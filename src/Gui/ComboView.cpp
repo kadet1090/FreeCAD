@@ -35,13 +35,12 @@
 using namespace Gui;
 using namespace Gui::DockWnd;
 
-
 /* TRANSLATOR Gui::DockWnd::ComboView */
 
 ComboView::ComboView(Gui::Document* pcDocument, QWidget *parent)
-  : DockWindow(pcDocument, parent)
+  : DockWindow(pcDocument,parent)
 {
-    setWindowTitle(tr("Combo View"));
+    hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/DockWindows/ComboView");
 
     auto pLayout = new QGridLayout(this);
     pLayout->setSpacing( 0 );
@@ -54,6 +53,18 @@ ComboView::ComboView(Gui::Document* pcDocument, QWidget *parent)
     // splitter between tree and property view
     splitter->setOrientation(Qt::Vertical);
 
+    int treeViewSize = hGrp->GetInt("TreeViewSize", 0);
+    int propertyViewSize = hGrp->GetInt("PropertyViewSize", 0);
+
+    if (treeViewSize || propertyViewSize) {
+        splitter->setSizes({ 
+            treeViewSize, 
+            propertyViewSize 
+        });
+    }
+
+    connect(splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(onSplitterMoved()));
+
     tree =  new TreePanel("ComboView", this);
     splitter->addWidget(tree);
 
@@ -63,5 +74,15 @@ ComboView::ComboView(Gui::Document* pcDocument, QWidget *parent)
 }
 
 ComboView::~ComboView() = default;
+
+void ComboView::onSplitterMoved()
+{
+    auto splitter = qobject_cast<QSplitter*>(sender());
+    if (splitter) {
+        auto sizes = splitter->sizes();
+        hGrp->SetInt("TreeViewSize", sizes[0]);
+        hGrp->SetInt("PropertyViewSize", sizes[1]);
+    }
+}
 
 #include "moc_ComboView.cpp"
