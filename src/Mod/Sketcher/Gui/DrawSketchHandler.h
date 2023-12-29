@@ -25,6 +25,7 @@
 
 #include <QCursor>
 #include <QPixmap>
+#include <QString>
 
 #include <Inventor/SbString.h>
 
@@ -233,6 +234,7 @@ protected:  // NVI requiring base implementation
     virtual bool isWidgetVisible() const;
     virtual QPixmap getToolIcon() const;
     virtual QString getToolWidgetText() const;
+    virtual QString getToolHintText() const;
 
 protected:
     // helpers
@@ -265,6 +267,8 @@ protected:
 
     qreal devicePixelRatio();
     //@}
+
+    void updateHint();
 
     void drawEdit(const std::vector<Base::Vector2d>& EditCurve) const;
     void drawEdit(const std::list<std::vector<Base::Vector2d>>& list) const;

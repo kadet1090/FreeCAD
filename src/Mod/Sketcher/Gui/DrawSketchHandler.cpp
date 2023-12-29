@@ -313,6 +313,15 @@ QString DrawSketchHandler::getToolWidgetText() const
     return QString();
 }
 
+QString DrawSketchHandler::getToolHintText() const
+{
+    return QString();
+}
+
+void DrawSketchHandler::updateHint()
+{
+    Gui::getMainWindow()->showHint(getToolHintText());
+}
 
 void DrawSketchHandler::activate(ViewProviderSketch* vp)
 {
@@ -326,6 +335,7 @@ void DrawSketchHandler::activate(ViewProviderSketch* vp)
         oldCursor = viewer->getWidget()->cursor();
 
         updateCursor();
+        updateHint();
 
         this->signalToolChanged();
 
@@ -349,6 +359,8 @@ void DrawSketchHandler::deactivate()
     resetPositionText();
     unsetCursor();
     setAngleSnapping(false);
+
+    Gui::getMainWindow()->hideHint();
 
     ViewProviderSketchDrawSketchHandlerAttorney::signalToolChanged(*sketchgui, "DSH_None");
 }
