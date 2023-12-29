@@ -268,6 +268,7 @@ struct MainWindowP
 {
     DimensionWidget* sizeLabel;
     QLabel* actionLabel;
+    QLabel* hintLabel;
     QTimer* actionTimer;
     QTimer* statusTimer;
     QTimer* activityTimer;
@@ -452,6 +453,11 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
     QProgressBar* progressBar = Gui::SequencerBar::instance()->getProgressBar(statusBar());
     statusBar()->addPermanentWidget(progressBar, 0);
     statusBar()->addPermanentWidget(d->sizeLabel, 0);
+
+
+    // hint label
+    d->hintLabel = new QLabel(statusBar());
+    statusBar()->addWidget(d->hintLabel);
 
     auto hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/NotificationArea");
 
@@ -2440,6 +2446,16 @@ void MainWindow::showStatus(int type, const QString& message)
     }
     d->currentStatusType = -type;
     statusBar()->showMessage(msg.simplified(), timeout);
+}
+
+void MainWindow::showHint(const QString& hint)
+{
+    d->hintLabel->setText(hint);
+}
+
+void MainWindow::hideHint()
+{
+    d->hintLabel->setText({});
 }
 
 
