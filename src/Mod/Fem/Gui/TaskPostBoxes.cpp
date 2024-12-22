@@ -482,10 +482,8 @@ void TaskPostFunction::applyPythonCode()
 // ***************************************************************************
 // Frames
 TaskPostFrames::TaskPostFrames(ViewProviderFemPostObject* view, QWidget* parent)
-    : TaskPostBox(view,
-                  Gui::BitmapFactory().pixmap("FEM_PostFrames"),
-                  tr("Result Frames"),
-                  parent), ui(new Ui_TaskPostFrames)
+    : TaskPostBox(view, Gui::BitmapFactory().pixmap("FEM_PostFrames"), tr("Result Frames"), parent)
+    , ui(new Ui_TaskPostFrames)
 {
     // we load the views widget
     proxy = new QWidget(this);
@@ -499,12 +497,13 @@ TaskPostFrames::TaskPostFrames(ViewProviderFemPostObject* view, QWidget* parent)
 
     auto unit = pipeline->getFrameUnit();
     auto steps = pipeline->getFrameValues();
-    for (unsigned long i=0; i<steps.size(); i++) {
-        QTableWidgetItem *idx = new QTableWidgetItem(QString::number(i));
-        QTableWidgetItem *value = new QTableWidgetItem(QString::fromStdString(Base::Quantity(steps[i], unit).getUserString()));
+    for (unsigned long i = 0; i < steps.size(); i++) {
+        QTableWidgetItem* idx = new QTableWidgetItem(QString::number(i));
+        QTableWidgetItem* value = new QTableWidgetItem(
+            QString::fromStdString(Base::Quantity(steps[i], unit).getUserString()));
 
         int rowIdx = ui->FrameTable->rowCount();
-        ui->FrameTable->insertRow (rowIdx);
+        ui->FrameTable->insertRow(rowIdx);
         ui->FrameTable->setItem(rowIdx, 0, idx);
         ui->FrameTable->setItem(rowIdx, 1, value);
     }
@@ -531,12 +530,10 @@ void TaskPostFrames::onSelectionChanged()
 }
 
 
-
 void TaskPostFrames::applyPythonCode()
 {
     // we apply the views widgets python code
 }
-
 
 
 // ***************************************************************************
@@ -550,7 +547,8 @@ TaskPostBranch::TaskPostBranch(ViewProviderFemPostBranchFilter* view, QWidget* p
     : TaskPostBox(view,
                   Gui::BitmapFactory().pixmap("FEM_PostBranchFilter"),
                   tr("Branch behaviour"),
-                  parent), ui(new Ui_TaskPostBranch)
+                  parent)
+    , ui(new Ui_TaskPostBranch)
 {
     // we load the views widget
     proxy = new QWidget(this);
@@ -591,12 +589,10 @@ void TaskPostBranch::onOutputIndexChanged(int idx)
 }
 
 
-
 void TaskPostBranch::applyPythonCode()
 {
     // we apply the views widgets python code
 }
-
 
 
 // ***************************************************************************
