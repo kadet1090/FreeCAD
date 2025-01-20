@@ -47,6 +47,11 @@ class AppExport Transaction: public Base::Persistence
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
+    /// Tag for sequential index of transaction objects
+    struct ByOrder {};
+    /// Tag for object index of transaction objects
+    struct ByObject {};
+
     /** Construction
      *
      * @param id: transaction id. If zero, then it will be generated
@@ -93,8 +98,12 @@ private:
     bmi::multi_index_container<
         Info,
         bmi::indexed_by<
-            bmi::sequenced<>,
-            bmi::hashed_unique<bmi::member<Info, const TransactionalObject*, &Info::first>>>>
+            bmi::sequenced<bmi::tag<ByOrder>>,
+            bmi::hashed_unique<
+                bmi::tag<ByObject>,
+                bmi::member<Info, const TransactionalObject*, &Info::first>
+            >
+        >>
         _Objects;
 };
 

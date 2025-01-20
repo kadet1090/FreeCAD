@@ -141,12 +141,12 @@ bool Transaction::isEmpty() const
 
 bool Transaction::hasObject(const TransactionalObject* Obj) const
 {
-    return !!_Objects.get<1>().count(Obj);
+    return !!_Objects.get<ByObject>().count(Obj);
 }
 
 void Transaction::addOrRemoveProperty(TransactionalObject* Obj, const Property* pcProp, bool add)
 {
-    auto& index = _Objects.get<1>();
+    auto& index = _Objects.get<ByObject>();
     auto pos = index.find(Obj);
 
     TransactionObject* To;
@@ -171,7 +171,8 @@ void Transaction::apply(Document& Doc, bool forward)
 {
     std::string errMsg;
     try {
-        auto& index = _Objects.get<0>();
+        auto& index = _Objects.get<ByOrder>();
+
         for (auto& info : index) {
             info.second->applyDel(Doc, const_cast<TransactionalObject*>(info.first));
         }
@@ -199,7 +200,7 @@ void Transaction::apply(Document& Doc, bool forward)
 
 void Transaction::addObjectNew(TransactionalObject* Obj)
 {
-    auto& index = _Objects.get<1>();
+    auto& index = _Objects.get<ByObject>();
     auto pos = index.find(Obj);
     if (pos != index.end()) {
         if (pos->second->status == TransactionObject::Del) {
@@ -214,8 +215,8 @@ void Transaction::addObjectNew(TransactionalObject* Obj)
             pos->second->status = TransactionObject::New;
             pos->second->_NameInDocument = Obj->detachFromDocument();
             // move item at the end to make sure the order of removal is kept
-            auto& seq = _Objects.get<0>();
-            seq.relocate(seq.end(), _Objects.project<0>(pos));
+            auto& seq = _Objects.get<ByOrder>();
+            seq.relocate(seq.end(), _Objects.project<ByOrder>(pos));
         }
     }
     else {
@@ -228,7 +229,7 @@ void Transaction::addObjectNew(TransactionalObject* Obj)
 
 void Transaction::addObjectDel(const TransactionalObject* Obj)
 {
-    auto& index = _Objects.get<1>();
+    auto& index = _Objects.get<ByObject>();
     auto pos = index.find(Obj);
 
     // is it created in this transaction ?
@@ -249,7 +250,7 @@ void Transaction::addObjectDel(const TransactionalObject* Obj)
 
 void Transaction::addObjectChange(const TransactionalObject* Obj, const Property* Prop)
 {
-    auto& index = _Objects.get<1>();
+    auto& index = _Objects.get<ByObject>();
     auto pos = index.find(Obj);
 
     TransactionObject* To;
