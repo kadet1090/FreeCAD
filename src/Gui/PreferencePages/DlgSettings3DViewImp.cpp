@@ -68,10 +68,7 @@ void DlgSettings3DViewImp::saveSettings()
     ui->CheckBox_use_SW_OpenGL->onSave();
     ui->CheckBox_useVBO->onSave();
     ui->FloatSpinBox_EyeDistance->onSave();
-    ui->checkBoxBacklight->onSave();
-    ui->backlightColor->onSave();
     ui->axisLetterColor->onSave();
-    ui->sliderIntensity->onSave();
     ui->radioPerspective->onSave();
     ui->radioOrthographic->onSave();
 }
@@ -85,10 +82,7 @@ void DlgSettings3DViewImp::loadSettings()
     ui->CheckBox_use_SW_OpenGL->onRestore();
     ui->CheckBox_useVBO->onRestore();
     ui->FloatSpinBox_EyeDistance->onRestore();
-    ui->checkBoxBacklight->onRestore();
-    ui->backlightColor->onRestore();
     ui->axisLetterColor->onRestore();
-    ui->sliderIntensity->onRestore();
     ui->radioPerspective->onRestore();
     ui->radioOrthographic->onRestore();
     ui->comboTransparentRender->onRestore();

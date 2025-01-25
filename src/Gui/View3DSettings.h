@@ -33,6 +33,10 @@ class View3DInventorViewer;
 class GuiExport View3DSettings: public ParameterGrp::ObserverType
 {
 public:
+    static constexpr auto defaultHeadLightDirection = "(0.0,0.0,-1.0)";
+    static constexpr auto defaultBackLightDirection = "(0.0,0.0,1.0)";
+    static constexpr auto defaultFillLightDirection = "(-0.6403416,0.7631294,0.087155744)";
+
     View3DSettings(ParameterGrp::handle hGrp, View3DInventorViewer*);
     View3DSettings(ParameterGrp::handle hGrp, const std::vector<View3DInventorViewer*>&);
     ~View3DSettings() override;
