@@ -61,7 +61,7 @@ void App::Extension::init()
 
     /* Set up entry in the type system. */
     Extension::classTypeId =
-        Base::Type::createType(Base::Type::badType(), "App::Extension", Extension::create);
+        Base::Type::createType(Base::Type::BadType, "App::Extension", Extension::create);
 }
 
 using namespace App;
