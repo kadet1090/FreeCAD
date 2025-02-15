@@ -1022,13 +1022,15 @@ void ParameterGrp::SetASCII(const char* Name, const char* sValue)
 {
     if (!_pGroupNode) {
         if (FC_LOG_INSTANCE.isEnabled(FC_LOGLEVEL_LOG)) {
-            FC_WARN("Setting attribute " << "FCText:" << Name << " in an orphan group " << _cName);
+            FC_WARN("Setting attribute "
+                    << "FCText:" << Name << " in an orphan group " << _cName);
         }
         return;
     }
     if (_Clearing) {
         if (FC_LOG_INSTANCE.isEnabled(FC_LOGLEVEL_LOG)) {
-            FC_WARN("Adding attribute " << "FCText:" << Name << " while clearing " << GetPath());
+            FC_WARN("Adding attribute "
+                    << "FCText:" << Name << " while clearing " << GetPath());
         }
         return;
     }
@@ -1250,6 +1252,55 @@ void ParameterGrp::RemoveUnsigned(const char* Name)
     // trigger observer
     _Notify(ParamType::FCUInt, Name, nullptr);
     Notify(Name);
+}
+
+Base::Color ParameterGrp::GetColor(const char* Name, Base::Color lPreset) const
+{
+    auto packed = GetUnsigned(Name, lPreset.getPackedValue());
+
+    return Color(static_cast<uint32_t>(packed));
+}
+
+void ParameterGrp::SetColor(const char* Name, Base::Color lValue)
+{
+    SetUnsigned(Name, lValue.getPackedValue());
+}
+
+std::vector<Base::Color> ParameterGrp::GetColors(const char* sFilter) const
+{
+    auto packed = GetUnsigneds(sFilter);
+    std::vector<Base::Color> result;
+
+    std::transform(packed.begin(),
+                   packed.end(),
+                   std::back_inserter(result),
+                   [](const unsigned long lValue) {
+                       return Color(static_cast<uint32_t>(lValue));
+                   });
+
+    return result;
+}
+
+std::vector<std::pair<std::string, Base::Color>>
+ParameterGrp::GetColorMap(const char* sFilter) const
+{
+    auto packed = GetUnsignedMap(sFilter);
+    std::vector<std::pair<std::string, Base::Color>> result;
+
+    std::transform(packed.begin(),
+                   packed.end(),
+                   std::back_inserter(result),
+                   [](const std::pair<std::string, unsigned long>& lValue) {
+                       return std::make_pair(lValue.first,
+                                             Color(static_cast<uint32_t>(lValue.second)));
+                   });
+
+    return result;
+}
+
+void ParameterGrp::RemoveColor(const char* Name)
+{
+    RemoveUnsigned(Name);
 }
 
 void ParameterGrp::RemoveGrp(const char* Name)
