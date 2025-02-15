@@ -3442,7 +3442,7 @@ QVariant PropertyColorItem::value(const App::Property* prop) const
 {
     assert(prop && prop->isDerivedFrom<App::PropertyColor>());
 
-    App::Color value = static_cast<const App::PropertyColor*>(prop)->getValue();
+    Base::Color value = static_cast<const App::PropertyColor*>(prop)->getValue();
     return QVariant(value.asValue<QColor>());
 }
 
@@ -3766,16 +3766,16 @@ void PropertyMaterialItem::setValue(const QVariant& value)
     }
 
     auto mat = value.value<Material>();
-    App::Color dc;
+    Base::Color dc;
     dc.setValue<QColor>(mat.diffuseColor);
     uint32_t dcp = dc.getPackedValue();
-    App::Color ac;
+    Base::Color ac;
     ac.setValue<QColor>(mat.ambientColor);
     uint32_t acp = ac.getPackedValue();
-    App::Color sc;
+    Base::Color sc;
     sc.setValue<QColor>(mat.specularColor);
     uint32_t scp = sc.getPackedValue();
-    App::Color ec;
+    Base::Color ec;
     ec.setValue<QColor>(mat.emissiveColor);
     uint32_t ecp = ec.getPackedValue();
     float s = mat.shininess;
@@ -4269,16 +4269,16 @@ void PropertyMaterialListItem::setValue(const QVariant& value)
     str << "(";
 
     auto mat = list[0].value<Material>();
-    App::Color dc;
+    Base::Color dc;
     dc.setValue<QColor>(mat.diffuseColor);
     uint32_t dcp = dc.getPackedValue();
-    App::Color ac;
+    Base::Color ac;
     ac.setValue<QColor>(mat.ambientColor);
     uint32_t acp = ac.getPackedValue();
-    App::Color sc;
+    Base::Color sc;
     sc.setValue<QColor>(mat.specularColor);
     uint32_t scp = sc.getPackedValue();
-    App::Color ec;
+    Base::Color ec;
     ec.setValue<QColor>(mat.emissiveColor);
     uint32_t ecp = ec.getPackedValue();
     float s = mat.shininess;

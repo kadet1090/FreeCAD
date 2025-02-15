@@ -47,7 +47,7 @@
 # include <QPainterPath>
 #endif
 
-#include <App/Color.h>
+#include <Base/Color.h>
 #include <Base/Tools.h>
 #include <Eigen/Dense>
 

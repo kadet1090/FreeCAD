@@ -1465,7 +1465,7 @@ void View3DInventorViewer::showRotationCenter(bool show)
                     .GetParameterGroupByPath("User parameter:BaseApp/Preferences/View")
                     ->GetUnsigned("RotationCenterColor", 4278190131);  // NOLINT
 
-            QColor color = App::Color::fromPackedRGBA<QColor>(rotationCenterColor);
+            QColor color = Base::Color::fromPackedRGBA<QColor>(rotationCenterColor);
 
             rotationCenterGroup = new SoSkipBoundingGroup();
 
