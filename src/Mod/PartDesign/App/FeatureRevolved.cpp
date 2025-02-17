@@ -86,11 +86,7 @@ App::DocumentObjectExecReturn* Revolved::executeRevolved(Part::RevolMode revolMo
 
 App::DocumentObjectExecReturn *Revolved::tryExecuteRevolved(Part::RevolMode revolMode)
 {
-    if (onlyHasToRefine()){
-        TopoShape result = refineShapeIfActive(rawShape);
-        Shape.setValue(result);
-        return App::DocumentObject::StdReturn;
-    }
+    if (onlyHaveRefined()) { return App::DocumentObject::StdReturn; }
 
     constexpr double maxDegree = 360.0;
     auto method = methodFromString(Type.getValueAsString());
