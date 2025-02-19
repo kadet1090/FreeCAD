@@ -71,17 +71,6 @@ namespace
 {
 constexpr const int lowPrec = 2;
 constexpr const int highPrec = 16;
-
-int toPercent(float value)
-{
-    return static_cast<int>(100 * value);  // NOLINT
-}
-
-float fromPercent(int value)
-{
-    return static_cast<float>(value) / 100.0F;  // NOLINT
-}
-
 }  // namespace
 
 PropertyItemFactory& PropertyItemFactory::instance()
@@ -3658,7 +3647,7 @@ int PropertyMaterialItem::getShininess() const
     }
 
     auto val = value.value<Material>();
-    return toPercent(val.shininess);
+    return Base::toPercent(val.shininess);
 }
 
 void PropertyMaterialItem::setShininess(int s)
@@ -3669,7 +3658,7 @@ void PropertyMaterialItem::setShininess(int s)
     }
 
     auto mat = value.value<Material>();
-    mat.shininess = fromPercent(s);
+    mat.shininess = Base::fromPercent(s);
     setValue(QVariant::fromValue<Material>(mat));
 }
 
@@ -3681,7 +3670,7 @@ int PropertyMaterialItem::getTransparency() const
     }
 
     auto val = value.value<Material>();
-    return toPercent(val.transparency);
+    return Base::toPercent(val.transparency);
 }
 
 void PropertyMaterialItem::setTransparency(int t)
@@ -3692,7 +3681,7 @@ void PropertyMaterialItem::setTransparency(int t)
     }
 
     auto mat = value.value<Material>();
-    mat.transparency = fromPercent(t);
+    mat.transparency = Base::fromPercent(t);
     setValue(QVariant::fromValue<Material>(mat));
 }
 
@@ -3747,8 +3736,8 @@ QVariant PropertyMaterialItem::toolTip(const App::Property* prop) const
                        .arg(ec.red())
                        .arg(ec.green())
                        .arg(ec.blue())
-                       .arg(toPercent(value.shininess))
-                       .arg(toPercent(value.transparency));
+                       .arg(Base::toPercent(value.shininess))
+                       .arg(Base::toPercent(value.transparency));
 
     return {data};
 }
@@ -4081,7 +4070,7 @@ int PropertyMaterialListItem::getShininess() const
     }
 
     auto mat = list[0].value<Material>();
-    return toPercent(mat.shininess);
+    return Base::toPercent(mat.shininess);
 }
 
 void PropertyMaterialListItem::setShininess(int s)
@@ -4101,7 +4090,7 @@ void PropertyMaterialListItem::setShininess(int s)
     }
 
     auto mat = list[0].value<Material>();
-    mat.shininess = fromPercent(s);
+    mat.shininess = Base::fromPercent(s);
     list[0] = QVariant::fromValue<Material>(mat);
     setValue(list);
 }
@@ -4123,7 +4112,7 @@ int PropertyMaterialListItem::getTransparency() const
     }
 
     auto mat = list[0].value<Material>();
-    return toPercent(mat.transparency);
+    return Base::toPercent(mat.transparency);
 }
 
 void PropertyMaterialListItem::setTransparency(int t)
@@ -4143,7 +4132,7 @@ void PropertyMaterialListItem::setTransparency(int t)
     }
 
     auto mat = list[0].value<Material>();
-    mat.transparency = fromPercent(t);
+    mat.transparency = Base::fromPercent(t);
     list[0] = QVariant::fromValue<Material>(mat);
     setValue(list);
 }
@@ -4231,8 +4220,8 @@ QVariant PropertyMaterialListItem::toolTip(const App::Property* prop) const
                        .arg(ec.red())
                        .arg(ec.green())
                        .arg(ec.blue())
-                       .arg(toPercent(value.shininess))
-                       .arg(toPercent(value.transparency));
+                       .arg(Base::toPercent(value.shininess))
+                       .arg(Base::toPercent(value.transparency));
 
     return {data};
 }

@@ -38,6 +38,8 @@
 #include "View3DSettings.h"
 #include "View3DInventorViewer.h"
 
+#include <Base/Tools.h>
+
 using namespace Gui;
 
 View3DSettings::View3DSettings(ParameterGrp::handle hGrp,
@@ -147,9 +149,9 @@ void View3DSettings::OnChange(ParameterGrp::SubjectType &rCaller,ParameterGrp::M
         }
     }
     else if (strcmp(Reason,"HeadlightIntensity") == 0) {
-        long value = rGrp.GetInt("HeadlightIntensity", 100);
+        long value = rGrp.GetInt("HeadlightIntensity", 90);
         for (auto _viewer : _viewers) {
-            _viewer->getHeadlight()->intensity.setValue((float)value/100.0f);
+            _viewer->getHeadlight()->intensity.setValue(Base::fromPercent(value));
         }
     }
     else if (strcmp(Reason,"EnableBacklight") == 0) {
@@ -183,7 +185,7 @@ void View3DSettings::OnChange(ParameterGrp::SubjectType &rCaller,ParameterGrp::M
     else if (strcmp(Reason,"BacklightIntensity") == 0) {
         long value = rGrp.GetInt("BacklightIntensity", 60);
         for (auto _viewer : _viewers) {
-            _viewer->getBacklight()->intensity.setValue((float)value/100.0f);
+            _viewer->getBacklight()->intensity.setValue(Base::fromPercent(value));
         }
     }
     else if (strcmp(Reason,"EnableFillLight") == 0) {
@@ -217,7 +219,7 @@ void View3DSettings::OnChange(ParameterGrp::SubjectType &rCaller,ParameterGrp::M
     else if (strcmp(Reason,"FillLightIntensity") == 0) {
         long value = rGrp.GetInt("FillLightIntensity", 40);
         for (auto _viewer : _viewers) {
-            _viewer->getFillLight()->intensity.setValue((float)value/100.0f);
+            _viewer->getFillLight()->intensity.setValue(Base::fromPercent(value));
         }
     }
     else if (strcmp(Reason,"AmbientLightColor") == 0) {
@@ -232,7 +234,7 @@ void View3DSettings::OnChange(ParameterGrp::SubjectType &rCaller,ParameterGrp::M
     else if (strcmp(Reason,"AmbientLightIntensity") == 0) {
         long value = rGrp.GetInt("AmbientLightIntensity", 20);
         for (auto _viewer : _viewers) {
-            _viewer->getEnvironment()->ambientIntensity.setValue((float)value/100.0f);
+            _viewer->getEnvironment()->ambientIntensity.setValue(Base::fromPercent(value));
         }
     }
     else if (strcmp(Reason,"EnablePreselection") == 0) {

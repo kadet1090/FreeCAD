@@ -97,19 +97,6 @@ FC_LOG_LEVEL_INIT("Part", true, true)
 
 using namespace PartGui;
 
-// Helper functions to consistently convert between float and long
-namespace {
-float fromPercent(long value)
-{
-    return std::roundf(value) / 100.0F;
-}
-
-long toPercent(float value)
-{
-    return std::lround(100.0 * value);
-}
-}
-
 PROPERTY_SOURCE(PartGui::ViewProviderPartExt, Gui::ViewProviderGeometryObject)
 
 
@@ -364,9 +351,9 @@ void ViewProviderPartExt::onChanged(const App::Property* prop)
     }
     else if (prop == &Transparency) {
         const App::Material& Mat = ShapeAppearance[0];
-        long value = toPercent(Mat.transparency);
+        long value = Base::toPercent(Mat.transparency);
         if (value != Transparency.getValue()) {
-            float trans = fromPercent(Transparency.getValue());
+            float trans = Base::fromPercent(Transparency.getValue());
             ShapeAppearance.setTransparency(trans);
         }
     }
