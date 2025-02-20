@@ -27,6 +27,7 @@
 #include "TKJtReader.h"
 #include <Base/Console.h>
 #include <Base/FileInfo.h>
+#include <Base/Matrix.h>
 
 using namespace JtReaderNS;
 

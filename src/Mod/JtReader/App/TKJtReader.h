@@ -36,6 +36,7 @@
 #include <JtNode_Shape_Vertex.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <TCollection_ExtendedString.hxx>
+#include <list>
 #include <Base/Builder3D.h>
 
 namespace JtReaderNS

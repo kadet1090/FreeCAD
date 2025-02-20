@@ -26,10 +26,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <istream>
+#include <map>
 #endif
 
 #include "Core/MeshIO.h"
 #include "Core/MeshKernel.h"
+#include <App/Color.h>
 #include <Base/Tools.h>
 
 #include "ReaderOBJ.h"
