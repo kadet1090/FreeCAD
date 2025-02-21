@@ -123,6 +123,19 @@ Sheet::~Sheet()
 
 void Sheet::clearAll()
 {
+    try {
+        tryClearAll();
+    }
+    catch (...) {
+        // Don't let an exception propagate out of a destructor (calls terminate())
+        Base::Console().Error(
+            "clearAll() resulted in an exception when deleting the spreadsheet : %s\n",
+            getNameInDocument());
+    }
+}
+
+void Sheet::tryClearAll()
+{
     cells.clear();
 
     std::vector<std::string> propNames = props.getDynamicPropertyNames();

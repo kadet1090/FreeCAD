@@ -272,6 +272,9 @@ protected:
 
     void updateBindings();
 
+private:
+    void tryClearAll();
+
     /* Properties for used cells */
     App::DynamicProperty& props;
 

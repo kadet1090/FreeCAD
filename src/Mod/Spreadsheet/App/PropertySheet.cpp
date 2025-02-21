@@ -787,7 +787,7 @@ void PropertySheet::setAlias(CellAddress address, const std::string& alias)
         App::ObjectIdentifier key(owner, oldAlias);
         App::ObjectIdentifier value(owner, alias.empty() ? address.toString() : alias);
 
-        m[key] = value;
+        m[key] = std::move(value);
 
         owner->getDocument()->renameObjectIdentifiers(m);
     }
@@ -1397,7 +1397,7 @@ void PropertySheet::addDependencies(CellAddress key)
 
                         // Insert into maps
                         propertyNameToCellMap[propName].insert(key);
-                        cellToPropertyNameMap[key].insert(propName);
+                        cellToPropertyNameMap[key].insert(std::move(propName));
                     }
                 }
             }
@@ -2261,7 +2261,9 @@ void PropertySheet::setPathValue(const ObjectIdentifier& path, const boost::any&
         }
     }
 
-    FC_THROWM(Base::TypeError, "Invalid path value '" << "' for " << getFullName());
+    FC_THROWM(Base::TypeError,
+              "Invalid path value '"
+                  << "' for " << getFullName());
 }
 
 const boost::any PropertySheet::getPathValue(const App::ObjectIdentifier& path) const
