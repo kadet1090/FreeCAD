@@ -370,7 +370,7 @@ void AboutDialog::showCredits()
     ui->tabWidget->addTab(tab_credits, tr("Credits"));
     auto hlayout = new QVBoxLayout(tab_credits);
     auto textField = new QTextBrowser(tab_credits);
-    textField->setOpenExternalLinks(true);
+    textField->setOpenLinks(false);
     hlayout->addWidget(textField);
 
     QString creditsHTML = QStringLiteral("<html><body><p>");
@@ -429,7 +429,6 @@ void AboutDialog::showLicenseInformation()
         auto hlayout = new QVBoxLayout(tab_license);
         auto textField = new QTextBrowser(tab_license);
         textField->setOpenExternalLinks(true);
-        textField->setOpenLinks(true);
         hlayout->addWidget(textField);
 
         textField->setHtml(licenseHTML);
