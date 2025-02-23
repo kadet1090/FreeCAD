@@ -196,6 +196,7 @@ SoSeparator* SoFCPlacementIndicatorKit::createAxes()
             pcAxisLabel->vertAlignment = SoImage::HALF;
             pcAxisLabel->border = false;
             pcAxisLabel->frame = false;
+            pcAxisLabel->textUseBaseColor = true;
             pcAxisLabel->size = labelFontSize;
 
             pcLabelSeparator->addChild(pcAxisLabel);
