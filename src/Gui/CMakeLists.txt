@@ -1068,6 +1068,7 @@ SET(Inventor_CPP_SRCS
     Inventor/So3DAnnotation.cpp
     Inventor/SoAutoZoomTranslation.cpp
     Inventor/SoAxisCrossKit.cpp
+    Inventor/SoFCPlacementIndicatorKit.cpp
     Inventor/SoDrawingGrid.cpp
     Inventor/SoFCBackgroundGradient.cpp
     Inventor/SoFCBoundingBox.cpp
@@ -1100,6 +1101,7 @@ SET(Inventor_SRCS
     Inventor/SmSwitchboard.h
     Inventor/SoAutoZoomTranslation.h
     Inventor/SoAxisCrossKit.h
+    Inventor/SoFCPlacementIndicatorKit.h
     Inventor/SoDrawingGrid.h
     Inventor/SoFCBackgroundGradient.h
     Inventor/SoFCBoundingBox.h
