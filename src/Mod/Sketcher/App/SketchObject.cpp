@@ -324,7 +324,6 @@ static bool inline checkSmallEdge(const Part::TopoShape &s) {
 }
 
 void SketchObject::buildShape() {
-    // Shape.setValue(solvedSketch.toShape());
     // We use the following instead to map element names
 
     std::vector<Part::TopoShape> shapes;
@@ -4527,7 +4526,6 @@ bool SketchObject::isExternalAllowed(App::Document* pDoc, App::DocumentObject* p
 
     // Note: Checking for the body of the support doesn't work when the support are the three base
     // planes
-    // App::DocumentObject *support = this->AttachmentSupport.getValue();
     Part::BodyBase* body_this = Part::BodyBase::findBodyOf(this);
     Part::BodyBase* body_obj = Part::BodyBase::findBodyOf(pObj);
     App::Part* part_this = App::Part::getPartOfObject(this);
@@ -4600,7 +4598,6 @@ bool SketchObject::isCarbonCopyAllowed(App::Document* pDoc, App::DocumentObject*
 
     // Note: Checking for the body of the support doesn't work when the support are the three base
     // planes
-    // App::DocumentObject *support = this->AttachmentSupport.getValue();
     Part::BodyBase* body_this = Part::BodyBase::findBodyOf(this);
     Part::BodyBase* body_obj = Part::BodyBase::findBodyOf(pObj);
     App::Part* part_this = App::Part::getPartOfObject(this);
@@ -4691,8 +4688,7 @@ bool SketchObject::isCarbonCopyAllowed(App::Document* pDoc, App::DocumentObject*
 }
 
 int SketchObject::addSymmetric(const std::vector<int>& geoIdList, int refGeoId,
-                               Sketcher::PointPos refPosId /*=Sketcher::PointPos::none*/,
-                               bool addSymmetryConstraints /*= false*/)
+                               Sketcher::PointPos refPosId , bool addSymmetryConstraints )
 {
     // no need to check input data validity as this is an sketchobject managed operation.
     Base::StateLocker lock(managedoperation, true);
@@ -4734,7 +4730,7 @@ int SketchObject::addSymmetric(const std::vector<int>& geoIdList, int refGeoId,
                     continue;
                 }
 
-                if (constr->Second == GeoEnum::GeoUndef /*&& constr->Third == GeoEnum::GeoUndef*/) {
+                if (constr->Second == GeoEnum::GeoUndef ){
                     if (refIsAxisAligned) {
                         // in this case we want to keep the Vertical, Horizontal constraints
                         // DistanceX ,and DistanceY constraints should also be possible to keep in
@@ -5252,8 +5248,6 @@ std::vector<Part::Geometry*> SketchObject::getSymmetric(const std::vector<int>& 
             else if (geosym->is<Part::GeomArcOfParabola>()) {
                 auto* geosymaoe = static_cast<Part::GeomArcOfParabola*>(geosym);
                 Base::Vector3d cp = geosymaoe->getCenter();
-
-                /*double df= geosymaoe->getFocal();*/
                 Base::Vector3d f1 = geosymaoe->getFocus();
 
                 Base::Vector3d sf1 = f1 + 2.0 * (refpoint - f1);
@@ -5297,9 +5291,8 @@ std::vector<Part::Geometry*> SketchObject::getSymmetric(const std::vector<int>& 
 }
 
 int SketchObject::addCopy(const std::vector<int>& geoIdList, const Base::Vector3d& displacement,
-                          bool moveonly /*=false*/, bool clone /*=false*/, int csize /*=2*/,
-                          int rsize /*=1*/, bool constraindisplacement /*= false*/,
-                          double perpscale /*= 1.0*/)
+                          bool moveonly , bool clone , int csize , int rsize , bool constraindisplacement ,
+                          double perpscale )
 {
     // no need to check input data validity as this is an sketchobject managed operation.
     Base::StateLocker lock(managedoperation, true);
@@ -8546,7 +8539,6 @@ void processEdge2(TopoDS_Edge& projEdge, std::vector<std::unique_ptr<Part::Geome
         gp_Pnt P1 = projCurve.Value(projCurve.FirstParameter());
         gp_Pnt P2 = projCurve.Value(projCurve.LastParameter());
 
-        // gp_Dir normal = e.Axis().Direction();
         gp_Dir normal = gp_Dir(0, 0, 1);
         gp_Ax2 xdirref(p, normal);
 
@@ -9082,10 +9074,6 @@ std::vector<TopoDS_Shape> projectShape(const TopoDS_Shape& inShape, const gp_Ax3
             res.push_back(hlrToShape.Rg1LineVCompound());
         }
 
-        /*if (!hlrToShape.RgNLineVCompound().IsNull()) {
-            res.push_back(hlrToShape.RgNLineVCompound());
-        }*/ // we don't need the seams.
-
         if (!hlrToShape.OutLineVCompound().IsNull()) {
             res.push_back(hlrToShape.OutLineVCompound());
         }
@@ -9101,10 +9089,6 @@ std::vector<TopoDS_Shape> projectShape(const TopoDS_Shape& inShape, const gp_Ax3
         if (!hlrToShape.Rg1LineHCompound().IsNull()) {
             res.push_back(hlrToShape.Rg1LineHCompound());
         }
-
-        /*if (!hlrToShape.RgNLineHCompound().IsNull()) {
-            res.push_back(hlrToShape.RgNLineHCompound());
-        }*/
 
         if (!hlrToShape.OutLineHCompound().IsNull()) {
             res.push_back(hlrToShape.OutLineHCompound());
@@ -11231,7 +11215,7 @@ int SketchObject::port_reversedExternalArcs(bool justAnalyze)
     // no need to check input data validity as this is an sketchobject managed operation.
     Base::StateLocker lock(managedoperation, true);
 
-    int cntToBeAffected = 0;//==cntSuccess+cntFail
+    int cntToBeAffected = 0;
     const std::vector<Constraint*>& vals = this->Constraints.getValues();
 
     std::vector<Constraint*> newVals(vals);// modifiable copy of pointers array
@@ -11260,7 +11244,6 @@ int SketchObject::port_reversedExternalArcs(bool justAnalyze)
             if (geoId <= GeoEnum::RefExt
                 && (posId == Sketcher::PointPos::start || posId == Sketcher::PointPos::end)) {
                 // we are dealing with a link to an endpoint of external geom
-//                Part::Geometry* g = this->ExternalGeo[-geoId - 1];
                 Part::Geometry* g = this->ExternalGeo[-geoId - 1];
                 if (g->is<Part::GeomArcOfCircle>()) {
                     const Part::GeomArcOfCircle* segm =
