@@ -29,14 +29,19 @@
 # include <QApplication>
 # include <QContextMenuEvent>
 # include <QCursor>
+# include <QDesktopServices>
+# include <QDir>
+# include <QFileInfo>
 # include <QHeaderView>
 # include <QMenu>
 # include <QMessageBox>
 # include <QPainter>
 # include <QPixmap>
+# include <QProcess>
 # include <QThread>
 # include <QTimer>
 # include <QToolTip>
+# include <QUrl>
 # include <QVBoxLayout>
 #endif
 
@@ -683,6 +688,10 @@ TreeWidget::TreeWidget(const char* name, QWidget* parent)
     connect(this->searchObjectsAction, &QAction::triggered,
             this, &TreeWidget::onSearchObjects);
 
+    this->openFileLocationAction = new QAction(this);
+    connect(this->openFileLocationAction, &QAction::triggered,
+            this, &TreeWidget::onOpenFileLocation);
+
     //NOLINTBEGIN
     // Setup connections
     connectNewDocument = Application::Instance->signalNewDocument.connect(std::bind(&TreeWidget::slotNewDocument, this, sp::_1, sp::_2));
@@ -1032,6 +1041,7 @@ void TreeWidget::contextMenuEvent(QContextMenuEvent* e)
 
         showHiddenAction->setChecked(docitem->showHidden());
         contextMenu.addAction(this->showHiddenAction);
+        contextMenu.addAction(this->openFileLocationAction);
         contextMenu.addAction(this->searchObjectsAction);
         contextMenu.addAction(this->closeDocAction);
         if (doc->testStatus(App::Document::PartialDoc))
@@ -2876,6 +2886,22 @@ void TreeWidget::onCloseDoc()
     }
 }
 
+void TreeWidget::onOpenFileLocation()
+{
+    auto docitem = dynamic_cast<DocumentItem*>(this->contextItem);
+    App::Document* doc = docitem->document()->getDocument();
+    std::string name = doc->FileName.getValue();
+
+    const QFileInfo fileInfo(QString::fromStdString(name));
+    if (fileInfo.exists()) {
+        const QString filePath = fileInfo.canonicalPath();
+        QUrl url = QUrl::fromLocalFile(filePath);
+        if (!QDesktopServices::openUrl(url)) {
+            QMessageBox::warning(this, tr("Error"), tr("Failed to open directory."));
+        }
+    }
+}
+
 void TreeWidget::slotRenameDocument(const Gui::Document& Doc)
 {
     // do nothing here
@@ -3329,6 +3355,9 @@ void TreeWidget::setupText()
 
     this->closeDocAction->setText(tr("Close document"));
     this->closeDocAction->setStatusTip(tr("Close the document"));
+
+    this->openFileLocationAction->setText(tr("Open file location"));
+    this->openFileLocationAction->setStatusTip(tr("Open the current file location"));
 
     this->reloadDocAction->setText(tr("Reload document"));
     this->reloadDocAction->setStatusTip(tr("Reload a partially loaded document"));
