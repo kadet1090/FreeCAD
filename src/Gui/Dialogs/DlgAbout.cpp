@@ -653,25 +653,23 @@ void AboutDialog::copyToClipboard()
     str << "Coin " << COIN_VERSION << ", ";
     str << "Vtk " << fcVtkVersion << ", ";
 
-    const char* cmd = "import ifcopenshell\n"
-                      "version = ifcopenshell.version";
-    PyObject * ifcopenshellVer = nullptr;
-
     try {
-        ifcopenshellVer = Base::Interpreter().getValue(cmd, "version");
-    }
-    catch (const Base::Exception& e) {
-        Base::Console().Log("%s (safe to ignore, unless using the BIM workbench and IFC).\n", e.what());
-    }
-
-    if (ifcopenshellVer) {
-        const char* ifcopenshellVerAsStr = PyUnicode_AsUTF8(ifcopenshellVer);
-
-        if (ifcopenshellVerAsStr) {
-            str << "IfcOpenShell " << ifcopenshellVerAsStr << ", ";
-            Py_DECREF(ifcopenshellVerAsStr);
+        Base::PyGILStateLocker lock;
+        Py::Module module(PyImport_ImportModule("ifcopenshell"), true);
+        if (!module.isNull() && module.hasAttr("version")) {
+            Py::String version(module.getAttr("version"));
+            std::string ver_str = static_cast<std::string>(version);
+            str << "IfcOpenShell " << ver_str.c_str() << ", ";
         }
-        Py_DECREF(ifcopenshellVer);
+        else {
+            Base::Console().Log("Module 'ifcopenshell' not found (safe to ignore, unless using "
+                                "the BIM workbench and IFC).\n");
+        }
+    }
+    catch (const Py::Exception&) {
+        Base::PyGILStateLocker lock;
+        Base::PyException e;
+        Base::Console().Log("%s\n", e.what());
     }
 
 #if defined(HAVE_OCC_VERSION)
