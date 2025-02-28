@@ -239,11 +239,23 @@ class FeatureSlice:
     def execute(self,selfobj):
         if len(selfobj.Tools) < 1:
             raise ValueError("No slicing objects supplied!")
-        selfobj.Shape = SplitAPI.slice(selfobj.Base.Shape,
-                                       [obj.Shape for obj in selfobj.Tools],
-                                       selfobj.Mode,
-                                       selfobj.Tolerance)
 
+        baseShape = self.findBaseShape(selfobj.Base)
+        toolShapes = [obj.Shape for obj in selfobj.Tools]
+        selfobj.Shape = SplitAPI.slice(baseShape,
+                        toolShapes,
+                        selfobj.Mode,
+                        selfobj.Tolerance)
+
+    def findBaseShape(self, objBase):
+        if hasattr(objBase, "Shape"):
+            return objBase.Shape
+        elif hasattr(objBase, "Group"):
+            baseShapes = []
+            for obj in objBase.Group:
+                if hasattr(obj, "Shape"):
+                    baseShapes.append(obj.Shape)
+            return Part.Compound(baseShapes)
 
 class ViewProviderSlice:
     """A View Provider for the Part Slice feature."""
