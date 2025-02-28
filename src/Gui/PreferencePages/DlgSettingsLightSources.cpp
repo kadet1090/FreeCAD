@@ -320,6 +320,10 @@ void DlgSettingsLightSources::resetSettingsToDefaults()
 {
     PreferencePage::resetSettingsToDefaults();
 
+    hGrp->RemoveASCII("HeadlightDirection");
+    hGrp->RemoveASCII("BacklightDirection");
+    hGrp->RemoveASCII("FillLightDirection");
+
     loadSettings();
     configureViewer();
 }
