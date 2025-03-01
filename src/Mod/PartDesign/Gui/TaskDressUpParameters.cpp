@@ -292,10 +292,8 @@ void TaskDressUpParameters::createAddAllEdgesAction(QListWidget* parentList)
 
     addAllEdgesAction = new QAction(tr("Add all edges"), this);
     addAllEdgesAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+A")));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // display shortcut behind the context menu entry
     addAllEdgesAction->setShortcutVisibleInContextMenu(true);
-#endif
     parentList->addAction(addAllEdgesAction);
     addAllEdgesAction->setStatusTip(tr("Adds all edges to the list box (active only when in add selection mode)."));
     parentList->setContextMenuPolicy(Qt::ActionsContextMenu);
@@ -308,10 +306,8 @@ void TaskDressUpParameters::createDeleteAction(QListWidget* parentList)
     deleteAction = new QAction(tr("Remove"), this);
     deleteAction->setShortcut(Gui::QtTools::deleteKeySequence());
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // display shortcut behind the context menu entry
     deleteAction->setShortcutVisibleInContextMenu(true);
-#endif
     parentList->addAction(deleteAction);
     parentList->setContextMenuPolicy(Qt::ActionsContextMenu);
 }

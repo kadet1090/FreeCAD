@@ -177,10 +177,8 @@ void TaskExtrudeParameters::setupDialog()
     unselectShapeFaceAction = new QAction(tr("Remove"), this);
     unselectShapeFaceAction->setShortcut(Gui::QtTools::deleteKeySequence());
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // display shortcut behind the context menu entry
     unselectShapeFaceAction->setShortcutVisibleInContextMenu(true);
-#endif
 
     ui->listWidgetReferences->addAction(unselectShapeFaceAction);
     ui->listWidgetReferences->setContextMenuPolicy(Qt::ActionsContextMenu);
