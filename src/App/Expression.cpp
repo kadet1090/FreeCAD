@@ -37,6 +37,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <fmt/format.h>
 
 #include <App/Application.h>
 #include <App/DocumentObject.h>
@@ -3729,14 +3730,17 @@ Expression * App::ExpressionParser::parse(const App::DocumentObject *owner, cons
     // run the parser
     int result = ExpressionParser::ExpressionParser_yyparse ();
 
-    if (result != 0)
-        throw ParserError("Failed to parse expression.");
+    if (result != 0) {
+        throw ParserError(fmt::format("Failed to parse expression '{}'", buffer));
+    }
 
-    if (!ScanResult)
-        throw ParserError("Unknown error in expression");
+    if (!ScanResult) {
+        throw ParserError(fmt::format("Unknown error in expression '{}'", buffer));
+    }
 
-    if (valueExpression)
+    if (valueExpression) {
         return ScanResult;
+    }
     else {
         delete ScanResult;
         throw Expression::Exception("Expression can not evaluate to a value.");
