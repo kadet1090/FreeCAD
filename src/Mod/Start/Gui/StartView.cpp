@@ -72,7 +72,7 @@ class NewFileButton: public QPushButton
 {
 
 public:
-    NewFileButton(const NewButton& newButton)
+    explicit NewFileButton(const NewButton& newButton)
     {
         auto hGrp = App::GetApplication().GetParameterGroupByPath(
             "User parameter:BaseApp/Preferences/Mod/Start");
@@ -111,7 +111,7 @@ public:
 
     void updateStyle()
     {
-        QString style = QStringLiteral("");
+        QString style;
         if (qApp->styleSheet().isEmpty()) {
             style = fileCardStyle();
         }
@@ -565,7 +565,6 @@ void StartView::retranslateUi()
     _recentFilesLabel->setText(h1Start + tr("Recent Files") + h1End);
     _customFolderLabel->setText(h1Start + tr("Custom Folder") + h1End);
 
-    QString application = QString::fromUtf8(App::Application::Config()["ExeName"].c_str());
     _openFirstStart->setText(tr("Open first start setup"));
     _showOnStartupCheckBox->setText(
         tr("Don't show this Start page again (start with blank screen)"));
