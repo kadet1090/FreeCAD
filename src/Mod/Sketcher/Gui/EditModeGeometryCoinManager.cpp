@@ -666,7 +666,8 @@ void EditModeGeometryCoinManager::createEditModeCurveInventorNodes()
     editModeScenegraphNodes.CurvesExternalDrawStyle->linePatternScaleFactor = 2;
 
     editModeScenegraphNodes.CurvesExternalDefiningDrawStyle = new SoDrawStyle;
-    editModeScenegraphNodes.CurvesExternalDefiningDrawStyle->setName("CurvesExternalDefiningDrawStyle");
+    editModeScenegraphNodes.CurvesExternalDefiningDrawStyle->setName(
+        "CurvesExternalDefiningDrawStyle");
     editModeScenegraphNodes.CurvesExternalDefiningDrawStyle->lineWidth =
         drawingParameters.ExternalDefiningWidth * drawingParameters.pixelScalingFactor;
     editModeScenegraphNodes.CurvesExternalDefiningDrawStyle->linePattern =
