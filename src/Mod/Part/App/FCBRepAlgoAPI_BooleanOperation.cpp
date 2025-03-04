@@ -113,18 +113,30 @@ void FCBRepAlgoAPI_BooleanOperation::Build()
         RecursiveAddArguments(myOriginalTools.First());
         if (!myTools.IsEmpty()) {
             myOperation = BOPAlgo_FUSE; // fuse tools together
-            Build();
+#if OCC_VERSION_HEX >= 0x070600
+            BRepAlgoAPI_BooleanOperation::Build(theRange);
+#else
+            BRepAlgoAPI_BooleanOperation::Build();
+#endif
             myOperation = BOPAlgo_CUT; // restore
             myArguments = myOriginalArguments;
             if (IsDone()) {
                 myTools.Append(myShape);
-                Build(); // cut with fused tools
+#if OCC_VERSION_HEX >= 0x070600
+                BRepAlgoAPI_BooleanOperation::Build(theRange); // cut with fused tools
+#else
+                BRepAlgoAPI_BooleanOperation::Build(); // cut with fused tools
+#endif
             }
             myTools = myOriginalTools; //restore
         } else { // there was less than 2 shapes in the compound
             myArguments = myOriginalArguments;
             myTools = myOriginalTools; //restore
-            Build();
+#if OCC_VERSION_HEX >= 0x070600
+            BRepAlgoAPI_BooleanOperation::Build(theRange);
+#else
+            BRepAlgoAPI_BooleanOperation::Build();
+#endif
         }
     } else if (myOperation==BOPAlgo_CUT && myArguments.Size()==1 && myArguments.First().ShapeType() == TopAbs_COMPOUND) {
         TopTools_ListOfShape myOriginalArguments = myArguments;
