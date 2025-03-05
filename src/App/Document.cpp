@@ -3758,8 +3758,7 @@ void Document::removeObject(const char* sName)
     d->objectIdMap.erase(pos->second->_Id);
     // Unset the bit to be on the safe side
     pos->second->setStatus(ObjectStatus::Remove, false);
-
-    std::string objLabel = pos->second->Label.getStrValue();
+    unregisterLabel(pos->second->Label.getStrValue());
 
     // do no transactions if we do a rollback!
     std::unique_ptr<DocumentObject> tobedestroyed;
@@ -3777,7 +3776,6 @@ void Document::removeObject(const char* sName)
         }
     }
 
-    unregisterLabel(objLabel);
     for (auto obj = d->objectArray.begin(); obj != d->objectArray.end(); ++obj) {
         if (*obj == pos->second) {
             d->objectArray.erase(obj);
