@@ -666,6 +666,13 @@ class DocumentBasicCases(unittest.TestCase):
         root = ET.fromstring(test.Content)
         self.assertEqual(root.tag, "Properties")
 
+    def testAddRemoveIssue19980(self):
+        doc = self.Doc
+        doc.UndoMode = 1
+        doc.openTransaction("Add/Remove")
+        doc.addObject("App::FeatureTest", "Test")
+        doc.removeObject("Test")
+
     def tearDown(self):
         # closing doc
         FreeCAD.closeDocument("CreateTest")
