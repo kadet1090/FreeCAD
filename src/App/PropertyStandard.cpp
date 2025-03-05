@@ -1426,23 +1426,27 @@ PropertyString::PropertyString() = default;
 
 PropertyString::~PropertyString() = default;
 
-void PropertyString::setValue(const char* newLabel)
+void PropertyString::setValue(const char* newValue)
 {
-    if (!newLabel) {
+    if (!newValue) {
         return;
     }
 
-    if (_cValue == newLabel) {
+    if (_cValue == newValue) {
         return;
     }
 
     std::vector<std::pair<Property*, std::unique_ptr<Property>>> propChanges;
-    std::string label = newLabel;
+    std::string newValueStr = newValue;
     auto obj = dynamic_cast<DocumentObject*>(getContainer());
     bool commit = false;
 
     if (obj && this == &obj->Label) {
-        propChanges = obj->onProposedLabelChange(label);
+        propChanges = obj->onProposedLabelChange(newValueStr);
+        if (_cValue == newValueStr) {
+            // OnProposedLabelChange has changed the new value to what the current value is
+            return;
+        }
         if (!propChanges.empty() && !GetApplication().getActiveTransaction()) {
             commit = true;
             std::ostringstream str;
@@ -1452,7 +1456,7 @@ void PropertyString::setValue(const char* newLabel)
     }
 
     aboutToSetValue();
-    _cValue = label;
+    _cValue = newValueStr;
     hasSetValue();
 
     for (auto& change : propChanges) {
