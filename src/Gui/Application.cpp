@@ -2593,9 +2593,9 @@ App::Document* Application::reopen(App::Document* doc)
         }
 
         for (auto& file : docs) {
-            App::DocumentCreateFlags createFlags;
-            createFlags.createView = false;
-            App::GetApplication().openDocument(file.c_str(), createFlags);
+            App::DocumentInitFlags initFlags;
+            initFlags.createView = false;
+            App::GetApplication().openDocument(file.c_str(), initFlags);
         }
     }
 
