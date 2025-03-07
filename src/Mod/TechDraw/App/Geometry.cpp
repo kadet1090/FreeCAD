@@ -1335,7 +1335,7 @@ void Vertex::Save(Base::Writer &writer) const
 //    const char r = reference?'1':'0';
 //    writer.Stream() << writer.ind() << "<Reference value=\"" <<  r << "\"/>" << endl;
 
-    Tag::Save(writer);
+    Tag::Save(writer, "VertexTag");
 }
 
 void Vertex::Restore(Base::XMLReader &reader)

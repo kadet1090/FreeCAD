@@ -43,9 +43,9 @@ public:
 protected:
     Tag();
     void setTag(const boost::uuids::uuid& newTag);
-    void Save(Base::Writer& writer) const;
+    void Save(Base::Writer& writer, std::string_view elementName) const;
     // Setting elementName is only for backwards compatibility!
-    void Restore(Base::XMLReader& reader, std::string_view elementName="Tag");
+    void Restore(Base::XMLReader& reader, std::string_view elementName);
 
 private:
     void createNewTag();

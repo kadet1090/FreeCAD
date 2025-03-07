@@ -77,9 +77,14 @@ void Tag::createNewTag()
     tag = gen();
 }
 
-void Tag::Save(Base::Writer& writer) const
+void Tag::Save(Base::Writer& writer, std::string_view elementName) const
 {
-    writer.Stream() << writer.ind() << "<Tag value=\"" <<  getTagAsString() << "\"/>" << std::endl;
+    writer.Stream() << writer.ind()
+                    << "<"
+                    << elementName
+                    << " value=\""
+                    << getTagAsString()
+                    << "\"/>\n";
 }
 
 void Tag::Restore(Base::XMLReader& reader, std::string_view elementName)

@@ -126,7 +126,7 @@ void CosmeticVertex::Save(Base::Writer &writer) const
     writer.Stream() << writer.ind() << "<Style value=\"" <<  style << "\"/>" << endl;
     const char v = visible?'1':'0';
     writer.Stream() << writer.ind() << "<Visible value=\"" <<  v << "\"/>" << endl;
-    Tag::Save(writer);
+    Tag::Save(writer, "Tag");
 }
 
 void CosmeticVertex::Restore(Base::XMLReader &reader)
@@ -150,7 +150,7 @@ void CosmeticVertex::Restore(Base::XMLReader &reader)
     style = reader.getAttributeAsInteger("value");
     reader.readElement("Visible");
     visible = (int)reader.getAttributeAsInteger("value")==0?false:true;
-    Tag::Restore(reader);
+    Tag::Restore(reader, "Tag");
 }
 
 Base::Vector3d CosmeticVertex::scaled(const double factor)
