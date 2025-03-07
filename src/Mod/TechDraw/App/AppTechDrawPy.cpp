@@ -44,8 +44,6 @@
 #include <Base/Vector3D.h>
 #include <Base/VectorPy.h>
 
-#include <Gui/Application.h>
-
 #include <Mod/Import/App/dxf/ImpExpDxf.h>
 #include <Mod/Part/App/OCCError.h>
 #include <Mod/Part/App/TopoShape.h>
@@ -74,7 +72,6 @@
 #include "GeometryObject.h"
 #include "ProjectionAlgos.h"
 #include "TechDrawExport.h"
-#include "CosmeticVertexPy.h"
 #include "DrawLeaderLinePy.h"
 
 namespace TechDraw {
@@ -490,7 +487,6 @@ private:
         std::string grpHead1 = "<g fill=\"none\" stroke=\"#000000\" stroke-opacity=\"1\" stroke-width=\"";
         std::string grpHead2 = "\" stroke-linecap=\"butt\" stroke-linejoin=\"miter\" stroke-miterlimit=\"4\">\n";
         std::string grpTail  = "</g>\n";
-        Base::Console().Message("TechDraw:: gui is up? %d\n", (int)DrawUtil::isGuiUp());
         try {
             App::DocumentObject* obj = nullptr;
             TechDraw::DrawViewPart* dvp = nullptr;
