@@ -183,12 +183,8 @@ void StdCmdToggleFreeze::activated(int iMsg)
 
         if (obj->isFreezed()){
             obj->unfreeze();
-            for (auto child : obj->getInListRecursive())
-                child->unfreeze();
         } else {
             obj->freeze();
-            for (auto parent : obj->getOutListRecursive())
-                parent->freeze();
         }
 
     }
