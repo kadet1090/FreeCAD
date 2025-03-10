@@ -2729,7 +2729,7 @@ void Application::initConfig(int argc, char ** argv)
 #endif
         }
         else {
-            *Base::Console().GetLogLevel(v.first.c_str()) = v.second;
+            *Base::Console().GetLogLevel(v.first.c_str()) = static_cast<int>(v.second);
         }
     }
 
