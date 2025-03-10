@@ -39,6 +39,7 @@
 #endif
 
 #include <App/Document.h>
+#include <Base/Exception.h>
 #include <Base/Sequencer.h>
 #include <Base/UnitsApi.h>
 #include <Gui/Application.h>
@@ -209,6 +210,16 @@ void CrossSections::accept()
 }
 
 void CrossSections::apply()
+{
+    try {
+        tryApply();
+    }
+    catch (const Base::Exception& e) {
+        e.ReportException();
+    }
+}
+
+void CrossSections::tryApply()
 {
     std::vector<App::DocumentObject*> docobjs = Gui::Selection().
             getObjectsOfType(App::DocumentObject::getClassTypeId());

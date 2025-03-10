@@ -67,6 +67,7 @@ private:
     void sectionsBoxToggled(bool);
 
 private:
+    void tryApply();
     std::vector<double> getPlanes() const;
     void calcPlane(Plane, double);
     void calcPlanes(Plane/*, double, bool, int*/);
