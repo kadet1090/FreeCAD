@@ -110,10 +110,12 @@ void AssemblyLink::onChanged(const App::Property* prop)
 
                 App::DocumentObject* obj = firstElement.first;
                 App::DocumentObject* link = firstElement.second;
-                auto* prop =
-                    dynamic_cast<App::PropertyPlacement*>(obj->getPropertyByName("Placement"));
-                auto* prop2 =
-                    dynamic_cast<App::PropertyPlacement*>(link->getPropertyByName("Placement"));
+                auto* prop = obj
+                    ? dynamic_cast<App::PropertyPlacement*>(obj->getPropertyByName("Placement"))
+                    : nullptr;
+                auto* prop2 = link
+                    ? dynamic_cast<App::PropertyPlacement*>(link->getPropertyByName("Placement"))
+                    : nullptr;
                 if (prop && prop2) {
                     movePlc = prop2->getValue() * prop->getValue().inverse();
                 }
@@ -159,10 +161,10 @@ void AssemblyLink::onChanged(const App::Property* prop)
                 propPlc->setValue(movePlc);
             }
         }
-
-        return;
     }
-    App::Part::onChanged(prop);
+    else {
+        App::Part::onChanged(prop);
+    }
 }
 
 void AssemblyLink::updateContents()
