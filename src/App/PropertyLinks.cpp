@@ -4244,14 +4244,12 @@ void PropertyXLink::Restore(Base::XMLReader& reader)
         name = reader.getAttribute("name");
     }
 
-    assert(getContainer()->isDerivedFrom<App::DocumentObject>());
     DocumentObject* object = nullptr;
     if (!name.empty() && file.empty()) {
-        DocumentObject* parent = static_cast<DocumentObject*>(getContainer());
-        Document* document = parent->getDocument();
-        object = document ? document->getObject(name.c_str()) : nullptr;
-        if (!object) {
-            if (reader.isVerbose()) {
+        if (auto parent = dynamic_cast<DocumentObject*>(getContainer())) {
+            Document* document = parent->getDocument();
+            object = document ? document->getObject(name.c_str()) : nullptr;
+            if (!object && reader.isVerbose()) {
                 FC_WARN("Lost link to '" << name
                                          << "' while loading, maybe "
                                             "an object was not loaded correctly");
