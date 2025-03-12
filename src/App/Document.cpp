@@ -127,7 +127,6 @@ using Base::Console;
 using Base::streq;
 using Base::Writer;
 using namespace App;
-using namespace std;
 using namespace boost;
 using namespace zipios;
 
@@ -1064,7 +1063,7 @@ void Document::Save(Base::Writer& writer) const
 
     // writing the features types
     writeObjects(d->objectArray, writer);
-    writer.Stream() << "</Document>" << endl;
+    writer.Stream() << "</Document>" << std::endl;
 }
 
 void Document::Restore(Base::XMLReader& reader)
@@ -1271,19 +1270,19 @@ void Document::exportObjects(const std::vector<App::DocumentObject*>& obj, std::
 
     Base::ZipWriter writer(out);
     writer.putNextEntry("Document.xml");
-    writer.Stream() << "<?xml version='1.0' encoding='utf-8'?>" << endl;
+    writer.Stream() << "<?xml version='1.0' encoding='utf-8'?>\n";
     writer.Stream() << R"(<Document SchemaVersion="4" ProgramVersion=")"
                     << App::Application::Config()["BuildVersionMajor"] << "."
                     << App::Application::Config()["BuildVersionMinor"] << "R"
                     << App::Application::Config()["BuildRevision"] << R"(" FileVersion="1">)"
-                    << endl;
+                    << '\n';
     // Add this block to have the same layout as for normal documents
-    writer.Stream() << "<Properties Count=\"0\">" << endl;
-    writer.Stream() << "</Properties>" << endl;
+    writer.Stream() << "<Properties Count=\"0\">\n";
+    writer.Stream() << "</Properties>\n";
 
     // writing the object types
     writeObjects(obj, writer);
-    writer.Stream() << "</Document>" << endl;
+    writer.Stream() << "</Document>\n";
 
     // Hook for others to add further data.
     signalExportObjects(obj, writer);
@@ -1293,106 +1292,136 @@ void Document::exportObjects(const std::vector<App::DocumentObject*>& obj, std::
     d->hashers.clear();
 }
 
-#define FC_ATTR_DEPENDENCIES "Dependencies"
-#define FC_ELEMENT_OBJECT_DEPS "ObjectDeps"
-#define FC_ATTR_DEP_COUNT "Count"
-#define FC_ATTR_DEP_OBJ_NAME "Name"
-#define FC_ATTR_DEP_ALLOW_PARTIAL "AllowPartial"
-#define FC_ELEMENT_OBJECT_DEP "Dep"
-
-void Document::writeObjects(const std::vector<App::DocumentObject*>& obj,
-                            Base::Writer& writer) const
+namespace
 {
-    // writing the features types
-    writer.incInd();  // indentation for 'Objects count'
-    writer.Stream() << writer.ind() << "<Objects Count=\"" << obj.size();
-    if (!isExporting(nullptr)) {
-        writer.Stream() << "\" " FC_ATTR_DEPENDENCIES "=\"1";
-    }
-    writer.Stream() << "\">" << endl;
+constexpr const char* FC_ATTR_DEPENDENCIES = "Dependencies";
+constexpr const char* FC_ELEMENT_OBJECT_DEPS = "ObjectDeps";
+constexpr const char* FC_ATTR_DEP_COUNT = "Count";
+constexpr const char* FC_ATTR_DEP_OBJ_NAME = "Name";
+constexpr const char* FC_ATTR_DEP_ALLOW_PARTIAL = "AllowPartial";
+constexpr const char* FC_ELEMENT_OBJECT_DEP = "Dep";
+}
 
-    writer.incInd();  // indentation for 'Object type'
+void Document::writeObjectDeps(const std::vector<App::DocumentObject*>& obj,
+                               Base::Writer& writer) const
+{
+    for (auto o : obj) {
+        // clang-format off
+        const auto& outList = o->getOutList(DocumentObject::OutListNoHidden |
+                                            DocumentObject::OutListNoXLinked);
+        // clang-format on
 
-    if (!isExporting(nullptr)) {
-        for (auto o : obj) {
-            const auto& outList =
-                o->getOutList(DocumentObject::OutListNoHidden | DocumentObject::OutListNoXLinked);
-            writer.Stream() << writer.ind()
-                            << "<" FC_ELEMENT_OBJECT_DEPS " " FC_ATTR_DEP_OBJ_NAME "=\""
-                            << o->getNameInDocument() << "\" " FC_ATTR_DEP_COUNT "=\""
-                            << outList.size();
-            if (outList.empty()) {
-                writer.Stream() << "\"/>" << endl;
-                continue;
-            }
-            int partial = o->canLoadPartial();
-            if (partial > 0) {
-                writer.Stream() << "\" " FC_ATTR_DEP_ALLOW_PARTIAL << "=\"" << partial;
-            }
-            writer.Stream() << "\">" << endl;
-            writer.incInd();
-            for (auto dep : outList) {
-                auto name = dep ? dep->getNameInDocument() : "";
-                writer.Stream() << writer.ind()
-                                << "<" FC_ELEMENT_OBJECT_DEP " " FC_ATTR_DEP_OBJ_NAME "=\""
-                                << (name ? name : "") << "\"/>" << endl;
-            }
-            writer.decInd();
-            writer.Stream() << writer.ind() << "</" FC_ELEMENT_OBJECT_DEPS ">" << endl;
+        writer.Stream() << writer.ind()
+                        << "<" << FC_ELEMENT_OBJECT_DEPS
+                        << " " << FC_ATTR_DEP_OBJ_NAME << "=\""
+                        << o->getNameInDocument() << "\" "
+                        << FC_ATTR_DEP_COUNT << "=\""
+                        << outList.size();
+        if (outList.empty()) {
+            writer.Stream() << "\"/>\n";
+            continue;
         }
+        int partial = o->canLoadPartial();
+        if (partial > 0) {
+            writer.Stream() << "\" " << FC_ATTR_DEP_ALLOW_PARTIAL << "=\"" << partial;
+        }
+        writer.Stream() << "\">\n";
+        writer.incInd();
+        for (auto dep : outList) {
+            auto name = dep ? dep->getNameInDocument() : "";
+            writer.Stream() << writer.ind()
+                            << "<" << FC_ELEMENT_OBJECT_DEP
+                            << " " << FC_ATTR_DEP_OBJ_NAME << "=\""
+                            << (name ? name : "") << "\"/>\n";
+        }
+        writer.decInd();
+        writer.Stream() << writer.ind() << "</" << FC_ELEMENT_OBJECT_DEPS << ">\n";
     }
+}
 
-    std::vector<DocumentObject*>::const_iterator it;
-    for (it = obj.begin(); it != obj.end(); ++it) {
+void Document::writeObjectType(const std::vector<App::DocumentObject*>& obj,
+                               Base::Writer& writer) const
+{
+    for (auto it : obj) {
         writer.Stream() << writer.ind() << "<Object "
-                        << "type=\"" << (*it)->getTypeId().getName() << "\" "
-                        << "name=\"" << (*it)->getExportName() << "\" "
-                        << "id=\"" << (*it)->getID() << "\" ";
+                        << "type=\"" << it->getTypeId().getName() << "\" "
+                        << "name=\"" << it->getExportName() << "\" "
+                        << "id=\"" << it->getID() << "\" ";
 
         // Only write out custom view provider types
-        std::string viewType = (*it)->getViewProviderNameStored();
-        if (viewType != (*it)->getViewProviderName()) {
+        std::string viewType = it->getViewProviderNameStored();
+        if (viewType != it->getViewProviderName()) {
             writer.Stream() << "ViewType=\"" << viewType << "\" ";
         }
 
         // See DocumentObjectPy::getState
-        if ((*it)->testStatus(ObjectStatus::Touch)) {
+        if (it->testStatus(ObjectStatus::Touch)) {
             writer.Stream() << "Touched=\"1\" ";
         }
-        if ((*it)->testStatus(ObjectStatus::Error)) {
+        if (it->testStatus(ObjectStatus::Error)) {
             writer.Stream() << "Invalid=\"1\" ";
-            auto desc = getErrorDescription(*it);
+            auto desc = getErrorDescription(it);
             if (desc) {
                 writer.Stream() << "Error=\"" << Property::encodeAttribute(desc) << "\" ";
             }
         }
-        if ((*it)->isFreezed()) {
+        if (it->isFreezed()) {
             writer.Stream() << "Freeze=\"1\" ";
         }
-        writer.Stream() << "/>" << endl;
+        writer.Stream() << "/>\n";
     }
+}
 
-    writer.decInd();  // indentation for 'Object type'
-    writer.Stream() << writer.ind() << "</Objects>" << endl;
-
+void Document::writeObjectData(const std::vector<App::DocumentObject*>& obj,
+                               Base::Writer& writer) const
+{
     // writing the features itself
-    writer.Stream() << writer.ind() << "<ObjectData Count=\"" << obj.size() << "\">" << endl;
+    writer.Stream() << writer.ind() << "<ObjectData Count=\"" << obj.size() << "\">\n";
 
     writer.incInd();  // indentation for 'Object name'
-    for (it = obj.begin(); it != obj.end(); ++it) {
-        writer.Stream() << writer.ind() << "<Object name=\"" << (*it)->getExportName() << "\"";
-        if ((*it)->hasExtensions()) {
+
+    for (auto it : obj) {
+        writer.Stream() << writer.ind() << "<Object name=\"" << it->getExportName() << "\"";
+        if (it->hasExtensions()) {
             writer.Stream() << " Extensions=\"True\"";
         }
 
-        writer.Stream() << ">" << endl;
-        (*it)->Save(writer);
-        writer.Stream() << writer.ind() << "</Object>" << endl;
+        writer.Stream() << ">\n";
+        it->Save(writer);
+        writer.Stream() << writer.ind() << "</Object>\n";
     }
 
     writer.decInd();  // indentation for 'Object name'
-    writer.Stream() << writer.ind() << "</ObjectData>" << endl;
+
+    writer.Stream() << writer.ind() << "</ObjectData>\n";
     writer.decInd();  // indentation for 'Objects count'
+}
+
+void Document::writeObjects(const std::vector<App::DocumentObject*>& obj,
+                            Base::Writer& writer) const
+{
+    std::ostream& str = writer.Stream();
+
+    // writing the features types
+    writer.incInd();  // indentation for 'Objects count'
+    str << writer.ind() << "<Objects Count=\"" << obj.size();
+    if (!isExporting(nullptr)) {
+        str << "\" " << FC_ATTR_DEPENDENCIES << "=\"1";
+    }
+    str << "\">\n";
+
+    writer.incInd();  // indentation for 'Object type'
+
+    if (!isExporting(nullptr)) {
+        writeObjectDeps(obj, writer);
+    }
+
+    writeObjectType(obj, writer);
+
+    writer.decInd();  // indentation for 'Object type'
+    str << writer.ind() << "</Objects>\n";
+
+    writeObjectData(obj, writer);
 }
 
 struct DepInfo
@@ -2206,11 +2235,11 @@ bool Document::saveToFile(const char* filename) const
             writer.setMode("BinaryBrep");
         }
 
-        writer.Stream() << "<?xml version='1.0' encoding='utf-8'?>" << endl
-                        << "<!--" << endl
+        writer.Stream() << "<?xml version='1.0' encoding='utf-8'?>" << std::endl
+                        << "<!--" << std::endl
                         << " FreeCAD Document, see https://www.freecad.org for more information..."
-                        << endl
-                        << "-->" << endl;
+                        << std::endl
+                        << "-->" << std::endl;
         Document::Save(writer);
 
         // Special handling for Gui document.
@@ -3020,7 +3049,7 @@ int Document::recompute(const std::vector<App::DocumentObject*>& objs,
     auto depObjs = getDependencyList(objs.empty()?d->objectArray:objs);
     vector<DocumentObject*> topoSortedObjects = topologicalSort(depObjs);
     if (topoSortedObjects.size() != depObjs.size()){
-        cerr << "App::Document::recompute(): cyclic dependency detected" << endl;
+        std::cerr << "App::Document::recompute(): cyclic dependency detected" << std::endl;
         topoSortedObjects = d->partialTopologicalSort(depObjs);
     }
     std::reverse(topoSortedObjects.begin(),topoSortedObjects.end());
@@ -3169,10 +3198,10 @@ int Document::recompute(const std::vector<App::DocumentObject*>& objs,
 std::vector<App::DocumentObject*>
 DocumentP::partialTopologicalSort(const std::vector<App::DocumentObject*>& objects)
 {
-    vector<App::DocumentObject*> ret;
+    std::vector<App::DocumentObject*> ret;
     ret.reserve(objects.size());
     // pairs of input and output degree
-    map<App::DocumentObject*, std::pair<int, int>> countMap;
+    std::map<App::DocumentObject*, std::pair<int, int>> countMap;
 
     for (auto objectIt : objects) {
         // we need inlist with unique entries
@@ -3196,9 +3225,8 @@ DocumentP::partialTopologicalSort(const std::vector<App::DocumentObject*>& objec
         removeVertex = false;
 
         // try input degree
-        auto degInIt = find_if(countMap.begin(),
-                               countMap.end(),
-                               [](pair<App::DocumentObject*, pair<int, int>> vertex) -> bool {
+        auto degInIt = std::find_if(countMap.begin(), countMap.end(),
+                               [](std::pair<App::DocumentObject*, std::pair<int, int>> vertex) -> bool {
                                    return vertex.second.first == 0;
                                });
 
@@ -3233,9 +3261,8 @@ DocumentP::partialTopologicalSort(const std::vector<App::DocumentObject*>& objec
     while (removeVertex) {
         removeVertex = false;
 
-        auto degOutIt = find_if(countMap.begin(),
-                                countMap.end(),
-                                [](pair<App::DocumentObject*, pair<int, int>> vertex) -> bool {
+        auto degOutIt = std::find_if(countMap.begin(), countMap.end(),
+                                [](std::pair<App::DocumentObject*, std::pair<int, int>> vertex) -> bool {
                                     return vertex.second.second == 0;
                                 });
 
@@ -3276,9 +3303,9 @@ DocumentP::topologicalSort(const std::vector<App::DocumentObject*>& objects) con
 {
     // topological sort algorithm described here:
     // https://de.wikipedia.org/wiki/Topologische_Sortierung#Algorithmus_f.C3.BCr_das_Topologische_Sortieren
-    vector<App::DocumentObject*> ret;
+    std::vector<App::DocumentObject*> ret;
     ret.reserve(objects.size());
-    map<App::DocumentObject*, int> countMap;
+    std::map<App::DocumentObject*, int> countMap;
 
     for (auto objectIt : objects) {
         // We now support externally linked objects
@@ -3294,14 +3321,13 @@ DocumentP::topologicalSort(const std::vector<App::DocumentObject*>& objects) con
         countMap[objectIt] = in.size();
     }
 
-    auto rootObjeIt = find_if(countMap.begin(),
-                              countMap.end(),
-                              [](pair<App::DocumentObject*, int> count) -> bool {
+    auto rootObjeIt = std::find_if(countMap.begin(), countMap.end(),
+                              [](std::pair<App::DocumentObject*, int> count) -> bool {
                                   return count.second == 0;
                               });
 
     if (rootObjeIt == countMap.end()) {
-        cerr << "Document::topologicalSort: cyclic dependency detected (no root object)" << endl;
+        std::cerr << "Document::topologicalSort: cyclic dependency detected (no root object)" << std::endl;
         return ret;
     }
 
@@ -3321,9 +3347,8 @@ DocumentP::topologicalSort(const std::vector<App::DocumentObject*>& objects) con
         }
         ret.push_back(rootObjeIt->first);
 
-        rootObjeIt = find_if(countMap.begin(),
-                             countMap.end(),
-                             [](pair<App::DocumentObject*, int> count) -> bool {
+        rootObjeIt = std::find_if(countMap.begin(), countMap.end(),
+                             [](std::pair<App::DocumentObject*, int> count) -> bool {
                                  return count.second == 0;
                              });
     }

@@ -619,7 +619,10 @@ protected:
     void _checkTransaction(DocumentObject* pcDelObj, const Property* What, int line);
     void breakDependency(DocumentObject* pcObject, bool clear);
     std::vector<App::DocumentObject*> readObjects(Base::XMLReader& reader);
-    void writeObjects(const std::vector<App::DocumentObject*>&, Base::Writer& writer) const;
+    void writeObjects(const std::vector<App::DocumentObject*>&  obj, Base::Writer& writer) const;
+    void writeObjectDeps(const std::vector<App::DocumentObject*>& obj, Base::Writer& writer) const;
+    void writeObjectType(const std::vector<App::DocumentObject*>& obj, Base::Writer& writer) const;
+    void writeObjectData(const std::vector<App::DocumentObject*>& obj, Base::Writer& writer) const;
     bool saveToFile(const char* filename) const;
     int countObjectsOfType(const Base::Type& typeId) const;
 
