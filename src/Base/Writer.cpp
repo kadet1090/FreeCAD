@@ -93,6 +93,31 @@ Writer::Writer()
 
 Writer::~Writer() = default;
 
+void Writer::clear()
+{
+    Stream().clear();
+}
+
+bool Writer::good() const
+{
+    return Stream().good();
+}
+
+bool Writer::fail() const
+{
+    return Stream().fail();
+}
+
+bool Writer::bad() const
+{
+    return Stream().bad();
+}
+
+bool Writer::eof() const
+{
+    return Stream().eof();
+}
+
 std::ostream& Writer::beginCharStream(CharStreamFormat format)
 {
     if (CharStream) {
