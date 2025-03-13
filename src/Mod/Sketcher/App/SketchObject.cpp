@@ -3469,7 +3469,7 @@ std::unique_ptr<Constraint> transformPreexistingConstraintForTrim(const SketchOb
      * and also make sure that the PointOnObject constraint is deleted.
      */
     std::unique_ptr<Constraint> newConstr;
-    if (!constr->involvesGeoId(cuttingGeoId)
+    if (cuttingGeoId == GeoEnum::GeoUndef || !constr->involvesGeoId(cuttingGeoId)
         || !constr->involvesGeoIdAndPosId(GeoId, PointPos::none)) {
         return newConstr;
     }
