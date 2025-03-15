@@ -646,6 +646,14 @@ Handle (Poly_Triangulation) Part::Tools::triangulationOfFace(const TopoDS_Face& 
     if ( surface.IsNull() ) {
         FC_THROWM(Base::CADKernelError, "Cannot create surface from face");
     }
+
+    // If the face has a surface of revolution it can happen that v1 == v2.
+    // The attempt to triangulate the face will freeze the application.
+    // See issue 16681
+    if (v1 == v2) {
+        return nullptr;
+    }
+
     BRepBuilderAPI_MakeFace mkBuilder(surface, u1, u2, v1, v2, Precision::Confusion() );
     TopoDS_Shape shape = mkBuilder.Shape();
     shape.Location(loc);
