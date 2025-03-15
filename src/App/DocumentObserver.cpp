@@ -39,38 +39,49 @@ namespace sp = std::placeholders;
 DocumentT::DocumentT() = default;
 
 DocumentT::DocumentT(Document* doc)
-{
-    document = doc->getName();
-}
+    : document{doc->getName()}
+{}
 
-DocumentT::DocumentT(const std::string& name)
-{
-    document = name;
-}
+DocumentT::DocumentT(std::string name)
+    : document{std::move(name)}
+{}
 
 DocumentT::DocumentT(const DocumentT& doc)
-{
-    document = doc.document;
-}
+    : document{doc.document}
+{}
+
+DocumentT::DocumentT(DocumentT&& doc) noexcept
+    : document{std::move(doc.document)}
+{}
 
 DocumentT::~DocumentT() = default;
 
-void DocumentT::operator=(const DocumentT& doc)
+DocumentT& DocumentT::operator=(const DocumentT& doc)
 {
-    if (this == &doc) {
-        return;
+    if (this != &doc) {
+        document = doc.document;
     }
-    document = doc.document;
+    return *this;
 }
 
-void DocumentT::operator=(const Document* doc)
+DocumentT& DocumentT::operator=(DocumentT&& doc) noexcept
+{
+    if (this != &doc) {
+        document = std::move(doc.document);
+    }
+    return *this;
+}
+
+DocumentT& DocumentT::operator=(const Document* doc)
 {
     document = doc->getName();
+    return *this;
 }
 
-void DocumentT::operator=(const std::string& name)
+DocumentT& DocumentT::operator=(const std::string& name)
 {
     document = name;
+    return *this;
 }
 
 Document* DocumentT::getDocument() const
@@ -99,7 +110,7 @@ DocumentObjectT::DocumentObjectT(const DocumentObjectT& other)
     *this = other;
 }
 
-DocumentObjectT::DocumentObjectT(DocumentObjectT&& other)
+DocumentObjectT::DocumentObjectT(DocumentObjectT&& other) noexcept
 {
     *this = std::move(other);
 }
@@ -146,7 +157,7 @@ DocumentObjectT& DocumentObjectT::operator=(const DocumentObjectT& obj)
     return *this;
 }
 
-DocumentObjectT& DocumentObjectT::operator=(DocumentObjectT&& obj)
+DocumentObjectT& DocumentObjectT::operator=(DocumentObjectT&& obj) noexcept
 {
     if (this == &obj) {
         return *this;
@@ -158,7 +169,7 @@ DocumentObjectT& DocumentObjectT::operator=(DocumentObjectT&& obj)
     return *this;
 }
 
-void DocumentObjectT::operator=(const DocumentObject* obj)
+DocumentObjectT& DocumentObjectT::operator=(const DocumentObject* obj)
 {
     if (!obj || !obj->isAttachedToDocument()) {
         object.clear();
@@ -172,9 +183,11 @@ void DocumentObjectT::operator=(const DocumentObject* obj)
         document = obj->getDocument()->getName();
         property.clear();
     }
+
+    return *this;
 }
 
-void DocumentObjectT::operator=(const Property* prop)
+DocumentObjectT& DocumentObjectT::operator=(const Property* prop)
 {
     if (!prop || !prop->hasName() || !prop->getContainer()
         || !prop->getContainer()->isDerivedFrom<App::DocumentObject>()) {
@@ -183,13 +196,14 @@ void DocumentObjectT::operator=(const Property* prop)
         document.clear();
         property.clear();
     }
-    else {
-        auto obj = static_cast<App::DocumentObject*>(prop->getContainer());
+    else if (auto obj = dynamic_cast<App::DocumentObject*>(prop->getContainer())) {
         object = obj->getNameInDocument();
         label = obj->Label.getValue();
         document = obj->getDocument()->getName();
         property = prop->getName();
     }
+
+    return *this;
 }
 
 bool DocumentObjectT::operator==(const DocumentObjectT& other) const
@@ -289,7 +303,7 @@ SubObjectT::SubObjectT() = default;
 
 SubObjectT::SubObjectT(const SubObjectT&) = default;
 
-SubObjectT::SubObjectT(SubObjectT&& other)
+SubObjectT::SubObjectT(SubObjectT&& other) noexcept
     : DocumentObjectT(std::move(other))
     , subname(std::move(other.subname))
 {}
@@ -312,6 +326,8 @@ SubObjectT::SubObjectT(const char* docName, const char* objName, const char* s)
     : DocumentObjectT(docName, objName)
     , subname(s ? s : "")
 {}
+
+SubObjectT::~SubObjectT() = default;
 
 bool SubObjectT::operator<(const SubObjectT& other) const
 {
@@ -341,18 +357,18 @@ SubObjectT& SubObjectT::operator=(const SubObjectT& other)
     if (this == &other) {
         return *this;
     }
-    static_cast<DocumentObjectT&>(*this) = other;
+    static_cast<DocumentObjectT&>(*this) = other;  // NOLINT
     subname = other.subname;
     return *this;
 }
 
-SubObjectT& SubObjectT::operator=(SubObjectT&& other)
+SubObjectT& SubObjectT::operator=(SubObjectT&& other) noexcept
 {
     if (this == &other) {
         return *this;
     }
-    static_cast<DocumentObjectT&>(*this) = std::move(other);
     subname = std::move(other.subname);
+    static_cast<DocumentObjectT&>(*this) = std::move(other);
     return *this;
 }
 
@@ -993,7 +1009,7 @@ void DocumentObjectObserver::removeFromObservation(App::DocumentObject* obj)
     _objects.erase(obj);
 }
 
-void DocumentObjectObserver::slotCreatedDocument(const App::Document&)
+void DocumentObjectObserver::slotCreatedDocument([[maybe_unused]]const App::Document& doc)
 {}
 
 void DocumentObjectObserver::slotDeletedDocument(const App::Document& Doc)
@@ -1005,13 +1021,12 @@ void DocumentObjectObserver::slotDeletedDocument(const App::Document& Doc)
     }
 }
 
-void DocumentObjectObserver::slotCreatedObject(const App::DocumentObject&)
+void DocumentObjectObserver::slotCreatedObject([[maybe_unused]]const App::DocumentObject& obj)
 {}
 
 void DocumentObjectObserver::slotDeletedObject(const App::DocumentObject& Obj)
 {
-    std::set<App::DocumentObject*>::iterator it =
-        _objects.find(const_cast<App::DocumentObject*>(&Obj));
+    auto it = _objects.find(const_cast<App::DocumentObject*>(&Obj));
     if (it != _objects.end()) {
         _objects.erase(it);
     }
@@ -1020,7 +1035,8 @@ void DocumentObjectObserver::slotDeletedObject(const App::DocumentObject& Obj)
     }
 }
 
-void DocumentObjectObserver::slotChangedObject(const App::DocumentObject&, const App::Property&)
+void DocumentObjectObserver::slotChangedObject([[maybe_unused]]const App::DocumentObject& obj,
+                                               [[maybe_unused]]const App::Property& prop)
 {}
 
 void DocumentObjectObserver::cancelObservation()

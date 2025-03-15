@@ -53,17 +53,21 @@ public:
     /*! Constructor */
     DocumentT(Document*);  // explicit bombs
     /*! Constructor */
-    explicit DocumentT(const std::string&);
+    explicit DocumentT(std::string);
     /*! Constructor */
     DocumentT(const DocumentT&);
+    /*! Move constructor */
+    DocumentT(DocumentT&&) noexcept;
     /*! Destructor */
     ~DocumentT();
     /*! Assignment operator */
-    void operator=(const DocumentT&);
+    DocumentT& operator=(const DocumentT&);
+    /*! Move assignment operator */
+    DocumentT& operator=(DocumentT&&) noexcept;
     /*! Assignment operator */
-    void operator=(const Document*);
+    DocumentT& operator=(const Document*);
     /*! Assignment operator */
-    void operator=(const std::string&);
+    DocumentT& operator=(const std::string&);
 
     bool operator==(const DocumentT& other) const
     {
@@ -106,7 +110,7 @@ public:
     /*! Constructor */
     DocumentObjectT(const DocumentObjectT&);
     /*! Constructor */
-    DocumentObjectT(DocumentObjectT&&);
+    DocumentObjectT(DocumentObjectT&&) noexcept;
     /*! Constructor */
     explicit DocumentObjectT(const DocumentObject*);
     /*! Constructor */
@@ -120,11 +124,11 @@ public:
     /*! Assignment operator */
     DocumentObjectT& operator=(const DocumentObjectT&);
     /*! Assignment operator */
-    DocumentObjectT& operator=(DocumentObjectT&&);
+    DocumentObjectT& operator=(DocumentObjectT&&) noexcept;
     /*! Assignment operator */
-    void operator=(const DocumentObject*);
+    DocumentObjectT& operator=(const DocumentObject*);
     /*! Assignment operator */
-    void operator=(const Property*);
+    DocumentObjectT& operator=(const Property*);
     /*! Equality operator */
     bool operator==(const DocumentObjectT&) const;
 
@@ -189,11 +193,14 @@ public:
     /*! Constructor */
     SubObjectT();
 
+    /*! Destructor */
+    ~SubObjectT();
+
     /*! Constructor */
     SubObjectT(const SubObjectT&);
 
     /*! Constructor */
-    SubObjectT(SubObjectT&&);
+    SubObjectT(SubObjectT&&) noexcept;
 
     /*! Constructor */
     SubObjectT(const DocumentObjectT& obj, const char* subname);
@@ -211,7 +218,7 @@ public:
     SubObjectT& operator=(const SubObjectT&);
 
     /*! Assignment operator */
-    SubObjectT& operator=(SubObjectT&&);
+    SubObjectT& operator=(SubObjectT&&) noexcept;
 
     /*! Assignment operator */
     SubObjectT& operator=(const DocumentObjectT&);
@@ -374,7 +381,9 @@ public:
 
     // disable
     DocumentWeakPtrT(const DocumentWeakPtrT&) = delete;
+    DocumentWeakPtrT(DocumentWeakPtrT&&) = delete;
     DocumentWeakPtrT& operator=(const DocumentWeakPtrT&) = delete;
+    DocumentWeakPtrT& operator=(DocumentWeakPtrT&&) = delete;
 
 private:
     class Private;
@@ -438,7 +447,9 @@ private:
 public:
     // disable
     DocumentObjectWeakPtrT(const DocumentObjectWeakPtrT&) = delete;
+    DocumentObjectWeakPtrT(DocumentObjectWeakPtrT&&) = delete;
     DocumentObjectWeakPtrT& operator=(const DocumentObjectWeakPtrT&) = delete;
+    DocumentObjectWeakPtrT& operator=(DocumentObjectWeakPtrT&&) = delete;
 
 private:
     class Private;
@@ -522,7 +533,9 @@ public:
 
     // disable
     WeakPtrT(const WeakPtrT&) = delete;
+    WeakPtrT(WeakPtrT&&) = delete;
     WeakPtrT& operator=(const WeakPtrT&) = delete;
+    WeakPtrT& operator=(WeakPtrT&&) = delete;
 
 private:
     DocumentObjectWeakPtrT ptr;
