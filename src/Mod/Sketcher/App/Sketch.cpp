@@ -1810,7 +1810,7 @@ int Sketch::checkGeoId(int geoId) const
         geoId += Geoms.size();  // convert negative external-geometry index to index into Geoms
     }
     if (!(geoId >= 0 && geoId < int(Geoms.size()))) {
-        throw Base::IndexError("Sketch::checkGeoId. GeoId index out range.");
+        throw Base::IndexError("Sketch::checkGeoId. GeoId index out of range.");
     }
     return geoId;
 }

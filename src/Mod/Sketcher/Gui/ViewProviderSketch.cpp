@@ -3125,11 +3125,16 @@ bool ViewProviderSketch::setEdit(int ModNum)
     // In order to have updated solver information, solve must take "true", this cause the Geometry
     // property to be updated with the solver information, including solver extensions, and triggers
     // a draw(true) via ViewProvider::UpdateData.
-    getSketchObject()->solve(true);
+    try {
+        getSketchObject()->solve(true);
 
-    // Enable solver initial solution update while dragging.
-    getSketchObject()->setRecalculateInitialSolutionWhileMovingPoint(
-        viewProviderParameters.recalculateInitialSolutionWhileDragging);
+        // Enable solver initial solution update while dragging.
+        getSketchObject()->setRecalculateInitialSolutionWhileMovingPoint(
+            viewProviderParameters.recalculateInitialSolutionWhileDragging);
+    }
+    catch (const Base::Exception& e) {
+        e.ReportException();
+    }
 
     // intercept del key press from main app
     listener = new ShortcutListener(this);
