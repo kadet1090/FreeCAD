@@ -968,6 +968,8 @@ TaskSketcherConstraints::TaskSketcherConstraints(ViewProviderSketch* sketchView)
     for (int i = filterList->normalFilterCount; i < filterList->count(); i++) {
         onFilterListItemChanged(filterList->item(i));
     }
+
+    attachDocument(sketchView->getDocument());
 }
 
 TaskSketcherConstraints::~TaskSketcherConstraints()
@@ -1432,6 +1434,30 @@ void TaskSketcherConstraints::OnChange(Base::Subject<const char*>& rCaller, cons
     if (actNum >= 0) {
         assert(actNum < static_cast<int>(ui->settingsButton->actions().size()));
         std::as_const(ui->settingsButton)->actions()[actNum]->setChecked(hGrp->GetBool(rcReason, false));
+    }
+}
+
+void TaskSketcherConstraints::clearConstraints()
+{
+    /* Remove entries, if any */
+    for (int i = ui->listWidgetConstraints->count(); i > 0; --i) {
+        delete ui->listWidgetConstraints->takeItem(i - 1);
+    }
+}
+
+void TaskSketcherConstraints::slotDeletedObject(const Gui::ViewProviderDocumentObject& Obj)
+{
+    if (sketchView && (&Obj == sketchView)) {
+        clearConstraints();
+        sketchView = nullptr;
+    }
+}
+
+void TaskSketcherConstraints::slotDeleteDocument(const Gui::Document& Doc)
+{
+    if (sketchView && (&Doc == sketchView->getDocument())) {
+        clearConstraints();
+        sketchView = nullptr;
     }
 }
 

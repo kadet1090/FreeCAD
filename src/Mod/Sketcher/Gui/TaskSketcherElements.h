@@ -28,6 +28,7 @@
 
 #include <boost/signals2.hpp>
 
+#include <Gui/DocumentObserver.h>
 #include <Gui/Selection/Selection.h>
 #include <Gui/TaskView/TaskView.h>
 
@@ -114,7 +115,9 @@ private:
 
 class ElementFilterList;
 
-class TaskSketcherElements: public Gui::TaskView::TaskBox, public Gui::SelectionObserver
+class TaskSketcherElements: public Gui::TaskView::TaskBox,
+                            public Gui::DocumentObserver,
+                            public Gui::SelectionObserver
 {
     Q_OBJECT
 
@@ -124,6 +127,8 @@ public:
 
     /// Observer message from the Selection
     void onSelectionChanged(const Gui::SelectionChanges& msg) override;
+    void slotDeletedObject(const Gui::ViewProviderDocumentObject& Obj) override;
+    void slotDeleteDocument(const Gui::Document& Doc) override;
 
 private:
     void slotElementsChanged();
@@ -133,6 +138,7 @@ private:
     void createFilterButtonActions();
     void createSettingsButtonActions();
     void connectSignals();
+    void clearElements();
 
 public Q_SLOTS:
     void onListWidgetElementsItemPressed(QListWidgetItem* item);

@@ -26,6 +26,7 @@
 #include <QListWidget>
 
 #include <Base/Parameter.h>
+#include <Gui/DocumentObserver.h>
 #include <Gui/Selection/Selection.h>
 #include <Gui/TaskView/TaskView.h>
 #include <Mod/Sketcher/App/Constraint.h>
@@ -136,6 +137,7 @@ private:
 };
 
 class TaskSketcherConstraints: public Gui::TaskView::TaskBox,
+                               public Gui::DocumentObserver,
                                public Gui::SelectionObserver,
                                public ParameterGrp::ObserverType
 {
@@ -161,6 +163,8 @@ public:
     /// Observer message from the Selection
     void onSelectionChanged(const Gui::SelectionChanges& msg) override;
     void OnChange(Base::Subject<const char*>& rCaller, const char* rcReason) override;
+    void slotDeletedObject(const Gui::ViewProviderDocumentObject& Obj) override;
+    void slotDeleteDocument(const Gui::Document& Doc) override;
 
     SpecialFilterType specialFilterMode;
 
@@ -172,6 +176,7 @@ private:
     void updateSelectionFilter();
     void updateAssociatedConstraintsFilter();
     void updateList();
+    void clearConstraints();
 
     void getSelectionGeoId(QString expr, int& geoid, Sketcher::PointPos& pos);
 

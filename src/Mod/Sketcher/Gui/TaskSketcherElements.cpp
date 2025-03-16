@@ -1221,6 +1221,7 @@ TaskSketcherElements::TaskSketcherElements(ViewProviderSketch* sketchView)
     ui->filterButton->setEnabled(ui->filterBox->isChecked());
 
     slotElementsChanged();
+    attachDocument(sketchView->getDocument());
 }
 
 TaskSketcherElements::~TaskSketcherElements()
@@ -1230,6 +1231,7 @@ TaskSketcherElements::~TaskSketcherElements()
 
 void TaskSketcherElements::connectSignals()
 {
+    // clang-format off
     // connecting the needed signals
     QObject::connect(ui->listWidgetElements,
                      &ElementView::itemPressed,
@@ -1251,8 +1253,10 @@ void TaskSketcherElements::connectSignals()
                      &QCheckBox::stateChanged,
                      this,
                      &TaskSketcherElements::onFilterBoxStateChanged);
-    QObject::connect(
-        ui->settingsButton, &QToolButton::clicked, ui->settingsButton, &QToolButton::showMenu);
+    QObject::connect(ui->settingsButton,
+                     &QToolButton::clicked,
+                     ui->settingsButton,
+                     &QToolButton::showMenu);
     QObject::connect(std::as_const(ui->settingsButton)->actions()[0],
                      &QAction::changed,
                      this,
@@ -1264,6 +1268,7 @@ void TaskSketcherElements::connectSignals()
     connectionElementsChanged = sketchView->signalElementsChanged.connect(
         std::bind(&SketcherGui::TaskSketcherElements::slotElementsChanged, this));
     //NOLINTEND
+    // clang-format on
 }
 
 /* filter functions --------------------------------------------------- */
@@ -1305,25 +1310,31 @@ void TaskSketcherElements::onListMultiFilterItemChanged(QListWidgetItem* item)
             bool atLeastOneChecked = false;
 
             for (int i = indexOfAllTypes + 1; i < filterList->count(); i++) {
-                if (filterList->item(i)->checkState() == Qt::Checked)
+                if (filterList->item(i)->checkState() == Qt::Checked) {
                     atLeastOneChecked = true;
-                if (filterList->item(i)->checkState() == Qt::Unchecked)
+                }
+                if (filterList->item(i)->checkState() == Qt::Unchecked) {
                     atLeastOneUnchecked = true;
+                }
             }
-            if (atLeastOneChecked && atLeastOneUnchecked)
+            if (atLeastOneChecked && atLeastOneUnchecked) {
                 filterList->item(indexOfAllTypes)->setCheckState(Qt::PartiallyChecked);
-            else if (atLeastOneUnchecked)
+            }
+            else if (atLeastOneUnchecked) {
                 filterList->item(indexOfAllTypes)->setCheckState(Qt::Unchecked);
-            else if (atLeastOneChecked)
+            }
+            else if (atLeastOneChecked) {
                 filterList->item(indexOfAllTypes)->setCheckState(Qt::Checked);
+            }
         }
     }
 
     // Save the state of the filter.
-    int filterState = INT_MIN;// INT_MIN = 000000000000000000000000000000 in binary.
+    int filterState = INT_MIN;  // INT_MIN = 000000000000000000000000000000 in binary.
     for (int i = filterList->count() - 1; i >= 0; i--) {
         bool isChecked = filterList->item(i)->checkState() == Qt::Checked;
-        filterState = filterState << 1;// we shift left first, else the list is shifted at the end.
+        filterState =
+            filterState << 1;  // we shift left first, else the list is shifted at the end.
         filterState = filterState | (isChecked ? 1 : 0);
     }
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
@@ -1470,8 +1481,9 @@ void TaskSketcherElements::onSelectionChanged(const Gui::SelectionChanges& msg)
                             // Get the GeoID&Pos
                             int GeoId;
                             Sketcher::PointPos PosId;
-                            sketchView->getSketchObject()->getGeoVertexIndex(
-                                ElementId, GeoId, PosId);
+                            sketchView->getSketchObject()->getGeoVertexIndex(ElementId,
+                                                                             GeoId,
+                                                                             PosId);
 
                             int countItems = ui->listWidgetElements->count();
                             for (int i = 0; i < countItems; i++) {
@@ -1504,7 +1516,8 @@ void TaskSketcherElements::onSelectionChanged(const Gui::SelectionChanges& msg)
                     if (modified_item != NULL) {
                         bool is_selected = modified_item->isSelected();
                         const bool should_be_selected = modified_item->isLineSelected
-                            || modified_item->isStartingPointSelected || modified_item->isEndPointSelected
+                            || modified_item->isStartingPointSelected
+                            || modified_item->isEndPointSelected
                             || modified_item->isMidPointSelected;
 
                         // If an element is already selected and a new subelement gets selected
@@ -1517,7 +1530,7 @@ void TaskSketcherElements::onSelectionChanged(const Gui::SelectionChanges& msg)
                         }
 
                         if (should_be_selected != is_selected) {
-                          modified_item->setSelected(should_be_selected);
+                            modified_item->setSelected(should_be_selected);
                         }
                     }
                 }
@@ -1529,33 +1542,61 @@ void TaskSketcherElements::onSelectionChanged(const Gui::SelectionChanges& msg)
     }
 }
 
+void TaskSketcherElements::clearElements()
+{
+    /* Remove entries, if any */
+    for (int i = ui->listWidgetElements->count(); i > 0; --i) {
+        delete ui->listWidgetElements->takeItem(i - 1);
+    }
+}
+
+void TaskSketcherElements::slotDeletedObject(const Gui::ViewProviderDocumentObject& Obj)
+{
+    if (sketchView && (&Obj == sketchView)) {
+        clearElements();
+        sketchView = nullptr;
+    }
+}
+
+void TaskSketcherElements::slotDeleteDocument(const Gui::Document& Doc)
+{
+    if (sketchView && (&Doc == sketchView->getDocument())) {
+        clearElements();
+        sketchView = nullptr;
+    }
+}
+
 void TaskSketcherElements::onListWidgetElementsItemPressed(QListWidgetItem* it)
 {
     // We use itemPressed instead of previously used ItemSelectionChanged because if user click on
     // already selected item, ItemSelectionChanged didn't trigger.
-    if (!it)
+    if (!it) {
         return;
+    }
 
     ElementItem* itf = static_cast<ElementItem*>(it);
     bool rightClickOnSelected = itf->rightClicked
         && (itf->isLineSelected || itf->isStartingPointSelected || itf->isEndPointSelected
             || itf->isMidPointSelected);
     itf->rightClicked = false;
-    if (rightClickOnSelected)// if user right clicked on a selected item, change nothing.
+    if (rightClickOnSelected) {  // if user right clicked on a selected item, change nothing.
         return;
+    }
 
     {
         QSignalBlocker sigblk(ui->listWidgetElements);
 
         bool multipleselection = false;
         bool multipleconsecutiveselection = false;
-        if (QApplication::keyboardModifiers() == Qt::ControlModifier)
+        if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
             multipleselection = true;
-        if (QApplication::keyboardModifiers() == Qt::ShiftModifier)
+        }
+        if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
             multipleconsecutiveselection = true;
+        }
 
         if (multipleselection
-            && multipleconsecutiveselection) {// ctrl takes priority over shift functionality
+            && multipleconsecutiveselection) {  // ctrl takes priority over shift functionality
             multipleselection = true;
             multipleconsecutiveselection = false;
         }
@@ -1564,7 +1605,7 @@ void TaskSketcherElements::onListWidgetElementsItemPressed(QListWidgetItem* it)
         std::string doc_name = sketchView->getSketchObject()->getDocument()->getName();
         std::string obj_name = sketchView->getSketchObject()->getNameInDocument();
 
-        bool block = this->blockSelection(true);// avoid to be notified by itself
+        bool block = this->blockSelection(true);  // avoid to be notified by itself
         Gui::Selection().clearSelection();
 
         for (int i = 0; i < ui->listWidgetElements->count(); i++) {
@@ -1637,8 +1678,8 @@ void TaskSketcherElements::onListWidgetElementsItemPressed(QListWidgetItem* it)
 
                 if (item->isSelected() && selected) {
                     item->setSelected(
-                        false);// if already selected and changing or adding subelement, ensure
-                               // selection change is triggered, which ensures timely repaint
+                        false);  // if already selected and changing or adding subelement, ensure
+                                 // selection change is triggered, which ensures timely repaint
                     item->setSelected(selected);
                 }
                 else {
@@ -1687,8 +1728,9 @@ void TaskSketcherElements::onListWidgetElementsItemPressed(QListWidgetItem* it)
         this->blockSelection(block);
     }
 
-    if (focusItemIndex > -1 && focusItemIndex < ui->listWidgetElements->count())
+    if (focusItemIndex > -1 && focusItemIndex < ui->listWidgetElements->count()) {
         previouslySelectedItemIndex = focusItemIndex;
+    }
 
     ui->listWidgetElements->repaint();
 }
@@ -1706,8 +1748,9 @@ void TaskSketcherElements::onListWidgetElementsMouseMoveOnItem(QListWidgetItem* 
 
     if (!item
         || (ui->listWidgetElements->row(item) == previouslyHoveredItemIndex
-            && item->hovered == previouslyHoveredType))
+            && item->hovered == previouslyHoveredType)) {
         return;
+    }
 
     Gui::Selection().rmvPreselect();
 
@@ -1753,12 +1796,15 @@ void TaskSketcherElements::onListWidgetElementsMouseMoveOnItem(QListWidgetItem* 
             }
         };
 
-        if (item->hovered == SubElementType::start)
+        if (item->hovered == SubElementType::start) {
             preselectvertex(item->ElementNbr, Sketcher::PointPos::start);
-        else if (item->hovered == SubElementType::end)
+        }
+        else if (item->hovered == SubElementType::end) {
             preselectvertex(item->ElementNbr, Sketcher::PointPos::end);
-        else if (item->hovered == SubElementType::mid)
+        }
+        else if (item->hovered == SubElementType::mid) {
             preselectvertex(item->ElementNbr, Sketcher::PointPos::mid);
+        }
         else if (item->hovered == SubElementType::edge) {
             if (item->ElementNbr >= 0) {
                 ss << "Edge" << item->ElementNbr + 1;
@@ -1803,17 +1849,22 @@ void TaskSketcherElements::slotElementsChanged()
 
         auto layerId = getSafeGeomLayerId(*it);
 
-        if (internalAligned)
+        if (internalAligned) {
             state = GeometryState::InternalAlignment;
-        else if (construction)// Caution, internalAligned geos are construction too. So the 'if' and
-                              // 'else if' cannot be swapped.
+        }
+        else if (construction) {  // Caution, internalAligned geos are construction too. So the 'if'
+                                  // and
+                                  // 'else if' cannot be swapped.
             state = GeometryState::Construction;
+        }
 
         auto IdInformation = [this, i, layerId]() {
-            if (sketchView->VisualLayerList.getSize() > 1)
+            if (sketchView->VisualLayerList.getSize() > 1) {
                 return QStringLiteral("(Edge%1#ID%2#VL%3)").arg(i).arg(i - 1).arg(layerId);
-            else
+            }
+            else {
                 return QStringLiteral("(Edge%1#ID%2)").arg(i).arg(i - 1);
+            }
         };
 
         ElementItem* itemN = new ElementItem(
@@ -1823,13 +1874,12 @@ void TaskSketcherElements::slotElementsChanged()
             sketchView->getSketchObject()->getVertexIndexGeoPos(i - 1, Sketcher::PointPos::end),
             type,
             state,
-            type == Part::GeomPoint::getClassTypeId()
-                ? (isNamingBoxChecked ? (tr("Point") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
-                                      : (QStringLiteral("%1-").arg(i) + tr("Point")))
+            type == Part::GeomPoint::getClassTypeId() ? (
+                isNamingBoxChecked ? (tr("Point") + IdInformation())
+                        + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                        : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                           : QStringLiteral("")))
+                                   : (QStringLiteral("%1-").arg(i) + tr("Point")))
                 : type == Part::GeomLineSegment::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("Line") + IdInformation())
                            + (construction
@@ -1912,7 +1962,7 @@ void TaskSketcherElements::slotElementsChanged()
          ++it, ++i, ++j) {
         Base::Type type = (*it)->getTypeId();
 
-        if (j > 2) {// we do not want the H and V axes
+        if (j > 2) {  // we do not want the H and V axes
 
             auto layerId = getSafeGeomLayerId(*it);
 
@@ -2063,6 +2113,6 @@ void TaskSketcherElements::onSettingsExtendedInformationChanged()
     slotElementsChanged();
 }
 
-#include "TaskSketcherElements.moc"// For Delegate as it is QOBJECT
+#include "TaskSketcherElements.moc"  // For Delegate as it is QOBJECT
 #include "moc_TaskSketcherElements.cpp"
 // clang-format on
