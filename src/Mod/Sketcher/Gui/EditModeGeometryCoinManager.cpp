@@ -191,6 +191,10 @@ void EditModeGeometryCoinManager::updateGeometryColor(const GeoListFacade& geoli
         SbColor* pcolor = editModeScenegraphNodes.PointsMaterials[l]->diffuseColor.startEditing();
         SbVec3f* pverts = editModeScenegraphNodes.PointsCoordinate[l]->point.startEditing();
 
+        if (PtNum >= coinMapping.getNumPoints()) {
+            continue;
+        }
+
         // colors of the point set
         for (int i = 0; i < PtNum; i++) {
             int GeoId = coinMapping.getPointGeoId(i, l);
