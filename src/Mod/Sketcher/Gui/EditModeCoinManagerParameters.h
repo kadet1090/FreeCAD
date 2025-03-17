@@ -471,6 +471,16 @@ struct CoinMapping
     {
         return CurvIdToGeoId[layerindex][sublayerindex][curveindex];
     }
+
+    bool isValidCurveId(int curveindex, int layerindex, int sublayerindex = 0) const
+    {
+        // clang-format off
+        return static_cast<int>(CurvIdToGeoId.size()) > layerindex &&
+               static_cast<int>(CurvIdToGeoId[layerindex].size()) > sublayerindex &&
+               static_cast<int>(CurvIdToGeoId[layerindex][sublayerindex].size()) > curveindex;
+        // clang-format on
+    }
+
     /// given the MF index of a point and the coin layer in which it is drawn returns the GeoId of
     /// the point
     int getPointGeoId(int pointindex, int layerindex)
@@ -478,9 +488,12 @@ struct CoinMapping
         return PointIdToGeoId[layerindex][pointindex];
     }
 
-    int getNumPoints() const
+    bool isValidPointId(int pointindex, int layerindex) const
     {
-        return static_cast<int>(PointIdToGeoId.size());
+        // clang-format off
+        return static_cast<int>(PointIdToGeoId.size()) > layerindex &&
+               static_cast<int>(PointIdToGeoId[layerindex].size()) > pointindex;
+        // clang-format on
     }
 
     /// given the MF index of a point and the coin layer in which it is drawn returns the PosId of
