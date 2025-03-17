@@ -21,19 +21,11 @@
 #  *                                                                          *
 #  ***************************************************************************/
 
-include_directories(
-        SYSTEM
-        ${PYCXX_INCLUDE_DIR}
-        ${Python3_INCLUDE_DIRS}
-        ${QtCore_INCLUDE_DIRS}
-        ${ZIPIOS_INCLUDES}
-)
-
 set(Start_LIBS
         FreeCADApp
         )
 
-SET(Start_SRCS
+set(Start_SRCS
         AppStart.cpp
         DisplayedFilesModel.cpp
         DisplayedFilesModel.h

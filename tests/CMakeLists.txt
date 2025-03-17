@@ -69,19 +69,10 @@ function(setup_qt_test)
 
         target_include_directories(${_testname}_Tests_run PUBLIC
             SYSTEM
-            ${PYCXX_INCLUDE_DIR}
-            ${Python3_INCLUDE_DIRS}
-            ${XercesC_INCLUDE_DIRS}
-            ${ZIPIOS_INCLUDES}
-            ${QtGui_INCLUDE_DIRS}
-            ${QtWidgets_INCLUDE_DIRS}
-            ${QtTest_INCLUDE_DIRS}
-            ${COIN3D_INCLUDE_DIRS})
+            ${QtTest_INCLUDE_DIRS})
         target_link_libraries(${_testname}_Tests_run
             FreeCADApp
             FreeCADGui
-            ${QtCore_LIBRARIES}
-            ${QtWidgets_LIBRARIES}
             ${QtTest_LIBRARIES}
             ${${_testname}_LIBS})
     endforeach()
@@ -94,34 +85,34 @@ set(TestExecutables
 )
 
 if(BUILD_ASSEMBLY)
-  list (APPEND TestExecutables Assembly_tests_run)
+    list (APPEND TestExecutables Assembly_tests_run)
 endif(BUILD_ASSEMBLY)
 if(BUILD_MATERIAL)
-  list (APPEND TestExecutables Material_tests_run)
+    list (APPEND TestExecutables Material_tests_run)
 endif(BUILD_MATERIAL)
 if(BUILD_MEASURE)
-  list (APPEND TestExecutables Measure_tests_run)
+    list (APPEND TestExecutables Measure_tests_run)
 endif(BUILD_MEASURE)
 if(BUILD_MESH)
-  list (APPEND TestExecutables Mesh_tests_run)
+    list (APPEND TestExecutables Mesh_tests_run)
 endif(BUILD_MESH)
 if(BUILD_MESH_PART)
-  list (APPEND TestExecutables MeshPart_tests_run)
+    list (APPEND TestExecutables MeshPart_tests_run)
 endif(BUILD_MESH_PART)
 if(BUILD_PART)
-  list (APPEND TestExecutables Part_tests_run)
+    list (APPEND TestExecutables Part_tests_run)
 endif(BUILD_PART)
 if(BUILD_PART_DESIGN)
     list (APPEND TestExecutables PartDesign_tests_run)
 endif(BUILD_PART_DESIGN)
 if(BUILD_POINTS)
-  list (APPEND TestExecutables Points_tests_run)
+    list (APPEND TestExecutables Points_tests_run)
 endif(BUILD_POINTS)
 if(BUILD_SKETCHER)
-  list (APPEND TestExecutables Sketcher_tests_run)
+    list (APPEND TestExecutables Sketcher_tests_run)
 endif(BUILD_SKETCHER)
 if(BUILD_SPREADSHEET)
-  list (APPEND TestExecutables Spreadsheet_tests_run)
+    list (APPEND TestExecutables Spreadsheet_tests_run)
 endif()
 
 # -------------------------

@@ -1,3 +1,5 @@
+add_library(FreeCADGui SHARED)
+
 add_subdirectory(Stylesheets)
 add_subdirectory(PreferencePacks)
 add_subdirectory(PreferencePackTemplates)
@@ -61,15 +63,11 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/DAGView
 )
 
-include_directories(
+target_include_directories(
+    FreeCADGui
     SYSTEM
-    ${Boost_INCLUDE_DIRS}
+    PRIVATE
     ${EIGEN3_INCLUDE_DIR}
-    ${PYCXX_INCLUDE_DIR}
-    ${Python3_INCLUDE_DIRS}
-    ${XercesC_INCLUDE_DIRS}
-    ${ZLIB_INCLUDE_DIR}
-    ${ZIPIOS_INCLUDES}
     ${3DCONNEXION_INCLUDE_DIR}
 )
 
@@ -103,8 +101,8 @@ endif(MSVC)
 if (TARGET Coin::Coin)
     list(APPEND FreeCADGui_LIBS Coin::Coin)
 else()
-    include_directories(SYSTEM ${COIN3D_INCLUDE_DIRS})
-    link_directories(${COIN3D_LIB_DIRS})
+    target_include_directories(FreeCADGui SYSTEM PUBLIC ${COIN3D_INCLUDE_DIRS})
+    target_link_directories(FreeCADGui PUBLIC ${COIN3D_LIB_DIRS})
     list(APPEND FreeCADGui_LIBS ${COIN3D_LIBRARIES})
 endif()
 
@@ -116,8 +114,10 @@ if (WIN32)
     endif()
 endif()
 
-include_directories(
+target_include_directories(
+    FreeCADGui
     SYSTEM
+    PUBLIC
     ${QtCore_INCLUDE_DIRS}
     ${QtWidgets_INCLUDE_DIRS}
     ${QtOpenGL_INCLUDE_DIRS}
@@ -140,8 +140,10 @@ list(APPEND FreeCADGui_LIBS
 )
 
 if(${Qt5WinExtras_FOUND})
-    include_directories(
+    target_include_directories(
+        FreeCADGui
         SYSTEM
+        PUBLIC
         ${Qt5WinExtras_INCLUDE_DIRS}
     )
     list(APPEND FreeCADGui_LIBS
@@ -1455,8 +1457,8 @@ if (EIGEN3_NO_DEPRECATED_COPY)
         PROPERTIES COMPILE_FLAGS ${EIGEN3_NO_DEPRECATED_COPY})
 endif ()
 
-add_library(FreeCADGui SHARED ${FreeCADGui_SRCS})
-target_link_libraries(FreeCADGui ${FreeCADGui_LIBS})
+target_sources(FreeCADGui PRIVATE ${FreeCADGui_SRCS})
+target_link_libraries(FreeCADGui PUBLIC ${FreeCADGui_LIBS})
 if (FREECAD_WARN_ERROR)
     target_compile_warn_error(FreeCADGui)
 endif()
