@@ -94,6 +94,7 @@ if(BUILD_FEM_VTK)
         CylinderWidget.ui
         PlaneWidget.ui
         SphereWidget.ui
+        TaskPostCalculator.ui
         TaskPostClip.ui
         TaskPostContours.ui
         TaskPostCut.ui
@@ -288,6 +289,7 @@ if(BUILD_FEM_VTK)
         SphereWidget.ui
         TaskPostBoxes.h
         TaskPostBoxes.cpp
+        TaskPostCalculator.ui
         TaskPostClip.ui
         TaskPostContours.ui
         TaskPostCut.ui
