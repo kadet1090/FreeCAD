@@ -39,6 +39,7 @@
 # include <QToolTip>
 #endif
 
+#include <App/AutoTransaction.h>
 #include <App/Document.h>
 #include <App/Link.h>
 #include <App/Part.h>
@@ -111,6 +112,9 @@ SectionCut::SectionCut(QWidget* parent)
     if (ObjectsList.empty()) {
         throw Base::RuntimeError("SectionCut error: there are no objects in the document");
     }
+
+    App::AutoTransaction::setEnable(false);
+    doc->openTransaction("Section cutting");
 
     // now store those that are currently visible
     for (auto anObject : ObjectsList) {
@@ -808,12 +812,13 @@ Part::Cut* SectionCut::tryCreateCut(const char* name)
 void SectionCut::startCutting(bool isInitial)
 {
     // there might be no document
-    if (!Gui::Application::Instance->activeDocument()) {
+    Gui::Document* active = Gui::Application::Instance->activeDocument();
+    if (!active) {
         noDocumentActions();
         return;
     }
     // the document might have been changed
-    if (doc != Gui::Application::Instance->activeDocument()->getDocument()) {
+    if (doc != active->getDocument()) {
         // refresh documents list
         onRefreshCutPBclicked();
     }
@@ -1406,7 +1411,8 @@ SectionCut* SectionCut::makeDockWidget(QWidget* parent)
 SectionCut::~SectionCut()
 {
     // there might be no document
-    if (!Gui::Application::Instance->activeDocument()) {
+    Gui::Document* active = Gui::Application::Instance->activeDocument();
+    if (!active) {
         noDocumentActions();
         return;
     }
@@ -1414,6 +1420,10 @@ SectionCut::~SectionCut()
         // make all objects visible that have been visible when the dialog was called
         // because we made them invisible when we created cuts
         setObjectsVisible(true);
+    }
+
+    if (doc == active->getDocument()) {
+        doc->commitTransaction();
     }
 }
 
