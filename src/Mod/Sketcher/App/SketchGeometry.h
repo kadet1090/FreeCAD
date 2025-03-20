@@ -26,6 +26,7 @@
 
 #include <memory>
 #include <list>
+#include <vector>
 #include "GeoEnum.h"
 #include <Base/Vector3D.h>
 
@@ -36,6 +37,9 @@ class Geometry;
 
 namespace Sketcher
 {
+
+class Constraint;
+class SketchObject;
 
 class SketcherExport SketchGeometry
 {
@@ -49,6 +53,12 @@ public:
 
     virtual bool supports(const Part::Geometry* geo) const = 0;
     virtual Base::Vector3d getPoint(const Part::Geometry* geo, PointPos PosId) const = 0;
+    virtual int exposeInternalGeometry([[maybe_unused]] int GeoId,
+                                       [[maybe_unused]] const Part::Geometry* geo,
+                                       [[maybe_unused]] SketchObject* sketch) const
+    {
+        return -1;  // not supported
+    }
 };
 
 using SketchGeometryPtr = std::shared_ptr<SketchGeometry>;
@@ -59,9 +69,12 @@ public:
     static void init();
     static void addType(const SketchGeometryPtr& type);
     static Base::Vector3d getPoint(const Part::Geometry* geo, PointPos PosId);
+    explicit SketchGeometryType(SketchObject* sketch);
+    int exposeInternalGeometry(int GeoId) const;
 
 private:
     static std::list<SketchGeometryPtr> sketchGeoms;  // NOLINT
+    SketchObject* sketch;
 };
 
 }  // namespace Sketcher

@@ -471,11 +471,6 @@ public:
      * \return -1 on error
      */
     int exposeInternalGeometry(int GeoId);
-    template<class GeomType>
-    int exposeInternalGeometryForType([[maybe_unused]] const int GeoId)
-    {
-        return -1;  // By default internal geometry is not supported
-    }
     /*!
      \brief Deletes all unused (not further constrained) internal geometry
      \param GeoId - the geometry having the internal geometry to delete
