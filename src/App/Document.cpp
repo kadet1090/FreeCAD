@@ -3465,7 +3465,7 @@ DocumentObject* Document::addObject(const char* sType,
         Base::Type::getTypeIfDerivedFrom(sType, App::DocumentObject::getClassTypeId(), true);
     if (type.isBad()) {
         std::stringstream str;
-        str << "'" << sType << "' is not a document object type";
+        str << "Document::addObject: '" << sType << "' is not a document object type";
         throw Base::TypeError(str.str());
     }
 

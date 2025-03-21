@@ -48,7 +48,7 @@
 #include <QMenu>
 #include <QToolTip>
 
-using namespace Gui;
+using namespace MeasureGui;
 
 namespace
 {
@@ -220,7 +220,11 @@ Measure::MeasureBase* TaskMeasure::createObject(const App::MeasureType* measureT
         auto pyMeasureClass = measureType->pythonClass;
 
         // Create a MeasurePython instance
-        _mMeasureObject = doc->addObject<Measure::MeasurePython>(measureType->label.c_str());
+        // Note: writing addObject<Measure::MeasurePython>() is not yet supported because
+        // getClassName() will determine the string 'App::FeaturePythonT<FeatureT>' instead
+        // of 'Measure::MeasurePython'
+        auto featurePython = doc->addObject("Measure::MeasurePython", measureType->label.c_str());
+        _mMeasureObject = dynamic_cast<Measure::MeasureBase*>(featurePython);
 
         // Create an instance of the pyMeasureClass, the classe's initializer sets the object as
         // proxy
@@ -238,8 +242,17 @@ Measure::MeasureBase* TaskMeasure::createObject(const App::MeasureType* measureT
     return _mMeasureObject;
 }
 
-
 void TaskMeasure::update()
+{
+    try {
+        tryUpdate();
+    }
+    catch (const Base::Exception& e) {
+        e.ReportException();
+    }
+}
+
+void TaskMeasure::tryUpdate()
 {
     App::Document* doc = App::GetApplication().getActiveDocument();
 
@@ -267,7 +280,7 @@ void TaskMeasure::update()
     std::string mode = explicitMode ? modeSwitch->currentText().toStdString() : "";
 
     App::MeasureSelection selection;
-    for (auto s : Gui::Selection().getSelection(doc->getName(), ResolveMode::NoResolve)) {
+    for (auto s : Gui::Selection().getSelection(doc->getName(), Gui::ResolveMode::NoResolve)) {
         App::SubObjectT sub(s.pObject, s.SubName);
 
         App::MeasureSelectionItem item = {sub, Base::Vector3d(s.x, s.y, s.z)};
@@ -351,7 +364,7 @@ void TaskMeasure::initViewObject()
 
 void TaskMeasure::close()
 {
-    Control().closeDialog();
+    Gui::Control().closeDialog();
 }
 
 
@@ -453,9 +466,10 @@ void TaskMeasure::clearSelection()
 void TaskMeasure::onSelectionChanged(const Gui::SelectionChanges& msg)
 {
     // Skip non-relevant events
-    if (msg.Type != SelectionChanges::AddSelection && msg.Type != SelectionChanges::RmvSelection
-        && msg.Type != SelectionChanges::SetSelection
-        && msg.Type != SelectionChanges::ClrSelection) {
+    if (msg.Type != Gui::SelectionChanges::AddSelection
+        && msg.Type != Gui::SelectionChanges::RmvSelection
+        && msg.Type != Gui::SelectionChanges::SetSelection
+        && msg.Type != Gui::SelectionChanges::ClrSelection) {
 
         return;
     }
@@ -469,9 +483,9 @@ void TaskMeasure::onSelectionChanged(const Gui::SelectionChanges& msg)
     const bool shift = (modifier & Qt::ShiftModifier) > 0;
     // shift inverts the current state temporarily
     const auto autosave = (mAutoSave && !shift) || (!mAutoSave && shift);
-    if ((!ctrl && Selection().getSelectionStyle() == SelectionStyle::NormalSelection)
-        || (ctrl && Selection().getSelectionStyle() == SelectionStyle::GreedySelection)) {
-        if (autosave && this->buttonBox->button(QDialogButtonBox::Apply)->isEnabled()) {
+    if ((!ctrl && Gui::Selection().getSelectionStyle() == SelectionStyle::NormalSelection)
+        || (ctrl && Gui::Selection().getSelectionStyle() == SelectionStyle::GreedySelection)) {
+        if (autosave && buttonBox && buttonBox->button(QDialogButtonBox::Apply)->isEnabled()) {
             apply(false);
         }
     }
@@ -499,7 +513,9 @@ bool TaskMeasure::eventFilter(QObject* obj, QEvent* event)
         if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
             // Save object. Indirectly dependent on whether the apply button is enabled
             // enabled if valid measurement object.
-            this->buttonBox->button(QDialogButtonBox::Apply)->click();
+            if (buttonBox) {
+                buttonBox->button(QDialogButtonBox::Apply)->click();
+            }
             return true;
         }
     }
