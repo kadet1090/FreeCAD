@@ -1029,9 +1029,16 @@ void MeshKernel::Read(std::istream& rclIn)
     }
     else {
         // The old formats
+        const unsigned long maxElements = 1e9;
         unsigned long uCtPts = magic, uCtFts = version;
         MeshPointArray pointArray;
         MeshFacetArray facetArray;
+
+        // Sanity checks so we don't over-allocate below: limit the mesh to 1 billion points and
+        // 1 billion facets. Coverity issue 515697.
+        if (uCtPts > maxElements || uCtFts > maxElements) {
+            throw Base::BadFormatError("Mesh seems to have over a billion points or facets");
+        }
 
         float ratio = 0;
         if (uCtPts > 0) {
