@@ -422,6 +422,8 @@ void Application::setupPythonException(PyObject* module)
     Base::PyExc_FC_CADKernelError = newException("CADKernelError", Base::PyExc_FC_GeneralError);
     Base::PyExc_FC_PropertyError = newException("PropertyError", PyExc_AttributeError);
     Base::PyExc_FC_AbortIOException = newException("AbortIOException", PyExc_BaseException);
+    Base::PyExc_FC_FileException = newException("FileException", PyExc_BaseException);
+    Base::PyExc_FC_SegfaultException = newException("SegfaultException", PyExc_BaseException);
     // clang-format on
 }
 
@@ -1916,6 +1918,48 @@ void my_se_translator_filter(unsigned int code, EXCEPTION_POINTERS* pExp)
 }
 #endif
 
+namespace
+{
+void initExceptions()
+{
+    // register exception producer types
+    // NOLINTBEGIN
+    new Base::ExceptionProducer<Base::AbortException>;
+    new Base::ExceptionProducer<Base::XMLBaseException>;
+    new Base::ExceptionProducer<Base::XMLParseException>;
+    new Base::ExceptionProducer<Base::XMLAttributeError>;
+    new Base::ExceptionProducer<Base::FileException>;
+    new Base::ExceptionProducer<Base::FileSystemError>;
+    new Base::ExceptionProducer<Base::BadFormatError>;
+    new Base::ExceptionProducer<Base::MemoryException>;
+    new Base::ExceptionProducer<Base::AccessViolation>;
+    new Base::ExceptionProducer<Base::AbnormalProgramTermination>;
+    new Base::ExceptionProducer<Base::UnknownProgramOption>;
+    new Base::ExceptionProducer<Base::ProgramInformation>;
+    new Base::ExceptionProducer<Base::TypeError>;
+    new Base::ExceptionProducer<Base::ValueError>;
+    new Base::ExceptionProducer<Base::IndexError>;
+    new Base::ExceptionProducer<Base::NameError>;
+    new Base::ExceptionProducer<Base::ImportError>;
+    new Base::ExceptionProducer<Base::AttributeError>;
+    new Base::ExceptionProducer<Base::RuntimeError>;
+    new Base::ExceptionProducer<Base::BadGraphError>;
+    new Base::ExceptionProducer<Base::NotImplementedError>;
+    new Base::ExceptionProducer<Base::ZeroDivisionError>;
+    new Base::ExceptionProducer<Base::ReferenceError>;
+    new Base::ExceptionProducer<Base::ExpressionError>;
+    new Base::ExceptionProducer<Base::ParserError>;
+    new Base::ExceptionProducer<Base::UnicodeError>;
+    new Base::ExceptionProducer<Base::OverflowError>;
+    new Base::ExceptionProducer<Base::UnderflowError>;
+    new Base::ExceptionProducer<Base::UnitsMismatchError>;
+    new Base::ExceptionProducer<Base::CADKernelError>;
+    new Base::ExceptionProducer<Base::RestoreError>;
+    new Base::ExceptionProducer<Base::PropertyError>;
+    // NOLINTEND
+}
+}
+
 void Application::init(int argc, char ** argv)
 {
     try {
@@ -1943,6 +1987,7 @@ void Application::init(int argc, char ** argv)
 
         initConfig(argc,argv);
         initApplication();
+        initExceptions();
     }
     catch (...) {
         // force the log to flush
@@ -2179,42 +2224,6 @@ void Application::initTypes()
     // register transaction type
     new App::TransactionProducer<TransactionDocumentObject>
             (DocumentObject::getClassTypeId());
-
-    // register exception producer types
-    // NOLINTBEGIN
-    new Base::ExceptionProducer<Base::AbortException>;
-    new Base::ExceptionProducer<Base::XMLBaseException>;
-    new Base::ExceptionProducer<Base::XMLParseException>;
-    new Base::ExceptionProducer<Base::XMLAttributeError>;
-    new Base::ExceptionProducer<Base::FileException>;
-    new Base::ExceptionProducer<Base::FileSystemError>;
-    new Base::ExceptionProducer<Base::BadFormatError>;
-    new Base::ExceptionProducer<Base::MemoryException>;
-    new Base::ExceptionProducer<Base::AccessViolation>;
-    new Base::ExceptionProducer<Base::AbnormalProgramTermination>;
-    new Base::ExceptionProducer<Base::UnknownProgramOption>;
-    new Base::ExceptionProducer<Base::ProgramInformation>;
-    new Base::ExceptionProducer<Base::TypeError>;
-    new Base::ExceptionProducer<Base::ValueError>;
-    new Base::ExceptionProducer<Base::IndexError>;
-    new Base::ExceptionProducer<Base::NameError>;
-    new Base::ExceptionProducer<Base::ImportError>;
-    new Base::ExceptionProducer<Base::AttributeError>;
-    new Base::ExceptionProducer<Base::RuntimeError>;
-    new Base::ExceptionProducer<Base::BadGraphError>;
-    new Base::ExceptionProducer<Base::NotImplementedError>;
-    new Base::ExceptionProducer<Base::ZeroDivisionError>;
-    new Base::ExceptionProducer<Base::ReferenceError>;
-    new Base::ExceptionProducer<Base::ExpressionError>;
-    new Base::ExceptionProducer<Base::ParserError>;
-    new Base::ExceptionProducer<Base::UnicodeError>;
-    new Base::ExceptionProducer<Base::OverflowError>;
-    new Base::ExceptionProducer<Base::UnderflowError>;
-    new Base::ExceptionProducer<Base::UnitsMismatchError>;
-    new Base::ExceptionProducer<Base::CADKernelError>;
-    new Base::ExceptionProducer<Base::RestoreError>;
-    new Base::ExceptionProducer<Base::PropertyError>;
-    // NOLINTEND
 
     Base::registerServiceImplementation<CenterOfMassProvider>(new NullCenterOfMass);
 }

@@ -268,70 +268,50 @@ PyObject* XMLAttributeError::getPyExceptionType() const
 
 FileException::FileException(const char* sMessage, const char* sFileName)
     : Exception(sMessage)
-    , file(sFileName)
+    , fileInfo(sFileName)
 {
     setFileName(sFileName);
 }
 
 FileException::FileException(const char* sMessage, const FileInfo& File)
     : Exception(sMessage)
-    , file(File)
+    , fileInfo(File)
 {
     setFileName(File.filePath().c_str());
 }
 
 FileException::FileException()
     : Exception("Unknown file exception happened")
-    , _sErrMsgAndFileName(_sErrMsg)
 {}
 
 void FileException::setFileName(const char* sFileName)
 {
-    file.setFile(sFileName);
-    _sErrMsgAndFileName = _sErrMsg;
+    fileInfo.setFile(sFileName);
     if (sFileName) {
-        _sErrMsgAndFileName += ": ";
-        _sErrMsgAndFileName += sFileName;
+        _sErrMsg += ": ";
+        _sErrMsg += sFileName;
     }
 }
 
 std::string FileException::getFileName() const
 {
-    return file.fileName();
+    return fileInfo.fileName();
 }
 
 const char* FileException::what() const noexcept
 {
-    return _sErrMsgAndFileName.c_str();
+    return Exception::what();
 }
 
 void FileException::ReportException() const
 {
-    if (!_isReported) {
-        const char* msg {};
-        if (_sErrMsgAndFileName.empty()) {
-            msg = typeid(*this).name();
-        }
-        else {
-            msg = _sErrMsgAndFileName.c_str();
-        }
-#ifdef FC_DEBUG
-        if (!_function.empty()) {
-            _FC_ERR(_file.c_str(), _line, _function << " -- " << msg);
-        }
-        else
-#endif
-        {
-            _FC_ERR(_file.c_str(), _line, msg);
-        }
-        _isReported = true;
-    }
+    Exception::ReportException();
 }
 
 PyObject* FileException::getPyObject()
 {
     Py::Dict edict(Exception::getPyObject(), true);
-    edict.setItem("filename", Py::String(this->file.fileName()));
+    edict.setItem("filename", Py::String(fileInfo.fileName()));
     return Py::new_reference_to(edict);
 }
 
@@ -349,7 +329,7 @@ void FileException::setPyObject(PyObject* pydict)
 
 PyObject* FileException::getPyExceptionType() const
 {
-    return PyExc_IOError;
+    return PyExc_FC_FileException;
 }
 
 // ---------------------------------------------------------
@@ -456,7 +436,7 @@ AccessViolation::AccessViolation(const std::string& sMessage)
 
 PyObject* AccessViolation::getPyExceptionType() const
 {
-    return PyExc_OSError;
+    return PyExc_FC_SegfaultException;
 }
 
 // ---------------------------------------------------------

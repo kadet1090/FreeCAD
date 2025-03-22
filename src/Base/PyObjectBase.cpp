@@ -37,6 +37,7 @@
 using namespace Base;
 
 // clang-format off
+// NOLINTBEGIN
 PyObject* Base::PyExc_FC_GeneralError = nullptr;
 PyObject* Base::PyExc_FC_FreeCADAbort = nullptr;
 PyObject* Base::PyExc_FC_XMLBaseException = nullptr;
@@ -50,6 +51,9 @@ PyObject* Base::PyExc_FC_ParserError = nullptr;
 PyObject* Base::PyExc_FC_CADKernelError = nullptr;
 PyObject* Base::PyExc_FC_PropertyError = nullptr;
 PyObject* Base::PyExc_FC_AbortIOException = nullptr;
+PyObject* Base::PyExc_FC_FileException = nullptr;
+PyObject* Base::PyExc_FC_SegfaultException = nullptr;
+// NOLINTEND
 
 typedef struct {            //NOLINT
     PyObject_HEAD

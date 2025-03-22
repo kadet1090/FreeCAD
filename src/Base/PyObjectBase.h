@@ -430,6 +430,8 @@ BaseExport extern PyObject* PyExc_FC_ParserError;
 BaseExport extern PyObject* PyExc_FC_CADKernelError;
 BaseExport extern PyObject* PyExc_FC_PropertyError;
 BaseExport extern PyObject* PyExc_FC_AbortIOException;
+BaseExport extern PyObject* PyExc_FC_FileException;
+BaseExport extern PyObject* PyExc_FC_SegfaultException;
 
 /** Exception handling for python callback functions
  * Is a convenience macro to manage the exception handling of python callback

@@ -399,10 +399,7 @@ public:
     PyObject* getPyExceptionType() const override;
 
 protected:
-    FileInfo file;
-    // necessary   for what() legacy behaviour as it returns a buffer that
-    // can not be of a temporary object to be destroyed at end of what()
-    std::string _sErrMsgAndFileName;
+    FileInfo fileInfo;
     void setFileName(const char* sFileName = nullptr);
 };
 
