@@ -2258,7 +2258,12 @@ bool Document::saveToFile(const char* filename) const
         writer.writeFiles();
 
         if (writer.hasErrors()) {
-            throw Base::FileException("Failed to write all data to file", tmp);
+            // retrieve Writer error strings
+            std::stringstream message;
+            message << writer.getFirstError() << "\n\n";
+            message << "Failed to write all data to file";
+            std::string error = message.str();
+            throw Base::FileException(error.c_str(), tmp);
         }
 
         GetApplication().signalSaveDocument(*this);

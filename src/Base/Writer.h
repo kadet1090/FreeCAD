@@ -113,10 +113,12 @@ public:
 
     /** @name Error handling */
     //@{
+    void checkSystemError();
     void addError(const std::string&);
     bool hasErrors() const;
     void clearErrors();
     std::vector<std::string> getErrors() const;
+    std::string getFirstError() const;
     //@}
 
     /** @name pretty formatting for XML */

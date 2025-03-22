@@ -27,6 +27,7 @@
 #include <set>
 #include <vector>
 #include <string>
+#include <system_error>
 #endif
 
 #include <limits>
@@ -177,6 +178,8 @@ void Writer::insertAsciiFile(const char* FileName)
         Stream().put(ch);
     }
     Stream() << "]]>" << std::endl;
+
+    checkSystemError();
 }
 
 void Writer::insertBinFile(const char* FileName)
@@ -195,6 +198,8 @@ void Writer::insertBinFile(const char* FileName)
     from.read(reinterpret_cast<char*>(bytes.data()), fileSize);
     Stream() << Base::base64_encode(bytes.data(), static_cast<unsigned int>(fileSize));
     Stream() << "]]>" << std::endl;
+
+    checkSystemError();
 }
 
 void Writer::setForceXML(bool on)
@@ -251,6 +256,23 @@ void Writer::clearModes()
     Modes.clear();
 }
 
+void Writer::checkSystemError()
+{
+    // See https://en.cppreference.com/w/cpp/error/errc for
+    // mapping of errno and std::errc
+    constexpr static std::array errors = {std::errc::no_space_on_device,
+                                          std::errc::read_only_file_system,
+                                          std::errc::no_such_device,
+                                          std::errc::permission_denied};
+
+    int errno_value = errno;
+    std::error_code error_code = std::make_error_code(std::errc(errno_value));
+    auto it = std::find(errors.begin(), errors.end(), error_code);
+    if (it != errors.end()) {
+        addError(error_code.message());
+    }
+}
+
 void Writer::addError(const std::string& msg)
 {
     Errors.push_back(msg);
@@ -269,6 +291,11 @@ void Writer::clearErrors()
 std::vector<std::string> Writer::getErrors() const
 {
     return Errors;
+}
+
+std::string Writer::getFirstError() const
+{
+    return Errors.empty() ? std::string() : Errors.front();
 }
 
 std::string Writer::addFile(const char* Name, const Base::Persistence* Object)
@@ -349,6 +376,8 @@ void ZipWriter::putNextEntry(const char* file, const char* obj)
     Writer::putNextEntry(file, obj);
 
     ZipStream.putNextEntry(file);
+
+    checkSystemError();
 }
 
 void ZipWriter::writeFiles()
@@ -385,6 +414,8 @@ void FileWriter::putNextEntry(const char* file, const char* obj)
 
     std::string fileName = DirName + "/" + file;
     this->FileStream.open(fileName.c_str(), std::ios::out | std::ios::binary);
+
+    checkSystemError();
 }
 
 bool FileWriter::shouldWrite(const std::string& /*name*/, const Base::Persistence* /*obj*/) const
@@ -420,4 +451,6 @@ void FileWriter::writeFiles()
 
         index++;
     }
+
+    checkSystemError();
 }

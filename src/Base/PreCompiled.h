@@ -79,6 +79,7 @@
 #include <bitset>
 #include <algorithm>
 #include <iomanip>
+#include <system_error>
 
 // streams
 #include <iostream>

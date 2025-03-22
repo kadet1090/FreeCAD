@@ -1446,7 +1446,7 @@ bool Document::save()
         }
         catch (const Base::Exception& e) {
             QMessageBox::critical(getMainWindow(), QObject::tr("Saving document failed"),
-                QString::fromLatin1(e.what()));
+                QString::fromUtf8(e.what()));
             return false;
         }
         return true;
@@ -1494,7 +1494,7 @@ bool Document::saveAs()
         }
         catch (const Base::Exception& e) {
             QMessageBox::critical(getMainWindow(), QObject::tr("Saving document failed"),
-                QString::fromLatin1(e.what()));
+                QString::fromUtf8(e.what()));
         }
         return true;
     }
