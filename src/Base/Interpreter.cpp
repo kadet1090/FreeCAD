@@ -114,12 +114,10 @@ void PyException::raiseException()
         Base::ExceptionFactory::Instance().raiseException(edict.ptr());
     }
 
-    if (_exceptionType == Base::PyExc_FC_FreeCADAbort) {
-        Base::AbortException exc(_sErrMsg.c_str());
-        exc.setReported(_isReported);
-        throw exc;
-    }
+    ExcData data {_exceptionType, _sErrMsg, _isReported};
+    Base::ExceptionFactory::Instance().raiseExceptionByType(data);
 
+    // Fallback
     throw *this;
 }
 
