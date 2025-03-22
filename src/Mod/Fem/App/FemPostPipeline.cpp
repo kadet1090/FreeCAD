@@ -80,7 +80,8 @@ void FemFrameSourceAlgorithm::setDataObject(vtkSmartPointer<vtkDataObject> data)
     Update();
 }
 
-bool FemFrameSourceAlgorithm::isValid() {
+bool FemFrameSourceAlgorithm::isValid()
+{
     return m_data.GetPointer() != nullptr;
 }
 
@@ -125,7 +126,7 @@ int FemFrameSourceAlgorithm::RequestInformation(vtkInformation* reqInfo,
                                                 vtkInformationVector* outVector)
 {
 
-    //setup default information
+    // setup default information
     if (!this->Superclass::RequestInformation(reqInfo, inVector, outVector)) {
         return 0;
     }
@@ -138,7 +139,7 @@ int FemFrameSourceAlgorithm::RequestInformation(vtkInformation* reqInfo,
     std::vector<double> frames = getFrameValues();
 
     if (frames.empty()) {
-        // no frames, default info is sfficient
+        // no frames, default info is sufficient
         return 1;
     }
 
@@ -202,8 +203,6 @@ int FemFrameSourceAlgorithm::RequestData([[maybe_unused]]vtkInformation* reqInfo
 PROPERTY_SOURCE_WITH_EXTENSIONS(Fem::FemPostPipeline, Fem::FemPostObject)
 
 FemPostPipeline::FemPostPipeline()
-    : FemPostObject()
-    , FemPostGroupExtension()
 {
 
     FemPostGroupExtension::initExtension(this);
@@ -219,8 +218,6 @@ FemPostPipeline::FemPostPipeline()
     m_source_algorithm = vtkSmartPointer<FemFrameSourceAlgorithm>::New();
     m_transform_filter->SetInputConnection(m_source_algorithm->GetOutputPort(0));
 }
-
-FemPostPipeline::~FemPostPipeline() = default;
 
 vtkDataSet* FemPostPipeline::getDataSet()
 {
@@ -312,7 +309,10 @@ void FemPostPipeline::read(Base::FileInfo File)
     Data.setValue(dataObjectFromFile(File));
 }
 
-void FemPostPipeline::read(std::vector<Base::FileInfo>& files, std::vector<double>& values, Base::Unit unit, std::string& frame_type)
+void FemPostPipeline::read(std::vector<Base::FileInfo>& files,
+                           std::vector<double>& values,
+                           Base::Unit unit,
+                           std::string& frame_type)
 {
     if (files.size() != values.size()) {
         Base::Console().Error("Result files and frame values have different length.\n");
@@ -370,7 +370,8 @@ App::DocumentObjectExecReturn* FemPostPipeline::execute()
 
             double time = frames[Frame.getValue()];
             m_transform_filter->UpdateTimeStep(time);
-        } else {
+        }
+        else {
             m_transform_filter->Update();
         }
 
@@ -441,7 +442,8 @@ void FemPostPipeline::onChanged(const Property* prop)
             m_block_property = true;
             Frame.setValue(val.c_str());
             m_block_property = false;
-        } else {
+        }
+        else {
             // frame gets updated
             Frame.setValue(long(0));
         }
@@ -451,15 +453,15 @@ void FemPostPipeline::onChanged(const Property* prop)
 
     if (prop == &Frame && !m_block_property) {
 
-        //Update all children with the new frame
+        // Update all children with the new frame
         double value = 0;
         auto frames = m_source_algorithm->getFrameValues();
         if (!frames.empty() && frames.size() > ulong(Frame.getValue())) {
             value = frames[Frame.getValue()];
         }
         for (const auto& obj : Group.getValues()) {
-            if (obj->isDerivedFrom<FemPostFilter>()) {
-                static_cast<Fem::FemPostFilter*>(obj)->Frame.setValue(value);
+            if (auto* postFilter = Base::freecad_dynamic_cast<FemPostFilter>(obj)) {
+                postFilter->Frame.setValue(value);
             }
         }
         // pipeline data updated!
@@ -478,7 +480,7 @@ void FemPostPipeline::onChanged(const Property* prop)
             return;
         }
 
-        FemPostFilter* filter = NULL;
+        FemPostFilter* filter = nullptr;
         for (auto& obj : objs) {
 
             // prepare the filter: make all connections new
@@ -494,7 +496,7 @@ void FemPostPipeline::onChanged(const Property* prop)
             }
             else {
                 // serial: the next filter gets the previous output, the first one gets our input
-                if (filter == NULL) {
+                if (!filter) {
                     nextFilter->getFilterInput()->SetInputConnection(
                         m_transform_filter->GetOutputPort(0));
                 }
@@ -527,7 +529,7 @@ void FemPostPipeline::filterChanged(FemPostFilter* filter)
 
             if (started) {
                 obj->touch();
-                if(obj->hasExtension(Fem::FemPostGroupExtension::getExtensionClassTypeId())) {
+                if (obj->hasExtension(Fem::FemPostGroupExtension::getExtensionClassTypeId())) {
                     obj->getExtension<FemPostGroupExtension>()->recomputeChildren();
                 }
             }
@@ -539,7 +541,8 @@ void FemPostPipeline::filterChanged(FemPostFilter* filter)
     }
 }
 
-void FemPostPipeline::filterPipelineChanged([[maybe_unused]] FemPostFilter* filter) {
+void FemPostPipeline::filterPipelineChanged([[maybe_unused]] FemPostFilter* filter)
+{
     // one of our filters has changed its active pipeline. We need to reconnect it properly.
     // As we are cheap we just reconnect everything
     // TODO: Do more efficiently
@@ -728,7 +731,8 @@ void FemPostPipeline::onDocumentRestored()
 {
     // if a old document was loaded with "custom" mode setting, the current value
     // would be out of range. Reset it to "serial"
-    if (Mode.getValue() > Fem::PostGroupMode::Parallel || Mode.getValue() < Fem::PostGroupMode::Serial) {
+    if (Mode.getValue() > Fem::PostGroupMode::Parallel
+        || Mode.getValue() < Fem::PostGroupMode::Serial) {
         Mode.setValue(Fem::PostGroupMode::Serial);
     }
 }

@@ -45,20 +45,19 @@ std::string FemPostPipelinePy::representation() const
 
 PyObject* FemPostPipelinePy::read(PyObject* args)
 {
-    char* Name;
-    if (PyArg_ParseTuple(args, "et", "utf-8", &Name)) {
-        getFemPostPipelinePtr()->read(Base::FileInfo(Name));
-        PyMem_Free(Name);
-        Py_Return;
-    }
-
-    PyObject *files;
-    PyObject *values = nullptr;
-    PyObject *unitobj = nullptr;
+    PyObject* files;
+    PyObject* values = nullptr;
+    PyObject* unitobj = nullptr;
     const char* value_type;
 
-    if (PyArg_ParseTuple(args, "O|OO!s", &files, &values, &(Base::UnitPy::Type), &unitobj, &value_type)) {
-        if (values == nullptr) {
+    if (PyArg_ParseTuple(args,
+                         "O|OO!s",
+                         &files,
+                         &values,
+                         &(Base::UnitPy::Type),
+                         &unitobj,
+                         &value_type)) {
+        if (!values) {
 
             // single argument version was called!
 
@@ -69,14 +68,15 @@ PyObject* FemPostPipelinePy::read(PyObject* args)
             const char* path = PyUnicode_AsUTF8(files);
             getFemPostPipelinePtr()->read(Base::FileInfo(path));
         }
-        else if (values != nullptr && unitobj != nullptr) {
+        else if (values && unitobj) {
 
-            //multistep version!
+            // multistep version!
 
-            if ( !(PyTuple_Check(files)   || PyList_Check(files)) ||
-                !(PyTuple_Check(values) || PyList_Check(values)) ) {
+            if (!(PyTuple_Check(files) || PyList_Check(files))
+                || !(PyTuple_Check(values) || PyList_Check(values))) {
 
-                std::string error = std::string("Files and values must be list of strings and number respectively.");
+                std::string error = std::string(
+                    "Files and values must be list of strings and number respectively.");
                 throw Base::TypeError(error);
             }
 
@@ -94,7 +94,7 @@ PyObject* FemPostPipelinePy::read(PyObject* args)
                 file_result[i] = Base::FileInfo(path.as_string());
             }
 
-            //extract the values
+            // extract the values
             Py::Sequence values_list(values);
             size = values_list.size();
             std::vector<double> value_result;
@@ -120,7 +120,6 @@ PyObject* FemPostPipelinePy::read(PyObject* args)
             Py_Return;
         }
     }
-
     return nullptr;
 }
 
@@ -136,14 +135,20 @@ PyObject* FemPostPipelinePy::scale(PyObject* args)
 
 PyObject* FemPostPipelinePy::load(PyObject* args)
 {
-    PyObject *py;
-    PyObject *list = nullptr;
-    PyObject *unitobj = nullptr;
+    PyObject* py;
+    PyObject* list = nullptr;
+    PyObject* unitobj = nullptr;
     const char* value_type;
 
-    if (PyArg_ParseTuple(args, "O|OO!s", &py, &list, &(Base::UnitPy::Type), &unitobj, &value_type)) {
+    if (PyArg_ParseTuple(args,
+                         "O|OO!s",
+                         &py,
+                         &list,
+                         &(Base::UnitPy::Type),
+                         &unitobj,
+                         &value_type)) {
 
-        if (list == nullptr) {
+        if (!list) {
 
             // single argument version!
 
@@ -151,7 +156,8 @@ PyObject* FemPostPipelinePy::load(PyObject* args)
                 PyErr_SetString(PyExc_TypeError, "object is not a result object");
                 return nullptr;
             }
-            App::DocumentObject* obj = static_cast<App::DocumentObjectPy*>(py)->getDocumentObjectPtr();
+            App::DocumentObject* obj =
+                static_cast<App::DocumentObjectPy*>(py)->getDocumentObjectPtr();
             if (!obj->isDerivedFrom<FemResultObject>()) {
                 PyErr_SetString(PyExc_TypeError, "object is not a result object");
                 return nullptr;
@@ -160,14 +166,15 @@ PyObject* FemPostPipelinePy::load(PyObject* args)
             getFemPostPipelinePtr()->load(static_cast<FemResultObject*>(obj));
             Py_Return;
         }
-        else if (list != nullptr && unitobj != nullptr) {
+        else if (list && unitobj) {
 
-            //multistep version!
+            // multistep version!
 
-            if ( !(PyTuple_Check(py)   || PyList_Check(py)) ||
-                !(PyTuple_Check(list) || PyList_Check(list)) ) {
+            if (!(PyTuple_Check(py) || PyList_Check(py))
+                || !(PyTuple_Check(list) || PyList_Check(list))) {
 
-                std::string error = std::string("Result and value must be list of ResultObjet and number respectively.");
+                std::string error = std::string(
+                    "Result and value must be list of ResultObject and number respectively.");
                 throw Base::TypeError(error);
             }
 
@@ -180,7 +187,8 @@ PyObject* FemPostPipelinePy::load(PyObject* args)
             for (Py::Sequence::size_type i = 0; i < size; i++) {
                 Py::Object item = result_list[i];
                 if (!PyObject_TypeCheck(*item, &(DocumentObjectPy::Type))) {
-                    std::string error = std::string("type in result list must be 'ResultObject', not ");
+                    std::string error =
+                        std::string("type in result list must be 'ResultObject', not ");
                     throw Base::TypeError(error);
                 }
                 auto obj = static_cast<DocumentObjectPy*>(*item)->getDocumentObjectPtr();
@@ -190,7 +198,7 @@ PyObject* FemPostPipelinePy::load(PyObject* args)
                 results[i] = static_cast<FemResultObject*>(obj);
             }
 
-            //extract the values
+            // extract the values
             Py::Sequence values_list(list);
             size = values_list.size();
             std::vector<double> values;
@@ -215,9 +223,13 @@ PyObject* FemPostPipelinePy::load(PyObject* args)
             getFemPostPipelinePtr()->load(results, values, unit, step_type);
             Py_Return;
         }
+        else {
+            std::string error = std::string(
+                "Multistep load requries 4 arguments: ResultList, ValueList, unit, type");
+            throw Base::TypeError(error);
+        }
     }
-
-    Py_Return;
+    return nullptr;
 }
 
 

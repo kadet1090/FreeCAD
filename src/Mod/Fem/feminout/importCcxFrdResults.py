@@ -62,7 +62,6 @@ def setupPipeline(doc, analysis, results_name, result_data):
     import ObjectsFem
     from . import importToolsFem
 
-
     # create a results pipeline if not already existing
     pipeline_name = "Pipeline_" + results_name
     pipeline_obj = doc.getObject(pipeline_name)
@@ -223,25 +222,32 @@ def importFrd(filename, analysis=None, result_name_prefix="", result_analysis_ty
                     multistep_value.append(step_time)
                     multistep_result.append(res_obj)
 
-
             # we have collected all result objects, lets create the multistep result pipeline
             if number_of_increments > 1:
                 # figure out type and unit
-                unit = FreeCAD.Units.Unit("")
-                description = "Unknown"
-                if result_analysis_type == "frequency":
-                    unit = FreeCAD.Units.Frequency
-                    description = "Eigenmode"
-                elif result_analysis_type == "buckling":
-                    description = "Buckling factor"
-                elif result_analysis_type == "thermomech":
-                    unit = FreeCAD.Units.TimeSpan
-                    description = "Timesteps"
-                elif result_analysis_type == "static":
-                    description = "Load factor"
+                match result_analysis_type:
+                    case "frequency":
+                        unit = FreeCAD.Units.Frequency
+                        description = "Eigenmode"
+                    case "buckling":
+                        unit = FreeCAD.Units.Unit()
+                        description = "Buckling factor"
+                    case "thermomech":
+                        unit = FreeCAD.Units.TimeSpan
+                        description = "Timesteps"
+                    case "static":
+                        unit = FreeCAD.Units.Unit()
+                        description = "Load factor"
+                    case _:
+                        unit = FreeCAD.Units.Unit()
+                        description = "Unknown"
 
-                setupPipeline(doc, analysis, results_name, [multistep_result, multistep_value, unit, description])
-
+                setupPipeline(
+                    doc,
+                    analysis,
+                    results_name,
+                    [multistep_result, multistep_value, unit, description],
+                )
 
         elif result_analysis_type == "check":
             results_name = f"{result_name_prefix}Check"

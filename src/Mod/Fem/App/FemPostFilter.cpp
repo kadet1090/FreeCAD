@@ -52,7 +52,6 @@ FemPostFilter::FemPostFilter()
                       "Data",
                       App::Prop_ReadOnly,
                       "The step used to calculate the data");
-
 }
 
 FemPostFilter::~FemPostFilter() = default;
@@ -72,21 +71,22 @@ void FemPostFilter::setActiveFilterPipeline(std::string name)
     if (m_activePipeline != name && isValid()) {
 
         // disable all inputs of current pipeline
-        if (m_activePipeline != "" and m_pipelines.find( m_activePipeline ) != m_pipelines.end()) {
+        if (m_activePipeline != "" && m_pipelines.find(m_activePipeline) != m_pipelines.end()) {
             m_pipelines[m_activePipeline].source->RemoveAllInputConnections(0);
         }
 
         // handle the transform
         if (m_use_transform) {
             m_transform_filter->RemoveAllInputConnections(0);
-            if(m_transform_location == TransformLocation::output) {
+            if (m_transform_location == TransformLocation::output) {
                 m_transform_filter->SetInputConnection(m_pipelines[name].target->GetOutputPort(0));
-            } else {
+            }
+            else {
                 m_pipelines[name].source->SetInputConnection(m_transform_filter->GetOutputPort(0));
             }
         }
 
-        //set the new pipeline active
+        // set the new pipeline active
         m_activePipeline = name;
         pipelineChanged();
     }
@@ -94,8 +94,7 @@ void FemPostFilter::setActiveFilterPipeline(std::string name)
 
 vtkSmartPointer<vtkAlgorithm> FemPostFilter::getFilterInput()
 {
-    if (m_use_transform &&
-        m_transform_location == TransformLocation::input) {
+    if (m_use_transform && m_transform_location == TransformLocation::input) {
 
         return m_transform_filter;
     }
@@ -105,8 +104,7 @@ vtkSmartPointer<vtkAlgorithm> FemPostFilter::getFilterInput()
 
 vtkSmartPointer<vtkAlgorithm> FemPostFilter::getFilterOutput()
 {
-    if (m_use_transform &&
-        m_transform_location == TransformLocation::output) {
+    if (m_use_transform && m_transform_location == TransformLocation::output) {
 
         return m_transform_filter;
     }
@@ -114,8 +112,9 @@ vtkSmartPointer<vtkAlgorithm> FemPostFilter::getFilterOutput()
     return m_pipelines[m_activePipeline].target;
 }
 
-void FemPostFilter::pipelineChanged() {
-    //inform our parent, that we need to be reconnected
+void FemPostFilter::pipelineChanged()
+{
+    // inform our parent, that we need to be reconnected
     App::DocumentObject* group = FemPostGroupExtension::getGroupOfObject(this);
     if (!group) {
         return;
@@ -134,25 +133,29 @@ void FemPostFilter::onChanged(const App::Property* prop)
             // remove transform from pipeline
             if (m_transform_location == TransformLocation::output) {
                 m_transform_filter->RemoveAllInputConnections(0);
-            } else {
+            }
+            else {
                 m_pipelines[m_activePipeline].source->RemoveAllInputConnections(0);
             }
             m_use_transform = false;
             pipelineChanged();
         }
-        if(!Placement.getValue().isIdentity() && !m_use_transform) {
+        if (!Placement.getValue().isIdentity() && !m_use_transform) {
             // add transform to pipeline
             if (m_transform_location == TransformLocation::output) {
-                m_transform_filter->SetInputConnection(m_pipelines[m_activePipeline].target->GetOutputPort(0));
-            } else {
-                m_pipelines[m_activePipeline].source->SetInputConnection(m_transform_filter->GetOutputPort(0));
+                m_transform_filter->SetInputConnection(
+                    m_pipelines[m_activePipeline].target->GetOutputPort(0));
+            }
+            else {
+                m_pipelines[m_activePipeline].source->SetInputConnection(
+                    m_transform_filter->GetOutputPort(0));
             }
             m_use_transform = true;
             pipelineChanged();
         }
     }
 
-    //make sure we inform our parent object that we changed, it then can inform others if needed
+    // make sure we inform our parent object that we changed, it then can inform others if needed
     App::DocumentObject* group = FemPostGroupExtension::getGroupOfObject(this);
     if (group && group->hasExtension(FemPostGroupExtension::getExtensionClassTypeId())) {
         auto postgroup = group->getExtensionByType<FemPostGroupExtension>();
@@ -179,7 +182,7 @@ DocumentObjectExecReturn* FemPostFilter::execute()
             return StdReturn;
         }
 
-        if (Frame.getValue()>0) {
+        if (Frame.getValue() > 0) {
             output->UpdateTimeStep(Frame.getValue());
         }
         else {
@@ -199,7 +202,7 @@ vtkSmartPointer<vtkDataSet> FemPostFilter::getInputData()
         return nullptr;
     }
 
-    vtkAlgorithmOutput* output = active.source->GetInputConnection(0,0);
+    vtkAlgorithmOutput* output = active.source->GetInputConnection(0, 0);
     vtkAlgorithm* algo = output->GetProducer();
     algo->Update();
     return vtkDataSet::SafeDownCast(algo->GetOutputDataObject(0));
@@ -616,7 +619,8 @@ void FemPostClipFilter::onChanged(const Property* prop)
         if (auto* value = Base::freecad_dynamic_cast<FemPostFunction>(Function.getValue())) {
             m_clipper->SetClipFunction(value->getImplicitFunction());
             m_extractor->SetImplicitFunction(value->getImplicitFunction());
-        } else {
+        }
+        else {
             m_clipper->SetClipFunction(m_defaultFunction);
             m_extractor->SetImplicitFunction(m_defaultFunction);
         }
@@ -966,8 +970,7 @@ void FemPostContoursFilter::refreshFields()
     // search if the current field is in the available ones and set it
     // Note: list could be empty and hence Field invalid
     if (Field.isValid()) {
-        std::vector<std::string>::iterator it =
-            std::find(FieldsArray.begin(), FieldsArray.end(), fieldName);
+        const auto it = std::find(FieldsArray.begin(), FieldsArray.end(), fieldName);
         if (!fieldName.empty() && it != FieldsArray.end()) {
             Field.setValue(fieldName.c_str());
         }
@@ -979,7 +982,6 @@ void FemPostContoursFilter::refreshFields()
     }
 
     m_blockPropertyChanges = false;
-
 }
 
 void FemPostContoursFilter::refreshVectors()
@@ -1078,7 +1080,8 @@ void FemPostCutFilter::onChanged(const Property* prop)
     if (prop == &Function) {
         if (auto* value = Base::freecad_dynamic_cast<FemPostFunction>(Function.getValue())) {
             m_cutter->SetCutFunction(value->getImplicitFunction());
-        } else {
+        }
+        else {
             m_cutter->SetCutFunction(m_defaultFunction);
         }
     }
@@ -1149,8 +1152,7 @@ DocumentObjectExecReturn* FemPostScalarClipFilter::execute()
     Scalars.setValue(m_scalarFields);
 
     // search if the current field is in the available ones and set it
-    std::vector<std::string>::iterator it =
-        std::find(ScalarsArray.begin(), ScalarsArray.end(), val);
+    const auto it = std::find(ScalarsArray.begin(), ScalarsArray.end(), val);
     if (!val.empty() && it != ScalarsArray.end()) {
         Scalars.setValue(val.c_str());
     }
@@ -1260,7 +1262,7 @@ DocumentObjectExecReturn* FemPostWarpVectorFilter::execute()
     Vector.setValue(m_vectorFields);
 
     // search if the current field is in the available ones and set it
-    std::vector<std::string>::iterator it = std::find(VectorArray.begin(), VectorArray.end(), val);
+    const auto it = std::find(VectorArray.begin(), VectorArray.end(), val);
     if (!val.empty() && it != VectorArray.end()) {
         Vector.setValue(val.c_str());
     }

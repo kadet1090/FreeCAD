@@ -42,7 +42,6 @@ class FemExport FemPostBranchFilter: public Fem::FemPostFilter, public FemPostGr
 public:
     /// Constructor
     FemPostBranchFilter();
-    ~FemPostBranchFilter() override;
 
     App::PropertyEnumeration Output;
 
@@ -68,7 +67,7 @@ private:
     void setupPipeline();
 
     vtkSmartPointer<vtkAppendFilter> m_append;
-    vtkSmartPointer<vtkPassThrough>  m_passthrough;
+    vtkSmartPointer<vtkPassThrough> m_passthrough;
 };
 
 }  // namespace Fem

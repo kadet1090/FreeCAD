@@ -139,8 +139,7 @@ void TaskFemConstraintForce::addToSelection()
         App::DocumentObject* obj = it.getObject();
         for (const auto& subName : subNames) {  // for every selected sub element
             bool addMe = true;
-            for (std::vector<std::string>::iterator itr =
-                     std::find(SubElements.begin(), SubElements.end(), subName);
+            for (auto itr = std::find(SubElements.begin(), SubElements.end(), subName);
                  itr != SubElements.end();
                  itr = std::find(++itr,
                                  SubElements.end(),
@@ -210,8 +209,7 @@ void TaskFemConstraintForce::removeFromSelection()
         const App::DocumentObject* obj = it.getObject();
 
         for (const auto& subName : subNames) {  // for every selected sub element
-            for (std::vector<std::string>::iterator itr =
-                     std::find(SubElements.begin(), SubElements.end(), subName);
+            for (auto itr = std::find(SubElements.begin(), SubElements.end(), subName);
                  itr != SubElements.end();
                  itr = std::find(++itr,
                                  SubElements.end(),

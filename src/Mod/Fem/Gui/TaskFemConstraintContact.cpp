@@ -230,8 +230,7 @@ void TaskFemConstraintContact::addToSelectionSlave()
                 QMessageBox::warning(this, tr("Selection error"), tr("Only faces can be picked"));
                 return;
             }
-            for (std::vector<std::string>::iterator itr =
-                     std::find(SubElements.begin(), SubElements.end(), subName);
+            for (auto itr = std::find(SubElements.begin(), SubElements.end(), subName);
                  itr != SubElements.end();
                  itr = std::find(++itr,
                                  SubElements.end(),
@@ -279,8 +278,7 @@ void TaskFemConstraintContact::removeFromSelectionSlave()
         const App::DocumentObject* obj = it.getObject();
 
         for (const auto& subName : subNames) {  // for every selected sub element
-            for (std::vector<std::string>::iterator itr =
-                     std::find(SubElements.begin(), SubElements.end(), subName);
+            for (auto itr = std::find(SubElements.begin(), SubElements.end(), subName);
                  itr != SubElements.end();
                  itr = std::find(++itr,
                                  SubElements.end(),
@@ -359,8 +357,7 @@ void TaskFemConstraintContact::addToSelectionMaster()
                 QMessageBox::warning(this, tr("Selection error"), tr("Only faces can be picked"));
                 return;
             }
-            for (std::vector<std::string>::iterator itr =
-                     std::find(SubElements.begin(), SubElements.end(), subName);
+            for (auto itr = std::find(SubElements.begin(), SubElements.end(), subName);
                  itr != SubElements.end();
                  itr = std::find(++itr,
                                  SubElements.end(),
@@ -408,8 +405,7 @@ void TaskFemConstraintContact::removeFromSelectionMaster()
         const App::DocumentObject* obj = it.getObject();
 
         for (const auto& subName : subNames) {  // for every selected sub element
-            for (std::vector<std::string>::iterator itr =
-                     std::find(SubElements.begin(), SubElements.end(), subName);
+            for (auto itr = std::find(SubElements.begin(), SubElements.end(), subName);
                  itr != SubElements.end();
                  itr = std::find(++itr,
                                  SubElements.end(),
