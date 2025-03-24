@@ -35,6 +35,7 @@
 #include <TopoDS_Iterator.hxx>
 #include <Precision.hxx>
 #include <FuzzyHelper.h>
+#include <SignalException.h>
 
 FCBRepAlgoAPI_BooleanOperation::FCBRepAlgoAPI_BooleanOperation()
 {
@@ -103,6 +104,7 @@ void FCBRepAlgoAPI_BooleanOperation::Build(const Message_ProgressRange& theRange
 void FCBRepAlgoAPI_BooleanOperation::Build()
 #endif
 {
+    Part::SignalException sig;
     if (myOperation == BOPAlgo_CUT && myArguments.Size() == 1 && myTools.Size() == 1 && myTools.First().ShapeType() == TopAbs_COMPOUND) {
         TopTools_ListOfShape myOriginalArguments = myArguments;
         TopTools_ListOfShape myOriginalTools = myTools;
