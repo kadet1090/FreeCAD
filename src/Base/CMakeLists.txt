@@ -5,6 +5,10 @@ if(WIN32)
     add_definitions(-DZIPIOS_UTF8)
 endif(WIN32)
 
+if(FREECAD_RELEASE_SEH)
+    add_definitions(-DHAVE_SEH)
+endif(FREECAD_RELEASE_SEH)
+
 include_directories(
     ${CMAKE_BINARY_DIR}/src
     ${CMAKE_SOURCE_DIR}/src
@@ -217,6 +221,7 @@ SET(FreeCADBase_CPP_SRCS
     SmartPtrPy.cpp
     Stream.cpp
     Swap.cpp
+    SystemHandler.cpp
     ${SWIG_SRCS}
     Tools.cpp
     Tools2D.cpp
@@ -284,6 +289,7 @@ SET(FreeCADBase_HPP_SRCS
     SmartPtrPy.h
     Stream.h
     Swap.h
+    SystemHandler.h
     ${SWIG_HEADERS}
     TimeInfo.h
     Tools.h
