@@ -573,6 +573,8 @@ SET(Part_SRCS
     ProgressIndicator.h
     Services.cpp
     Services.h
+    SignalException.cpp
+    SignalException.h
     TopoShape.cpp
     TopoShape.h
     TopoShapeCache.cpp
