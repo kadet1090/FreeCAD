@@ -1122,7 +1122,6 @@ void CmdSketcherJoinCurves::activated(int iMsg)
                         "selected point to be able to join them."
                     )
                 );
-
                 return;
             }
 

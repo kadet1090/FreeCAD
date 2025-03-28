@@ -448,7 +448,6 @@ public:
             onviewparameterindex,
             value
         );  // specialisation interface
-
         finishControlsChanged();
     }
 
