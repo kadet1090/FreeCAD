@@ -157,6 +157,8 @@ SET(PartGui_SRCS
     Resources/Part.qrc
     PreCompiled.cpp
     PreCompiled.h
+    ProgressIndicator.cpp
+    ProgressIndicator.h
     PropertyEnumAttacherItem.cpp
     PropertyEnumAttacherItem.h
     SoFCShapeObject.cpp
