@@ -46,7 +46,7 @@ ReaderIges::ReaderIges(const Base::FileInfo& file)  // NOLINT
     : file {file}
 {}
 
-void ReaderIges::read(Handle(TDocStd_Document) hDoc)  // NOLINT
+void ReaderIges::read(Handle(TDocStd_Document) hDoc, const Message_ProgressRange& theProgress)
 {
     Base::Reference<ParameterGrp> hGrp = App::GetApplication()
                                              .GetUserParameter()
@@ -68,7 +68,7 @@ void ReaderIges::read(Handle(TDocStd_Document) hDoc)  // NOLINT
         throw Base::FileException("Cannot read IGES file", file);
     }
 
-    aReader.Transfer(hDoc);
+    aReader.Transfer(hDoc, theProgress);
 
     // http://opencascade.blogspot.de/2009/03/unnoticeable-memory-leaks-part-2.html
     Handle(IGESToBRep_Actor)::DownCast(aReader.WS()->TransferReader()->Actor())
