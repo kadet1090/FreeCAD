@@ -117,6 +117,9 @@ size_t SequencerBase::numberOfSteps() const
 void SequencerBase::startStep()
 {}
 
+void SequencerBase::stopStep()
+{}
+
 bool SequencerBase::next(bool canAbort)
 {
     this->nProgress++;
@@ -145,6 +148,7 @@ void SequencerBase::setProgress(size_t /*value*/)
 bool SequencerBase::stop()
 {
     resetData();
+    stopStep();
     return true;
 }
 
@@ -284,4 +288,10 @@ size_t SequencerLauncher::numberOfSteps() const
 bool SequencerLauncher::wasCanceled() const
 {
     return SequencerBase::Instance().wasCanceled();
+}
+
+void SequencerLauncher::stop()
+{
+    std::lock_guard<std::recursive_mutex> locker(SequencerP::mutex);
+    SequencerBase::Instance().stop();
 }
