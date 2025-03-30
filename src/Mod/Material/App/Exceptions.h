@@ -24,214 +24,118 @@
 
 #include <QString>
 
-#include <Base/BaseClass.h>
 #include <Base/Exception.h>
+#include <Mod/Material/MaterialGlobal.h>
 
 namespace Materials
 {
 
-class Uninitialized: public Base::Exception
+class MaterialsExport Uninitialized: public Base::Exception
 {
 public:
-    Uninitialized()
-    {}
-    explicit Uninitialized(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit Uninitialized(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~Uninitialized() noexcept override = default;
+    Uninitialized();
+    explicit Uninitialized(const char* msg);
+    explicit Uninitialized(const QString& msg);
+    ~Uninitialized() noexcept override;
 };
 
-class ModelNotFound: public Base::Exception
+class MaterialsExport ModelNotFound: public Base::Exception
 {
 public:
-    ModelNotFound()
-    {
-        this->setMessage("Model not found");
-    }
-    explicit ModelNotFound(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit ModelNotFound(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~ModelNotFound() noexcept override = default;
+    ModelNotFound();
+    explicit ModelNotFound(const char* msg);
+    explicit ModelNotFound(const QString& msg);
+    ~ModelNotFound() noexcept override;
 };
 
-class InvalidMaterialType: public Base::Exception
+class MaterialsExport InvalidMaterialType: public Base::Exception
 {
 public:
-    InvalidMaterialType()
-    {}
-    explicit InvalidMaterialType(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit InvalidMaterialType(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~InvalidMaterialType() noexcept override = default;
+    InvalidMaterialType();
+    explicit InvalidMaterialType(const char* msg);
+    explicit InvalidMaterialType(const QString& msg);
+    ~InvalidMaterialType() noexcept override;
 };
 
-class MaterialNotFound: public Base::Exception
+class MaterialsExport MaterialNotFound: public Base::Exception
 {
 public:
-    MaterialNotFound()
-    {
-        this->setMessage("Material not found");
-    }
-    explicit MaterialNotFound(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit MaterialNotFound(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~MaterialNotFound() noexcept override = default;
+    MaterialNotFound();
+    explicit MaterialNotFound(const char* msg);
+    explicit MaterialNotFound(const QString& msg);
+    ~MaterialNotFound() noexcept override;
 };
 
-class MaterialExists: public Base::Exception
+class MaterialsExport MaterialExists: public Base::Exception
 {
 public:
-    MaterialExists()
-    {}
-    explicit MaterialExists(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit MaterialExists(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~MaterialExists() noexcept override = default;
+    MaterialExists();
+    explicit MaterialExists(const char* msg);
+    explicit MaterialExists(const QString& msg);
+    ~MaterialExists() noexcept override;
 };
 
-class MaterialReadError: public Base::Exception
+class MaterialsExport MaterialReadError: public Base::Exception
 {
 public:
-    MaterialReadError()
-    {}
-    explicit MaterialReadError(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit MaterialReadError(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~MaterialReadError() noexcept override = default;
+    MaterialReadError();
+    explicit MaterialReadError(const char* msg);
+    explicit MaterialReadError(const QString& msg);
+    ~MaterialReadError() noexcept override;
 };
 
-class PropertyNotFound: public Base::Exception
+class MaterialsExport PropertyNotFound: public Base::Exception
 {
 public:
-    PropertyNotFound()
-    {
-        this->setMessage("Property not found");
-    }
-    explicit PropertyNotFound(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit PropertyNotFound(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~PropertyNotFound() noexcept override = default;
+    PropertyNotFound();
+    explicit PropertyNotFound(const char* msg);
+    explicit PropertyNotFound(const QString& msg);
+    ~PropertyNotFound() noexcept override;
 };
 
-class LibraryNotFound: public Base::Exception
+class MaterialsExport LibraryNotFound: public Base::Exception
 {
 public:
-    LibraryNotFound()
-    {
-        this->setMessage("Library not found");
-    }
-    explicit LibraryNotFound(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit LibraryNotFound(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~LibraryNotFound() noexcept override = default;
+    LibraryNotFound();
+    explicit LibraryNotFound(const char* msg);
+    explicit LibraryNotFound(const QString& msg);
+    ~LibraryNotFound() noexcept override;
 };
 
-class InvalidModel: public Base::Exception
+class MaterialsExport InvalidModel: public Base::Exception
 {
 public:
-    InvalidModel()
-    {
-        this->setMessage("Invalid model");
-    }
-    explicit InvalidModel(const char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit InvalidModel(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~InvalidModel() noexcept override = default;
+    InvalidModel();
+    explicit InvalidModel(const char* msg);
+    explicit InvalidModel(const QString& msg);
+    ~InvalidModel() noexcept override;
 };
 
-class InvalidIndex: public Base::Exception
+class MaterialsExport InvalidIndex: public Base::Exception
 {
 public:
-    InvalidIndex()
-    {
-        this->setMessage("Invalid index");
-    }
-    explicit InvalidIndex(char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit InvalidIndex(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~InvalidIndex() noexcept override = default;
+    InvalidIndex();
+    explicit InvalidIndex(char* msg);
+    explicit InvalidIndex(const QString& msg);
+    ~InvalidIndex() noexcept override;
 };
 
-class UnknownValueType: public Base::Exception
+class MaterialsExport UnknownValueType: public Base::Exception
 {
 public:
-    UnknownValueType()
-    {}
-    explicit UnknownValueType(char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit UnknownValueType(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~UnknownValueType() noexcept override = default;
+    UnknownValueType();
+    explicit UnknownValueType(char* msg);
+    explicit UnknownValueType(const QString& msg);
+    ~UnknownValueType() noexcept override;
 };
 
-class DeleteError: public Base::Exception
+class MaterialsExport DeleteError: public Base::Exception
 {
 public:
-    DeleteError()
-    {}
-    explicit DeleteError(char* msg)
-    {
-        this->setMessage(msg);
-    }
-    explicit DeleteError(const QString& msg)
-    {
-        this->setMessage(msg.toStdString().c_str());
-    }
-    ~DeleteError() noexcept override = default;
+    DeleteError();
+    explicit DeleteError(char* msg);
+    explicit DeleteError(const QString& msg);
+    ~DeleteError() noexcept override;
 };
 
 }  // namespace Materials

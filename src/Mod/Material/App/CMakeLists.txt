@@ -60,7 +60,6 @@ generate_from_xml(ModelPy)
 generate_from_xml(UUIDsPy)
 
 SET(Python_SRCS
-    Exceptions.h
     Array2DPy.xml
     Array2DPyImp.cpp
     Array3DPy.xml
@@ -85,6 +84,8 @@ SOURCE_GROUP("Python" FILES ${Python_SRCS})
 SET(Materials_SRCS
     ${Python_SRCS}
     AppMaterial.cpp
+    Exceptions.cpp
+    Exceptions.h
     FolderTree.h
     MaterialConfigLoader.cpp
     MaterialConfigLoader.h
