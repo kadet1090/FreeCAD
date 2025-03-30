@@ -46,7 +46,6 @@ void setupLineSegment(Part::GeomLineSegment& lineSeg)
 void setupCircle(Part::GeomCircle& circle)
 {
     Base::Vector3d coordsCenter(1.0, 2.0, 0.0);
-    Base::Vector3d splitPoint(2.0, 3.1, 0.0);
     double radius = 3.0;
     circle.setCenter(coordsCenter);
     circle.setRadius(radius);
