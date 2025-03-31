@@ -298,6 +298,7 @@ SET(FreeCADBase_HPP_SRCS
     Tools3D.h
     Translate.h
     Type.h
+    UnlimitedUnsigned.h
     UniqueNameManager.h
     Uuid.h
     Vector3D.h
