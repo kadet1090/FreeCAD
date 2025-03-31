@@ -25,210 +25,272 @@
 
 using namespace Materials;
 
-Uninitialized::Uninitialized() = default;
+Uninitialized::Uninitialized()
+    : Base::Exception("Uninitialized")
+{}
 
 Uninitialized::Uninitialized(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 Uninitialized::Uninitialized(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 Uninitialized::~Uninitialized() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
 ModelNotFound::ModelNotFound()
-{
-    this->setMessage("Model not found");
-}
+    : Base::Exception("Model not found")
+{}
 
 ModelNotFound::ModelNotFound(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 ModelNotFound::ModelNotFound(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 ModelNotFound::~ModelNotFound() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
-InvalidMaterialType::InvalidMaterialType() = default;
+InvalidMaterialType::InvalidMaterialType()
+    : Base::Exception("Invalid material type")
+{}
 
 InvalidMaterialType::InvalidMaterialType(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 InvalidMaterialType::InvalidMaterialType(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 InvalidMaterialType::~InvalidMaterialType() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
 MaterialNotFound::MaterialNotFound()
-{
-    this->setMessage("Material not found");
-}
+    : Base::Exception("Material not found")
+{}
 
 MaterialNotFound::MaterialNotFound(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 MaterialNotFound::MaterialNotFound(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 MaterialNotFound::~MaterialNotFound() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
-MaterialExists::MaterialExists() = default;
+MaterialExists::MaterialExists()
+    : Base::Exception("Material already exists")
+{}
 
 MaterialExists::MaterialExists(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 MaterialExists::MaterialExists(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 MaterialExists::~MaterialExists() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
-MaterialReadError::MaterialReadError() = default;
+MaterialReadError::MaterialReadError()
+    : Base::Exception("Unable to read material")
+{}
 
 MaterialReadError::MaterialReadError(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 MaterialReadError::MaterialReadError(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 MaterialReadError::~MaterialReadError() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
 PropertyNotFound::PropertyNotFound()
-{
-    this->setMessage("Property not found");
-}
+    : Base::Exception("Property not found")
+{}
 
 PropertyNotFound::PropertyNotFound(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 PropertyNotFound::PropertyNotFound(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 PropertyNotFound::~PropertyNotFound() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
 LibraryNotFound::LibraryNotFound()
-{
-    this->setMessage("Library not found");
-}
+    : Base::Exception("Library not found")
+{}
 
 LibraryNotFound::LibraryNotFound(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 LibraryNotFound::LibraryNotFound(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 LibraryNotFound::~LibraryNotFound() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
 InvalidModel::InvalidModel()
-{
-    this->setMessage("Invalid model");
-}
+    : Base::Exception("Invalid model")
+{}
 
 InvalidModel::InvalidModel(const char* msg)
-{
-    this->setMessage(msg);
-}
+    : Base::Exception(msg)
+{}
 
 InvalidModel::InvalidModel(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 InvalidModel::~InvalidModel() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
 InvalidIndex::InvalidIndex()
-{
-    this->setMessage("Invalid index");
-}
+    : Base::Exception("Invalid index")
+{}
 
-InvalidIndex::InvalidIndex(char* msg)
-{
-    this->setMessage(msg);
-}
+InvalidIndex::InvalidIndex(const char* msg)
+    : Base::Exception(msg)
+{}
 
 InvalidIndex::InvalidIndex(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 InvalidIndex::~InvalidIndex() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
-UnknownValueType::UnknownValueType() = default;
+UnknownValueType::UnknownValueType()
+    : Base::Exception("Unknown value type")
+{}
 
-UnknownValueType::UnknownValueType(char* msg)
-{
-    this->setMessage(msg);
-}
+UnknownValueType::UnknownValueType(const char* msg)
+    : Base::Exception(msg)
+{}
 
 UnknownValueType::UnknownValueType(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 UnknownValueType::~UnknownValueType() noexcept = default;
 
 // ----------------------------------------------------------------------------
 
-DeleteError::DeleteError() = default;
+DeleteError::DeleteError()
+    : Base::Exception("Unable to delete object")
+{}
 
-DeleteError::DeleteError(char* msg)
-{
-    this->setMessage(msg);
-}
+DeleteError::DeleteError(const char* msg)
+    : Base::Exception(msg)
+{}
 
 DeleteError::DeleteError(const QString& msg)
-{
-    this->setMessage(msg.toStdString().c_str());
-}
+    : Base::Exception(msg.toStdString().c_str())
+{}
 
 DeleteError::~DeleteError() noexcept = default;
+
+// ----------------------------------------------------------------------------
+
+InvalidProperty::InvalidProperty()
+    : Base::Exception("Invalid property")
+{}
+
+InvalidProperty::InvalidProperty(const char* msg)
+    : Base::Exception(msg)
+{}
+
+InvalidProperty::InvalidProperty(const QString& msg)
+    : Base::Exception(msg.toStdString().c_str())
+{}
+
+InvalidProperty::~InvalidProperty() noexcept = default;
+
+// ----------------------------------------------------------------------------
+
+InvalidLibrary::InvalidLibrary()
+    : Base::Exception("Invalid library")
+{}
+
+InvalidLibrary::InvalidLibrary(const char* msg)
+    : Base::Exception(msg)
+{}
+
+InvalidLibrary::InvalidLibrary(const QString& msg)
+    : Base::Exception(msg.toStdString().c_str())
+{}
+
+InvalidLibrary::~InvalidLibrary() noexcept = default;
+
+// ----------------------------------------------------------------------------
+
+RenameError::RenameError()
+    : Base::Exception("Unable to rename object")
+{}
+
+RenameError::RenameError(const char* msg)
+    : Base::Exception(msg)
+{}
+
+RenameError::RenameError(const QString& msg)
+    : Base::Exception(msg.toStdString().c_str())
+{}
+
+RenameError::~RenameError() noexcept = default;
+
+// ----------------------------------------------------------------------------
+
+ReplacementError::ReplacementError()
+    : Base::Exception("Unable to replace object")
+{}
+
+ReplacementError::ReplacementError(const char* msg)
+    : Base::Exception(msg)
+{}
+
+ReplacementError::ReplacementError(const QString& msg)
+    : Base::Exception(msg.toStdString().c_str())
+{}
+
+ReplacementError::~ReplacementError() noexcept = default;
+
+// ----------------------------------------------------------------------------
+
+ConnectionError::ConnectionError()
+    : Base::Exception("Unable to connect")
+{}
+
+ConnectionError::ConnectionError(const char* msg)
+    : Base::Exception(msg)
+{}
+
+ConnectionError::ConnectionError(const QString& msg)
+    : Base::Exception(msg.toStdString().c_str())
+{}
+
+ConnectionError::~ConnectionError() noexcept = default;

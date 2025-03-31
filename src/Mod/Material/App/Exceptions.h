@@ -115,7 +115,7 @@ class MaterialsExport InvalidIndex: public Base::Exception
 {
 public:
     InvalidIndex();
-    explicit InvalidIndex(char* msg);
+    explicit InvalidIndex(const char* msg);
     explicit InvalidIndex(const QString& msg);
     ~InvalidIndex() noexcept override;
 };
@@ -124,7 +124,7 @@ class MaterialsExport UnknownValueType: public Base::Exception
 {
 public:
     UnknownValueType();
-    explicit UnknownValueType(char* msg);
+    explicit UnknownValueType(const char* msg);
     explicit UnknownValueType(const QString& msg);
     ~UnknownValueType() noexcept override;
 };
@@ -133,9 +133,54 @@ class MaterialsExport DeleteError: public Base::Exception
 {
 public:
     DeleteError();
-    explicit DeleteError(char* msg);
+    explicit DeleteError(const char* msg);
     explicit DeleteError(const QString& msg);
     ~DeleteError() noexcept override;
+};
+
+class MaterialsExport InvalidProperty: public Base::Exception
+{
+public:
+    InvalidProperty();
+    explicit InvalidProperty(const char* msg);
+    explicit InvalidProperty(const QString& msg);
+    ~InvalidProperty() noexcept override;
+};
+
+class MaterialsExport InvalidLibrary: public Base::Exception
+{
+public:
+    InvalidLibrary();
+    explicit InvalidLibrary(const char* msg);
+    explicit InvalidLibrary(const QString& msg);
+    ~InvalidLibrary() noexcept override;
+};
+
+class MaterialsExport RenameError: public Base::Exception
+{
+public:
+    RenameError();
+    explicit RenameError(const char* msg);
+    explicit RenameError(const QString& msg);
+    ~RenameError() noexcept override;
+};
+
+class MaterialsExport ReplacementError: public Base::Exception
+{
+public:
+    ReplacementError();
+    explicit ReplacementError(const char* msg);
+    explicit ReplacementError(const QString& msg);
+    ~ReplacementError() noexcept override;
+};
+
+class MaterialsExport ConnectionError: public Base::Exception
+{
+public:
+    ConnectionError();
+    explicit ConnectionError(const char* msg);
+    explicit ConnectionError(const QString& msg);
+    ~ConnectionError() noexcept override;
 };
 
 }  // namespace Materials
