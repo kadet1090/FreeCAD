@@ -105,6 +105,7 @@ private:
     void clearCurrentProperty();
 
     void removeEditor();
+    void removeSelectionEditor();
     void addEditor(PropertyEditor::PropertyItem* propertyItem, std::string& type);
 
     bool isTypeWithEditor(const std::string& type);

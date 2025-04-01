@@ -232,12 +232,25 @@ static PropertyEditor::PropertyItem *createPropertyItem(App::Property *prop)
     return item;
 }
 
+void DlgAddPropertyVarSet::removeSelectionEditor()
+{
+    // If the editor has a lineedit, then Qt selects the string inside it when
+    // the editor is created.  This interferes with the editor getting focus.
+    // For example, units will then be selected as well, whereas this is not
+    // the behavior we want.  We therefore deselect the text in the lineedit.
+    if (auto lineEdit = editor->findChild<QLineEdit*>()) {
+        lineEdit->deselect();
+    }
+}
+
 void DlgAddPropertyVarSet::addEditor(PropertyEditor::PropertyItem* propertyItem,
                                      [[maybe_unused]]std::string& type)
 {
     editor.reset(propertyItem->createEditor(this, [this]() {
         this->valueChanged();
     }));
+
+    QSignalBlocker block(editor.get());
     propertyItem->setEditorData(editor.get(), propertyItem->data(1, Qt::EditRole));
     editor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     editor->setObjectName(QStringLiteral("editor"));
@@ -246,6 +259,8 @@ void DlgAddPropertyVarSet::addEditor(PropertyEditor::PropertyItem* propertyItem,
 
     QWidget::setTabOrder(ui->comboBoxType, editor.get());
     QWidget::setTabOrder(editor.get(), ui->checkBoxAdd);
+
+    removeSelectionEditor();
 }
 
 bool DlgAddPropertyVarSet::isTypeWithEditor(const std::string& type)
