@@ -53,8 +53,6 @@
 #include <boost/tokenizer.hpp>
 
 #include <Python.h>
-#include <QFileInfo>
-#include <QStandardPaths>
 
 // Salomesh
 #include <SMDSAbs_ElementType.hxx>
@@ -202,6 +200,9 @@
 #include <vtkXMLStructuredGridReader.h>
 #include <vtkXMLUnstructuredGridReader.h>
 #include <vtkXMLUnstructuredGridWriter.h>
+
+#include <QFileInfo>
+#include <QStandardPaths>
 
 // Netgen
 #ifdef FCWithNetgen

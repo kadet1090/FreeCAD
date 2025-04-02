@@ -54,6 +54,9 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost_regex.hpp>
 
+// OpenCasCade
+#include <Mod/Part/App/OpenCascadeAll.h>
+
 // Qt
 #include <QApplication>
 #include <QCollator>
@@ -64,9 +67,6 @@
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 #include <QtConcurrentRun>
-
-// OpenCasCade
-#include <Mod/Part/App/OpenCascadeAll.h>
 
 #endif // _PreComp_
 #endif

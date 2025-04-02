@@ -30,13 +30,6 @@
 // STL
 #include <sstream>
 
-// Qt
-#include <QAction>
-#include <QApplication>
-#include <QMenu>
-#include <QMessageBox>
-#include <QTimer>
-
 // OpenCasCade
 #include <BRepAdaptor_Curve.hxx>
 #include <GeomAPI_ProjectPointOnCurve.hxx>
@@ -47,6 +40,13 @@
 #include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Shape.hxx>
+
+// Qt
+#include <QAction>
+#include <QApplication>
+#include <QMenu>
+#include <QMessageBox>
+#include <QTimer>
 
 #endif  //_PreComp_
 
