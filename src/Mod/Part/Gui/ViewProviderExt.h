@@ -76,7 +76,6 @@ public:
     App::PropertyAngle AngularDeflection;
     App::PropertyEnumeration Lighting;
     App::PropertyEnumeration DrawStyle;
-    App::PropertyBool ShowPlacement;
     // Points
     App::PropertyFloatConstraint PointSize;
     App::PropertyColor PointColor;
