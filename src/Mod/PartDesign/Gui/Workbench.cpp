@@ -477,6 +477,7 @@ void Workbench::deactivated()
 
 Gui::MenuItem* Workbench::setupMenuBar() const
 {
+    const auto& cmdmgr = Gui::Application::Instance->commandManager();
     Gui::MenuItem* root = StdWorkbench::setupMenuBar();
     Gui::MenuItem* item = root->findItem("&Windows");
 
@@ -557,16 +558,19 @@ Gui::MenuItem* Workbench::setupMenuBar() const
           << "Separator"
           << "PartDesign_Boolean"
           << "Separator"
-          << "Part_CheckGeometry"
-          << "Separator"
-          << "PartDesign_InvoluteGear"
-          << "PartDesign_Sprocket";
+          << "Part_CheckGeometry";
 
-    // For 0.13 a couple of python packages like numpy, matplotlib and others
-    // are not deployed with the installer on Windows. Thus, the WizardShaft is
-    // not deployed either hence the check for the existence of the command.
-    if (Gui::Application::Instance->commandManager().getCommandByName("PartDesign_WizardShaft")) {
-        *part << "Separator" << "PartDesign_WizardShaft";
+    if (cmdmgr.getCommandByName("PartDesign_InvoluteGear")) {
+        *part << "Separator"
+              << "PartDesign_InvoluteGear";
+    }
+
+    if (cmdmgr.getCommandByName("PartDesign_Sprocket")) {
+        *part << "PartDesign_Sprocket";
+    }
+
+    if (cmdmgr.getCommandByName("PartDesign_WizardShaft")) {
+        *part << "PartDesign_WizardShaft";
     }
 
     Gui::MenuItem* view = root->findItem("&View");

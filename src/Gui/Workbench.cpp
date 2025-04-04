@@ -734,7 +734,10 @@ MenuItem* StdWorkbench::setupMenuBar() const
           << "Separator"
           << "Std_DlgCustomize";
 #ifdef BUILD_ADDONMGR
-    *tool << "Std_AddonMgr";
+    const auto& cmdmgr = Gui::Application::Instance->commandManager();
+    if (cmdmgr.getCommandByName("Std_AddonMgr")) {
+        *tool << "Std_AddonMgr";
+    }
 #endif
 
     // Macro

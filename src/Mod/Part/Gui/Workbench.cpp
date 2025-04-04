@@ -25,6 +25,8 @@
 
 #include "Workbench.h"
 #include <Base/Interpreter.h>
+#include <Gui/Application.h>
+#include <Gui/Command.h>
 #include <Gui/MenuManager.h>
 #include <Gui/ToolBarManager.h>
 
@@ -71,6 +73,7 @@ Workbench::~Workbench() = default;
 
 Gui::MenuItem* Workbench::setupMenuBar() const
 {
+    const auto& cmdmgr = Gui::Application::Instance->commandManager();
     Gui::MenuItem* root = StdWorkbench::setupMenuBar();
     Gui::MenuItem* item = root->findItem("&Windows");
 
@@ -80,9 +83,11 @@ Gui::MenuItem* Workbench::setupMenuBar() const
           << "Part_Cylinder"
           << "Part_Sphere"
           << "Part_Cone"
-          << "Part_Torus"
-          << "Separator"
-          << "Part_Tube";
+          << "Part_Torus";
+    if (cmdmgr.getCommandByName("Part_Tube")) {
+        *prim << "Separator"
+              << "Part_Tube";
+    }
 
     Gui::MenuItem* copy = new Gui::MenuItem;
     copy->setCommand("Create a copy");
@@ -98,25 +103,34 @@ Gui::MenuItem* Workbench::setupMenuBar() const
          << "Part_Fuse"
          << "Part_Common";
 
-    Gui::MenuItem* join = new Gui::MenuItem;
-    join->setCommand("Join");
-    *join << "Part_JoinConnect"
-          << "Part_JoinEmbed"
-          << "Part_JoinCutout";
+    Gui::MenuItem* join {};
+    if (cmdmgr.getCommandByName("Part_JoinConnect")) {
+        join = new Gui::MenuItem;
+        join->setCommand("Join");
+        *join << "Part_JoinConnect"
+              << "Part_JoinEmbed"
+              << "Part_JoinCutout";
+    }
 
-    Gui::MenuItem* split = new Gui::MenuItem;
-    split->setCommand("Split");
-    *split << "Part_BooleanFragments"
-           << "Part_SliceApart"
-           << "Part_Slice"
-           << "Part_XOR";
+    Gui::MenuItem* split {};
+    if (cmdmgr.getCommandByName("Part_BooleanFragments")) {
+        split = new Gui::MenuItem;
+        split->setCommand("Split");
+        *split << "Part_BooleanFragments"
+               << "Part_SliceApart"
+               << "Part_Slice"
+               << "Part_XOR";
+    }
 
-    Gui::MenuItem* compound = new Gui::MenuItem;
-    compound->setCommand("Compound");
-    *compound << "Part_Compound"
-              << "Part_ExplodeCompound"
-              << "Part_CompoundFilter"
-              << "Part_ToleranceSet";
+    Gui::MenuItem* compound {};
+    if (cmdmgr.getCommandByName("Part_ExplodeCompound")) {
+        compound = new Gui::MenuItem;
+        compound->setCommand("Compound");
+        *compound << "Part_Compound";
+        *compound << "Part_ExplodeCompound"
+                  << "Part_CompoundFilter"
+                  << "Part_ToleranceSet";
+    }
 
     Gui::MenuItem* part = new Gui::MenuItem;
     root->insertItem(item, part);
@@ -127,25 +141,35 @@ Gui::MenuItem* Workbench::setupMenuBar() const
           << "Part_BoxSelection"
           << "Separator";
     *part << prim
-          << "Part_Primitives"
-          << "Part_Builder"
-          << "Separator"
-          << "Part_ShapeFromMesh"
-          << "Part_PointsFromMesh"
-          << "Part_MakeSolid"
-          << "Part_ReverseShape"
-          << copy
-          << "Part_CheckGeometry"
-          << "Part_Defeaturing"
-          << "Materials_InspectAppearance"
-          << "Materials_InspectMaterial"
-          << "Separator"
-          << bop << join << split << compound
-          << "Separator";
+        << "Part_Primitives"
+        << "Part_Builder"
+        << "Separator"
+        << "Part_ShapeFromMesh"
+        << "Part_PointsFromMesh"
+        << "Part_MakeSolid"
+        << "Part_ReverseShape"
+        << copy
+        << "Part_CheckGeometry"
+        << "Part_Defeaturing"
+        << "Materials_InspectAppearance"
+        << "Materials_InspectMaterial"
+        << "Separator"
+        << bop;
+    if (join) {
+        *part << join;
+    }
+    if (split) {
+        *part << split;
+    }
+    if (compound) {
+        *part << compound;
+    }
+    *part << "Separator";
     if (hasSketcher) {
       *part << "Sketcher_NewSketch";
     }
-      *part << "Part_Extrude"
+
+    *part << "Part_Extrude"
           << "Part_Revolve"
           << "Part_Mirror"
           << "Part_Scale"
@@ -178,6 +202,7 @@ Gui::MenuItem* Workbench::setupMenuBar() const
 
 Gui::ToolBarItem* Workbench::setupToolBars() const
 {
+    const auto& cmdmgr = Gui::Application::Instance->commandManager();
     Gui::ToolBarItem* root = StdWorkbench::setupToolBars();
 
     Gui::ToolBarItem* solids = new Gui::ToolBarItem(root);
@@ -186,9 +211,11 @@ Gui::ToolBarItem* Workbench::setupToolBars() const
             << "Part_Cylinder"
             << "Part_Sphere"
             << "Part_Cone"
-            << "Part_Torus"
-            << "Part_Tube"
-            << "Part_Primitives"
+            << "Part_Torus";
+    if (cmdmgr.getCommandByName("Part_Tube")) {
+        *solids << "Part_Tube";
+    }
+    *solids << "Part_Primitives"
             << "Part_Builder";
 
     Gui::ToolBarItem* tool = new Gui::ToolBarItem(root);
