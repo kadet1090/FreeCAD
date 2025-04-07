@@ -160,11 +160,7 @@
 FC_LOG_LEVEL_INIT("App", true, true)
 
 using namespace App;
-using namespace Base;
-using namespace std;
-using namespace boost;
-using namespace boost::program_options;
-using Base::FileInfo;
+namespace po = boost::program_options;
 namespace sp = std::placeholders;
 
 //==========================================================================
@@ -429,7 +425,7 @@ void Application::renameDocument(const char *OldName, const char *NewName)
 
 Document* Application::newDocument(const char * proposedName, const char * proposedLabel, DocumentInitFlags initFlags)
 {
-    bool isUsingDefaultName = Tools::isNullOrEmpty(proposedName);
+    bool isUsingDefaultName = Base::Tools::isNullOrEmpty(proposedName);
     // get a valid name anyway!
     if (isUsingDefaultName) {
         proposedName = "Unnamed";
@@ -446,7 +442,7 @@ Document* Application::newDocument(const char * proposedName, const char * propo
 
     // Determine the document's Label
     std::string label;
-    if (!Tools::isNullOrEmpty(proposedLabel)) {
+    if (!Base::Tools::isNullOrEmpty(proposedLabel)) {
         // If a label is supplied it is used even if not unique
         label = proposedLabel;
     }
@@ -531,7 +527,7 @@ bool Application::closeDocument(const char* name)
     }
     const std::unique_ptr<Document> delDoc (pos->second);
     DocMap.erase( pos );
-    DocFileMap.erase(FileInfo(delDoc->FileName.getValue()).filePath());
+    DocFileMap.erase(Base::FileInfo(delDoc->FileName.getValue()).filePath());
 
     _objCount = -1;
 
@@ -680,10 +676,10 @@ Document *Application::getDocumentByPath(const char *path, PathMatchMode checkCa
         for(const auto &v : DocMap) {
             const auto &file = v.second->FileName.getStrValue();
             if(!file.empty())
-                DocFileMap[FileInfo(file.c_str()).filePath()] = v.second;
+                DocFileMap[Base::FileInfo(file.c_str()).filePath()] = v.second;
         }
     }
-    const auto it = DocFileMap.find(FileInfo(path).filePath());
+    const auto it = DocFileMap.find(Base::FileInfo(path).filePath());
     if(it != DocFileMap.end())
         return it->second;
 
@@ -691,7 +687,7 @@ Document *Application::getDocumentByPath(const char *path, PathMatchMode checkCa
         return nullptr;
     }
 
-    const std::string filepath = FileInfo(path).filePath();
+    const std::string filepath = Base::FileInfo(path).filePath();
     const QString canonicalPath = QFileInfo(QString::fromUtf8(path)).canonicalFilePath();
     for (const auto &v : DocMap) {
         QFileInfo fi(QString::fromUtf8(v.second->FileName.getValue()));
@@ -920,7 +916,7 @@ Document* Application::openDocumentPrivate(const char * FileName,
         bool isMainDoc, DocumentInitFlags initFlags,
         std::vector<std::string> &&objNames)
 {
-    FileInfo File(FileName);
+    Base::FileInfo File(FileName);
 
     if (!File.exists()) {
         std::stringstream str;
@@ -982,7 +978,7 @@ Document* Application::openDocumentPrivate(const char * FileName,
 
     std::string name;
     if(propFileName != FileName) {
-        FileInfo fi(propFileName);
+        Base::FileInfo fi(propFileName);
         name = fi.fileNamePure();
     }else
         name = File.fileNamePure();
@@ -1001,7 +997,7 @@ Document* Application::openDocumentPrivate(const char * FileName,
         // read the document
         newDoc->restore(File.filePath().c_str(),true,objNames);
         if(!DocFileMap.empty())
-            DocFileMap[FileInfo(newDoc->FileName.getValue()).filePath()] = newDoc;
+            DocFileMap[Base::FileInfo(newDoc->FileName.getValue()).filePath()] = newDoc;
         return newDoc;
     }
     // if the project file itself is corrupt then
@@ -1637,7 +1633,7 @@ void Application::slotBeforeRecompute(const Document& doc)
     this->signalBeforeRecomputeDocument(doc);
 }
 
-void Application::slotOpenTransaction(const Document &doc, string name)
+void Application::slotOpenTransaction(const Document &doc, std::string name)
 {
     this->signalOpenTransaction(doc, std::move(name));
 }
@@ -2064,20 +2060,20 @@ void Application::initTypes()
 
 namespace {
 
-void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& vm)
+void parseProgramOptions(int ac, char ** av, const std::string& exe, po::variables_map& vm)
 {
     // Declare a group of options that will be
     // allowed only on the command line
-    options_description generic("Generic options");
+    po::options_description generic("Generic options");
     generic.add_options()
     ("version,v", "Prints version string")
     ("verbose", "Prints verbose version string")
     ("help,h", "Prints help message")
     ("console,c", "Starts in console mode")
-    ("response-file", value<string>(),"Can be specified with '@name', too")
+    ("response-file", po::value<std::string>(),"Can be specified with '@name', too")
     ("dump-config", "Dumps configuration")
-    ("get-config", value<string>(), "Prints the value of the requested configuration key")
-    ("set-config", value< vector<string> >()->multitoken(), "Sets the value of a configuration key")
+    ("get-config", po::value<std::string>(), "Prints the value of the requested configuration key")
+    ("set-config", po::value< std::vector<std::string> >()->multitoken(), "Sets the value of a configuration key")
     ("keep-deprecated-paths", "If set then config files are kept on the old location")
     ;
 
@@ -2089,18 +2085,18 @@ void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& v
     boost::program_options::options_description config("Configuration");
     config.add_options()
     ("write-log,l", descr.str().c_str())
-    ("log-file", value<string>(), "Unlike --write-log this allows logging to an arbitrary file")
-    ("user-cfg,u", value<string>(),"User config file to load/save user settings")
-    ("system-cfg,s", value<string>(),"System config file to load/save system settings")
-    ("run-test,t", value<string>()->implicit_value(""),"Run a given test case (use 0 (zero) to run all tests). If no argument is provided then return list of all available tests.")
-    ("run-open,r", value<string>()->implicit_value(""),"Run a given test case (use 0 (zero) to run all tests). If no argument is provided then return list of all available tests.  Keeps UI open after test(s) complete.")
-    ("module-path,M", value< vector<string> >()->composing(),"Additional module paths")
-    ("macro-path,E", value< vector<string> >()->composing(),"Additional macro paths")
-    ("python-path,P", value< vector<string> >()->composing(),"Additional python paths")
-    ("disable-addon", value< vector<string> >()->composing(),"Disable a given addon.")
+    ("log-file", po::value<std::string>(), "Unlike --write-log this allows logging to an arbitrary file")
+    ("user-cfg,u", po::value<std::string>(),"User config file to load/save user settings")
+    ("system-cfg,s", po::value<std::string>(),"System config file to load/save system settings")
+    ("run-test,t", po::value<std::string>()->implicit_value(""),"Run a given test case (use 0 (zero) to run all tests). If no argument is provided then return list of all available tests.")
+    ("run-open,r", po::value<std::string>()->implicit_value(""),"Run a given test case (use 0 (zero) to run all tests). If no argument is provided then return list of all available tests.  Keeps UI open after test(s) complete.")
+    ("module-path,M", po::value< std::vector<std::string> >()->composing(),"Additional module paths")
+    ("macro-path,E", po::value< std::vector<std::string> >()->composing(),"Additional macro paths")
+    ("python-path,P", po::value< std::vector<std::string> >()->composing(),"Additional python paths")
+    ("disable-addon", po::value< std::vector<std::string> >()->composing(),"Disable a given addon.")
     ("single-instance", "Allow to run a single instance of the application")
     ("safe-mode", "Force enable safe mode")
-    ("pass", value< vector<string> >()->multitoken(), "Ignores the following arguments and pass them through to be used by a script")
+    ("pass", po::value< std::vector<std::string> >()->multitoken(), "Ignores the following arguments and pass them through to be used by a script")
     ;
 
 
@@ -2108,33 +2104,33 @@ void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& v
     // in the config file, but will not be shown to the user.
     boost::program_options::options_description hidden("Hidden options");
     hidden.add_options()
-    ("input-file", boost::program_options::value< vector<string> >(), "input file")
-    ("output",     boost::program_options::value<string>(),"output file")
+    ("input-file", boost::program_options::value< std::vector<std::string> >(), "input file")
+    ("output",     boost::program_options::value<std::string>(),"output file")
     ("hidden",                                             "don't show the main window")
     // this are to ignore for the window system (QApplication)
-    ("style",      boost::program_options::value< string >(), "set the application GUI style")
-    ("stylesheet", boost::program_options::value< string >(), "set the application stylesheet")
-    ("session",    boost::program_options::value< string >(), "restore the application from an earlier session")
+    ("style",      boost::program_options::value< std::string >(), "set the application GUI style")
+    ("stylesheet", boost::program_options::value< std::string >(), "set the application stylesheet")
+    ("session",    boost::program_options::value< std::string >(), "restore the application from an earlier session")
     ("reverse",                                               "set the application's layout direction from right to left")
     ("widgetcount",                                           "print debug messages about widgets")
-    ("graphicssystem", boost::program_options::value< string >(), "backend to be used for on-screen widgets and pixmaps")
-    ("display",    boost::program_options::value< string >(), "set the X-Server")
-    ("geometry ",  boost::program_options::value< string >(), "set the X-Window geometry")
-    ("font",       boost::program_options::value< string >(), "set the X-Window font")
-    ("fn",         boost::program_options::value< string >(), "set the X-Window font")
-    ("background", boost::program_options::value< string >(), "set the X-Window background color")
-    ("bg",         boost::program_options::value< string >(), "set the X-Window background color")
-    ("foreground", boost::program_options::value< string >(), "set the X-Window foreground color")
-    ("fg",         boost::program_options::value< string >(), "set the X-Window foreground color")
-    ("button",     boost::program_options::value< string >(), "set the X-Window button color")
-    ("btn",        boost::program_options::value< string >(), "set the X-Window button color")
-    ("name",       boost::program_options::value< string >(), "set the X-Window name")
-    ("title",      boost::program_options::value< string >(), "set the X-Window title")
-    ("visual",     boost::program_options::value< string >(), "set the X-Window to color scheme")
+    ("graphicssystem", boost::program_options::value< std::string >(), "backend to be used for on-screen widgets and pixmaps")
+    ("display",    boost::program_options::value< std::string >(), "set the X-Server")
+    ("geometry ",  boost::program_options::value< std::string >(), "set the X-Window geometry")
+    ("font",       boost::program_options::value< std::string >(), "set the X-Window font")
+    ("fn",         boost::program_options::value< std::string >(), "set the X-Window font")
+    ("background", boost::program_options::value< std::string >(), "set the X-Window background color")
+    ("bg",         boost::program_options::value< std::string >(), "set the X-Window background color")
+    ("foreground", boost::program_options::value< std::string >(), "set the X-Window foreground color")
+    ("fg",         boost::program_options::value< std::string >(), "set the X-Window foreground color")
+    ("button",     boost::program_options::value< std::string >(), "set the X-Window button color")
+    ("btn",        boost::program_options::value< std::string >(), "set the X-Window button color")
+    ("name",       boost::program_options::value< std::string >(), "set the X-Window name")
+    ("title",      boost::program_options::value< std::string >(), "set the X-Window title")
+    ("visual",     boost::program_options::value< std::string >(), "set the X-Window to color scheme")
     ("ncols",      boost::program_options::value< int    >(), "set the X-Window to color scheme")
     ("cmap",                                                  "set the X-Window to color scheme")
 #if defined(FC_OS_MACOSX)
-    ("psn",        boost::program_options::value< string >(), "process serial number")
+    ("psn",        boost::program_options::value< std::string >(), "process serial number")
 #endif
     ;
 
@@ -2167,7 +2163,7 @@ void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& v
 
     // 0000659: SIGABRT on startup in boost::program_options (Boost 1.49)
     // Add some text to the constructor
-    options_description cmdline_options("Command-line options");
+    po::options_description cmdline_options("Command-line options");
     cmdline_options.add(generic).add(config).add(hidden);
 
     boost::program_options::options_description config_file_options("Config");
@@ -2210,21 +2206,21 @@ void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& v
 
     if (vm.count("response-file")) {
         // Load the file and tokenize it
-        std::ifstream ifs(vm["response-file"].as<string>().c_str());
+        std::ifstream ifs(vm["response-file"].as<std::string>().c_str());
         if (!ifs) {
             Base::Console().Error("Could no open the response file\n");
             std::stringstream str;
             str << "Could no open the response file: '"
-                << vm["response-file"].as<string>() << "'" << '\n';
+                << vm["response-file"].as<std::string>() << "'" << '\n';
             throw Base::UnknownProgramOption(str.str());
         }
         // Read the whole file into a string
-        stringstream ss;
+        std::stringstream ss;
         ss << ifs.rdbuf();
         // Split the file content
-        char_separator<char> sep(" \n\r");
-        tokenizer<char_separator<char> > tok(ss.str(), sep);
-        vector<string> args2;
+        boost::char_separator<char> sep(" \n\r");
+        boost::tokenizer<boost::char_separator<char> > tok(ss.str(), sep);
+        std::vector<std::string> args2;
         copy(tok.begin(), tok.end(), back_inserter(args2));
         // Parse the file and store the options
         store( boost::program_options::command_line_parser(args2).
@@ -2232,7 +2228,7 @@ void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& v
     }
 }
 
-void processProgramOptions(const variables_map& vm, std::map<std::string,std::string>& mConfig)
+void processProgramOptions(const po::variables_map& vm, std::map<std::string,std::string>& mConfig)
 {
     if (vm.count("version")) {
         std::stringstream str;
@@ -2260,8 +2256,8 @@ void processProgramOptions(const variables_map& vm, std::map<std::string,std::st
     }
 
     if (vm.count("module-path")) {
-        vector<string> Mods = vm["module-path"].as< vector<string> >();
-        string temp;
+        auto Mods = vm["module-path"].as< std::vector<std::string> >();
+        std::string temp;
         for (const auto & It : Mods)
             temp += It + ";";
         temp.erase(temp.end()-1);
@@ -2269,8 +2265,8 @@ void processProgramOptions(const variables_map& vm, std::map<std::string,std::st
     }
 
     if (vm.count("macro-path")) {
-        vector<string> Macros = vm["macro-path"].as< vector<string> >();
-        string temp;
+        auto Macros = vm["macro-path"].as< std::vector<std::string> >();
+        std::string temp;
         for (const auto & It : Macros)
             temp += It + ";";
         temp.erase(temp.end()-1);
@@ -2278,14 +2274,14 @@ void processProgramOptions(const variables_map& vm, std::map<std::string,std::st
     }
 
     if (vm.count("python-path")) {
-        vector<string> Paths = vm["python-path"].as< vector<string> >();
+        auto Paths = vm["python-path"].as< std::vector<std::string> >();
         for (const auto & It : Paths)
             Base::Interpreter().addPythonPath(It.c_str());
     }
 
     if (vm.count("disable-addon")) {
-        auto Addons = vm["disable-addon"].as< vector<string> >();
-        string temp;
+        auto Addons = vm["disable-addon"].as< std::vector<std::string> >();
+        std::string temp;
         for (const auto & It : Addons) {
             temp += It + ";";
         }
@@ -2294,7 +2290,7 @@ void processProgramOptions(const variables_map& vm, std::map<std::string,std::st
     }
 
     if (vm.count("input-file")) {
-        vector<string> files(vm["input-file"].as< vector<string> >());
+        auto files(vm["input-file"].as< std::vector<std::string> >());
         int OpenFileCount=0;
         for (const auto & It : files) {
 
@@ -2309,7 +2305,7 @@ void processProgramOptions(const variables_map& vm, std::map<std::string,std::st
     }
 
     if (vm.count("output")) {
-        mConfig["SaveFile"] = vm["output"].as<string>();
+        mConfig["SaveFile"] = vm["output"].as<std::string>();
     }
 
     if (vm.count("hidden")) {
@@ -2323,19 +2319,19 @@ void processProgramOptions(const variables_map& vm, std::map<std::string,std::st
 
     if (vm.count("log-file")) {
         mConfig["LoggingFile"] = "1";
-        mConfig["LoggingFileName"] = vm["log-file"].as<string>();
+        mConfig["LoggingFileName"] = vm["log-file"].as<std::string>();
     }
 
     if (vm.count("user-cfg")) {
-        mConfig["UserParameter"] = vm["user-cfg"].as<string>();
+        mConfig["UserParameter"] = vm["user-cfg"].as<std::string>();
     }
 
     if (vm.count("system-cfg")) {
-        mConfig["SystemParameter"] = vm["system-cfg"].as<string>();
+        mConfig["SystemParameter"] = vm["system-cfg"].as<std::string>();
     }
 
     if (vm.count("run-test") || vm.count("run-open")) {
-        string testCase = vm.count("run-open") ? vm["run-open"].as<string>() : vm["run-test"].as<string>();
+        std::string testCase = vm.count("run-open") ? vm["run-open"].as<std::string>() : vm["run-test"].as<std::string>();
 
         if ( "0" == testCase) {
             testCase = "TestApp.All";
@@ -2362,7 +2358,7 @@ void processProgramOptions(const variables_map& vm, std::map<std::string,std::st
     }
 
     if (vm.count("get-config")) {
-        std::string configKey = vm["get-config"].as<string>();
+        auto configKey = vm["get-config"].as<std::string>();
         std::stringstream str;
         std::map<std::string,std::string>::iterator pos;
         pos = mConfig.find(configKey);
@@ -2374,7 +2370,7 @@ void processProgramOptions(const variables_map& vm, std::map<std::string,std::st
     }
 
     if (vm.count("set-config")) {
-        std::vector<std::string> configKeyValue = vm["set-config"].as< std::vector<std::string> >();
+        auto configKeyValue = vm["set-config"].as< std::vector<std::string> >();
         for (const auto& it : configKeyValue) {
             auto pos = it.find('=');
             if (pos != std::string::npos) {
@@ -2431,7 +2427,7 @@ void Application::initConfig(int argc, char ** argv)
         }
     }
 
-    variables_map vm;
+    po::variables_map vm;
     {
         BOOST_SCOPE_EXIT_ALL(&) {
             // console-mode needs to be set (if possible) also in case parseProgramOptions
@@ -2928,9 +2924,9 @@ void Application::LoadParameters()
 
 // A helper function to simplify the main part.
 template<class T>
-ostream& operator<<(ostream& os, const vector<T>& v)
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
-    copy(v.begin(), v.end(), ostream_iterator<T>(cout, " "));
+    std::copy(v.begin(), v.end(), std::ostream_iterator<T>(std::cout, " "));
     return os;
 }
 
