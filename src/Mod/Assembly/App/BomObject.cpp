@@ -27,6 +27,7 @@
 #include <vector>
 #endif
 
+#include <boost/algorithm/string.hpp>
 #include <App/Application.h>
 #include <App/Document.h>
 #include <App/DocumentObjectGroup.h>
@@ -239,6 +240,16 @@ void BomObject::addObjectToBom(App::DocumentObject* obj, size_t row, std::string
         else if (columnName == "Quantity") {
             setCell(App::CellAddress(row, col), std::to_string(1).c_str());
         }
+        else if (boost::starts_with(columnName, ".")) {
+            // Column names that start with a dot are considered property names
+            // Extract the property name
+            std::string baseName = columnName.substr(1);
+
+            auto propertyValue = getBomPropertyValue(obj, baseName);
+            if (!propertyValue.empty()) {
+                setCell(App::CellAddress(row, col), propertyValue.c_str());
+            }
+        }
         else {
             // load custom data if any.
             for (auto& el : dataElements) {
@@ -250,6 +261,39 @@ void BomObject::addObjectToBom(App::DocumentObject* obj, size_t row, std::string
         }
         ++col;
     }
+}
+
+std::string BomObject::getBomPropertyValue(App::DocumentObject* obj, const std::string& baseName)
+{
+    App::Property* prop = obj->getPropertyByName(baseName.c_str());
+
+    if (!prop) {
+        Base::Console().Warning("Property not found: %s\n", baseName.c_str());
+        return {"N/A"};
+    }
+
+    // Only support a subset of property types for BOM
+    if (auto propStr = Base::freecad_dynamic_cast<App::PropertyString>(prop)) {
+        return propStr->getValue();
+    }
+    else if (auto propQuantity = Base::freecad_dynamic_cast<App::PropertyQuantity>(prop)) {
+        return propQuantity->getQuantityValue().getUserString();
+    }
+    else if (auto propEnum = Base::freecad_dynamic_cast<App::PropertyEnumeration>(prop)) {
+        return propEnum->getValueAsString();
+    }
+    else if (auto propFloat = Base::freecad_dynamic_cast<App::PropertyFloat>(prop)) {
+        return std::to_string(propFloat->getValue());
+    }
+    else if (auto propInt = Base::freecad_dynamic_cast<App::PropertyInteger>(prop)) {
+        return std::to_string(propInt->getValue());
+    }
+    else if (auto propBool = Base::freecad_dynamic_cast<App::PropertyBool>(prop)) {
+        return propBool->getValue() ? "True" : "False";
+    }
+
+    Base::Console().Warning("Property type not supported for: %s\n", prop->getName());
+    return {"Not supported"};
 }
 
 AssemblyObject* BomObject::getAssembly()
