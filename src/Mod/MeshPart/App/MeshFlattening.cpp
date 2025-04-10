@@ -83,25 +83,37 @@ std::vector<ColMat<double, 3>> getBoundaries(ColMat<double, 3> vertices, ColMat<
     }
 
 
-    while (neighbour_map.size() != 0) {
+    while (!neighbour_map.empty()) {
         long start_index = neighbour_map.begin()->first;
         long close_index = start_index;
-        long next_index = neighbour_map[start_index][1];
-        long temporary_next;
+        const auto& neighbours1 = neighbour_map[start_index];
+        if (neighbours1.size() < 2) {
+            break;
+        }
+        long next_index = neighbours1.at(1);
+        long temporary_next = 0L;
         edge_vector_0.clear();
         edge_vector_0.push_back(close_index);
         edge_vector_0.push_back(start_index);
         neighbour_map.erase(start_index);
         edge_vector_0.push_back(next_index);
         while (next_index != close_index) {
-            temporary_next = neighbour_map[next_index][0];
+            const auto& neighbours2 = neighbour_map[next_index];
+            if (neighbours2.empty()) {
+                break;
+            }
+            temporary_next = neighbours2.at(0);
             if (temporary_next != start_index) {
                 start_index = next_index;
                 next_index = temporary_next;
             }
             else {
                 start_index = next_index;
-                next_index = neighbour_map[start_index][1];
+                const auto& neighbours3 = neighbour_map[start_index];
+                if (neighbours3.size() < 2) {
+                    break;
+                }
+                next_index = neighbours3.at(1);
             }
             neighbour_map.erase(start_index);
             edge_vector_0.push_back(next_index);
