@@ -176,6 +176,8 @@ public:
   virtual Property *getPropertyByName(const char* name) const;
   /// get the name of a property
   virtual const char* getPropertyName(const Property* prop) const;
+  /// get the label of a property
+  virtual const char* getPropertyLabel(const Property* prop) const;
   /// get all properties of the class (including properties of the parent)
   virtual void getPropertyMap(std::map<std::string,Property*> &Map) const;
   /// get all properties of the class (including properties of the parent)

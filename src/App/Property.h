@@ -136,6 +136,12 @@ public:
      */
     static bool isValidName(const char* name);
 
+    /** Get the label of this property in the belonging container.
+     * If the property doesn't belong to a container an empty string is returned. The label is
+     * used for display purposes and can differ from the returned string of \ref getName().
+     */
+    const char* getLabel() const;
+
     std::string getFullName() const;
 
     /// Get the class name of the associated property editor item

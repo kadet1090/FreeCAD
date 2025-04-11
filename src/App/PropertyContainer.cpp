@@ -187,6 +187,11 @@ const char* PropertyContainer::getPropertyName(const Property* prop)const
     return res;
 }
 
+const char* PropertyContainer::getPropertyLabel(const Property* prop) const
+{
+    return prop->getName();
+}
+
 const PropertyData * PropertyContainer::getPropertyDataPtr(){return &propertyData;}
 const PropertyData & PropertyContainer::getPropertyData() const{return propertyData;}
 
