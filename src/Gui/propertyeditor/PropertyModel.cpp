@@ -240,15 +240,24 @@ QModelIndex PropertyModel::propertyIndexFromPath(const QStringList& path) const
     return index;
 }
 
-static void setPropertyItemName(PropertyItem* item, const char* propName, QString groupName)
+static void setPropertyItemName(PropertyItem* item,
+                                const char* propName,
+                                const char* displayName,
+                                const QString& groupName)
 {
     QString name = QString::fromLatin1(propName);
+    QString display = QString::fromLatin1(displayName);
     QString realName = name;
     if (name.size() > groupName.size() + 1 && name.startsWith(groupName + QLatin1Char('_'))) {
         name = name.right(name.size() - groupName.size() - 1);
     }
 
-    item->setPropertyName(name, realName);
+    // Is it the same pointer?
+    if (propName == displayName) {
+        display = PropertyItem::displayName(name);
+    }
+
+    item->setPropertyName(name, display, realName);
 }
 
 static PropertyItem* createPropertyItem(App::Property* prop)
@@ -378,7 +387,7 @@ void PropertyModel::findOrCreateChildren(const PropertyModel::PropertyList& prop
         groupInfo.children.push_back(item);
 
         item->setLinked(boost::ends_with(jt.first, "*"));
-        setPropertyItemName(item, prop->getName(), groupInfo.groupItem->propertyName());
+        setPropertyItemName(item, prop->getName(), prop->getLabel(), groupInfo.groupItem->propertyName());
 
         if (jt.second != item->getPropertyData()) {
             for (auto prop : item->getPropertyData()) {
@@ -548,7 +557,7 @@ void PropertyModel::appendProperty(const App::Property& _prop)
     QModelIndex midx = this->index(groupInfo.groupItem->_row, 0, QModelIndex());
     beginInsertRows(midx, row, row);
     groupInfo.groupItem->insertChild(row, item);
-    setPropertyItemName(item, prop->getName(), groupInfo.groupItem->propertyName());
+    setPropertyItemName(item, prop->getName(), prop->getLabel(), groupInfo.groupItem->propertyName());
     item->setPropertyData({prop});
     endInsertRows();
 }

@@ -189,8 +189,11 @@ public:
     PropertyItem* child(int row);
     int childCount() const;
     int columnCount() const;
+    static QString displayName(const QString& name);
     QString propertyName() const;
-    void setPropertyName(const QString& name, const QString& realName = QString());
+    void setPropertyName(const QString& name,
+                         const QString& display = QString(),
+                         const QString& realName = QString());
     void setPropertyValue(const QString&);
     virtual QVariant data(int column, int role) const;
     bool setData(const QVariant& value);

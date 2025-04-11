@@ -547,25 +547,8 @@ PropertyEditorWidget* PropertyItem::createPropertyEditorWidget(QWidget* parent) 
     return editor;
 }
 
-QString PropertyItem::propertyName() const
+QString PropertyItem::displayName(const QString& name)
 {
-    if (propName.isEmpty()) {
-        return QLatin1String(QT_TRANSLATE_NOOP("App::Property", "<empty>"));
-    }
-    return propName;
-}
-
-void PropertyItem::setPropertyName(const QString& name, const QString& realName)
-{
-    if (realName.size()) {
-        propName = realName;
-    }
-    else {
-        propName = name;
-    }
-
-    setObjectName(propName);
-
     QString display;
     bool upper = false;
     for (auto&& i : name) {
@@ -582,7 +565,27 @@ void PropertyItem::setPropertyName(const QString& name, const QString& realName)
         display += i;
     }
 
+    return display;
+}
+
+QString PropertyItem::propertyName() const
+{
+    if (propName.isEmpty()) {
+        return QLatin1String(QT_TRANSLATE_NOOP("App::Property", "<empty>"));
+    }
+    return propName;
+}
+
+void PropertyItem::setPropertyName(const QString& name,
+                                   const QString& display,
+                                   const QString& realName)
+{
+    setObjectName(realName.isEmpty() ? name : realName);
+
     propName = display;
+    if (propName.isEmpty()) {
+        propName = displayName(name);
+    }
 
     QString str = QApplication::translate("App::Property", propName.toUtf8());
     displayText = str;
