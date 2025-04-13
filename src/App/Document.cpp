@@ -1630,9 +1630,8 @@ std::vector<App::DocumentObject*> Document::readObjects(Base::XMLReader& reader)
         reader.readElement("Object");
         std::string name = reader.getName(reader.getAttribute("name"));
         DocumentObject* pObj = getObject(name.c_str());
-        if (pObj
-            && !pObj->testStatus(
-                App::PartialObject)) {  // check if this feature has been registered
+        // check if this feature has been registered
+        if (pObj && !pObj->testStatus(App::PartialObject)) {
             pObj->setStatus(ObjectStatus::Restore, true);
             try {
                 FC_TRACE("restoring " << pObj->getFullName());

@@ -1272,6 +1272,8 @@ void DrawViewSection::handleChangedPropertyType(Base::XMLReader &reader, const c
         }
         return;
     }
+
+    DrawViewPart::handleChangedPropertyType(reader, TypeName, prop);
 }
 
 // hatch file routines

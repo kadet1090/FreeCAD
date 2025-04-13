@@ -1499,6 +1499,8 @@ void DrawViewPart::handleChangedPropertyType(Base::XMLReader &reader, const char
         }
         return;
     }
+
+    DrawView::handleChangedPropertyType(reader, TypeName, prop);
 }
 
 // debugging ----------------------------------------------------------------------------
