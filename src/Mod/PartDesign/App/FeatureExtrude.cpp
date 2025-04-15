@@ -717,8 +717,8 @@ App::DocumentObjectExecReturn* FeatureExtrude::buildExtrusion(ExtrudeOptions opt
             Part::ExtrusionParameters params;
             params.dir = dir;
             params.solid = makeface;
-            params.taperAngleFwd = this->TaperAngle.getValue() * M_PI / 180.0;
-            params.taperAngleRev = this->TaperAngle2.getValue() * M_PI / 180.0;
+            params.taperAngleFwd = Base::toRadians(this->TaperAngle.getValue());
+            params.taperAngleRev = Base::toRadians(this->TaperAngle2.getValue());
             if (L2 == 0.0 && Midplane.getValue()) {
                 params.lengthFwd = L / 2;
                 params.lengthRev = L / 2;

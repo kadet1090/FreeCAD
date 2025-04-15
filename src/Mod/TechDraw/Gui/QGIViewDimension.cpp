@@ -42,6 +42,7 @@
 #include <App/Application.h>
 #include <Base/Console.h>
 #include <Base/Parameter.h>
+#include <Base/Tools.h>
 #include <Base/UnitsApi.h>
 #include <Gui/Command.h>
 #include <Mod/TechDraw/App/DrawUtil.h>
@@ -1831,9 +1832,9 @@ void QGIViewDimension::drawDistance(TechDraw::DrawViewDimension* dimension,
 
     if (dimension->AngleOverride.getValue()) {
         drawDistanceOverride(fromQtApp(linePoints.first()), fromQtApp(linePoints.second()),
-                             dimension->LineAngle.getValue() * M_PI / 180.0, labelRectangle,
+                             Base::toRadians(dimension->LineAngle.getValue()), labelRectangle,
                              standardStyle, renderExtent, flipArrows,
-                             dimension->ExtensionAngle.getValue() * M_PI / 180.0);
+                             Base::toRadians(dimension->ExtensionAngle.getValue()));
     }
     else {
         drawDistanceExecutive(fromQtApp(linePoints.extensionLineFirst()), fromQtApp(linePoints.extensionLineSecond()),

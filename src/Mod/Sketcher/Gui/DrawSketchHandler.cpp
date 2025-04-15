@@ -550,7 +550,7 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint>& suggested
 
     // Number of Degree of deviation from horizontal or vertical lines
     const double angleDev = 2;
-    const double angleDevRad = angleDev * M_PI / 180.;
+    const double angleDevRad = Base::toRadians(angleDev);
 
     AutoConstraint constr;
     constr.Type = Sketcher::None;

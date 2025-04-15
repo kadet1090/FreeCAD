@@ -48,6 +48,7 @@
 #include <Base/PlacementPy.h>
 #include <Base/QuantityPy.h>
 #include <Base/RotationPy.h>
+#include <Base/Tools.h>
 #include <Base/VectorPy.h>
 
 #include "ExpressionParser.h"
@@ -2228,7 +2229,7 @@ Py::Object FunctionExpression::evaluate(const Expression *expr, int f, const std
 
         Rotation rotation = Base::Rotation(
             Vector3d(static_cast<double>(f == MROTATEX), static_cast<double>(f == MROTATEY), static_cast<double>(f == MROTATEZ)),
-            rotationAngle.getValue() * M_PI / 180.0);
+            Base::toRadians(rotationAngle.getValue()));
         Base::Matrix4D rotationMatrix;
         rotation.getValue(rotationMatrix);
 
@@ -2426,7 +2427,7 @@ Py::Object FunctionExpression::evaluate(const Expression *expr, int f, const std
             _EXPR_THROW("Unit must be either empty or an angle.", expr);
 
         // Convert value to radians
-        value *= M_PI / 180.0;
+        value = Base::toRadians(value);
         unit = Unit();
         break;
     case ACOS:

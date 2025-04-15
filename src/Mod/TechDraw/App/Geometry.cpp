@@ -718,11 +718,11 @@ Circle::Circle(Base::Vector3d c, double r)
     gp_Circ circle;
     circle.SetAxis(axis);
     circle.SetRadius(r);
-    double angle1 = 0.0;
-    double angle2 = 360.0;
+    const double angle1 = 0.0;
+    const double angle2 = 360.0;
 
     Handle(Geom_Circle) hCircle = new Geom_Circle (circle);
-    BRepBuilderAPI_MakeEdge aMakeEdge(hCircle, angle1*(M_PI/180), angle2*(M_PI/180));
+    BRepBuilderAPI_MakeEdge aMakeEdge(hCircle, Base::toRadians(angle1), Base::toRadians(angle2));
     TopoDS_Edge edge = aMakeEdge.Edge();
     occEdge = edge;
 }
@@ -823,7 +823,7 @@ AOC::AOC(Base::Vector3d c, double r, double sAng, double eAng) : Circle()
     circle.SetRadius(r);
 
     Handle(Geom_Circle) hCircle = new Geom_Circle (circle);
-    BRepBuilderAPI_MakeEdge aMakeEdge(hCircle, sAng*(M_PI/180), eAng*(M_PI/180));
+    BRepBuilderAPI_MakeEdge aMakeEdge(hCircle, Base::toRadians(sAng), Base::toRadians(eAng));
     TopoDS_Edge edge = aMakeEdge.Edge();
     occEdge = edge;
 
@@ -1756,7 +1756,7 @@ TopoDS_Face GeometryUtils::makePerforatedFace(FacePtr bigCheese,  const std::vec
     try {
         faceShape = Part::FaceMakerCheese::makeFace(cheeseIngredients);
     }
-    catch (const Standard_Failure &e) {
+    catch (const Standard_Failure&) {
         Base::Console().Warning("Area - could not make holes in face\n");
         return flippedFace;
     }
