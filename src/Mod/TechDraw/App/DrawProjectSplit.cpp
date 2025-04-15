@@ -48,6 +48,7 @@
 
 #include <Base/Console.h>
 #include <Base/Parameter.h>
+#include <Base/Tools.h>
 
 #include "DrawProjectSplit.h"
 #include "DrawUtil.h"
@@ -345,10 +346,9 @@ std::vector<edgeSortItem> DrawProjectSplit::sortEdges(std::vector<edgeSortItem>&
 //*************************
 std::string edgeSortItem::dump()
 {
-    std::string result;
     std::stringstream builder;
     builder << "edgeSortItem - s: " << DrawUtil::formatVector(start)  << " e: " << DrawUtil::formatVector(end) <<
-                              " sa: " << startAngle * 180.0/M_PI << " ea: " << endAngle* 180.0/M_PI << " idx: " << idx;
+                              " sa: " << Base::toDegrees(startAngle) << " ea: " << Base::toDegrees(endAngle) << " idx: " << idx;
     return builder.str();
 }
 

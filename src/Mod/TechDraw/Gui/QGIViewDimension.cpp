@@ -1002,8 +1002,8 @@ void QGIViewDimension::drawSingleArc(QPainterPath& painterPath, const Base::Vect
                                  arcCenter.x + arcRadius, arcCenter.y + arcRadius)));
 
     // In arc drawing are for some reason Qt's angles counterclockwise as in our computations...
-    painterPath.arcMoveTo(qtArcRectangle, toDeg(startAngle));
-    painterPath.arcTo(qtArcRectangle, toDeg(startAngle), toDeg(endAngle - startAngle));
+    painterPath.arcMoveTo(qtArcRectangle, Base::toDegrees(startAngle));
+    painterPath.arcTo(qtArcRectangle, Base::toDegrees(startAngle), Base::toDegrees(endAngle - startAngle));
 }
 
 void QGIViewDimension::drawMultiArc(QPainterPath& painterPath, const Base::Vector2d& arcCenter,
@@ -2455,11 +2455,11 @@ void QGIViewDimension::setPens()
     aHead2->setWidth(m_lineWidth);
 }
 
-double QGIViewDimension::toDeg(double angle) { return angle * 180 / M_PI; }
+double QGIViewDimension::toDeg(double angle) { return Base::toDegrees(angle); }
 
 double QGIViewDimension::toQtRad(double angle) { return -angle; }
 
-double QGIViewDimension::toQtDeg(double angle) { return -angle * 180.0 / M_PI; }
+double QGIViewDimension::toQtDeg(double angle) { return Base::toDegrees(-angle); }
 
 void QGIViewDimension::makeMarkC(double xPos, double yPos, QColor color) const
 {

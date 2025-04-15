@@ -47,6 +47,8 @@
 # include <Inventor/misc/SoState.h>
 #endif // _PreComp_
 
+#include <Base/Tools.h>
+
 #include <Gui/BitmapFactory.h>
 #include <Gui/Tools.h>
 
@@ -1678,7 +1680,7 @@ void SoDatumLabel::drawText(SoState *state, int srcw, int srch, float angle, con
 
     // Apply a rotation and translation matrix
     glTranslatef(textOffset[0], textOffset[1], textOffset[2]);
-    glRotatef((GLfloat) angle * 180 / M_PI, 0,0,1);
+    glRotatef(Base::toDegrees<GLfloat>(angle), 0,0,1);
     glBegin(GL_QUADS);
 
     glColor3f(1.F, 1.F, 1.F);

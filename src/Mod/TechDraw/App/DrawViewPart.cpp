@@ -987,7 +987,7 @@ double DrawViewPart::getSizeAlongVector(Base::Vector3d alignmentVector)
     if (getEdgeCompound().IsNull()) {
         return 1.0;
     }
-    TopoDS_Shape rotatedShape = ShapeUtils::rotateShape(getEdgeCompound(), OXYZ, alignmentAngle * 180.0 / M_PI);
+    TopoDS_Shape rotatedShape = ShapeUtils::rotateShape(getEdgeCompound(), OXYZ, Base::toDegrees(alignmentAngle));
     Bnd_Box shapeBox;
     shapeBox.SetGap(0.0);
     BRepBndLib::AddOptimal(rotatedShape, shapeBox);

@@ -744,9 +744,9 @@ void Rotation::getYawPitchRoll(double& y, double& p, double& r) const
     }
 
     // convert to degree
-    y = (y / D_PI) * 180;
-    p = (p / D_PI) * 180;
-    r = (r / D_PI) * 180;
+    y = toDegrees(y);
+    p = toDegrees(p);
+    r = toDegrees(r);
 }
 
 bool Rotation::isSame(const Rotation& q) const
@@ -1082,7 +1082,7 @@ void Rotation::getEulerAngles(EulerSequence theOrder,
         theGamma = aFirst;
     }
 
-    theAlpha *= 180.0 / D_PI;
-    theBeta *= 180.0 / D_PI;
-    theGamma *= 180.0 / D_PI;
+    theAlpha = Base::toDegrees(theAlpha);
+    theBeta = Base::toDegrees(theBeta);
+    theGamma = Base::toDegrees(theGamma);
 }

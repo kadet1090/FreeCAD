@@ -41,6 +41,7 @@
 #endif
 
 #include <Base/Console.h>
+#include <Base/Tools.h>
 
 #include "EdgeWalker.h"
 #include "DrawUtil.h"
@@ -552,11 +553,10 @@ std::size_t ewWireList::size(void)
 
 std::string embedItem::dump()
 {
-    std::string result;
     std::stringstream builder;
     builder << "embedItem - vertex: " << iVertex  << " incidenceList: ";
     for (auto& ii : incidenceList) {
-        builder << " e:" << ii.iEdge << "/a:" << (ii.angle * (180.0/M_PI)) << "/ed:" << ii.eDesc;
+        builder << " e:" << ii.iEdge << "/a:" << Base::toDegrees(ii.angle) << "/ed:" << ii.eDesc;
     }
     return builder.str();
 }
