@@ -56,10 +56,10 @@ MeasureArea::~MeasureArea() = default;
 bool MeasureArea::isSupported(App::MeasureElementType type)
 {
     // clang-format off
-    // TODO: Also support Volume?
     return (type == App::MeasureElementType::PLANE) ||
            (type == App::MeasureElementType::CYLINDER) ||
-           (type == App::MeasureElementType::SURFACE);
+           (type == App::MeasureElementType::SURFACE) ||
+           (type == App::MeasureElementType::VOLUME);
     // clang-format on
 }
 

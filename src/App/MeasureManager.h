@@ -52,7 +52,7 @@ enum class MeasureElementType
     PLANE,
     CYLINDER,
     SURFACE,
-    Volume,
+    VOLUME,
 };
 
 
