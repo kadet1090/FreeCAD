@@ -157,7 +157,7 @@ App::MeasureElementType PartMeasureTypeCb(App::DocumentObject* ob, const char* s
             switch (surface.GetType()) {
                 case GeomAbs_Cylinder: { return App::MeasureElementType::CYLINDER; }
                 case GeomAbs_Plane: { return App::MeasureElementType::PLANE; }
-                default: { return App::MeasureElementType::INVALID; }
+                default: { return App::MeasureElementType::SURFACE; }
             }
         }
         case TopAbs_SOLID: {
