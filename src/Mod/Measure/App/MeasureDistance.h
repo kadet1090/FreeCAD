@@ -63,7 +63,6 @@ class MeasureExport MeasureDistance
 public:
     /// Constructor
     MeasureDistance();
-    ~MeasureDistance() override;
 
     App::PropertyLinkSub Element1;
     App::PropertyLinkSub Element2;
@@ -83,15 +82,16 @@ public:
         return "MeasureGui::ViewProviderMeasureDistance";
     }
 
+    static bool isSupported(App::MeasureElementType type);
     static bool isValidSelection(const App::MeasureSelection& selection);
     static bool isPrioritizedSelection(const App::MeasureSelection& selection);
     void parseSelection(const App::MeasureSelection& selection) override;
 
-    std::vector<std::string> getInputProps() override
+    std::vector<std::string> getInputProps() const override
     {
         return {"Element1", "Element2"};
     }
-    App::Property* getResultProp() override
+    const App::Property* getResultProp() const override
     {
         return &this->Distance;
     }
@@ -120,7 +120,6 @@ class MeasureExport MeasureDistanceDetached: public Measure::MeasureBase
 public:
     /// Constructor
     MeasureDistanceDetached();
-    ~MeasureDistanceDetached() override;
 
     App::PropertyDistance Distance;
     App::PropertyDistance DistanceX;
@@ -141,11 +140,11 @@ public:
     static bool isValidSelection(const App::MeasureSelection& selection);
     void parseSelection(const App::MeasureSelection& selection) override;
 
-    std::vector<std::string> getInputProps() override
+    std::vector<std::string> getInputProps() const override
     {
         return {"Position1", "Position2"};
     }
-    App::Property* getResultProp() override
+    const App::Property* getResultProp() const override
     {
         return &this->Distance;
     }

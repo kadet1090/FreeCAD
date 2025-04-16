@@ -65,19 +65,22 @@ using namespace Part;
 // From: https://github.com/Celemation/FreeCAD/blob/joel_selection_summary_demo/src/Gui/Selection/SelectionSummary.cpp
 
 // Should work with edges and wires
-static float getLength(TopoDS_Shape& wire){
+static double getLength(const TopoDS_Shape& wire)
+{
     GProp_GProps gprops;
     BRepGProp::LinearProperties(wire, gprops);
     return gprops.Mass();
 }
 
-static float getFaceArea(TopoDS_Shape& face){
+static double getFaceArea(const TopoDS_Shape& face)
+{
     GProp_GProps gprops;
     BRepGProp::SurfaceProperties(face, gprops);
     return gprops.Mass();
 }
 
-static float getRadius(TopoDS_Shape& edge){
+static double getRadius(const TopoDS_Shape& edge)
+{
     // gprops.Mass() would be the circumference (length) of the circle (arc)
     if (edge.ShapeType() == TopAbs_EDGE) {
         BRepAdaptor_Curve adapt(TopoDS::Edge(edge));
@@ -193,7 +196,7 @@ Part::VectorAdapter buildAdapter(const App::SubObjectT& subject)
         // failure here on loading document with existing measurement.
         Base::Console().Message("Part::buildAdapter did not retrieve shape for %s, %s\n",
                                 subject.getObjectName(), subject.getElementName());
-        return Part::VectorAdapter();
+        return {};
     }
     TopAbs_ShapeEnum shapeType = shape.ShapeType();
 

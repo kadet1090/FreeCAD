@@ -60,31 +60,32 @@ MeasureRadius::MeasureRadius()
                       "Radius of selection");
 }
 
-MeasureRadius::~MeasureRadius() = default;
+bool MeasureRadius::isSupported(App::MeasureElementType type)
+{
+    // clang-format off
+    return (type == App::MeasureElementType::CIRCLE) ||
+           (type == App::MeasureElementType::ARC);
+    // clang-format on
+}
 
 //! validate all the object+subelement pairs in the selection. Must be circle or arc
 //! and have a geometry handler available.  We only calculate radius if there is a
 //! single valid item in the selection
 bool MeasureRadius::isValidSelection(const App::MeasureSelection& selection)
 {
-
-    if (selection.empty() || selection.size() > 1) {
+    if (selection.size() != 1) {
         // too few or too many selections
         return false;
     }
 
-    auto element = selection.front();
-    auto type = App::MeasureManager::getMeasureElementType(element);
+    return std::all_of(selection.begin(), selection.end(), [](const auto& element) {
+        auto type = App::MeasureManager::getMeasureElementType(element);
+        if (type == App::MeasureElementType::INVALID) {
+            return false;
+        }
 
-    if (type == App::MeasureElementType::INVALID) {
-        return false;
-    }
-
-    if (type != App::MeasureElementType::CIRCLE && type != App::MeasureElementType::ARC) {
-        return false;
-    }
-
-    return true;
+        return isSupported(type);
+    });
 }
 
 //! return true if the selection is particularly interesting to MeasureRadius.
@@ -95,16 +96,9 @@ bool MeasureRadius::isPrioritizedSelection(const App::MeasureSelection& selectio
         return false;
     }
 
-    auto element = selection.front();
-    auto type = App::MeasureManager::getMeasureElementType(element);
-
-    if (type == App::MeasureElementType::CIRCLE || type == App::MeasureElementType::ARC) {
-        return true;
-    }
-
-    return false;
+    auto type = App::MeasureManager::getMeasureElementType(selection.front());
+    return isSupported(type);
 }
-
 
 //! Set properties from first item in selection. assumes a valid selection.
 void MeasureRadius::parseSelection(const App::MeasureSelection& selection)
@@ -116,7 +110,6 @@ void MeasureRadius::parseSelection(const App::MeasureSelection& selection)
     Element.setValue(objT.getObject(), subElementList);
 }
 
-
 App::DocumentObjectExecReturn* MeasureRadius::execute()
 {
     auto info = getMeasureInfoFirst();
@@ -127,7 +120,6 @@ App::DocumentObjectExecReturn* MeasureRadius::execute()
     Radius.setValue(info->radius);
     return DocumentObject::StdReturn;
 }
-
 
 void MeasureRadius::onChanged(const App::Property* prop)
 {
@@ -143,16 +135,14 @@ void MeasureRadius::onChanged(const App::Property* prop)
     MeasureBase::onChanged(prop);
 }
 
-
 //! return a placement (location + orientation) for the first element
-Base::Placement MeasureRadius::getPlacement()
+Base::Placement MeasureRadius::getPlacement() const
 {
     auto loc = getMeasureInfoFirst()->pointOnCurve;
     auto p = Base::Placement();
     p.setPosition(loc);
     return p;
 }
-
 
 //! return the pointOnCurve element in MeasureRadiusInfo for the first element
 Base::Vector3d MeasureRadius::getPointOnCurve() const

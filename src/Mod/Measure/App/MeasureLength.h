@@ -44,7 +44,6 @@ class MeasureExport MeasureLength: public Measure::MeasureBaseExtendable<Part::M
 public:
     /// Constructor
     MeasureLength();
-    ~MeasureLength() override;
 
     App::PropertyLinkSubList Elements;
     App::PropertyDistance Length;
@@ -56,20 +55,21 @@ public:
         return "MeasureGui::ViewProviderMeasureLength";
     }
 
+    static bool isSupported(App::MeasureElementType type);
     static bool isValidSelection(const App::MeasureSelection& selection);
     void parseSelection(const App::MeasureSelection& selection) override;
 
-    std::vector<std::string> getInputProps() override
+    std::vector<std::string> getInputProps() const override
     {
         return {"Elements"};
     }
-    App::Property* getResultProp() override
+    const App::Property* getResultProp() const override
     {
         return &this->Length;
     }
 
     // Return a placement for the viewprovider, just use the first element for now
-    Base::Placement getPlacement() override;
+    Base::Placement getPlacement() const override;
 
     // Return the object we are measuring
     std::vector<App::DocumentObject*> getSubject() const override;

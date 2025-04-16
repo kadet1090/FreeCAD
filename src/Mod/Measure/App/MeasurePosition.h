@@ -48,7 +48,6 @@ class MeasureExport MeasurePosition
 public:
     /// Constructor
     MeasurePosition();
-    ~MeasurePosition() override;
 
     App::PropertyLinkSub Element;
     App::PropertyPosition Position;
@@ -60,20 +59,21 @@ public:
         return "MeasureGui::ViewProviderMeasurePosition";
     }
 
+    static bool isSupported(App::MeasureElementType type);
     static bool isValidSelection(const App::MeasureSelection& selection);
     void parseSelection(const App::MeasureSelection& selection) override;
 
-    std::vector<std::string> getInputProps() override
+    std::vector<std::string> getInputProps() const override
     {
         return {"Element"};
     }
-    App::Property* getResultProp() override
+    const App::Property* getResultProp() const override
     {
         return &this->Position;
     }
-    QString getResultString() override;
+    QString getResultString() const override;
 
-    Base::Placement getPlacement() override;
+    Base::Placement getPlacement() const override;
 
     // Return the object we are measuring
     std::vector<App::DocumentObject*> getSubject() const override;

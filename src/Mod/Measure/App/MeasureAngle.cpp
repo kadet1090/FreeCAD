@@ -62,8 +62,14 @@ MeasureAngle::MeasureAngle()
     Angle.setUnit(Base::Unit::Angle);
 }
 
-MeasureAngle::~MeasureAngle() = default;
-
+bool MeasureAngle::isSupported(App::MeasureElementType type)
+{
+    // clang-format off
+    return (type == App::MeasureElementType::LINE) ||
+           (type == App::MeasureElementType::PLANE) ||
+           (type == App::MeasureElementType::LINESEGMENT);
+    // clang-format on
+}
 
 bool MeasureAngle::isValidSelection(const App::MeasureSelection& selection)
 {
@@ -71,19 +77,14 @@ bool MeasureAngle::isValidSelection(const App::MeasureSelection& selection)
         return false;
     }
 
-    for (auto element : selection) {
+    return std::all_of(selection.begin(), selection.end(), [](const auto& element) {
         auto type = App::MeasureManager::getMeasureElementType(element);
-
         if (type == App::MeasureElementType::INVALID) {
             return false;
         }
 
-        if (!(type == App::MeasureElementType::LINE || type == App::MeasureElementType::PLANE
-              || type == App::MeasureElementType::LINESEGMENT)) {
-            return false;
-        }
-    }
-    return true;
+        return isSupported(type);
+    });
 }
 
 bool MeasureAngle::isPrioritizedSelection(const App::MeasureSelection& selection)
@@ -107,11 +108,9 @@ bool MeasureAngle::isPrioritizedSelection(const App::MeasureSelection& selection
     Base::Vector3d vec2;
     getVec(*ob2, sub2, vec2);
 
-
     double angle = std::fmod(vec1.GetAngle(vec2), D_PI);
     return angle > Base::Precision::Angular();
 }
-
 
 void MeasureAngle::parseSelection(const App::MeasureSelection& selection)
 {
@@ -130,7 +129,6 @@ void MeasureAngle::parseSelection(const App::MeasureSelection& selection)
     const std::vector<std::string> elems2 = {objT2.getSubName()};
     Element2.setValue(ob2, elems2);
 }
-
 
 bool MeasureAngle::getVec(App::DocumentObject& ob, std::string& subName, Base::Vector3d& vecOut)
 {
@@ -157,9 +155,8 @@ Base::Vector3d MeasureAngle::getLoc(App::DocumentObject& ob, std::string& subNam
     return angleInfo->position;
 }
 
-gp_Vec MeasureAngle::vector1()
+gp_Vec MeasureAngle::vector1() const
 {
-
     App::DocumentObject* ob = Element1.getValue();
     std::vector<std::string> subs = Element1.getSubValues();
 
@@ -169,24 +166,24 @@ gp_Vec MeasureAngle::vector1()
 
     Base::Vector3d vec;
     getVec(*ob, subs.at(0), vec);
-    return gp_Vec(vec.x, vec.y, vec.z);
+    return {vec.x, vec.y, vec.z};
 }
 
-gp_Vec MeasureAngle::vector2()
+gp_Vec MeasureAngle::vector2() const
 {
     App::DocumentObject* ob = Element2.getValue();
     std::vector<std::string> subs = Element2.getSubValues();
 
     if (!ob || !ob->isValid() || subs.empty()) {
-        return gp_Vec();
+        return {};
     }
 
     Base::Vector3d vec;
     getVec(*ob, subs.at(0), vec);
-    return gp_Vec(vec.x, vec.y, vec.z);
+    return {vec.x, vec.y, vec.z};
 }
 
-gp_Vec MeasureAngle::location1()
+gp_Vec MeasureAngle::location1() const
 {
 
     App::DocumentObject* ob = Element1.getValue();
@@ -198,7 +195,8 @@ gp_Vec MeasureAngle::location1()
     auto temp = getLoc(*ob, subs.at(0));
     return {temp.x, temp.y, temp.z};
 }
-gp_Vec MeasureAngle::location2()
+
+gp_Vec MeasureAngle::location2() const
 {
     App::DocumentObject* ob = Element2.getValue();
     std::vector<std::string> subs = Element2.getSubValues();

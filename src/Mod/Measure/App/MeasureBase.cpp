@@ -45,8 +45,7 @@ MeasureBase::MeasureBase()
         "Visual placement of the measurement");
 }
 
-
-PyObject* MeasureBase::getPyObject(void)
+PyObject* MeasureBase::getPyObject()
 {
     if (PythonObject.is(Py::_None())) {
         // ref counter is set to 1
@@ -63,7 +62,7 @@ Py::Object MeasureBase::getProxyObject() const
         return Py::None();
     }
     return dynamic_cast<App::PropertyPythonObject*>(prop)->getValue();
-};
+}
 
 std::vector<App::DocumentObject*> MeasureBase::getSubject() const
 {
@@ -92,8 +91,7 @@ std::vector<App::DocumentObject*> MeasureBase::getSubject() const
     }
 
     return retVec;
-};
-
+}
 
 void MeasureBase::parseSelection(const App::MeasureSelection& selection)
 {
@@ -120,8 +118,7 @@ void MeasureBase::parseSelection(const App::MeasureSelection& selection)
     }
 }
 
-
-std::vector<std::string> MeasureBase::getInputProps()
+std::vector<std::string> MeasureBase::getInputProps() const
 {
     Base::PyGILStateLocker lock;
     Py::Object proxy = getProxyObject();
@@ -150,8 +147,7 @@ std::vector<std::string> MeasureBase::getInputProps()
     return props;
 }
 
-
-QString MeasureBase::getResultString()
+QString MeasureBase::getResultString() const
 {
     Py::Object proxy = getProxyObject();
     Base::PyGILStateLocker lock;
@@ -169,23 +165,23 @@ QString MeasureBase::getResultString()
         catch (Py::Exception&) {
             Base::PyException e;
             e.ReportException();
-            return QString();
+            return {};
         }
         return QString::fromStdString(ret.as_string());
     }
 
-    App::Property* prop = getResultProp();
+    const App::Property* prop = getResultProp();
     if (prop == nullptr) {
-        return QString();
+        return {};
     }
 
     if (prop->isDerivedFrom<App::PropertyQuantity>()) {
         return QString::fromStdString(
-            static_cast<App::PropertyQuantity*>(prop)->getQuantityValue().getUserString());
+            static_cast<const App::PropertyQuantity*>(prop)->getQuantityValue().getUserString());
     }
 
 
-    return QString();
+    return {};
 }
 
 void MeasureBase::onDocumentRestored()
@@ -194,7 +190,7 @@ void MeasureBase::onDocumentRestored()
     recompute();
 }
 
-Base::Placement MeasureBase::getPlacement()
+Base::Placement MeasureBase::getPlacement() const
 {
     return this->Placement.getValue();
 }
@@ -207,7 +203,7 @@ namespace App
 /// @cond DOXERR
 PROPERTY_SOURCE_TEMPLATE(Measure::MeasurePython, Measure::MeasureBase)
 template<>
-const char* Measure::MeasurePython::getViewProviderName(void) const
+const char* Measure::MeasurePython::getViewProviderName() const
 {
     return "MeasureGui::ViewProviderMeasure";
 }

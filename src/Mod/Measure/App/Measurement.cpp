@@ -58,8 +58,8 @@ using namespace Part;
 TYPESYSTEM_SOURCE(Measure::Measurement, Base::BaseClass)
 
 Measurement::Measurement()
+    : measureType {MeasureType::Invalid}
 {
-    measureType = MeasureType::Invalid;
     References3D.setScope(App::LinkScope::Global);
 }
 
@@ -73,7 +73,7 @@ void Measurement::clear()
     measureType = MeasureType::Invalid;
 }
 
-bool Measurement::has3DReferences()
+bool Measurement::has3DReferences() const
 {
     return (References3D.getSize() > 0);
 }
@@ -99,15 +99,15 @@ int Measurement::addReference3D(App::DocumentObject* obj, const char* subName)
     return References3D.getSize();
 }
 
-MeasureType Measurement::findType()
+MeasureType Measurement::findType() const
 {
     const std::vector<App::DocumentObject*>& objects = References3D.getValues();
     const std::vector<std::string>& subElements = References3D.getSubValues();
 
-    std::vector<App::DocumentObject*>::const_iterator obj = objects.begin();
-    std::vector<std::string>::const_iterator subEl = subElements.begin();
+    auto obj = objects.begin();
+    auto subEl = subElements.begin();
 
-    MeasureType mode;
+    MeasureType mode {};
 
     int verts = 0;
     int edges = 0;
@@ -274,7 +274,7 @@ MeasureType Measurement::findType()
     return mode;
 }
 
-MeasureType Measurement::getType()
+MeasureType Measurement::getType() const
 {
     return measureType;
 }
@@ -312,8 +312,8 @@ double Measurement::length() const
                  || measureType == MeasureType::TwoLines || measureType == MeasureType::Circle) {
 
             // Iterate through edges and calculate each length
-            std::vector<App::DocumentObject*>::const_iterator obj = objects.begin();
-            std::vector<std::string>::const_iterator subEl = subElements.begin();
+            auto obj = objects.begin();
+            auto subEl = subElements.begin();
 
             for (; obj != objects.end(); ++obj, ++subEl) {
 
@@ -455,14 +455,14 @@ double Measurement::angle(const Base::Vector3d& /*param*/) const
     // TODO: do these references arrive as obj+sub pairs or as a struct of obj + [subs]?
     const std::vector<App::DocumentObject*>& objects = References3D.getValues();
     const std::vector<std::string>& subElements = References3D.getSubValues();
-    int numRefs = objects.size();
+    std::size_t numRefs = objects.size();
     if (numRefs == 0) {
         throw Base::RuntimeError("No references available for angle measurement");
     }
-    else if (measureType == MeasureType::Invalid) {
+    if (measureType == MeasureType::Invalid) {
         throw Base::RuntimeError("MeasureType is Invalid for angle measurement");
     }
-    else if (measureType == MeasureType::TwoLines) {
+    if (measureType == MeasureType::TwoLines) {
         // Only case that is supported is edge to edge
         // The angle between two skew lines is measured by the angle between one line (A)
         // and a line (B) with the direction of the second through a point on the first line.
@@ -489,15 +489,13 @@ double Measurement::angle(const Base::Vector3d& /*param*/) const
                 double aRadr = l1.Angle(l2r);
                 return Base::toDegrees<double>(std::min(aRad, aRadr));
             }
-            else {
-                throw Base::RuntimeError("Measurement references must both be lines");
-            }
+
+            throw Base::RuntimeError("Measurement references must both be lines");
         }
-        else {
-            throw Base::RuntimeError("Can not compute angle measurement - too many references");
-        }
+
+        throw Base::RuntimeError("Can not compute angle measurement - too many references");
     }
-    else if (measureType == MeasureType::Points) {
+    if (measureType == MeasureType::Points) {
         // NOTE: we are calculating the 3d angle here, not the projected angle
         // ASSUMPTION: the references are in end-apex-end order
         if (numRefs == 3) {
@@ -549,10 +547,10 @@ double Measurement::radius() const
         if (sf.GetType() == GeomAbs_Cylinder) {
             return sf.Cylinder().Radius();
         }
-        else if (sf.GetType() == GeomAbs_Sphere) {
+        if (sf.GetType() == GeomAbs_Sphere) {
             return sf.Sphere().Radius();
         }
-        else if (sf.GetType() == GeomAbs_Torus) {
+        if (sf.GetType() == GeomAbs_Torus) {
             return sf.Torus().MinorRadius();
         }
     }
@@ -726,8 +724,8 @@ Base::Vector3d Measurement::massCenter() const
 
         if (measureType == MeasureType::Volumes) {
             // Iterate through edges and calculate each length
-            std::vector<App::DocumentObject*>::const_iterator obj = objects.begin();
-            std::vector<std::string>::const_iterator subEl = subElements.begin();
+            auto obj = objects.begin();
+            auto subEl = subElements.begin();
 
             for (; obj != objects.end(); ++obj, ++subEl) {
 
@@ -747,9 +745,8 @@ Base::Vector3d Measurement::massCenter() const
 
             return Base::Vector3d(cog.X(), cog.Y(), cog.Z());
         }
-        else {
-            Base::Console().Error("Measurement::massCenter - measureType is not recognized\n");
-        }
+
+        Base::Console().Error("Measurement::massCenter - measureType is not recognized\n");
     }
     return result;
 }

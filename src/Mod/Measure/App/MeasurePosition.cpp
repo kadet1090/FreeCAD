@@ -53,35 +53,32 @@ MeasurePosition::MeasurePosition()
                       "The absolute position");
 }
 
-MeasurePosition::~MeasurePosition() = default;
-
+bool MeasurePosition::isSupported(App::MeasureElementType type)
+{
+    return (type == App::MeasureElementType::POINT);
+}
 
 bool MeasurePosition::isValidSelection(const App::MeasureSelection& selection)
 {
-
-    if (selection.empty() || selection.size() > 1) {
+    if (selection.size() != 1) {
         return false;
     }
 
-    for (auto element : selection) {
+    return std::all_of(selection.begin(), selection.end(), [](const auto& element) {
         auto type = App::MeasureManager::getMeasureElementType(element);
-
         if (type == App::MeasureElementType::INVALID) {
             return false;
         }
 
-        if (type != App::MeasureElementType::POINT) {
-            return false;
-        }
-    }
-    return true;
+        return isSupported(type);
+    });
 }
 
 void MeasurePosition::parseSelection(const App::MeasureSelection& selection)
 {
     // Set properties from selection, method is only invoked when isValid Selection returns true
 
-    for (auto element : selection) {
+    for (const auto& element : selection) {
         auto objT = element.object;
 
         std::vector<std::string> subElements {objT.getSubName()};
@@ -89,7 +86,6 @@ void MeasurePosition::parseSelection(const App::MeasureSelection& selection)
         break;
     }
 }
-
 
 App::DocumentObjectExecReturn* MeasurePosition::execute()
 {
@@ -108,7 +104,6 @@ App::DocumentObjectExecReturn* MeasurePosition::execute()
     return DocumentObject::StdReturn;
 }
 
-
 void MeasurePosition::onChanged(const App::Property* prop)
 {
     if (isRestoring() || isRemoving()) {
@@ -122,10 +117,9 @@ void MeasurePosition::onChanged(const App::Property* prop)
     DocumentObject::onChanged(prop);
 }
 
-
-QString MeasurePosition::getResultString()
+QString MeasurePosition::getResultString() const
 {
-    App::Property* prop = this->getResultProp();
+    const App::Property* prop = this->getResultProp();
     if (prop == nullptr) {
         return {};
     }
@@ -148,14 +142,12 @@ QString MeasurePosition::getResultString()
     return text;
 }
 
-
-Base::Placement MeasurePosition::getPlacement()
+Base::Placement MeasurePosition::getPlacement() const
 {
     Base::Placement placement;
     placement.setPosition(Position.getValue());
     return placement;
 }
-
 
 //! Return the object we are measuring
 //! used by the viewprovider in determining visibility

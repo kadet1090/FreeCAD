@@ -47,7 +47,6 @@ class MeasureExport MeasureRadius: public Measure::MeasureBaseExtendable<Part::M
 public:
     /// Constructor
     MeasureRadius();
-    ~MeasureRadius() override;
 
     App::PropertyLinkSub Element;
     App::PropertyDistance Radius;
@@ -58,21 +57,22 @@ public:
         return "MeasureGui::ViewProviderMeasureRadius";
     }
 
+    static bool isSupported(App::MeasureElementType type);
     static bool isValidSelection(const App::MeasureSelection& selection);
     static bool isPrioritizedSelection(const App::MeasureSelection& selection);
     void parseSelection(const App::MeasureSelection& selection) override;
 
-    std::vector<std::string> getInputProps() override
+    std::vector<std::string> getInputProps() const override
     {
         return {"Element"};
     }
-    App::Property* getResultProp() override
+    const App::Property* getResultProp() const override
     {
         return &this->Radius;
     }
 
     // Return a placement for the viewprovider, just use the first element for now
-    Base::Placement getPlacement() override;
+    Base::Placement getPlacement() const override;
     // Return a point on curve for the viewprovider
     Base::Vector3d getPointOnCurve() const;
 

@@ -52,7 +52,6 @@ class MeasureExport MeasureBase: public App::DocumentObject
 
 public:
     MeasureBase();
-    ~MeasureBase() override = default;
 
     App::PropertyPlacement Placement;
 
@@ -65,14 +64,14 @@ public:
     virtual void parseSelection(const App::MeasureSelection& selection);
 
 
-    virtual QString getResultString();
+    virtual QString getResultString() const;
 
-    virtual std::vector<std::string> getInputProps();
-    virtual App::Property* getResultProp()
+    virtual std::vector<std::string> getInputProps() const;
+    virtual const App::Property* getResultProp() const
     {
         return {};
     }
-    virtual Base::Placement getPlacement();
+    virtual Base::Placement getPlacement() const;
 
     // Return the objects that are measured
     virtual std::vector<App::DocumentObject*> getSubject() const;
@@ -98,7 +97,7 @@ class MeasureExport MeasureBaseExtendable: public MeasureBase
 public:
     static void addGeometryHandler(const std::string& module, GeometryHandler callback)
     {
-        _mGeometryHandlers[module] = callback;
+        _mGeometryHandlers[module] = std::move(callback);
     }
 
     static GeometryHandler getGeometryHandler(const std::string& module)
@@ -120,8 +119,7 @@ public:
             return nullptr;
         }
 
-        if (sub->isDerivedFrom<App::Link>()) {
-            auto link = static_cast<App::Link*>(sub);
+        if (auto link = dynamic_cast<App::Link*>(sub)) {
             sub = link->getLinkedObject(true);
         }
 
@@ -140,7 +138,7 @@ public:
     }
 
     static void addGeometryHandlers(const std::vector<std::string>& modules,
-                                    GeometryHandler callback)
+                                    const GeometryHandler& callback)
     {
         // TODO: this will replace a callback with a later one.  Should we check that there isn't
         // already a handler defined for this module?
@@ -156,7 +154,7 @@ public:
     }
 
 private:
-    inline static HandlerMap _mGeometryHandlers = MeasureBaseExtendable<T>::HandlerMap();
+    inline static HandlerMap _mGeometryHandlers = MeasureBaseExtendable<T>::HandlerMap();  // NOLINT
 };
 
 

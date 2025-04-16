@@ -71,14 +71,14 @@ public:
     ~Measurement() override;
 
     void clear();
-    bool has3DReferences();
+    bool has3DReferences() const;
 
     /// Add a reference
     int addReference3D(App::DocumentObject* obj, const std::string& subName);
     int addReference3D(App::DocumentObject* obj, const char* subName);
 
-    MeasureType getType();
-    MeasureType findType();
+    MeasureType getType() const;
+    MeasureType findType() const;
 
     // from base class
     PyObject* getPyObject() override;
@@ -94,8 +94,7 @@ public:
     double radius() const;
 
     // Calculates the angle between two edges
-    double
-    angle(const Base::Vector3d& param = Base::Vector3d(0, 0, 0)) const;  // param is never used???
+    double angle(const Base::Vector3d& param = Base::Vector3d()) const;
 
     // Calculate the center of mass
     Base::Vector3d massCenter() const;

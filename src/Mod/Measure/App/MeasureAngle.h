@@ -48,7 +48,6 @@ class MeasureExport MeasureAngle: public Measure::MeasureBaseExtendable<Part::Me
 public:
     /// Constructor
     MeasureAngle();
-    ~MeasureAngle() override;
 
     App::PropertyLinkSub Element1;
     App::PropertyLinkSub Element2;
@@ -61,15 +60,16 @@ public:
         return "MeasureGui::ViewProviderMeasureAngle";
     }
 
+    static bool isSupported(App::MeasureElementType type);
     static bool isValidSelection(const App::MeasureSelection& selection);
     static bool isPrioritizedSelection(const App::MeasureSelection& selection);
     void parseSelection(const App::MeasureSelection& selection) override;
 
-    std::vector<std::string> getInputProps() override
+    std::vector<std::string> getInputProps() const override
     {
         return {"Element1", "Element2"};
     }
-    App::Property* getResultProp() override
+    const App::Property* getResultProp() const override
     {
         return &this->Angle;
     }
@@ -79,15 +79,15 @@ public:
 
 
     static bool getVec(App::DocumentObject& ob, std::string& subName, Base::Vector3d& vecOut);
-    Base::Vector3d getLoc(App::DocumentObject& ob, std::string& subName);
+    static Base::Vector3d getLoc(App::DocumentObject& ob, std::string& subName);
 
     // Orientation Vectors
-    gp_Vec vector1();
-    gp_Vec vector2();
+    gp_Vec vector1() const;
+    gp_Vec vector2() const;
 
     // Location Vectors
-    gp_Vec location1();
-    gp_Vec location2();
+    gp_Vec location1() const;
+    gp_Vec location2() const;
 
 private:
     void onChanged(const App::Property* prop) override;

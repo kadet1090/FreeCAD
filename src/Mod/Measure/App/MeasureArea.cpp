@@ -51,8 +51,6 @@ MeasureArea::MeasureArea()
                       "Area of element");
 }
 
-MeasureArea::~MeasureArea() = default;
-
 bool MeasureArea::isSupported(App::MeasureElementType type)
 {
     // clang-format off
@@ -65,23 +63,18 @@ bool MeasureArea::isSupported(App::MeasureElementType type)
 
 bool MeasureArea::isValidSelection(const App::MeasureSelection& selection)
 {
-
     if (selection.empty()) {
         return false;
     }
 
-    for (auto element : selection) {
+    return std::all_of(selection.begin(), selection.end(), [](const auto& element) {
         auto type = App::MeasureManager::getMeasureElementType(element);
-
         if (type == App::MeasureElementType::INVALID) {
             return false;
         }
 
-        if (!isSupported(type)) {
-            return false;
-        }
-    }
-    return true;
+        return isSupported(type);
+    });
 }
 
 void MeasureArea::parseSelection(const App::MeasureSelection& selection)
@@ -91,7 +84,7 @@ void MeasureArea::parseSelection(const App::MeasureSelection& selection)
     std::vector<App::DocumentObject*> objects;
     std::vector<std::string> subElements;
 
-    for (auto element : selection) {
+    for (const auto& element : selection) {
         auto objT = element.object;
 
         objects.push_back(objT.getObject());
@@ -100,7 +93,6 @@ void MeasureArea::parseSelection(const App::MeasureSelection& selection)
 
     Elements.setValues(objects, subElements);
 }
-
 
 App::DocumentObjectExecReturn* MeasureArea::execute()
 {
@@ -125,7 +117,6 @@ App::DocumentObjectExecReturn* MeasureArea::execute()
     return DocumentObject::StdReturn;
 }
 
-
 void MeasureArea::onChanged(const App::Property* prop)
 {
     if (isRestoring() || isRemoving()) {
@@ -140,14 +131,13 @@ void MeasureArea::onChanged(const App::Property* prop)
     MeasureBase::onChanged(prop);
 }
 
-
-Base::Placement MeasureArea::getPlacement()
+Base::Placement MeasureArea::getPlacement() const
 {
     const std::vector<App::DocumentObject*>& objects = Elements.getValues();
     const std::vector<std::string>& subElements = Elements.getSubValues();
 
     if (objects.empty() || subElements.empty()) {
-        return Base::Placement();
+        return {};
     }
 
     App::SubObjectT subject {objects.front(), subElements.front().c_str()};
@@ -159,7 +149,6 @@ Base::Placement MeasureArea::getPlacement()
     auto areaInfo = std::dynamic_pointer_cast<Part::MeasureAreaInfo>(info);
     return areaInfo->placement;
 }
-
 
 //! Return the object we are measuring
 //! used by the viewprovider in determining visibility

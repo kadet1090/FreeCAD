@@ -96,8 +96,6 @@ public:
             "net placement applied.  Link scaling operations along the path are also applied.");
         initialize("This is a module for measuring");  // register with Python
     }
-    ~Module() override
-    {}
 
 private:
     Py::Object invoke_method_varargs(void* method_def, const Py::Tuple& args) override

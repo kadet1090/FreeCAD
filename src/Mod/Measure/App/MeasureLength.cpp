@@ -53,29 +53,30 @@ MeasureLength::MeasureLength()
                       "Length of selection");
 }
 
-MeasureLength::~MeasureLength() = default;
-
+bool MeasureLength::isSupported(App::MeasureElementType type)
+{
+    // clang-format off
+    return (type == App::MeasureElementType::LINESEGMENT) ||
+           (type == App::MeasureElementType::CIRCLE) ||
+           (type == App::MeasureElementType::ARC) ||
+           (type == App::MeasureElementType::CURVE);
+    // clang-format on
+}
 
 bool MeasureLength::isValidSelection(const App::MeasureSelection& selection)
 {
-
     if (selection.empty()) {
         return false;
     }
 
-    for (auto element : selection) {
+    return std::all_of(selection.begin(), selection.end(), [](const auto& element) {
         auto type = App::MeasureManager::getMeasureElementType(element);
-
         if (type == App::MeasureElementType::INVALID) {
             return false;
         }
 
-        if ((type != App::MeasureElementType::LINESEGMENT && type != App::MeasureElementType::CIRCLE
-             && type != App::MeasureElementType::ARC && type != App::MeasureElementType::CURVE)) {
-            return false;
-        }
-    }
-    return true;
+        return isSupported(type);
+    });
 }
 
 void MeasureLength::parseSelection(const App::MeasureSelection& selection)
@@ -85,7 +86,7 @@ void MeasureLength::parseSelection(const App::MeasureSelection& selection)
     std::vector<App::DocumentObject*> objects;
     std::vector<std::string> subElements;
 
-    for (auto element : selection) {
+    for (const auto& element : selection) {
         auto objT = element.object;
 
         objects.push_back(objT.getObject());
@@ -94,7 +95,6 @@ void MeasureLength::parseSelection(const App::MeasureSelection& selection)
 
     Elements.setValues(objects, subElements);
 }
-
 
 App::DocumentObjectExecReturn* MeasureLength::execute()
 {
@@ -120,7 +120,6 @@ App::DocumentObjectExecReturn* MeasureLength::execute()
     return DocumentObject::StdReturn;
 }
 
-
 void MeasureLength::onChanged(const App::Property* prop)
 {
     if (isRestoring() || isRemoving()) {
@@ -135,14 +134,13 @@ void MeasureLength::onChanged(const App::Property* prop)
     MeasureBase::onChanged(prop);
 }
 
-
-Base::Placement MeasureLength::getPlacement()
+Base::Placement MeasureLength::getPlacement() const
 {
     const std::vector<App::DocumentObject*>& objects = Elements.getValues();
     const std::vector<std::string>& subElements = Elements.getSubValues();
 
-    if (!objects.size() || !subElements.size()) {
-        return Base::Placement();
+    if (objects.empty() || subElements.empty()) {
+        return {};
     }
 
     App::SubObjectT subject {objects.front(), subElements.front().c_str()};
@@ -154,7 +152,6 @@ Base::Placement MeasureLength::getPlacement()
     auto lengthInfo = std::dynamic_pointer_cast<Part::MeasureLengthInfo>(info);
     return lengthInfo->placement;
 }
-
 
 //! Return the object we are measuring
 //! used by the viewprovider in determining visibility

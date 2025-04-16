@@ -61,8 +61,12 @@ class PartExport MeasureInfo {
 public:
     // making the destructor virtual so MeasureInfo is polymorphic
     MeasureInfo() = default;
-    MeasureInfo(bool val) : valid(val) {}
+    explicit MeasureInfo(bool val) : valid(val) {}
     virtual ~MeasureInfo() = default;
+    MeasureInfo(const MeasureInfo&) = default;
+    MeasureInfo(MeasureInfo&&) = default;
+    MeasureInfo& operator= (const MeasureInfo&) = default;
+    MeasureInfo& operator= (MeasureInfo&&) = default;
     bool valid{false};
 };
 
@@ -71,7 +75,6 @@ public:
     MeasureAngleInfo() = default;
     MeasureAngleInfo(bool val, Base::Vector3d orient, Base::Vector3d pos) :
         MeasureInfo(val), orientation(orient), position(pos)  {}
-    ~MeasureAngleInfo() override = default;
 
     Base::Vector3d orientation{0.0, 0.0, 0.0};
     Base::Vector3d position{0.0, 0.0, 0.0};
@@ -82,7 +85,6 @@ public:
     MeasureAreaInfo() = default;
     MeasureAreaInfo(bool val, double a2, Base::Placement plm) :
         MeasureInfo(val), area(a2), placement(plm) {}
-    ~MeasureAreaInfo() override = default;
 
     double area{0};
     Base::Placement placement{};
@@ -92,9 +94,8 @@ public:
 class PartExport MeasureDistanceInfo : public MeasureInfo {
 public:
     MeasureDistanceInfo() = default;
-    explicit MeasureDistanceInfo(bool val, const TopoDS_Shape& shp)  :
+    MeasureDistanceInfo(bool val, const TopoDS_Shape& shp)  :
        MeasureInfo(val), shape(shp) {}
-    ~MeasureDistanceInfo() override = default;
 
     const TopoDS_Shape& getShape() { return shape; }
 
@@ -107,7 +108,6 @@ public:
     MeasureLengthInfo() = default;
     MeasureLengthInfo(bool val, double len, Base::Placement plm)  :
         MeasureInfo(val), length(len), placement(plm) {}
-    ~MeasureLengthInfo() override = default;
 
     double length{0};
     Base::Placement placement{};
@@ -118,7 +118,6 @@ public:
     MeasurePositionInfo() = default;
     MeasurePositionInfo(bool val, Base::Vector3d pos) :
         MeasureInfo(val), position(pos)  {}
-    ~MeasurePositionInfo() override = default;
 
     Base::Vector3d position{0.0, 0.0, 0.0};
 };
@@ -128,7 +127,6 @@ public:
     MeasureRadiusInfo() = default;
     MeasureRadiusInfo(bool val, double rad, Base::Vector3d point, Base::Placement plm) :
         MeasureInfo(val), radius(rad), pointOnCurve(point), placement(plm)  {}
-    ~MeasureRadiusInfo() override = default;
 
     double radius{};
     Base::Vector3d pointOnCurve;
@@ -143,8 +141,8 @@ class PartExport CallbackRegistrationRecord
 {
 public:
     CallbackRegistrationRecord() = default;
-    CallbackRegistrationRecord(const std::string& module, const std::string& measureType, GeometryHandler callback) :
-        m_module(module), m_measureType(measureType), m_callback(callback)
+    CallbackRegistrationRecord(std::string module, std::string measureType, GeometryHandler callback) :
+        m_module(std::move(module)), m_measureType(std::move(measureType)), m_callback(std::move(callback))
         { }
 
     std::string m_module;

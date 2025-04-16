@@ -99,32 +99,34 @@ MeasureDistance::MeasureDistance()
                       "Position2");
 }
 
-MeasureDistance::~MeasureDistance() = default;
-
+bool MeasureDistance::isSupported(App::MeasureElementType type)
+{
+    // clang-format off
+    return (type == App::MeasureElementType::POINT) ||
+           (type == App::MeasureElementType::LINE) ||
+           (type == App::MeasureElementType::LINESEGMENT) ||
+           (type == App::MeasureElementType::CIRCLE) ||
+           (type == App::MeasureElementType::ARC) ||
+           (type == App::MeasureElementType::CURVE) ||
+           (type == App::MeasureElementType::PLANE) ||
+           (type == App::MeasureElementType::CYLINDER);
+    // clang-format on
+}
 
 bool MeasureDistance::isValidSelection(const App::MeasureSelection& selection)
 {
-
     if (selection.size() != 2) {
         return false;
     }
 
-    for (auto element : selection) {
+    return std::all_of(selection.begin(), selection.end(), [](const auto& element) {
         auto type = App::MeasureManager::getMeasureElementType(element);
-
         if (type == App::MeasureElementType::INVALID) {
             return false;
         }
 
-        if (type != App::MeasureElementType::POINT && type != App::MeasureElementType::LINE
-            && type != App::MeasureElementType::LINESEGMENT
-            && type != App::MeasureElementType::CIRCLE && type != App::MeasureElementType::ARC
-            && type != App::MeasureElementType::CURVE && type != App::MeasureElementType::PLANE
-            && type != App::MeasureElementType::CYLINDER) {
-            return false;
-        }
-    }
-    return true;
+        return isSupported(type);
+    });
 }
 
 bool MeasureDistance::isPrioritizedSelection(const App::MeasureSelection& selection)
@@ -139,7 +141,6 @@ bool MeasureDistance::isPrioritizedSelection(const App::MeasureSelection& select
 
     return false;
 }
-
 
 void MeasureDistance::parseSelection(const App::MeasureSelection& selection)
 {
@@ -158,7 +159,6 @@ void MeasureDistance::parseSelection(const App::MeasureSelection& selection)
     const std::vector<std::string> elems2 = {objT2.getSubName()};
     Element2.setValue(ob2, elems2);
 }
-
 
 bool MeasureDistance::getShape(App::PropertyLinkSub* prop, TopoDS_Shape& rShape)
 {
@@ -317,6 +317,7 @@ std::vector<App::DocumentObject*> MeasureDistance::getSubject() const
     return {Element1.getValue()};
 }
 
+// ----------------------------------------------------------------------------
 
 PROPERTY_SOURCE(Measure::MeasureDistanceDetached, Measure::MeasureBase)
 
@@ -360,9 +361,6 @@ MeasureDistanceDetached::MeasureDistanceDetached()
                       "Position2");
 }
 
-MeasureDistanceDetached::~MeasureDistanceDetached() = default;
-
-
 bool MeasureDistanceDetached::isValidSelection(const App::MeasureSelection& selection)
 {
     return selection.size() == 2;
@@ -376,7 +374,6 @@ void MeasureDistanceDetached::parseSelection(const App::MeasureSelection& select
     Position1.setValue(sel1.pickedPoint);
     Position2.setValue(sel2.pickedPoint);
 }
-
 
 App::DocumentObjectExecReturn* MeasureDistanceDetached::execute()
 {
@@ -406,12 +403,10 @@ void MeasureDistanceDetached::onChanged(const App::Property* prop)
     MeasureBase::onChanged(prop);
 }
 
-
 std::vector<App::DocumentObject*> MeasureDistanceDetached::getSubject() const
 {
     return {};
 }
-
 
 Base::Type MeasureDistanceType::getClassTypeId()
 {
