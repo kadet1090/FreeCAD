@@ -1122,8 +1122,12 @@ double BSpline::getLinCombFactor(double x, size_t k, size_t i, unsigned int p)
 
     for (size_t r = 1; r < p + 1; ++r) {
         for (size_t j = p; j > r - 1; --j) {
-            double alpha = (x - flattenedknots[j + k - p])
-                / (flattenedknots[j + 1 + k - r] - flattenedknots[j + k - p]);
+            size_t i1 = j + k - p;
+            size_t i2 = j + 1 + k - r;
+            if (i1 >= flattenedknots.size() || i2 >= flattenedknots.size()) {
+                continue;
+            }
+            double alpha = (x - flattenedknots[i1]) / (flattenedknots[i2] - flattenedknots[i1]);
             d[j] = (1.0 - alpha) * d[j - 1] + alpha * d[j];
         }
     }
@@ -1135,8 +1139,12 @@ double BSpline::splineValue(double x, size_t k, unsigned int p, VEC_D& d, const 
 {
     for (size_t r = 1; r < p + 1; ++r) {
         for (size_t j = p; j > r - 1; --j) {
-            double alpha =
-                (x - flatknots[j + k - p]) / (flatknots[j + 1 + k - r] - flatknots[j + k - p]);
+            size_t i1 = j + k - p;
+            size_t i2 = j + 1 + k - r;
+            if (i1 >= flatknots.size() || i2 >= flatknots.size()) {
+                continue;
+            }
+            double alpha = (x - flatknots[i1]) / (flatknots[i2] - flatknots[i1]);
             d[j] = (1.0 - alpha) * d[j - 1] + alpha * d[j];
         }
     }
