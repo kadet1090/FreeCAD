@@ -396,7 +396,7 @@ Py::Object VoronoiEdgePy::getCell() const
 }
 
 
-PyObject* VoronoiEdgePy::isFinite(PyObject* args)
+PyObject* VoronoiEdgePy::isFinite(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
     PyObject* chk = e->ptr->is_finite() ? Py_True : Py_False;
@@ -404,7 +404,7 @@ PyObject* VoronoiEdgePy::isFinite(PyObject* args)
     return chk;
 }
 
-PyObject* VoronoiEdgePy::isInfinite(PyObject* args)
+PyObject* VoronoiEdgePy::isInfinite(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
     PyObject* chk = e->ptr->is_infinite() ? Py_True : Py_False;
@@ -412,7 +412,7 @@ PyObject* VoronoiEdgePy::isInfinite(PyObject* args)
     return chk;
 }
 
-PyObject* VoronoiEdgePy::isLinear(PyObject* args)
+PyObject* VoronoiEdgePy::isLinear(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
     PyObject* chk = e->ptr->is_linear() ? Py_True : Py_False;
@@ -420,7 +420,7 @@ PyObject* VoronoiEdgePy::isLinear(PyObject* args)
     return chk;
 }
 
-PyObject* VoronoiEdgePy::isCurved(PyObject* args)
+PyObject* VoronoiEdgePy::isCurved(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
     PyObject* chk = e->ptr->is_curved() ? Py_True : Py_False;
@@ -428,7 +428,7 @@ PyObject* VoronoiEdgePy::isCurved(PyObject* args)
     return chk;
 }
 
-PyObject* VoronoiEdgePy::isPrimary(PyObject* args)
+PyObject* VoronoiEdgePy::isPrimary(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
     PyObject* chk = e->ptr->is_primary() ? Py_True : Py_False;
@@ -436,7 +436,7 @@ PyObject* VoronoiEdgePy::isPrimary(PyObject* args)
     return chk;
 }
 
-PyObject* VoronoiEdgePy::isSecondary(PyObject* args)
+PyObject* VoronoiEdgePy::isSecondary(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
     PyObject* chk = e->ptr->is_secondary() ? Py_True : Py_False;
@@ -444,7 +444,7 @@ PyObject* VoronoiEdgePy::isSecondary(PyObject* args)
     return chk;
 }
 
-PyObject* VoronoiEdgePy::isBorderline(PyObject* args)
+PyObject* VoronoiEdgePy::isBorderline(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
     PyObject* chk = Py_False;
@@ -463,7 +463,7 @@ PyObject* VoronoiEdgePy::isBorderline(PyObject* args)
     return chk;
 }
 
-PyObject* VoronoiEdgePy::toShape(PyObject* args)
+PyObject* VoronoiEdgePy::toShape(PyObject* args) const
 {
     double z0 = 0.0;
     double z1 = DBL_MAX;
@@ -678,7 +678,7 @@ PyObject* VoronoiEdgePy::toShape(PyObject* args)
 }
 
 
-PyObject* VoronoiEdgePy::getDistances(PyObject* args)
+PyObject* VoronoiEdgePy::getDistances(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
     Py::List list;
@@ -686,7 +686,7 @@ PyObject* VoronoiEdgePy::getDistances(PyObject* args)
     return Py::new_reference_to(list);
 }
 
-PyObject* VoronoiEdgePy::getSegmentAngle(PyObject* args)
+PyObject* VoronoiEdgePy::getSegmentAngle(PyObject* args) const
 {
     VoronoiEdge* e = getVoronoiEdgeFromPy(this, args);
 

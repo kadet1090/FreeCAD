@@ -91,7 +91,7 @@ Py::Long Array2DPy::getColumns() const
     return Py::Long(getMaterial2DArrayPtr()->columns());
 }
 
-PyObject* Array2DPy::getRow(PyObject* args)
+PyObject* Array2DPy::getRow(PyObject* args) const
 {
     int row;
     if (!PyArg_ParseTuple(args, "i", &row)) {
@@ -117,7 +117,7 @@ PyObject* Array2DPy::getRow(PyObject* args)
     return nullptr;
 }
 
-PyObject* Array2DPy::getValue(PyObject* args)
+PyObject* Array2DPy::getValue(PyObject* args) const
 {
     int row;
     int column;
