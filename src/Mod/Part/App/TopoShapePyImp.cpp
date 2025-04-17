@@ -1360,7 +1360,7 @@ PyObject*  TopoShapePy::reversed(PyObject *args) const
 
     // let the type object decide
     if (type->tp_new)
-        cpy = type->tp_new(type, this, nullptr);
+        cpy = type->tp_new(type, const_cast<TopoShapePy*>(this), nullptr);
     if (!cpy) {
         PyErr_SetString(PyExc_TypeError, "failed to create copy of shape");
         return nullptr;
@@ -2340,7 +2340,7 @@ PyObject* TopoShapePy::defeaturing(PyObject *args) const
             );
         }
         PyTypeObject* type = this->GetType();
-        PyObject* inst = type->tp_new(type, this, nullptr);
+        PyObject* inst = type->tp_new(type, const_cast<TopoShapePy*>(this), nullptr);
         static_cast<TopoShapePy*>(inst)->getTopoShapePtr()->setShape
             (this->getTopoShapePtr()->defeaturing(shapes));
         return inst;
