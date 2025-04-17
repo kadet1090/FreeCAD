@@ -949,7 +949,7 @@ optimalBoundingBox([useTriangulation = True, useShapeTolerance = False]) -> boun
         </UserDocu>
       </Documentation>
     </Methode>
-      <Methode Name="clearCache" Const="true">
+      <Methode Name="clearCache">
           <Documentation>
               <UserDocu>Clear internal sub-shape cache</UserDocu>
           </Documentation>
