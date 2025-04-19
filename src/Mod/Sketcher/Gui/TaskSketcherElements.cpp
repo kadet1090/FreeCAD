@@ -1443,6 +1443,7 @@ void TaskSketcherElements::onSelectionChanged(const Gui::SelectionChanges& msg)
                                 if (item->ElementNbr == ElementId) {
                                     item->isLineSelected = select;
                                     modified_item = item;
+                                    SketcherGui::scrollTo(ui->listWidgetElements, i, select);
                                     break;
                                 }
                             }
