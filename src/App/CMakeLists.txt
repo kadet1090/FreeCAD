@@ -3,6 +3,10 @@ if(WIN32)
     add_definitions(-DBOOST_DYN_LINK)
 endif(WIN32)
 
+if(CMAKE_BUILD_TYPE)
+    add_definitions(-DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}")
+endif(CMAKE_BUILD_TYPE)
+
 if(FREECAD_RELEASE_SEH)
     add_definitions(-DHAVE_SEH)
 endif(FREECAD_RELEASE_SEH)
@@ -290,6 +294,7 @@ SET(FreeCADApp_CPP_SRCS
     Metadata.cpp
     MetadataPyImp.cpp
     ElementNamingUtils.cpp
+    ProgramInformation.cpp
     SafeMode.cpp
     Services.cpp
     StringHasher.cpp
@@ -315,6 +320,7 @@ SET(FreeCADApp_HPP_SRCS
     MeasureManager.h
     Metadata.h
     ElementNamingUtils.h
+    ProgramInformation.h
     Services.h
     StringHasher.h
 )

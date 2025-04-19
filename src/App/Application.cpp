@@ -125,6 +125,7 @@
 #include "Datums.h"
 #include "OriginGroupExtension.h"
 #include "OriginGroupExtensionPy.h"
+#include "ProgramInformation.h"
 #include "SuppressibleExtension.h"
 #include "SuppressibleExtensionPy.h"
 #include "Part.h"
@@ -2235,22 +2236,7 @@ void processProgramOptions(const po::variables_map& vm, std::map<std::string,std
         str << mConfig["ExeName"] << " " << mConfig["ExeVersion"]
             << " Revision: " << mConfig["BuildRevision"] << '\n';
         if (vm.count("verbose")) {
-            str << "\nLibrary versions:\n";
-            str << "boost    " << BOOST_LIB_VERSION << '\n';
-            str << "Coin3D   " << fcCoin3dVersion << '\n';
-            str << "Eigen3   " << fcEigen3Version << '\n';
-#ifdef OCC_VERSION_STRING_EXT
-            str << "OCC      " << OCC_VERSION_STRING_EXT << '\n';
-#endif
-            str << "Qt       " << QT_VERSION_STR << '\n';
-            str << "Python   " << PY_VERSION << '\n';
-            str << "PySide   " << fcPysideVersion << '\n';
-            str << "shiboken " << fcShibokenVersion << '\n';
-#ifdef SMESH_VERSION_STR
-            str << "SMESH    " << SMESH_VERSION_STR << '\n';
-#endif
-            str << "VTK      " << fcVtkVersion << '\n';
-            str << "xerces-c " << fcXercescVersion << '\n';
+            App::ProgramInformation::getVerboseCommonInfo(str, mConfig);
         }
         throw Base::ProgramInformation(str.str());
     }
