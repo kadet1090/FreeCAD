@@ -52,7 +52,7 @@
 #include "Flag.h"
 #include "Navigation/GestureNavigationStyle.h"
 #include "Navigation/NavigationStyle.h"
-#include "Navigation/NavigationStateChart.h"
+#include "Navigation/SiemensNXStyle.h"
 #include "SelectionObject.h"
 #include "SoDevicePixelRatioElement.h"
 #include "SoFCColorBar.h"
