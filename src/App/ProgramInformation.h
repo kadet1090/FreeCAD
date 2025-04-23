@@ -34,7 +34,7 @@ namespace App
 
 using Config = std::map<std::string, std::string>;
 
-class BaseExport ProgramInformation
+class AppExport ProgramInformation
 {
 public:
     static std::string prettyProductInfoWrapper();
