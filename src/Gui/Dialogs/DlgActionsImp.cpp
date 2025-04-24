@@ -182,6 +182,9 @@ void DlgCustomActionsImp::showActions()
             item->setIcon(0, BitmapFactory().pixmap(aclCurMacro->getPixmap()));
         }
     }
+
+    const int minWidth = 300;
+    ui->actionListWidget->setMinimumWidth(minWidth);
 }
 
 void DlgCustomActionsImp::onActionListWidgetItemActivated(QTreeWidgetItem* item)
