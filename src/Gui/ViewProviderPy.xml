@@ -13,9 +13,9 @@
             <Author Licence="LGPL" Name="Werner Mayer" EMail="wmayer@users.sourceforge.net" />
             <UserDocu>This is the ViewProvider base class</UserDocu>
         </Documentation>
-        <Methode Name="addProperty">
+        <Methode Name="addProperty" Keyword="true">
             <Documentation>
-                <UserDocu>addProperty(type, name, group, doc, attr=0, ro=False, hd=False) -> ViewProvider
+                <UserDocu>addProperty(type, name, group, doc, attr=0, ro=False, hd=False, locked = False, enum_vals=[]) -> ViewProvider
 
 Add a generic property.
 
@@ -25,12 +25,18 @@ name : str
     Property name. Optional.
 group : str
     Property group. Optional.
+doc : str
+    Property doc string. Optional.
 attr : int
     Property attributes.
 ro : bool
     Read only property.
 hd : bool
-    Hidden property.</UserDocu>
+    Hidden property.
+locked : bool
+    Locked property.
+enum_vals : list
+    Enum list.</UserDocu>
             </Documentation>
         </Methode>
         <Methode Name="removeProperty">
