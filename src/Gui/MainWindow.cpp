@@ -117,6 +117,7 @@
 #include "View3DInventorViewer.h"
 #include "Dialogs/DlgObjectSelection.h"
 #include <Base/Color.h>
+#include "QtWidgets.h"
 
 FC_LOG_LEVEL_INIT("MainWindow",false,true,true)
 
