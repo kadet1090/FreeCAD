@@ -185,22 +185,7 @@ Property* DynamicProperty::addDynamicProperty(PropertyContainer& pc,
         type = "<null>";
     }
 
-    std::string _name;
-
-    static ParameterGrp::handle hGrp =
-        GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Document");
-    if (hGrp->GetBool("AutoNameDynamicProperty", false)) {
-        if (!name || !name[0]) {
-            name = type;
-        }
-        _name = getUniquePropertyName(pc, name);
-        if (_name != name) {
-            FC_WARN(pc.getFullName()
-                    << " rename dynamic property from '" << name << "' to '" << _name << "'");
-        }
-        name = _name.c_str();
-    }
-    else if (!name) {
+    if (!name) {
         name = "<null>";  // setting a bad name to trigger exception
     }
 
