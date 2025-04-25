@@ -33,6 +33,7 @@
 #  define WINVER 0x502 // needed for SetDllDirectory
 #  include <Windows.h>
 # endif
+# include <boost/algorithm/string/join.hpp>
 # include <boost/program_options.hpp>
 # include <boost/date_time/posix_time/posix_time.hpp>
 # include <boost/scope_exit.hpp>
@@ -2243,36 +2244,24 @@ void processProgramOptions(const po::variables_map& vm, std::map<std::string,std
 
     if (vm.count("module-path")) {
         auto Mods = vm["module-path"].as< std::vector<std::string> >();
-        std::string temp;
-        for (const auto & It : Mods)
-            temp += It + ";";
-        temp.erase(temp.end()-1);
-        mConfig["AdditionalModulePaths"] = temp;
+        mConfig["AdditionalModulePaths"] = boost::algorithm::join(Mods, ";");
     }
 
     if (vm.count("macro-path")) {
         auto Macros = vm["macro-path"].as< std::vector<std::string> >();
-        std::string temp;
-        for (const auto & It : Macros)
-            temp += It + ";";
-        temp.erase(temp.end()-1);
-        mConfig["AdditionalMacroPaths"] = std::move(temp);
+        mConfig["AdditionalMacroPaths"] = boost::algorithm::join(Macros, ";");
     }
 
     if (vm.count("python-path")) {
         auto Paths = vm["python-path"].as< std::vector<std::string> >();
-        for (const auto & It : Paths)
+        for (const auto & It : Paths) {
             Base::Interpreter().addPythonPath(It.c_str());
+        }
     }
 
     if (vm.count("disable-addon")) {
         auto Addons = vm["disable-addon"].as< std::vector<std::string> >();
-        std::string temp;
-        for (const auto & It : Addons) {
-            temp += It + ";";
-        }
-        temp.erase(temp.end()-1);
-        mConfig["DisabledAddons"] = temp;
+        mConfig["DisabledAddons"] = boost::algorithm::join(Addons, ";");
     }
 
     if (vm.count("input-file")) {

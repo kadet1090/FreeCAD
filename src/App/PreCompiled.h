@@ -91,6 +91,7 @@
 #include <boost_graph_adjacency_list.hpp>
 #include <boost/signals2.hpp>
 
+#include <boost/algorithm/string/join.hpp>
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 #include <boost/utility.hpp>
