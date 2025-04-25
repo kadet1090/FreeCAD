@@ -263,7 +263,7 @@ static void setPropertyItemName(PropertyItem* item,
 static PropertyItem* createPropertyItem(App::Property* prop)
 {
     const char* editor = prop->getEditorName();
-    if (!editor || !editor[0]) {
+    if (Base::Tools::isNullOrEmpty(editor)) {
         if (PropertyView::showAll()) {
             editor = "Gui::PropertyEditor::PropertyItem";
         }
@@ -271,8 +271,7 @@ static PropertyItem* createPropertyItem(App::Property* prop)
             return nullptr;
         }
     }
-    auto item =
-        static_cast<PropertyItem*>(PropertyItemFactory::instance().createPropertyItem(editor));
+    auto item = PropertyItemFactory::instance().createPropertyItem(editor);
     if (!item) {
         qWarning("No property item for type %s found\n", editor);
     }
