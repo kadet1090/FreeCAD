@@ -57,21 +57,24 @@ namespace Gui { namespace Dialog {
 class find_placement
 {
 public:
-    explicit find_placement(const std::string& name) : propertyname(name)
+    explicit find_placement(std::string name) : propertyname(std::move(name))
     {
     }
     bool operator () (const std::pair<std::string, App::Property*>& elem) const
     {
         if (elem.first == propertyname) {
             //  flag set that property is read-only or hidden
-            if (elem.second->testStatus(App::Property::ReadOnly) || elem.second->testStatus(App::Property::Hidden))
+            if (elem.second->testStatus(App::Property::ReadOnly) ||
+                elem.second->testStatus(App::Property::Hidden)) {
                 return false;
+            }
             App::PropertyContainer* parent = elem.second->getContainer();
             if (parent) {
                 //  flag set that property is read-only or hidden
                 if (parent->isReadOnly(elem.second) ||
-                    parent->isHidden(elem.second))
+                    parent->isHidden(elem.second)) {
                     return false;
+                }
             }
             return elem.second->isDerivedFrom
                 (Base::Type::fromName("App::PropertyPlacement"));
@@ -137,14 +140,12 @@ void PlacementHandler::setSelection(const std::vector<Gui::SelectionObject>& sel
 
 void PlacementHandler::reselectObjects()
 {
-    //we have to clear selection and reselect original object(s)
-    //else later on the rotation is applied twice because there will
-    //be 2 (vertex) objects in the selection, and even if both are subobjects
-    //of the same object the rotation still gets applied twice
-    Gui::Selection().clearSelection();
-    //reselect original object that was selected when placement dlg first opened
-    for (const auto& it : selectionObjects) {
-        Gui::Selection().addSelection(it);
+    if (!selectionObjects.empty()) {
+        Gui::Selection().clearSelection();
+        //reselect original object that was selected when placement dlg first opened
+        for (const auto& it : selectionObjects) {
+            Gui::Selection().addSelection(it);
+        }
     }
 }
 
@@ -179,8 +180,9 @@ void PlacementHandler::activatedDocument(const std::string& name)
 void PlacementHandler::openTransaction()
 {
     App::Document* activeDoc = App::GetApplication().getActiveDocument();
-    if (activeDoc)
+    if (activeDoc) {
         activeDoc->openTransaction("Placement");
+    }
 }
 
 void PlacementHandler::revertTransformation()
@@ -200,7 +202,7 @@ void PlacementHandler::revertTransformation()
 
 std::vector<const App::DocumentObject*> PlacementHandler::getObjects(const Gui::Document* document) const
 {
-    auto objs = document->getDocument()->getObjectsOfType(App::DocumentObject::getClassTypeId());
+    auto objs = document->getDocument()->getObjectsOfType<App::DocumentObject>();
     std::vector<const App::DocumentObject*> list;
     list.insert(list.begin(), objs.begin(), objs.end());
     return list;
@@ -219,7 +221,7 @@ std::vector<const App::DocumentObject*> PlacementHandler::getSelectedObjects(con
     }
 
     if (list.empty()) {
-        auto objs = Gui::Selection().getObjectsOfType(App::DocumentObject::getClassTypeId(), doc->getName());
+        auto objs = Gui::Selection().getObjectsOfType<App::DocumentObject>(doc->getName());
         list.insert(list.begin(), objs.begin(), objs.end());
     }
 
@@ -254,8 +256,9 @@ const Base::Placement& PlacementHandler::getRefPlacement() const
 void PlacementHandler::applyPlacement(const Base::Placement& p, bool incremental)
 {
     Gui::Document* document = Application::Instance->activeDocument();
-    if (!document)
+    if (!document) {
         return;
+    }
 
     std::vector<const App::DocumentObject*> sel = getSelectedObjects(document);
     if (!sel.empty()) {
@@ -274,10 +277,7 @@ void PlacementHandler::applyPlacement(const Gui::Document* document, const App::
     auto property = find_placement::getProperty(obj, this->propertyName);
     if (property) {
         Base::Placement cur = property->getValue();
-        if (incremental)
-            cur = p * cur;
-        else
-            cur = p;
+        cur = incremental ? p * cur : p;
 
         if (!changeProperty) {
             Gui::ViewProvider* vp = document->getViewProvider(obj);
@@ -294,8 +294,9 @@ void PlacementHandler::applyPlacement(const Gui::Document* document, const App::
 void PlacementHandler::applyPlacement(const QString& data, bool incremental)
 {
     Gui::Document* document = Application::Instance->activeDocument();
-    if (!document)
+    if (!document) {
         return;
+    }
 
     // When directly changing the property we now only have to commit the transaction,
     // do a recompute and open a new transaction
@@ -359,11 +360,10 @@ QString PlacementHandler::getSimplePlacement(const App::DocumentObject* obj, con
 Base::Vector3d PlacementHandler::computeCenterOfMass() const
 {
     Base::Vector3d centerOfMass;
-    std::vector<App::DocumentObject*> sel = Gui::Selection().getObjectsOfType
-        (App::GeoFeature::getClassTypeId());
+    auto sel = Gui::Selection().getObjectsOfType<App::GeoFeature>();
     if (!sel.empty()) {
         for (auto it : sel) {
-            const App::PropertyComplexGeoData* propgeo = static_cast<App::GeoFeature*>(it)->getPropertyOfGeometry();
+            const App::PropertyComplexGeoData* propgeo = it->getPropertyOfGeometry();
             const Data::ComplexGeoData* geodata = propgeo ? propgeo->getComplexData() : nullptr;
             if (geodata && geodata->getCenterOfGravity(centerOfMass)) {
                 break;
@@ -456,6 +456,7 @@ void PlacementHandler::abortCommandIfActive(Gui::Document* doc)
 Placement::Placement(QWidget* parent, Qt::WindowFlags fl)
   : QDialog(parent, fl)
   , ui{nullptr}
+  , signalMapper{nullptr}
 {
     setupUi();
     setupConnections();
@@ -495,6 +496,8 @@ void Placement::setupConnections()
 
 void Placement::setupUnits()
 {
+    const float deg1 = 90.0F;
+    const float deg2 = 180.0F;
     ui->xPos->setUnit(Base::Unit::Length);
     ui->yPos->setUnit(Base::Unit::Length);
     ui->zPos->setUnit(Base::Unit::Length);
@@ -503,16 +506,16 @@ void Placement::setupUnits()
     ui->yCnt->setValue(Base::Quantity(0, Base::Unit::Length));
     ui->zCnt->setValue(Base::Quantity(0, Base::Unit::Length));
     ui->angle->setUnit(Base::Unit::Angle);
-    ui->yawAngle->setMaximum(180.0F);
-    ui->yawAngle->setMinimum(-180.0F);
+    ui->yawAngle->setMaximum(deg2);
+    ui->yawAngle->setMinimum(-deg2);
     ui->yawAngle->setUnit(Base::Unit::Angle);
     ui->yawAngle->checkRangeInExpression(true);
-    ui->pitchAngle->setMaximum(90.0F);
-    ui->pitchAngle->setMinimum(-90.0F);
+    ui->pitchAngle->setMaximum(deg1);
+    ui->pitchAngle->setMinimum(-deg1);
     ui->pitchAngle->setUnit(Base::Unit::Angle);
     ui->pitchAngle->checkRangeInExpression(true);
-    ui->rollAngle->setMaximum(180.0F);
-    ui->rollAngle->setMinimum(-180.0F);
+    ui->rollAngle->setMaximum(deg2);
+    ui->rollAngle->setMinimum(-deg2);
     ui->rollAngle->setUnit(Base::Unit::Angle);
     ui->rollAngle->checkRangeInExpression(true);
 }
@@ -542,7 +545,7 @@ void Placement::setupSignalMapper()
 void Placement::setupRotationMethod()
 {
     ParameterGrp::handle hGrp = WindowParameter::getDefaultParameter()->GetGroup("Placement");
-    long index = hGrp->GetInt("RotationMethod");
+    int index = static_cast<int>(hGrp->GetInt("RotationMethod"));
     ui->rotationInput->setCurrentIndex(index);
     ui->stackedWidget->setCurrentIndex(index);
 }
@@ -568,14 +571,17 @@ QWidget* Placement::getInvalidInput() const
 {
     QList<Gui::QuantitySpinBox*> sb = this->findChildren<Gui::QuantitySpinBox*>();
     for (const auto & it : sb) {
-        if (!it->hasValidInput())
+        if (!it->hasValidInput()) {
             return it;
+        }
     }
     return nullptr;
 }
 
-void Placement::onPlacementChanged(int)
+void Placement::onPlacementChanged(int index)
 {
+    Q_UNUSED(index)
+
     // If there are listeners to the 'placementChanged' signal we rely
     // on that the listener updates any placement. If no listeners
     // are connected the placement is applied to all selected objects
@@ -608,13 +614,11 @@ void Placement::onSelectedVertexClicked()
     ui->centerOfMass->setChecked(false);
 
     Base::Vector3d center;
-    bool success = false;
     auto [firstSelected, picked] = handler.getSelectedPoints();
     handler.reselectObjects();
 
     if (picked.size() == 1) {
         center = picked[0];
-        success = true;
     }
     else if (picked.size() == 2) {
         //average the coords to get center of rotation
@@ -625,7 +629,7 @@ void Placement::onSelectedVertexClicked()
         Base::Placement plm = getPlacement();
         Base::Rotation rot = plm.getRotation();
         Base::Vector3d tmp;
-        double angle;
+        double angle {};
         rot.getRawValue(tmp, angle);
         Base::Vector3d axis;
         if (firstSelected == picked[0]){
@@ -634,30 +638,23 @@ void Placement::onSelectedVertexClicked()
         else {
             axis = Base::Vector3d(picked[0] - picked[1]);
         }
-        double length = axis.Length();
-        Base::Console().Message("Distance: %.8f\n",length);
-        if (QApplication::keyboardModifiers() == Qt::ShiftModifier){ //copy to clipboard on Shift+click
-            QLocale loc;
-            QApplication::clipboard()->setText(loc.toString(length,'g',8));
-        }
-        else {
-            Base::Console().Message("(Shift + click Selected points button to copy distance to clipboard)\n");
-        }
+
         axis.Normalize();
         rot.setValue(axis, angle);
         plm.setRotation(rot);
         setPlacementData(plm); //creates custom axis, if needed
         ui->rotationInput->setCurrentIndex(0); //use rotation with axis instead of euler
         ui->stackedWidget->setCurrentIndex(0);
-        success = true;
     }
-    else if (picked.size() == 3){
+    else if (picked.size() == 3) {
         /* User selected 3 points, so we find the plane defined by those
          * and use the normal vector that contains the first point picked
          * as the axis of rotation.
          */
 
-        Base::Vector3d a, b(firstSelected), c; //b is on central axis
+        Base::Vector3d a;
+        Base::Vector3d b {firstSelected};  // b is on central axis
+        Base::Vector3d c;
         if (picked[0] == firstSelected){
             a = picked[1];
             c = picked[2];
@@ -680,50 +677,25 @@ void Placement::onSelectedVertexClicked()
         Base::Placement plm = getPlacement();
         Base::Rotation rot = plm.getRotation();
         Base::Vector3d tmp;
-        double angle;
+        double angle {};
         rot.getRawValue(tmp, angle);
-        double length = (a-c).Length();
-        Base::Console().Message("Distance: %.8f\n",length);
+
         Base::Vector3d v1(a-b);
         Base::Vector3d v2(c-b);
         v1.Normalize();
         v2.Normalize();
-        double targetAngle = Base::toDegrees(v2.GetAngle(v1));
-        Base::Console().Message("Target angle: %.8f degrees, complementary: %.8f degrees\n",targetAngle, 90.0-targetAngle);
-        if (QApplication::keyboardModifiers() == Qt::ShiftModifier){ //copy to clipboard on Shift+click
-            QLocale loc;
-            QApplication::clipboard()->setText(loc.toString(targetAngle,'g',8));
-            Base::Console().Message("(Angle copied to clipboard, but you might need to use a negative (-) angle sometimes.)\n");
-        }
-        else {
-            Base::Console().Message("(Shift + click Selected points button to copy angle to clipboard)\n");
-        }
+
         rot.setValue(norm, angle);
         plm.setRotation(rot);
         setPlacementData(plm); //creates custom axis, if needed
         ui->rotationInput->setCurrentIndex(0); //use rotation with axis instead of euler
         ui->stackedWidget->setCurrentIndex(0);
-        success = true;
     }
 
     handler.setCenterOfMass(center);
     ui->xCnt->setValue(center.x);
     ui->yCnt->setValue(center.y);
     ui->zCnt->setValue(center.z);
-
-    if (!success) {
-        Base::Console().Warning("Placement selection error.  Select either 1 or 2 points.\n");
-        QMessageBox msgBox(this);
-        msgBox.setText(tr("Please select 1, 2, or 3 points before clicking this button.  A point may be on a vertex, \
-face, or edge.  If on a face or edge the point used will be the point at the mouse position along \
-face or edge.  If 1 point is selected it will be used as the center of rotation.  If 2 points are \
-selected the midpoint between them will be the center of rotation and a new custom axis will be \
-created, if needed.  If 3 points are selected the first point becomes the center of rotation and \
-lies on the vector that is normal to the plane defined by the 3 points.  Some distance and angle \
-information is provided in the report view, which can be useful when aligning objects.  For your \
-convenience when Shift + click is used the appropriate distance or angle is copied to the clipboard."));
-        msgBox.exec();
-    }
 }
 
 void Placement::onApplyAxialClicked()
@@ -731,7 +703,7 @@ void Placement::onApplyAxialClicked()
     signalMapper->blockSignals(true);
     double axPos = ui->axialPos->value().getValue();
     Base::Placement p = getPlacementData();
-    double angle;
+    double angle {};
     Base::Vector3d axis;
     p.getRotation().getValue(axis, angle);
     Base::Vector3d curPos (p.getPosition());
@@ -958,13 +930,15 @@ void Placement::setPlacementData(const Base::Placement& p)
     ui->yPos->setValue(Base::Quantity(p.getPosition().y, Base::Unit::Length));
     ui->zPos->setValue(Base::Quantity(p.getPosition().z, Base::Unit::Length));
 
-    double Y,P,R;
-    p.getRotation().getYawPitchRoll(Y,P,R);
-    ui->yawAngle->setValue(Base::Quantity(Y, Base::Unit::Angle));
-    ui->pitchAngle->setValue(Base::Quantity(P, Base::Unit::Angle));
-    ui->rollAngle->setValue(Base::Quantity(R, Base::Unit::Angle));
+    double yaw {};
+    double pitch {};
+    double roll {};
+    p.getRotation().getYawPitchRoll(yaw, pitch, roll);
+    ui->yawAngle->setValue(Base::Quantity(yaw, Base::Unit::Angle));
+    ui->pitchAngle->setValue(Base::Quantity(pitch, Base::Unit::Angle));
+    ui->rollAngle->setValue(Base::Quantity(roll, Base::Unit::Angle));
 
-    double angle;
+    double angle {};
     Base::Vector3d axis;
     p.getRotation().getRawValue(axis, angle);
     ui->xAxis->setValue(axis.x);
@@ -1286,7 +1260,7 @@ TaskPlacementPy::~TaskPlacementPy() = default;
 
 Py::Object TaskPlacementPy::repr()
 {
-    return Py::String("TaskPlacement");
+    return Py::String("TaskPlacement");  // NOLINT
 }
 
 Py::Object TaskPlacementPy::getattr(const char * name)
@@ -1411,7 +1385,7 @@ Py::Object TaskPlacementPy::accept(const Py::Tuple& args)
         widget->accept();
         res = widget->result() == QDialog::Accepted;
     }
-    return Py::Boolean(res);
+    return Py::Boolean(res);  // NOLINT
 }
 
 Py::Object TaskPlacementPy::reject(const Py::Tuple& args)
@@ -1425,7 +1399,7 @@ Py::Object TaskPlacementPy::reject(const Py::Tuple& args)
         widget->reject();
         res = widget->result() == QDialog::Rejected;
     }
-    return Py::Boolean(res);
+    return Py::Boolean(res);  // NOLINT
 }
 
 Py::Object TaskPlacementPy::clicked(const Py::Tuple& args)
@@ -1458,7 +1432,7 @@ Py::Object TaskPlacementPy::isAllowedAlterDocument(const Py::Tuple& args)
     if (!PyArg_ParseTuple(args.ptr(), "")) {
         throw Py::Exception();
     }
-    return Py::Boolean(true);
+    return Py::Boolean(true);  // NOLINT
 }
 
 Py::Object TaskPlacementPy::isAllowedAlterView(const Py::Tuple& args)
@@ -1466,7 +1440,7 @@ Py::Object TaskPlacementPy::isAllowedAlterView(const Py::Tuple& args)
     if (!PyArg_ParseTuple(args.ptr(), "")) {
         throw Py::Exception();
     }
-    return Py::Boolean(true);
+    return Py::Boolean(true);  // NOLINT
 }
 
 Py::Object TaskPlacementPy::isAllowedAlterSelection(const Py::Tuple& args)
@@ -1474,7 +1448,7 @@ Py::Object TaskPlacementPy::isAllowedAlterSelection(const Py::Tuple& args)
     if (!PyArg_ParseTuple(args.ptr(), "")) {
         throw Py::Exception();
     }
-    return Py::Boolean(true);
+    return Py::Boolean(true);  // NOLINT
 }
 
 Py::Object TaskPlacementPy::getStandardButtons(const Py::Tuple& args)
@@ -1485,7 +1459,7 @@ Py::Object TaskPlacementPy::getStandardButtons(const Py::Tuple& args)
     auto buttons = QDialogButtonBox::Ok|
             QDialogButtonBox::Cancel|
             QDialogButtonBox::Apply;
-    return Py::Long(static_cast<int>(buttons));
+    return Py::Long(static_cast<int>(buttons));  // NOLINT
 }
 
 #include "moc_Placement.cpp"
