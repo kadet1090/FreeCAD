@@ -297,6 +297,8 @@ public:
     addObjects(const char* sType, const std::vector<std::string>& objectNames, bool isNew = true);
     /// Remove a feature out of the document
     void removeObject(const char* sName);
+    /// Remove a feature out of the document
+    void removeObject(const DocumentObject* object);
     /** Add an existing feature with sName (ASCII) to this document and set it active.
      * Unicode names are set through the Label property.
      * This is an overloaded function of the function above and can be used to create
