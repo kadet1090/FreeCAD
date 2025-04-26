@@ -24,7 +24,7 @@
 #include "Workbench.h"
 #include "WorkbenchManager.h"
 
-// inclusion of the generated files (generated out of WorkbenchPy.xml)
+// generated out of Workbench.pyi
 #include "WorkbenchPy.h"
 #include "WorkbenchPy.cpp"
 

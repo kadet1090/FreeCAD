@@ -25,7 +25,6 @@
 #include "PythonWorkbenchPy.h"
 #include "PythonWorkbenchPy.cpp"
 
-
 using namespace Gui;
 
 /** @class PythonWorkbenchPy
