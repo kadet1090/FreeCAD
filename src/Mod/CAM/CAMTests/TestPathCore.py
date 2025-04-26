@@ -53,9 +53,9 @@ class TestPathCore(PathTestBase):
 
         # Create Path and parameters in one
         c3 = Path.Command("G1", {"X": 34, "Y": 1.2})
-        self.assertEqual(str(c3), "Command G1 [ X:34 Y:1.2 ]")
+        self.assertEqual(str(c3), "Command('G1', {'X': 34, 'Y': 1.2})")
         c4 = Path.Command("G1X4Y5")
-        self.assertEqual(str(c4), "Command G1 [ X:4 Y:5 ]")
+        self.assertEqual(str(c4), "Command('G1', {'X': 4, 'Y': 5})")
 
         # use placement
         self.assertEqual(str(c3.Placement), "Placement [Pos=(34,1.2,0), Yaw-Pitch-Roll=(0,0,0)]")
@@ -64,24 +64,24 @@ class TestPathCore(PathTestBase):
         p1.Base = FreeCAD.Vector(3, 2, 1)
         self.assertEqual(str(p1), "Placement [Pos=(3,2,1), Yaw-Pitch-Roll=(0,0,0)]")
         c5 = Path.Command("g1", p1)
-        self.assertEqual(str(c5), "Command G1 [ X:3 Y:2 Z:1 ]")
+        self.assertEqual(str(c5), "Command('G1', {'X': 3, 'Y': 2, 'Z': 1})")
         p2 = FreeCAD.Placement()
         p2.Base = FreeCAD.Vector(5, 0, 0)
 
         # overwrite placement
         c5.Placement = p2
-        self.assertEqual(str(c5), "Command G1 [ X:5 ]")
+        self.assertEqual(str(c5), "Command('G1', {'X': 5})")
         self.assertEqual(c5.x, 5.0)
 
         # overwrite individual parameters
         c5.x = 10
         self.assertEqual(c5.x, 10.0)
         c5.y = 2
-        self.assertEqual(str(c5), "Command G1 [ X:10 Y:2 ]")
+        self.assertEqual(str(c5), "Command('G1', {'X': 10, 'Y': 2})")
 
         # set from gcode
         c3.setFromGCode("G1X1Y0")
-        self.assertEqual(str(c3), "Command G1 [ X:1 Y:0 ]")
+        self.assertEqual(str(c3), "Command('G1', {'X': 1, 'Y': 0})")
 
     def test10(self):
         """Test Path Object core functionality"""
@@ -91,7 +91,7 @@ class TestPathCore(PathTestBase):
         p = Path.Path([c1, c2])
         self.assertAlmostEqual(str(p), "Path [ size:2 length:3.2361 ]", places=4)
 
-        self.assertEqual(str(p.Commands), "[Command G1 [ X:1 Y:0 ], Command G1 [ X:0 Y:2 ]]")
+        self.assertEqual(str(p.Commands), "[Command('G1', {'X': 1, 'Y': 0}), Command('G1', {'X': 0, 'Y': 2})]")
         self.assertAlmostEqual(p.Length, 3.2361, places=4)
         p.addCommands(c1)
         self.assertEqual(
