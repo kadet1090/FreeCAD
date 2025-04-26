@@ -105,6 +105,8 @@ public:
             DocumentInitFlags initFlags=DocumentInitFlags());
     /// Closes the document \a name and removes it from the application.
     bool closeDocument(const char* name);
+    /// Closes the document \a doc and removes it from the application.
+    bool closeDocument(const Document* doc);
     /// find a unique document name
     std::string getUniqueDocumentName(const char *Name, bool tempDoc=false) const;
     /// Open an existing document from a file
