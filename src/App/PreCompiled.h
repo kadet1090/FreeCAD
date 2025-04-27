@@ -69,6 +69,7 @@
 #include <sstream>
 
 // STL
+#include <array>
 #include <bitset>
 #include <chrono>
 #include <exception>
