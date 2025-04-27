@@ -257,8 +257,9 @@ private:
     int intGeoCount;
     bool OwnerT;
     mutable bool indexInit;
-    mutable std::vector<Sketcher::GeoElementId> VertexId2GeoElementId;  // these maps a lazy initialised
-                                                                        // on first demand.
+    mutable std::vector<Sketcher::GeoElementId> VertexId2GeoElementId;  // these maps a lazy
+                                                                        // initialised on first
+                                                                        // demand.
     mutable std::map<Sketcher::GeoElementId, int> GeoElementId2VertexId;
 };
 

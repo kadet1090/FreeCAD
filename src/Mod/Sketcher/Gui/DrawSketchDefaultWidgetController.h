@@ -76,7 +76,7 @@ template<
     typename ConstructionMethodT = ConstructionMethods::DefaultConstructionMethod,
     bool PFirstComboboxIsConstructionMethod = false>  // The handler template or class having this
                                                       // as inner class
-                                                      class DrawSketchDefaultWidgetController
+class DrawSketchDefaultWidgetController
     : public DrawSketchController<HandlerT, SelectModeT, PAutoConstraintSize, OnViewParametersT, ConstructionMethodT>
 {
 public:

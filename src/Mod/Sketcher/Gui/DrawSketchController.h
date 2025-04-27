@@ -95,7 +95,8 @@ template<
                                  // value per construction mode)
     typename ConstructionMethodT = ConstructionMethods::DefaultConstructionMethod>  // The enum
                                                                                     // comprising
-                                                                                    // all the supported
+                                                                                    // all the
+                                                                                    // supported
                                                                                     // construction
                                                                                     // methods
                                                                                     class DrawSketchController
