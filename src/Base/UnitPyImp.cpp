@@ -68,15 +68,15 @@ int UnitPy::PyInit(PyObject* args, PyObject* /*kwd*/)
     Unit* self = getUnitPtr();
 
     // get quantity
-    if (PyArg_ParseTuple(args, "O!", &(Base::QuantityPy::Type), &object)) {
-        *self = static_cast<Base::QuantityPy*>(object)->getQuantityPtr()->getUnit();
+    if (PyArg_ParseTuple(args, "O!", &(QuantityPy::Type), &object)) {
+        *self = static_cast<QuantityPy*>(object)->getQuantityPtr()->getUnit();
         return 0;
     }
     PyErr_Clear();  // set by PyArg_ParseTuple()
 
     // get unit
-    if (PyArg_ParseTuple(args, "O!", &(Base::UnitPy::Type), &object)) {
-        *self = *(static_cast<Base::UnitPy*>(object)->getUnitPtr());
+    if (PyArg_ParseTuple(args, "O!", &(UnitPy::Type), &object)) {
+        *self = *(static_cast<UnitPy*>(object)->getUnitPtr());
         return 0;
     }
     PyErr_Clear();  // set by PyArg_ParseTuple()
@@ -90,7 +90,7 @@ int UnitPy::PyInit(PyObject* args, PyObject* /*kwd*/)
             *self = Quantity::parse(str).getUnit();
             return 0;
         }
-        catch (const Base::ParserError& e) {
+        catch (const ParserError& e) {
             PyErr_SetString(PyExc_ValueError, e.what());
             return -1;
         }
@@ -110,7 +110,7 @@ int UnitPy::PyInit(PyObject* args, PyObject* /*kwd*/)
             *self = Unit(i1, i2, i3, i4, i5, i6, i7, i8);
             return 0;
         }
-        catch (const Base::OverflowError& e) {
+        catch (const OverflowError& e) {
             PyErr_SetString(PyExc_OverflowError, e.what());
             return -1;
         }
@@ -131,8 +131,8 @@ PyObject* UnitPy::number_add_handler(PyObject* self, PyObject* other)
         PyErr_SetString(PyExc_TypeError, "Second arg must be Unit");
         return nullptr;
     }
-    Base::Unit* a = static_cast<UnitPy*>(self)->getUnitPtr();
-    Base::Unit* b = static_cast<UnitPy*>(other)->getUnitPtr();
+    Unit* a = static_cast<UnitPy*>(self)->getUnitPtr();
+    Unit* b = static_cast<UnitPy*>(other)->getUnitPtr();
 
     if (*a != *b) {
         PyErr_SetString(PyExc_TypeError, "Units not matching!");
@@ -152,8 +152,8 @@ PyObject* UnitPy::number_subtract_handler(PyObject* self, PyObject* other)
         PyErr_SetString(PyExc_TypeError, "Second arg must be Unit");
         return nullptr;
     }
-    Base::Unit* a = static_cast<UnitPy*>(self)->getUnitPtr();
-    Base::Unit* b = static_cast<UnitPy*>(other)->getUnitPtr();
+    Unit* a = static_cast<UnitPy*>(self)->getUnitPtr();
+    Unit* b = static_cast<UnitPy*>(other)->getUnitPtr();
 
     if (*a != *b) {
         PyErr_SetString(PyExc_TypeError, "Units not matching!");
@@ -171,8 +171,8 @@ PyObject* UnitPy::number_multiply_handler(PyObject* self, PyObject* other)
     }
 
     if (PyObject_TypeCheck(other, &(UnitPy::Type))) {
-        Base::Unit* a = static_cast<UnitPy*>(self)->getUnitPtr();
-        Base::Unit* b = static_cast<UnitPy*>(other)->getUnitPtr();
+        Unit* a = static_cast<UnitPy*>(self)->getUnitPtr();
+        Unit* b = static_cast<UnitPy*>(other)->getUnitPtr();
 
         return new UnitPy(new Unit((*a) * (*b)));
     }

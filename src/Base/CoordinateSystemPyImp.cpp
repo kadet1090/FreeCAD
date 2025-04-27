@@ -29,7 +29,6 @@
 #include "PlacementPy.h"
 #include "VectorPy.h"
 
-
 using namespace Base;
 
 // returns a string which represents the object e.g. when printed in python
@@ -130,7 +129,7 @@ Py::Object CoordinateSystemPy::getAxis() const
 
 void CoordinateSystemPy::setAxis(Py::Object arg)
 {
-    if (PyObject_TypeCheck(arg.ptr(), &(Base::AxisPy::Type))) {
+    if (PyObject_TypeCheck(arg.ptr(), &(AxisPy::Type))) {
         AxisPy* axis = static_cast<AxisPy*>(arg.ptr());
         getCoordinateSystemPtr()->setAxis(*axis->getAxisPtr());
         return;
