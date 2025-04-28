@@ -100,3 +100,18 @@ std::optional<PyObject*> ShapeAttributeProvider::getAttribute(App::DocumentObjec
 
     return {};
 }
+
+Py::Object PartPseudoShapeProvider::getElement(const Py::Object& module, const Py::Object& object, const std::string& subname) const
+{
+    Py::Callable func(module.getAttr("getShape"));
+    Py::Tuple tuple(1);
+    tuple.setItem(0, object);
+    if (subname.empty()) {
+        return func.apply(tuple);
+    }
+
+    Py::Dict dict;
+    dict.setItem("subname", Py::String(subname));
+    dict.setItem("needSubElement", Py::True());
+    return func.apply(tuple, dict);
+}
