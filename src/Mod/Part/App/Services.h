@@ -44,4 +44,10 @@ public:
     std::optional<Base::Vector3d> ofDocumentObject(App::DocumentObject* object) const override;
 };
 
+class ShapeAttributeProvider final: public App::CustomAttributeProvider
+{
+public:
+    std::optional<PyObject*> getAttribute(App::DocumentObject* object, const char* attr) const override;
+};
+
 #endif  // PART_SERVICES_H
