@@ -226,14 +226,6 @@ void ViewProviderMeasureBase::setDisplayMode(const char* ModeName)
     ViewProviderDocumentObject::setDisplayMode(ModeName);
 }
 
-
-void ViewProviderMeasureBase::finishRestoring()
-{
-    // Force measurement visibility when loading a document
-    show();
-}
-
-
 void ViewProviderMeasureBase::onChanged(const App::Property* prop)
 {
     if (prop == &TextColor) {
@@ -527,11 +519,6 @@ void ViewProviderMeasureBase::onSubjectVisibilityChanged(const App::DocumentObje
             // show ourselves only if subject is visible
             setVisible(false);
         }
-        else {
-            // here, we don't know if we should be visible or not, so we have to check the whole
-            // subject
-            setVisible(isSubjectVisible());
-        }
     }
 }
 
@@ -711,16 +698,6 @@ Base::Vector3d ViewProviderMeasure::getTextPosition()
     Base::Vector3d textPos(vec[0], vec[1], vec[2]);
 
     return textPos - basePoint;
-}
-
-//! called by the system when it is time to display this measure
-void ViewProviderMeasureBase::show()
-{
-    if (isSubjectVisible()) {
-        // only show the annotation if the subject is visible.
-        // this avoids disconnected annotations floating in space.
-        ViewProviderDocumentObject::show();
-    }
 }
 
 

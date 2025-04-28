@@ -94,11 +94,10 @@ public:
     bool isPartOfPhysicalObject() const override
     {
         return false;
-    };
+    }
     void attach(App::DocumentObject* pcObj) override;
     void updateData(const App::Property* prop) override;
     virtual void positionAnno(const Measure::MeasureBase* measureObject);
-    void finishRestoring() override;
 
     bool useNewSelectionModel() const override
     {
@@ -106,8 +105,6 @@ public:
     }
     std::vector<std::string> getDisplayModes() const override;
     void setDisplayMode(const char* ModeName) override;
-    /// Show the annotation in the 3d window
-    void show() override;
 
     virtual void redrawAnnotation();
     Measure::MeasureBase* getMeasureObject();
