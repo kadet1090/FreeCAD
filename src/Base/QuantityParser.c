@@ -63,7 +63,7 @@
 
 
 /* Copy the first part of user declarations.  */
-#line 6 "QuantityParser.y" /* yacc.c:339  */
+#line 24 "QuantityParser.y" /* yacc.c:339  */
 
         #define YYSTYPE Quantity
         #define yyparse Quantity_yyparse
@@ -447,10 +447,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    34,    34,    35,    36,    37,    38,    39,    41,    42,
-      43,    44,    45,    46,    47,    48,    49,    50,    51,    52,
-      53,    54,    55,    56,    57,    58,    59,    60,    61,    62,
-      65,    66,    67,    68,    69,    70,    72,    73
+       0,    52,    52,    53,    54,    55,    56,    57,    59,    60,
+      61,    62,    63,    64,    65,    66,    67,    68,    69,    70,
+      71,    72,    73,    74,    75,    76,    77,    78,    79,    80,
+      83,    84,    85,    86,    87,    88,    90,    91
 };
 #endif
 
@@ -1300,217 +1300,217 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 34 "QuantityParser.y" /* yacc.c:1646  */
-    { QuantResult = Quantity(DOUBLE_MIN); /* empty input */ }
+#line 52 "QuantityParser.y" /* yacc.c:1646  */
+    { QuantResult = Quantity(); /* empty input */ }
 #line 1305 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 35 "QuantityParser.y" /* yacc.c:1646  */
+#line 53 "QuantityParser.y" /* yacc.c:1646  */
     { QuantResult = (yyvsp[0])     ;            }
 #line 1311 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 36 "QuantityParser.y" /* yacc.c:1646  */
+#line 54 "QuantityParser.y" /* yacc.c:1646  */
     { QuantResult = (yyvsp[0])     ;            }
 #line 1317 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 37 "QuantityParser.y" /* yacc.c:1646  */
+#line 55 "QuantityParser.y" /* yacc.c:1646  */
     { QuantResult = (yyvsp[0])     ;            }
 #line 1323 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 38 "QuantityParser.y" /* yacc.c:1646  */
+#line 56 "QuantityParser.y" /* yacc.c:1646  */
     { QuantResult = (yyvsp[-1]) + (yyvsp[0]);            }
 #line 1329 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 39 "QuantityParser.y" /* yacc.c:1646  */
+#line 57 "QuantityParser.y" /* yacc.c:1646  */
     { QuantResult = (yyvsp[-2]) + (yyvsp[-1]) + (yyvsp[0]);       }
 #line 1335 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 41 "QuantityParser.y" /* yacc.c:1646  */
+#line 59 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]);         	}
 #line 1341 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 42 "QuantityParser.y" /* yacc.c:1646  */
+#line 60 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]);         	}
 #line 1347 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 43 "QuantityParser.y" /* yacc.c:1646  */
+#line 61 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity((yyvsp[-2]).getValue() + (yyvsp[0]).getValue());    	}
 #line 1353 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 44 "QuantityParser.y" /* yacc.c:1646  */
+#line 62 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity((yyvsp[-2]).getValue() - (yyvsp[0]).getValue());    	}
 #line 1359 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 45 "QuantityParser.y" /* yacc.c:1646  */
+#line 63 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity((yyvsp[-2]).getValue() * (yyvsp[0]).getValue());    	}
 #line 1365 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 46 "QuantityParser.y" /* yacc.c:1646  */
+#line 64 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity((yyvsp[-2]).getValue() / (yyvsp[0]).getValue());    	}
 #line 1371 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 47 "QuantityParser.y" /* yacc.c:1646  */
+#line 65 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(-(yyvsp[0]).getValue());                    }
 #line 1377 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 48 "QuantityParser.y" /* yacc.c:1646  */
+#line 66 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(pow ((yyvsp[-2]).getValue(), (yyvsp[0]).getValue()));}
 #line 1383 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 49 "QuantityParser.y" /* yacc.c:1646  */
+#line 67 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-1]);         	}
 #line 1389 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 50 "QuantityParser.y" /* yacc.c:1646  */
+#line 68 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(acos((yyvsp[-1]).getValue()));   }
 #line 1395 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 51 "QuantityParser.y" /* yacc.c:1646  */
+#line 69 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(asin((yyvsp[-1]).getValue()));   }
 #line 1401 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 52 "QuantityParser.y" /* yacc.c:1646  */
+#line 70 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(atan((yyvsp[-1]).getValue()));   }
 #line 1407 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 53 "QuantityParser.y" /* yacc.c:1646  */
+#line 71 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(fabs((yyvsp[-1]).getValue()));   }
 #line 1413 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 54 "QuantityParser.y" /* yacc.c:1646  */
+#line 72 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(exp((yyvsp[-1]).getValue()));    }
 #line 1419 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 55 "QuantityParser.y" /* yacc.c:1646  */
+#line 73 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(log((yyvsp[-1]).getValue()));    }
 #line 1425 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 56 "QuantityParser.y" /* yacc.c:1646  */
+#line 74 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(log10((yyvsp[-1]).getValue()));  }
 #line 1431 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 57 "QuantityParser.y" /* yacc.c:1646  */
+#line 75 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(sin((yyvsp[-1]).getValue()));    }
 #line 1437 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 58 "QuantityParser.y" /* yacc.c:1646  */
+#line 76 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(sinh((yyvsp[-1]).getValue()));   }
 #line 1443 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 59 "QuantityParser.y" /* yacc.c:1646  */
+#line 77 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(tan((yyvsp[-1]).getValue()));    }
 #line 1449 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 60 "QuantityParser.y" /* yacc.c:1646  */
+#line 78 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(tanh((yyvsp[-1]).getValue()));   }
 #line 1455 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 61 "QuantityParser.y" /* yacc.c:1646  */
+#line 79 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(sqrt((yyvsp[-1]).getValue()));   }
 #line 1461 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 62 "QuantityParser.y" /* yacc.c:1646  */
+#line 80 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(cos((yyvsp[-1]).getValue()));    }
 #line 1467 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 65 "QuantityParser.y" /* yacc.c:1646  */
+#line 83 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[0]);         	                }
 #line 1473 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 66 "QuantityParser.y" /* yacc.c:1646  */
+#line 84 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity(1.0)/(yyvsp[0]);  	        }
 #line 1479 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 67 "QuantityParser.y" /* yacc.c:1646  */
+#line 85 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-2]) * (yyvsp[0]);    	                }
 #line 1485 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 68 "QuantityParser.y" /* yacc.c:1646  */
+#line 86 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-2]) / (yyvsp[0]);    	                }
 #line 1491 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 69 "QuantityParser.y" /* yacc.c:1646  */
+#line 87 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-2]).pow ((yyvsp[0]));                 }
 #line 1497 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 70 "QuantityParser.y" /* yacc.c:1646  */
+#line 88 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-1]);                          }
 #line 1503 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 72 "QuantityParser.y" /* yacc.c:1646  */
+#line 90 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = (yyvsp[-1])*(yyvsp[0]);    	                }
 #line 1509 "QuantityParser.c" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 73 "QuantityParser.y" /* yacc.c:1646  */
+#line 91 "QuantityParser.y" /* yacc.c:1646  */
     { (yyval) = Quantity((yyvsp[-2]))/(yyvsp[0]);  	        }
 #line 1515 "QuantityParser.c" /* yacc.c:1646  */
     break;
@@ -1744,6 +1744,6 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 77 "QuantityParser.y" /* yacc.c:1906  */
+#line 95 "QuantityParser.y" /* yacc.c:1906  */
 
 // clang-format on

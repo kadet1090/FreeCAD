@@ -568,7 +568,7 @@ Quantity Quantity::parse(const std::string& string)
         QuantityParser::yy_scan_string(string.c_str());
     QuantityParser::StringBufferCleaner cleaner(my_string_buffer);
     // set the global return variables
-    QuantResult = Quantity(DOUBLE_MIN);
+    QuantResult = Quantity(0.0);
     // run the parser
     QuantityParser::yyparse();
 

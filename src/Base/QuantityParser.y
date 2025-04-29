@@ -49,7 +49,7 @@
 
 %%
 
-    input:                                  { QuantResult = Quantity(DOUBLE_MIN); /* empty input */ }
+    input:                                  { QuantResult = Quantity(); /* empty input */ }
             |  num                          { QuantResult = $1     ;            }
             |  unit                         { QuantResult = $1     ;            }
             |  quantity                     { QuantResult = $1     ;            }
