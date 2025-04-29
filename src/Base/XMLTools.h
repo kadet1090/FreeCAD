@@ -28,22 +28,14 @@
 #include <memory>
 #include <ostream>
 #include <xercesc/util/TransService.hpp>
+#include <FCGlobal.h>
 
-#ifndef XERCES_CPP_NAMESPACE_BEGIN
-#define XERCES_CPP_NAMESPACE_QUALIFIER
 namespace XERCES_CPP_NAMESPACE
 {
 class DOMNode;
 class DOMElement;
 class DOMDocument;
 }  // namespace XERCES_CPP_NAMESPACE
-#else
-XERCES_CPP_NAMESPACE_BEGIN
-class DOMNode;
-class DOMElement;
-class DOMDocument;
-XERCES_CPP_NAMESPACE_END
-#endif
 
 // Helper class
 class BaseExport XMLTools
@@ -85,12 +77,12 @@ inline std::ostream& operator<<(std::ostream& target, const StrX& toDump)
 }
 
 inline StrX::StrX(const XMLCh* const toTranscode)
-    : fLocalForm(XERCES_CPP_NAMESPACE_QUALIFIER XMLString::transcode(toTranscode))
+    : fLocalForm(XERCES_CPP_NAMESPACE::XMLString::transcode(toTranscode))
 {}
 
 inline StrX::~StrX()
 {
-    XERCES_CPP_NAMESPACE_QUALIFIER XMLString::release(&fLocalForm);
+    XERCES_CPP_NAMESPACE::XMLString::release(&fLocalForm);
 }
 
 
@@ -163,12 +155,12 @@ private:
 
 
 inline XStr::XStr(const char* const toTranscode)
-    : fUnicodeForm(XERCES_CPP_NAMESPACE_QUALIFIER XMLString::transcode(toTranscode))
+    : fUnicodeForm(XERCES_CPP_NAMESPACE::XMLString::transcode(toTranscode))
 {}
 
 inline XStr::~XStr()
 {
-    XERCES_CPP_NAMESPACE_QUALIFIER XMLString::release(&fUnicodeForm);
+    XERCES_CPP_NAMESPACE::XMLString::release(&fUnicodeForm);
 }
 
 // Uses the compiler to create a cache of transcoded string literals so that each subsequent call

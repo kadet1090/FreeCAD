@@ -60,12 +60,7 @@
 
 FC_LOG_LEVEL_INIT("Parameter", true, true)
 
-#ifndef XERCES_CPP_NAMESPACE_BEGIN
-#define XERCES_CPP_NAMESPACE_QUALIFIER
 using namespace XERCES_CPP_NAMESPACE;
-#else
-XERCES_CPP_NAMESPACE_USE
-#endif
 using namespace Base;
 
 
@@ -121,7 +116,7 @@ public:
     //@{
 
     /** @ interface from DOMWriterFilter */
-    FilterAction acceptNode(const XERCES_CPP_NAMESPACE_QUALIFIER DOMNode* node) const override;
+    FilterAction acceptNode(const DOMNode* node) const override;
     //@{
 
     ShowType getWhatToShow() const override
@@ -175,9 +170,7 @@ inline bool DOMTreeErrorReporter::getSawErrors() const
 
 /** Default construction
  */
-ParameterGrp::ParameterGrp(XERCES_CPP_NAMESPACE_QUALIFIER DOMElement* GroupNode,
-                           const char* sName,
-                           ParameterGrp* Parent)
+ParameterGrp::ParameterGrp(DOMElement* GroupNode, const char* sName, ParameterGrp* Parent)
     : _pGroupNode(GroupNode)
     , _Parent(Parent)
 {
@@ -357,10 +350,7 @@ void ParameterGrp::revert(const Base::Reference<ParameterGrp>& Grp)
     }
 }
 
-XERCES_CPP_NAMESPACE_QUALIFIER DOMElement*
-ParameterGrp::CreateElement(XERCES_CPP_NAMESPACE_QUALIFIER DOMElement* Start,
-                            const char* Type,
-                            const char* Name)
+DOMElement* ParameterGrp::CreateElement(DOMElement* Start, const char* Type, const char* Name)
 {
     if (XMLString::compareString(Start->getNodeName(), XStrLiteral("FCParamGroup").unicodeForm())
             != 0
@@ -378,7 +368,7 @@ ParameterGrp::CreateElement(XERCES_CPP_NAMESPACE_QUALIFIER DOMElement* Start,
         _Parent->_GetGroup(_cName.c_str());
     }
 
-    XERCES_CPP_NAMESPACE_QUALIFIER DOMDocument* pDocument = Start->getOwnerDocument();
+    DOMDocument* pDocument = Start->getOwnerDocument();
 
     auto pcElem = pDocument->createElement(XStr(Type).unicodeForm());
     pcElem->setAttribute(XStrLiteral("Name").unicodeForm(), XStr(Name).unicodeForm());
@@ -1045,7 +1035,7 @@ void ParameterGrp::SetASCII(const char* Name, const char* sValue)
         // and set the value
         DOMNode* pcElem2 = pcElem->getFirstChild();
         if (!pcElem2) {
-            XERCES_CPP_NAMESPACE_QUALIFIER DOMDocument* pDocument = _pGroupNode->getOwnerDocument();
+            DOMDocument* pDocument = _pGroupNode->getOwnerDocument();
             DOMText* pText = pDocument->createTextNode(XUTF8Str(sValue).unicodeForm());
             pcElem->appendChild(pText);
             if (isNew || sValue[0] != 0) {
@@ -1440,10 +1430,7 @@ bool ParameterGrp::ShouldRemove() const
     });
 }
 
-XERCES_CPP_NAMESPACE_QUALIFIER DOMElement*
-ParameterGrp::FindElement(XERCES_CPP_NAMESPACE_QUALIFIER DOMElement* Start,
-                          const char* Type,
-                          const char* Name) const
+DOMElement* ParameterGrp::FindElement(DOMElement* Start, const char* Type, const char* Name) const
 {
     if (XMLString::compareString(Start->getNodeName(), XStrLiteral("FCParamGroup").unicodeForm())
             != 0
@@ -1482,8 +1469,7 @@ ParameterGrp::FindElement(XERCES_CPP_NAMESPACE_QUALIFIER DOMElement* Start,
     return nullptr;
 }
 
-XERCES_CPP_NAMESPACE_QUALIFIER DOMElement*
-ParameterGrp::FindNextElement(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode* Prev, const char* Type) const
+DOMElement* ParameterGrp::FindNextElement(DOMNode* Prev, const char* Type) const
 {
     DOMNode* clChild = Prev;
     if (!clChild) {
@@ -1502,10 +1488,7 @@ ParameterGrp::FindNextElement(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode* Prev, cons
     return nullptr;
 }
 
-XERCES_CPP_NAMESPACE_QUALIFIER DOMElement*
-ParameterGrp::FindOrCreateElement(XERCES_CPP_NAMESPACE_QUALIFIER DOMElement* Start,
-                                  const char* Type,
-                                  const char* Name)
+DOMElement* ParameterGrp::FindOrCreateElement(DOMElement* Start, const char* Type, const char* Name)
 {
     // first try to find it
     DOMElement* pcElem = FindElement(Start, Type, Name);
@@ -1516,8 +1499,7 @@ ParameterGrp::FindOrCreateElement(XERCES_CPP_NAMESPACE_QUALIFIER DOMElement* Sta
     return CreateElement(Start, Type, Name);
 }
 
-XERCES_CPP_NAMESPACE_QUALIFIER DOMNode*
-ParameterGrp::FindAttribute(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode* Node, const char* Name) const
+DOMNode* ParameterGrp::FindAttribute(DOMNode* Node, const char* Name) const
 {
     DOMNamedNodeMap* attr = Node->getAttributes();
     if (attr) {
@@ -1861,7 +1843,7 @@ int ParameterManager::LoadDocument(const char* sFileName)
     }
 }
 
-int ParameterManager::LoadDocument(const XERCES_CPP_NAMESPACE_QUALIFIER InputSource& inputSource)
+int ParameterManager::LoadDocument(const XERCES_CPP_NAMESPACE::InputSource& inputSource)
 {
     //
     //  Create our parser, then attach an error handler to the parser.
