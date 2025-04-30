@@ -130,6 +130,12 @@ foreach (exe ${TestExecutables})
     add_executable(${exe})
 endforeach()
 
+if (FREECAD_WARN_ERROR)
+    foreach (exe ${TestExecutables})
+        target_compile_warn_error(${exe})
+    endforeach()
+endif()
+
 if ( EXISTS "${CMAKE_SOURCE_DIR}/tests/lib/googletest" )
     add_subdirectory(lib)
 endif()
