@@ -41,7 +41,7 @@ std::string MaterialTreeWidgetPy::representation() const
 PyObject* MaterialTreeWidgetPy::PyMake(struct _typeobject*, PyObject*, PyObject*)  // Python wrapper
 {
     // never create such objects with the constructor
-    return new MaterialTreeWidgetPy(new MaterialTreeWidget());
+    return new MaterialTreeWidgetPy(nullptr);
 }
 
 // constructor method
@@ -49,46 +49,34 @@ int MaterialTreeWidgetPy::PyInit(PyObject* args, PyObject* /*kwd*/)
 {
     PyObject* obj {};
     if (PyArg_ParseTuple(args, "")) {
+        setHandle(std::make_shared<MaterialTreeWidget>());
         return 0;
     }
 
     PyErr_Clear();
     if (PyArg_ParseTuple(args, "O!", &(MatGui::MaterialTreeWidgetPy::Type), &obj)) {
         auto widget = static_cast<MatGui::MaterialTreeWidgetPy*>(obj)->getMaterialTreeWidgetPtr();
-        _pcTwinPointer = widget;
+        setTwinPointer(widget);
         return 0;
     }
 
-    // PyErr_Clear();
-    // if (PyArg_ParseTuple(args, "O!", &(QWidget::Type), &obj)) {
-    //     auto widget = static_cast<MatGui::MaterialTreeWidget*>(obj);
-    //     _pcTwinPointer = widget;
-    //     return 0;
-    // }
-
     PyErr_Clear();
     if (PyArg_ParseTuple(args, "O", &obj)) {
-        if ((QLatin1String(obj->ob_type->tp_name) == QLatin1String("PySide2.QtWidgets.QWidget")) ||
-            (QLatin1String(obj->ob_type->tp_name) == QLatin1String("PySide6.QtWidgets.QWidget"))) {
-            Gui::PythonWrapper wrap;
-            wrap.loadWidgetsModule();
-            auto qObject = wrap.toQObject(Py::Object(obj));
-            auto widget = static_cast<MatGui::MaterialTreeWidget*>(qObject);
-            _pcTwinPointer = widget;
+        Gui::PythonWrapper wrap;
+        wrap.loadWidgetsModule();
+        auto qObject = wrap.toQObject(Py::Object(obj));
+        if (auto widget = dynamic_cast<MatGui::MaterialTreeWidget*>(qObject)) {
+            setTwinPointer(widget);
             return 0;
         }
-        else {
-            PyErr_Format(PyExc_TypeError,
-                         "empty parameter list, or MaterialTreeWidget expected not '%s'",
-                         obj->ob_type->tp_name);
-            return -1;
-        }
+
+        PyErr_Format(PyExc_TypeError,
+                     "empty parameter list, or MaterialTreeWidget expected not '%s'",
+                     obj->ob_type->tp_name);
+        return -1;
     }
 
     PyErr_SetString(PyExc_TypeError, "empty parameter list, or MaterialTreeWidget expected");
-    // PyErr_Format(PyExc_TypeError,
-    //              "empty parameter list, or MaterialTreeWidget expected not '%s'",
-    //              obj->ob_type->tp_name);
     return -1;
 }
 

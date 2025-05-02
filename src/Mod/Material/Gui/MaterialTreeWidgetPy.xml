@@ -67,5 +67,15 @@
         <UserDocu>Set the current material filter.</UserDocu>
       </Documentation>
     </Methode>
+    <ClassDeclarations>
+private:
+    std::shared_ptr&lt;QWidget&gt; myWidget;
+
+public:
+    void setHandle(std::shared_ptr&lt;QWidget&gt; widget) {
+        setTwinPointer(widget.get());
+        myWidget = widget;
+    }
+</ClassDeclarations>
   </PythonExport>
 </GenerateModel>
