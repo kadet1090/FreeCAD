@@ -57,6 +57,7 @@ public:
     void updateData(const App::Property*) override;
     bool setEdit(int ModNum) override;
     bool doubleClicked() override;
+    void setupContextMenu(QMenu* menu, QObject* receiver, const char* member) override;
     bool canDelete(App::DocumentObject* obj) const override;
 
     TechDraw::DrawHatch* getViewObject() const;

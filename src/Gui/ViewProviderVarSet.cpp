@@ -23,10 +23,12 @@
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <memory>
+# include <QMenu>
 #endif
 
 #include <App/VarSet.h>
 
+#include "ActionFunction.h"
 #include "MainWindow.h"
 #include "ViewProviderVarSet.h"
 
@@ -55,6 +57,17 @@ bool ViewProviderVarSet::doubleClicked()
     dialog->activateWindow();
 
     return true;
+}
+
+void ViewProviderVarSet::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
+{
+    auto func = new Gui::ActionFunction(menu);
+    QAction* action = menu->addAction(QObject::tr("Add property..."));
+    func->trigger(action, [this](){
+        this->doubleClicked();
+    });
+
+    ViewProviderDocumentObject::setupContextMenu(menu, receiver, member);
 }
 
 void ViewProviderVarSet::onFinished(int /*result*/)

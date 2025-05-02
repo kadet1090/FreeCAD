@@ -25,11 +25,13 @@
 
 #ifndef _PreComp_
 #include <vector>
+#include <QMenu>
 #endif
 
 #include <App/Document.h>
 #include <App/DocumentObject.h>
 
+#include <Gui/ActionFunction.h>
 #include <Gui/Application.h>
 #include <Gui/BitmapFactory.h>
 #include <Gui/Command.h>
@@ -66,4 +68,15 @@ bool ViewProviderBom::doubleClicked()
     Gui::Command::runCommand(Gui::Command::App, pythonCommand.c_str());
 
     return true;
+}
+
+void ViewProviderBom::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
+{
+    Gui::ActionFunction* func = new Gui::ActionFunction(menu);
+    QAction* action = menu->addAction(QObject::tr("Edit BOM..."));
+    func->trigger(action, [this]() {
+        this->doubleClicked();
+    });
+
+    ViewProviderSheet::setupContextMenu(menu, receiver, member);
 }

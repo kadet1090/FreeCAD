@@ -48,6 +48,7 @@ public:
 
     /// Is called by the tree if the user double click on the object
     bool doubleClicked() override;
+    void setupContextMenu(QMenu*, QObject*, const char*) override;
 
     TechDraw::DrawProjGroup* getObject() const;
     TechDraw::DrawProjGroup* getViewObject() const override;

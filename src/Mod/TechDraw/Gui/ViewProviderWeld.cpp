@@ -24,12 +24,14 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+# include <QMenu>
 # include <QMessageBox>
 # include <QTextStream>
 #endif
 
 #include <App/Application.h>
 #include <App/DocumentObject.h>
+#include <Gui/ActionFunction.h>
 #include <Gui/Control.h>
 #include <Gui/MainWindow.h>
 #include <Gui/Selection/Selection.h>
@@ -112,6 +114,18 @@ bool ViewProviderWeld::doubleClicked()
 //    Base::Console().Message("VPW::doubleClicked()\n");
     setEdit(ViewProvider::Default);
     return true;
+}
+
+void ViewProviderWeld::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
+{
+    auto* func = new Gui::ActionFunction(menu);
+    QAction* act = menu->addAction(QObject::tr("Edit Welding Symbol"));
+    act->setData(QVariant((int)ViewProvider::Default));
+    func->trigger(act, [this]() {
+        this->doubleClicked();
+    });
+
+    ViewProviderDrawingView::setupContextMenu(menu, receiver, member);
 }
 
 std::string ViewProviderWeld::prefFontName()

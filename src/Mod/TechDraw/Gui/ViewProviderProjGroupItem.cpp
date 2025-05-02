@@ -22,11 +22,14 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
+ #include <QCoreApplication>
+ #include <QMenu>
  #include <QMessageBox>
  #include <QTextStream>
 #endif
 
 #include <App/DocumentObject.h>
+#include <Gui/ActionFunction.h>
 #include <Gui/Control.h>
 #include <Gui/MainWindow.h>
 
@@ -93,16 +96,21 @@ void ViewProviderProjGroupItem::updateIcon()
     } else if(strcmp(projType.c_str(), "FrontBottomLeft") == 0) {
         sPixmap = "TechDraw_ProjFrontBottomLeft";
     }
- }
+}
 
 
 void ViewProviderProjGroupItem::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
 {
-    Q_UNUSED(menu);
-    Q_UNUSED(receiver);
-    Q_UNUSED(member);
-    //QAction* act;
-    //act = menu->addAction(QObject::tr("Show drawing"), receiver, member);
+    if (!getObject()->getPGroup()) {
+        auto func = new Gui::ActionFunction(menu);
+        QString title = QCoreApplication::translate("TechDrawGui::TaskProjGroup", "Projection Group");
+        QAction* action = menu->addAction(title);
+        func->trigger(action, [this](){
+            this->doubleClicked();
+        });
+    }
+
+    ViewProviderViewPart::setupContextMenu(menu, receiver, member);
 }
 
 bool ViewProviderProjGroupItem::setEdit(int ModNum)

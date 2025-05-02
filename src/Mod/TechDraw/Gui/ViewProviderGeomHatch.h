@@ -57,6 +57,7 @@ public:
     void onChanged(const App::Property *prop) override;
     bool setEdit(int ModNum) override;
     bool doubleClicked(void) override;
+    void setupContextMenu(QMenu* menu, QObject* receiver, const char* member) override;
     bool useNewSelectionModel(void) const override {return false;}
     void updateGraphic(void);
     void getParameters(void);

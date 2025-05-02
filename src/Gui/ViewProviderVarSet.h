@@ -40,6 +40,7 @@ public:
     bool isShow() const override { return true; }
 
     bool doubleClicked() override;
+    void setupContextMenu(QMenu* menu, QObject* receiver, const char* member) override;
 
     void onFinished(int);
 

@@ -31,6 +31,7 @@
 #endif
 
 #include <App/DocumentObject.h>
+#include <Gui/ActionFunction.h>
 #include <Gui/Control.h>
 #include <Gui/MainWindow.h>
 #include <Gui/Selection/Selection.h>
@@ -85,6 +86,18 @@ bool ViewProviderProjGroup::setEdit(int ModNum)
     }
 
     return true;
+}
+
+void ViewProviderProjGroup::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
+{
+    auto func = new Gui::ActionFunction(menu);
+    QString title = QCoreApplication::translate("TechDrawGui::TaskProjGroup", "Projection Group");
+    QAction* action = menu->addAction(title);
+    func->trigger(action, [this](){
+        this->doubleClicked();
+    });
+
+    ViewProviderDrawingView::setupContextMenu(menu, receiver, member);
 }
 
 bool ViewProviderProjGroup::doubleClicked()

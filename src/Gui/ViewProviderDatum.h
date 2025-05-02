@@ -57,6 +57,7 @@ namespace Gui
         }
         void unsetEdit(int) override
         { }
+        void setupContextMenu(QMenu* menu, QObject* receiver, const char* member) override;
         ///@}
 
         void setTemporaryScale(double factor);

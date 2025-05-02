@@ -53,6 +53,7 @@ public:
     std::vector<App::DocumentObject*> claimChildren() const override;
     bool setEdit(int ModNum) override;
     bool doubleClicked() override;
+    void setupContextMenu(QMenu* menu, QObject* receiver, const char* member) override;
 
     TechDraw::DrawWeldSymbol* getViewObject() const override;
     virtual TechDraw::DrawWeldSymbol* getFeature() const;

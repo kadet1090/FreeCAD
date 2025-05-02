@@ -26,10 +26,12 @@
 
 #ifndef _PreComp_
 #include <Precision.hxx>
+#include <QMenu>
 #endif
 
 #include <App/DocumentObject.h>
 #include <Base/UnitsApi.h>
+#include <Gui/ActionFunction.h>
 #include <Gui/Application.h>
 #include <Gui/Control.h>
 
@@ -92,6 +94,18 @@ bool ViewProviderHatch::doubleClicked()
 {
     setEdit(0);
     return true;
+}
+
+void ViewProviderHatch::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
+{
+    auto* func = new Gui::ActionFunction(menu);
+    QAction* act = menu->addAction(QObject::tr("Edit Face Hatch"));
+    act->setData(QVariant((int)ViewProvider::Default));
+    func->trigger(act, [this]() {
+        this->doubleClicked();
+    });
+
+    ViewProviderDocumentObject::setupContextMenu(menu, receiver, member);
 }
 
 void ViewProviderHatch::onChanged(const App::Property* prop)
