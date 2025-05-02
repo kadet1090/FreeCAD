@@ -149,18 +149,15 @@ void Transaction::addOrRemoveProperty(TransactionalObject* Obj, const Property* 
     auto& index = _Objects.get<1>();
     auto pos = index.find(Obj);
 
-    TransactionObject* To;
-
     if (pos != index.end()) {
-        To = pos->second;
+        auto To = pos->second;
+        To->addOrRemoveProperty(pcProp, add);
     }
-    else {
-        To = TransactionFactory::instance().createTransaction(Obj->getTypeId());
+    else if (auto To = TransactionFactory::instance().createTransaction(Obj->getTypeId())) {
         To->status = TransactionObject::Chn;
         index.emplace(Obj, To);
+        To->addOrRemoveProperty(pcProp, add);
     }
-
-    To->addOrRemoveProperty(pcProp, add);
 }
 
 //**************************************************************************
@@ -218,8 +215,7 @@ void Transaction::addObjectNew(TransactionalObject* Obj)
             seq.relocate(seq.end(), _Objects.project<0>(pos));
         }
     }
-    else {
-        TransactionObject* To = TransactionFactory::instance().createTransaction(Obj->getTypeId());
+    else if (auto To = TransactionFactory::instance().createTransaction(Obj->getTypeId())) {
         To->status = TransactionObject::New;
         To->_NameInDocument = Obj->detachFromDocument();
         index.emplace(Obj, To);
@@ -240,8 +236,7 @@ void Transaction::addObjectDel(const TransactionalObject* Obj)
     else if (pos != index.end() && pos->second->status == TransactionObject::Chn) {
         pos->second->status = TransactionObject::Del;
     }
-    else {
-        TransactionObject* To = TransactionFactory::instance().createTransaction(Obj->getTypeId());
+    else if (auto To = TransactionFactory::instance().createTransaction(Obj->getTypeId())) {
         To->status = TransactionObject::Del;
         index.emplace(Obj, To);
     }
@@ -252,18 +247,15 @@ void Transaction::addObjectChange(const TransactionalObject* Obj, const Property
     auto& index = _Objects.get<1>();
     auto pos = index.find(Obj);
 
-    TransactionObject* To;
-
     if (pos != index.end()) {
-        To = pos->second;
+        auto To = pos->second;
+        To->setProperty(Prop);
     }
-    else {
-        To = TransactionFactory::instance().createTransaction(Obj->getTypeId());
+    else if (auto To = TransactionFactory::instance().createTransaction(Obj->getTypeId())) {
         To->status = TransactionObject::Chn;
         index.emplace(Obj, To);
+        To->setProperty(Prop);
     }
-
-    To->setProperty(Prop);
 }
 
 
@@ -522,13 +514,12 @@ void TransactionFactory::addProducer(const Base::Type& type, Base::AbstractProdu
  */
 TransactionObject* TransactionFactory::createTransaction(const Base::Type& type) const
 {
-    std::map<Base::Type, Base::AbstractProducer*>::const_iterator it;
-    for (it = producers.begin(); it != producers.end(); ++it) {
-        if (type.isDerivedFrom(it->first)) {
-            return static_cast<TransactionObject*>(it->second->Produce());
+    for (const auto& it : producers) {
+        if (type.isDerivedFrom(it.first)) {
+            return static_cast<TransactionObject*>(it.second->Produce());
         }
     }
 
-    assert(0);
+    Base::Console().Log("Cannot create transaction object from %s\n", type.getName());
     return nullptr;
 }
