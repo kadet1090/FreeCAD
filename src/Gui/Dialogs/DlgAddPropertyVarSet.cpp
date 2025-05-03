@@ -57,6 +57,8 @@ namespace Editor
     const bool ClearName = true;
 }
 
+/* TRANSLATOR Gui::Dialog::DlgAddPropertyVarSet */
+
 DlgAddPropertyVarSet::DlgAddPropertyVarSet(QWidget* parent,
                                            ViewProviderVarSet* viewProvider)
     : QDialog(parent),
@@ -177,7 +179,7 @@ void DlgAddPropertyVarSet::initializeWidgets(ViewProviderVarSet* viewProvider)
 
 void DlgAddPropertyVarSet::setTitle()
 {
-    setWindowTitle(QObject::tr("Add a property to %1").arg(QString::fromStdString(varSet->getFullName())));
+    setWindowTitle(tr("Add a property to %1").arg(QString::fromStdString(varSet->getFullName())));
 }
 
 void DlgAddPropertyVarSet::setOkEnabled(bool enabled)
@@ -265,8 +267,8 @@ void DlgAddPropertyVarSet::createProperty()
     }
     catch (const Base::Exception& e) {
         e.ReportException();
-        critical(QObject::tr("Add property"),
-                 QObject::tr("Failed to add property to '%1': %2").arg(
+        critical(tr("Add property"),
+                 tr("Failed to add property to '%1': %2").arg(
                          QString::fromLatin1(varSet->getFullName().c_str()),
                          QString::fromUtf8(e.what())));
         clearEditors(Editor::ClearName);
@@ -386,16 +388,16 @@ void DlgAddPropertyVarSet::checkName() {
     std::string name = ui->lineEditName->text().toStdString();
     if(name.empty() || name != Base::Tools::getIdentifier(name)) {
         QMessageBox::critical(getMainWindow(),
-                              QObject::tr("Invalid name"),
-                              QObject::tr("The property name must only contain alpha numericals, "
-                                          "underscore, and must not start with a digit."));
+                              tr("Invalid name"),
+                              tr("The property name must only contain alpha numericals, "
+                                 "underscore, and must not start with a digit."));
         clearEditors(Editor::KeepName);
         throw CreatePropertyException("Invalid name");
     }
 
     if(App::ExpressionParser::isTokenAUnit(name) || App::ExpressionParser::isTokenAConstant(name)) {
-        critical(QObject::tr("Invalid name"),
-                 QObject::tr("The property name is a reserved word."));
+        critical(tr("Invalid name"),
+                 tr("The property name is a reserved word."));
         clearEditors(Editor::KeepName);
         throw CreatePropertyException("Invalid name");
     }
@@ -404,8 +406,8 @@ void DlgAddPropertyVarSet::checkName() {
         // we are adding a new property, check whether it doesn't already exist
         auto prop = varSet->getPropertyByName(name.c_str());
         if(prop && prop->getContainer() == varSet) {
-            critical(QObject::tr("Invalid name"),
-                     QObject::tr("The property '%1' already exists in '%2'").arg(
+            critical(tr("Invalid name"),
+                     tr("The property '%1' already exists in '%2'").arg(
                              QString::fromLatin1(name.c_str()),
                              QString::fromLatin1(varSet->getFullName().c_str())));
             clearEditors(Editor::KeepName);
@@ -418,9 +420,9 @@ void DlgAddPropertyVarSet::checkGroup() {
     std::string group = comboBoxGroup.currentText().toStdString();
 
     if (group.empty() || group != Base::Tools::getIdentifier(group)) {
-        critical(QObject::tr("Invalid name"),
-                 QObject::tr("The group name must only contain alpha numericals,\n"
-                             "underscore, and must not start with a digit."));
+        critical(tr("Invalid name"),
+                 tr("The group name must only contain alpha numericals,\n"
+                    "underscore, and must not start with a digit."));
         comboBoxGroup.setEditText(QStringLiteral("Base"));
         throw CreatePropertyException("Invalid name");
     }

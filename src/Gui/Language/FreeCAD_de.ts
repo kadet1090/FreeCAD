@@ -8587,10 +8587,6 @@ Choose &apos;Abort&apos; to abort</source>
         <location filename="../DlgAddProperty.cpp" line="106"/>
         <location filename="../DlgAddProperty.cpp" line="117"/>
         <location filename="../DlgAddProperty.cpp" line="126"/>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="401"/>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="409"/>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="419"/>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="433"/>
         <source>Invalid name</source>
         <translation>Ungültiger Name</translation>
     </message>
@@ -8603,25 +8599,21 @@ und Unterstriche enthalten und darf nicht mit einer Ziffer beginnen.</translatio
     </message>
     <message>
         <location filename="../DlgAddProperty.cpp" line="118"/>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="410"/>
         <source>The property name is a reserved word.</source>
         <translation>Der Eigenschaftsname ist ein bereits vergebenes Wort</translation>
     </message>
     <message>
         <location filename="../DlgAddProperty.cpp" line="127"/>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="420"/>
         <source>The property &apos;%1&apos; already exists in &apos;%2&apos;</source>
         <translation>Die Eigenschaft &apos;%1&apos; existiert bereits in &apos;%2&apos;</translation>
     </message>
     <message>
         <location filename="../DlgAddProperty.cpp" line="150"/>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="286"/>
         <source>Add property</source>
         <translation>Eigenschaft hinzufügen</translation>
     </message>
     <message>
         <location filename="../DlgAddProperty.cpp" line="151"/>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="287"/>
         <source>Failed to add property to &apos;%1&apos;: %2</source>
         <translation>Das Hinzufügen der Eigenschaft %2 zu &apos;%1&apos; ist fehlgeschlagen</translation>
     </message>
@@ -8897,23 +8889,6 @@ the current copy will be lost.
         <location filename="../ViewProviderSuppressibleExtension.cpp" line="95"/>
         <source>Suppressed</source>
         <translation>Unterdrückt</translation>
-    </message>
-    <message>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="191"/>
-        <source>Add a property to %1</source>
-        <translation type="unfinished">Add a property to %1</translation>
-    </message>
-    <message>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="402"/>
-        <source>The property name must only contain alpha numericals, underscore, and must not start with a digit.</source>
-        <translation type="unfinished">The property name must only contain alpha numericals, underscore, and must not start with a digit.</translation>
-    </message>
-    <message>
-        <location filename="../DlgAddPropertyVarSet.cpp" line="434"/>
-        <source>The group name must only contain alpha numericals,
-underscore, and must not start with a digit.</source>
-        <translation>Der Gruppenname darf nur alphanumerische Zeichen
-und Unterstriche enthalten und darf nicht mit einer Ziffer beginnen.</translation>
     </message>
     <message>
         <location filename="../SplashScreen.cpp" line="189"/>
@@ -13380,6 +13355,57 @@ der Region nicht transparent sind.</translation>
         <location filename="../DlgAddPropertyVarSet.ui" line="65"/>
         <source>Tooltip</source>
         <translation>Quick-Info</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="191"/>
+        <source>Add a property to %1</source>
+        <translation>Eigenschaft hinzufügen zu %1</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="270"/>
+        <source>Add property</source>
+        <translation>Eigenschaft hinzufügen</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="402"/>
+        <source>The property name must only contain alpha numericals, underscore, and must not start with a digit.</source>
+        <translation>Der Eigenschaftsname darf nur alphanumerische Zeichen
+oder Unterstriche enthalten und darf nicht mit einer Ziffer beginnen.</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="434"/>
+        <source>The group name must only contain alpha numericals,
+underscore, and must not start with a digit.</source>
+        <translation>Der Gruppenname darf nur alphanumerische Zeichen
+oder Unterstriche enthalten und darf nicht mit einer Ziffer beginnen.</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="401"/>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="409"/>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="419"/>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="433"/>
+        <source>Invalid name</source>
+        <translation>Ungültiger Name</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="410"/>
+        <source>The property name is a reserved word.</source>
+        <translation>Der Eigenschaftsname ist ein bereits vergebenes Wort</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="420"/>
+        <source>The property &apos;%1&apos; already exists in &apos;%2&apos;</source>
+        <translation>Die Eigenschaft &apos;%1&apos; existiert bereits in &apos;%2&apos;</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="286"/>
+        <source>Add property</source>
+        <translation>Eigenschaft hinzufügen</translation>
+    </message>
+    <message>
+        <location filename="../DlgAddPropertyVarSet.cpp" line="287"/>
+        <source>Failed to add property to &apos;%1&apos;: %2</source>
+        <translation>Das Hinzufügen der Eigenschaft %2 zu &apos;%1&apos; ist fehlgeschlagen</translation>
     </message>
 </context>
 <context>
