@@ -1,51 +1,63 @@
-/****************************************************************************
- *   Copyright (c) 2024 Ondsel <development@ondsel.com>                     *
- *                                                                          *
- *   This file is part of the FreeCAD CAx development system.               *
- *                                                                          *
- *   This library is free software; you can redistribute it and/or          *
- *   modify it under the terms of the GNU Library General Public            *
- *   License as published by the Free Software Foundation; either           *
- *   version 2 of the License, or (at your option) any later version.       *
- *                                                                          *
- *   This library  is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *   GNU Library General Public License for more details.                   *
- *                                                                          *
- *   You should have received a copy of the GNU Library General Public      *
- *   License along with this library; see the file COPYING.LIB. If not,     *
- *   write to the Free Software Foundation, Inc., 59 Temple Place,          *
- *   Suite 330, Boston, MA  02111-1307, USA                                 *
- *                                                                          *
- ****************************************************************************/
+/***************************************************************************
+ *   Copyright (c) 2024 Ondsel <development@ondsel.com>                    *
+ *                                                                         *
+ *   This file is part of FreeCAD.                                         *
+ *                                                                         *
+ *   FreeCAD is free software: you can redistribute it and/or modify it    *
+ *   under the terms of the GNU Lesser General Public License as           *
+ *   published by the Free Software Foundation, either version 2.1 of the  *
+ *   License, or (at your option) any later version.                       *
+ *                                                                         *
+ *   FreeCAD is distributed in the hope that it will be useful, but        *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of            *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU      *
+ *   Lesser General Public License for more details.                       *
+ *                                                                         *
+ *   You should have received a copy of the GNU Lesser General Public      *
+ *   License along with FreeCAD. If not, see                               *
+ *   <https://www.gnu.org/licenses/>.                                      *
+ *                                                                         *
+ **************************************************************************/
 
 #ifndef GUI_DIALOG_DLG_ADD_PROPERTY_VARSET_H
 #define GUI_DIALOG_DLG_ADD_PROPERTY_VARSET_H
 
-#include <qcompleter.h>
 #include <unordered_set>
-#include <QDialog>
 #include <QComboBox>
+#include <QCompleter>
+#include <QDialog>
+#include <QLineEdit>
 #include <FCGlobal.h>
 
 #include <App/VarSet.h>
-
-#include "propertyeditor/PropertyItem.h"
 
 namespace Gui {
 
 class ViewProviderVarSet;
 
+namespace PropertyEditor
+{
+
+class PropertyItem;
+
+}
+
 namespace Dialog {
 
-class EditFinishedComboBox : public QComboBox {
+class EditFinishedComboBox : public QComboBox
+{
     Q_OBJECT
 public:
-    explicit EditFinishedComboBox(QWidget *parent = nullptr) : QComboBox(parent) {
+    explicit EditFinishedComboBox(QWidget *parent = nullptr)
+        : QComboBox(parent)
+    {
+        // clang-format off
         setEditable(true);
-        connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &EditFinishedComboBox::onIndexChanged);
-        connect(this->lineEdit(), &QLineEdit::editingFinished, this, &EditFinishedComboBox::onEditingFinished);
+        connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &EditFinishedComboBox::onIndexChanged);
+        connect(lineEdit(), &QLineEdit::editingFinished,
+                this, &EditFinishedComboBox::onEditingFinished);
+        // clang-format on
     }
 
 Q_SIGNALS:
@@ -66,6 +78,7 @@ class Ui_DlgAddPropertyVarSet;
 class GuiExport DlgAddPropertyVarSet : public QDialog
 {
     Q_OBJECT
+    Q_DISABLE_COPY_MOVE(DlgAddPropertyVarSet)
 
 public:
     static const std::string GROUP_BASE;
@@ -88,7 +101,7 @@ private:
 
     void setTitle();
     void setOkEnabled(bool enabled);
-    void clearEditors(bool clearName = true);
+    void clearEditors(bool clearName);
     void clearCurrentProperty();
 
     void removeEditor();

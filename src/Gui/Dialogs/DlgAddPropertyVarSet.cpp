@@ -1,30 +1,28 @@
-/****************************************************************************
- *   Copyright (c) 2024 Ondsel <development@ondsel.com>                     *
- *                                                                          *
- *   This file is part of the FreeCAD CAx development system.               *
- *                                                                          *
- *   This library is free software; you can redistribute it and/or          *
- *   modify it under the terms of the GNU Library General Public            *
- *   License as published by the Free Software Foundation; either           *
- *   version 2 of the License, or (at your option) any later version.       *
- *                                                                          *
- *   This library  is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *   GNU Library General Public License for more details.                   *
- *                                                                          *
- *   You should have received a copy of the GNU Library General Public      *
- *   License along with this library; see the file COPYING.LIB. If not,     *
- *   write to the Free Software Foundation, Inc., 59 Temple Place,          *
- *   Suite 330, Boston, MA  02111-1307, USA                                 *
- *                                                                          *
- ****************************************************************************/
+/***************************************************************************
+ *   Copyright (c) 2024 Ondsel <development@ondsel.com>                    *
+ *                                                                         *
+ *   This file is part of FreeCAD.                                         *
+ *                                                                         *
+ *   FreeCAD is free software: you can redistribute it and/or modify it    *
+ *   under the terms of the GNU Lesser General Public License as           *
+ *   published by the Free Software Foundation, either version 2.1 of the  *
+ *   License, or (at your option) any later version.                       *
+ *                                                                         *
+ *   FreeCAD is distributed in the hope that it will be useful, but        *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of            *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU      *
+ *   Lesser General Public License for more details.                       *
+ *                                                                         *
+ *   You should have received a copy of the GNU Lesser General Public      *
+ *   License along with FreeCAD. If not, see                               *
+ *   <https://www.gnu.org/licenses/>.                                      *
+ *                                                                         *
+ **************************************************************************/
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-# include <QMessageBox>
-# include <QString>
-# include <QCompleter>
+#include <QMessageBox>
+#include <QString>
 #endif
 
 #include <App/Application.h>
@@ -38,17 +36,26 @@
 #include "ui_DlgAddPropertyVarSet.h"
 #include "MainWindow.h"
 #include "ViewProviderVarSet.h"
+#include "propertyeditor/PropertyItem.h"
 
-FC_LOG_LEVEL_INIT("DlgAddPropertyVarSet", true, true)
+FC_LOG_LEVEL_INIT("DlgAddPropertyVarSet", true, true)  // NOLINT
 
 using namespace Gui;
 using namespace Gui::Dialog;
 
 const std::string DlgAddPropertyVarSet::GROUP_BASE = "Base";
 
-const bool CLEAR_NAME = true;
-const bool ABORT = true;
-const bool COMMIT = false;
+namespace Transaction
+{
+    const bool Commit = false;
+    const bool Abort = true;
+}
+
+namespace Editor
+{
+    const bool KeepName = false;
+    const bool ClearName = true;
+}
 
 DlgAddPropertyVarSet::DlgAddPropertyVarSet(QWidget* parent,
                                            ViewProviderVarSet* viewProvider)
@@ -83,17 +90,17 @@ void DlgAddPropertyVarSet::initializeGroup()
         groupNames.insert(groupName ? groupName : GROUP_BASE);
     }
     std::vector<std::string> groupNamesSorted(groupNames.begin(), groupNames.end());
-    std::sort(groupNamesSorted.begin(), groupNamesSorted.end(), [](std::string& a, std::string& b) {
+    std::sort(groupNamesSorted.begin(), groupNamesSorted.end(), [](const std::string& a,
+                                                                   const std::string& b)
+    {
         // prefer anything else other than Base, so move it to the back
         if (a == GROUP_BASE) {
             return false;
         }
-        else if (b == GROUP_BASE) {
+        if (b == GROUP_BASE) {
             return true;
         }
-        else {
-            return a < b;
-        }
+        return a < b;
     });
 
     for (const auto& groupName : groupNamesSorted) {
@@ -132,8 +139,9 @@ void DlgAddPropertyVarSet::initializeTypes()
 
     for(const auto& type : types) {
         ui->comboBoxType->addItem(QString::fromLatin1(type.getName()));
-        if(type == lastType)
+        if (type == lastType) {
             ui->comboBoxType->setCurrentIndex(ui->comboBoxType->count()-1);
+        }
     }
 
     completerType.setModel(ui->comboBoxType->model());
@@ -145,22 +153,6 @@ void DlgAddPropertyVarSet::initializeTypes()
     connComboBoxType = connect(ui->comboBoxType, &QComboBox::currentTextChanged,
                                this, &DlgAddPropertyVarSet::onEditFinished);
 }
-
-/*
-// keep some debugging code for debugging tab order
-static void printFocusChain(QWidget *widget) {
-    FC_ERR("Focus Chain:");
-    QWidget* start = widget;
-    int i = 0;
-    do {
-        FC_ERR(" " << widget->objectName().toStdString();
-        widget = widget->nextInFocusChain();
-        i++;
-    } while (widget != nullptr && i < 30 && start != widget);
-    QWidget *currentWidget = QApplication::focusWidget();
-    FC_ERR("  Current focus widget:" << (currentWidget ? currentWidget->objectName().toStdString() : "None") << std::endl << std::endl);
-}
-*/
 
 void DlgAddPropertyVarSet::initializeWidgets(ViewProviderVarSet* viewProvider)
 {
@@ -181,9 +173,6 @@ void DlgAddPropertyVarSet::initializeWidgets(ViewProviderVarSet* viewProvider)
 
     QWidget::setTabOrder(ui->lineEditName, &comboBoxGroup);
     QWidget::setTabOrder(&comboBoxGroup, ui->comboBoxType);
-
-    // FC_ERR("Initialize widgets");
-    // printFocusChain(ui->lineEditName);
 }
 
 void DlgAddPropertyVarSet::setTitle()
@@ -200,9 +189,8 @@ void DlgAddPropertyVarSet::setOkEnabled(bool enabled)
 void DlgAddPropertyVarSet::clearEditors(bool clearName)
 {
     if (clearName) {
-        bool beforeBlocked = ui->lineEditName->blockSignals(true);
+        QSignalBlocker block(ui->lineEditName);
         ui->lineEditName->clear();
-        ui->lineEditName->blockSignals(beforeBlocked);
     }
     removeEditor();
     ui->lineEditToolTip->clear();
@@ -216,9 +204,6 @@ void DlgAddPropertyVarSet::removeEditor()
         layout()->removeWidget(editor.get());
         QWidget::setTabOrder(ui->comboBoxType, ui->checkBoxAdd);
         editor = nullptr;
-
-        // FC_ERR("remove editor");
-        // printFocusChain(ui->comboBoxType);
     }
 }
 
@@ -234,7 +219,7 @@ void DlgAddPropertyVarSet::changeEvent(QEvent* e)
 static PropertyEditor::PropertyItem *createPropertyItem(App::Property *prop)
 {
     const char *editor = prop->getEditorName();
-    if (!editor || !editor[0]) {
+    if (Base::Tools::isNullOrEmpty(editor)) {
         return nullptr;
     }
     auto item = static_cast<PropertyEditor::PropertyItem*>(
@@ -259,9 +244,6 @@ void DlgAddPropertyVarSet::addEditor(PropertyEditor::PropertyItem* propertyItem,
 
     QWidget::setTabOrder(ui->comboBoxType, editor.get());
     QWidget::setTabOrder(editor.get(), ui->checkBoxAdd);
-
-    // FC_ERR("add editor");
-    // printFocusChain(editor.get());
 }
 
 bool DlgAddPropertyVarSet::isTypeWithEditor(const std::string& type)
@@ -276,18 +258,18 @@ void DlgAddPropertyVarSet::createProperty()
     std::string type = ui->comboBoxType->currentText().toStdString();
     std::string doc = ui->lineEditToolTip->text().toStdString();
 
-    App::Property* prop;
+    App::Property* prop = nullptr;
     try {
         prop = varSet->addDynamicProperty(type.c_str(), name.c_str(),
                                           group.c_str(), doc.c_str());
     }
-    catch (Base::Exception& e) {
+    catch (const Base::Exception& e) {
         e.ReportException();
         critical(QObject::tr("Add property"),
                  QObject::tr("Failed to add property to '%1': %2").arg(
                          QString::fromLatin1(varSet->getFullName().c_str()),
                          QString::fromUtf8(e.what())));
-        clearEditors();
+        clearEditors(Editor::ClearName);
         return;
     }
 
@@ -307,7 +289,8 @@ void DlgAddPropertyVarSet::createProperty()
     setOkEnabled(true);
 }
 
-App::Property* DlgAddPropertyVarSet::getPropertyToAdd() {
+App::Property* DlgAddPropertyVarSet::getPropertyToAdd()
+{
     // This function should be called only if it is certain the property exists.
     // It will throw a runtime error if not.
     App::Property* prop = varSet->getPropertyByName(namePropertyToAdd.c_str());
@@ -370,29 +353,34 @@ void DlgAddPropertyVarSet::closeTransaction(bool abort)
     }
 }
 
-
 void DlgAddPropertyVarSet::clearCurrentProperty()
 {
     removeEditor();
     varSet->removeDynamicProperty(namePropertyToAdd.c_str());
     if (hasPendingTransaction()) {
-        closeTransaction(ABORT);
+        closeTransaction(Transaction::Abort);
     }
     setOkEnabled(false);
     namePropertyToAdd.clear();
 }
 
+namespace
+{
 class CreatePropertyException : public std::exception {
 public:
-    explicit CreatePropertyException(const std::string& message) : msg(message) {}
+    explicit CreatePropertyException(std::string message)
+        : msg(std::move(message))
+    {}
 
-    const char* what() const noexcept override {
+    const char* what() const noexcept override
+    {
         return msg.c_str();
     }
 
 private:
     std::string msg;
 };
+}
 
 void DlgAddPropertyVarSet::checkName() {
     std::string name = ui->lineEditName->text().toStdString();
@@ -401,14 +389,14 @@ void DlgAddPropertyVarSet::checkName() {
                               QObject::tr("Invalid name"),
                               QObject::tr("The property name must only contain alpha numericals, "
                                           "underscore, and must not start with a digit."));
-        clearEditors(!CLEAR_NAME);
+        clearEditors(Editor::KeepName);
         throw CreatePropertyException("Invalid name");
     }
 
     if(App::ExpressionParser::isTokenAUnit(name) || App::ExpressionParser::isTokenAConstant(name)) {
         critical(QObject::tr("Invalid name"),
                  QObject::tr("The property name is a reserved word."));
-        clearEditors(!CLEAR_NAME);
+        clearEditors(Editor::KeepName);
         throw CreatePropertyException("Invalid name");
     }
 
@@ -420,7 +408,7 @@ void DlgAddPropertyVarSet::checkName() {
                      QObject::tr("The property '%1' already exists in '%2'").arg(
                              QString::fromLatin1(name.c_str()),
                              QString::fromLatin1(varSet->getFullName().c_str())));
-            clearEditors(!CLEAR_NAME);
+            clearEditors(Editor::KeepName);
             throw CreatePropertyException("Invalid name");
         }
     }
@@ -528,10 +516,10 @@ void DlgAddPropertyVarSet::addDocumentation() {
 void DlgAddPropertyVarSet::accept()
 {
     addDocumentation();
-    closeTransaction(COMMIT);
+    closeTransaction(Transaction::Commit);
 
     if (ui->checkBoxAdd->isChecked()) {
-        clearEditors();
+        clearEditors(Editor::ClearName);
         openTransaction();
         ui->lineEditName->setFocus();
         return;
@@ -560,7 +548,7 @@ void DlgAddPropertyVarSet::reject()
 
     // a transaction is not pending if a name has not been determined.
     if (hasPendingTransaction()) {
-        closeTransaction(ABORT);
+        closeTransaction(Transaction::Abort);
     }
     QDialog::reject();
 }
