@@ -3546,7 +3546,7 @@ double NETGENPlugin_Mesher::GetProgress(const SMESH_Algo* holder,
 void NETGENPlugin_Mesher::RemoveTmpFiles()
 {
   bool rm =  SMESH_File("test.out").remove() ;
-#ifndef WIN32
+#if 0
   if (rm && netgen::testout)
   {
     delete netgen::testout;
