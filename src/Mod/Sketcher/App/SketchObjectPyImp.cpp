@@ -2507,8 +2507,14 @@ Py::List SketchObjectPy::getMalformedConstraints() const
     return malformed;
 }
 
-PyObject* SketchObjectPy::getCustomAttributes(const char* /*attr*/) const
+PyObject* SketchObjectPy::getCustomAttributes(const char* attr) const
 {
+    // for backward compatibility
+    if (strcmp(attr, "movePoint") == 0) {
+        Py::Object str(PyUnicode_InternFromString("moveGeometry"), true);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+        return PyObject_GenericGetAttr(const_cast<SketchObjectPy*>(this), str.ptr());
+    }
     return nullptr;
 }
 
