@@ -482,6 +482,9 @@ class TestSketcherSolver(unittest.TestCase):
         )
 
     def testRemovedExternalGeometryReference(self):
+        if not "BUILD_PARTDESIGN" in FreeCAD.__cmake__:
+            return
+
         body = self.Doc.addObject("PartDesign::Body", "Body")
         sketch = body.newObject("Sketcher::SketchObject", "Sketch")
         CreateRectangleSketch(sketch, (0, 0), (30, 30))
@@ -535,6 +538,9 @@ class TestSketcherSolver(unittest.TestCase):
 
     def testSaveLoadWithExternalGeometryReference(self):
         # Arrange
+        if not "BUILD_PARTDESIGN" in FreeCAD.__cmake__:
+            return
+
         body = self.Doc.addObject("PartDesign::Body", "Body")
         sketch = self.Doc.addObject("Sketcher::SketchObject", "Sketch")
         CreateRectangleSketch(sketch, (0, 0), (30, 30))
@@ -580,6 +586,9 @@ class TestSketcherSolver(unittest.TestCase):
 
     def testTNPExternalGeometryStored(self):
         # Arrange
+        if not "BUILD_PARTDESIGN" in FreeCAD.__cmake__:
+            return
+
         import xml.etree.ElementTree as ET
 
         sketch = self.Doc.addObject("Sketcher::SketchObject", "Sketch")
@@ -641,6 +650,9 @@ class TestSketcherSolver(unittest.TestCase):
 
     def testConstructionToggleTNP(self):
         """Bug 15484"""
+        if not "BUILD_PARTDESIGN" in FreeCAD.__cmake__:
+            return
+
         # Arrange
         import xml.etree.ElementTree as ET
 

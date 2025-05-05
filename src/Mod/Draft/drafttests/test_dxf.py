@@ -74,7 +74,7 @@ class DraftDXF(test_base.DraftTestCaseDoc):
         self.assertTrue(obj, "'{}' failed".format(operation))
 
     def testDXFImportCPPIssue20195(self):
-        operation = "importDXF.import"
+        operation = "importDXF.importCPP"
         _msg("  Test '{}'".format(operation))
         _msg("  This test requires a DXF file to read.")
         import importDXF

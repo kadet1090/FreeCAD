@@ -1,6 +1,6 @@
+import FreeCAD
 from FreeCAD import Vector, Base, newDocument, closeDocument
 import Part
-import Sketcher
 
 import unittest
 
@@ -33,8 +33,11 @@ class RegressionTests(unittest.TestCase):
         15735: Point in sketch as loft profile won't work in dev, but works in stable
         The following test is a simplified version of the issue, but the outcome is the same
         """
+        if not "BUILD_SKETCHER" in FreeCAD.__cmake__:
+            return
 
         # Arrange
+        import Sketcher
         ArcSketch = self.Doc.addObject("Sketcher::SketchObject", "ArcSketch")
         ArcSketch.Placement = Base.Placement(
             Base.Vector(0.000000, 0.000000, 0.000000),

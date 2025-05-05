@@ -131,6 +131,9 @@ class TestSketchValidateCoincidents(unittest.TestCase):
     def testExternalGeoDeletion(self):
         """Make sure that we don't remove External Geometry references to deleted geometry.
         See https://github.com/FreeCAD/FreeCAD/issues/16361"""
+        if not "BUILD_PARTDESIGN" in FreeCAD.__cmake__:
+            return
+
         doc = App.ActiveDocument
         doc.addObject("PartDesign::Body", "Body")
         doc.Body.Label = "Body"

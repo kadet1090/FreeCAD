@@ -124,6 +124,9 @@ class PartTestBSplineCurve(unittest.TestCase):
         self.spline.setPole(1, App.Vector([1, 0, 0])) # first parameter 0 gives occ error
 
     def testIssue2671(self):
+        if not "BUILD_SPREADSHEET" in FreeCAD.__cmake__:
+            return
+
         self.Doc = App.newDocument("Issue2671")
         Box = self.Doc.addObject("Part::Box","Box")
         Mirroring = self.Doc.addObject("Part::Mirroring", 'Mirroring')
@@ -147,6 +150,9 @@ class PartTestBSplineCurve(unittest.TestCase):
         App.closeDocument("Issue2671")
 
     def testIssue2876(self):
+        if not "BUILD_SPREADSHEET" in FreeCAD.__cmake__:
+            return
+
         self.Doc = App.newDocument("Issue2876")
         Cylinder = self.Doc.addObject("Part::Cylinder", "Cylinder")
         Cylinder.Radius = 5
@@ -527,6 +533,9 @@ class PartTestRuledSurface(unittest.TestCase):
         self.assertEqual(len(same32), 3)
 
     def testRuledSurfaceFromOneObject(self):
+        if not "BUILD_SKETCHER" in FreeCAD.__cmake__:
+            return
+
         sketch = self.Doc.addObject('Sketcher::SketchObject', 'Sketch')
         sketch.Placement = FreeCAD.Placement(FreeCAD.Vector(0.000000, 0.000000, 0.000000), App.Rotation(0.707107, 0.000000, 0.000000, 0.707107))
         sketch.MapMode = "Deactivated"

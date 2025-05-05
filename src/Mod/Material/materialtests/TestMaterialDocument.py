@@ -36,6 +36,9 @@ class DocumentTestCases(unittest.TestCase):
 
     def testApplyDiffuseColorCheckShapeAppearance(self):
         """ Test that applying a DiffuseColor with transparency results in a correct ShapeAppearance """
+        if not "BUILD_PART" in FreeCAD.__cmake__:
+            return
+
         dif_col_1 = (1.0, 1.0, 0.0, 1.0)  # yellow 0% transparent
         dif_col_2 = (1.0, 0.0, 0.0, 0.5)  # red 50% transparent
         dif_col = [dif_col_1] + [dif_col_2] + 4 * [dif_col_1]
@@ -51,6 +54,9 @@ class DocumentTestCases(unittest.TestCase):
 
     def testApplyShapeAppearanceCheckDiffuseColor(self):
         """ Test that applying a ShapeAppearance with transparency results in a correct DiffuseColor """
+        if not "BUILD_PART" in FreeCAD.__cmake__:
+            return
+
         sapp_1 = FreeCAD.Material()
         sapp_1.DiffuseColor = (0.0, 1.0, 1.0, 0.0)  # cyan
         sapp_1.Transparency = 0.0                   # 0% transparent
