@@ -197,6 +197,7 @@ void PropertyPostDataObject::setPyObject(PyObject* value)
     m_dataObject->DeepCopy(dobj);
     hasSetValue();
 #else
+    std::ignore = value;
     throw Base::NotImplementedError();
 #endif
 }

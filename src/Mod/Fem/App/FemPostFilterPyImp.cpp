@@ -84,6 +84,7 @@ PyObject* FemPostFilterPy::addFilterPipeline(PyObject* args)
     }
     Py_Return;
 #else
+    std::ignore = args;
     PyErr_SetString(PyExc_NotImplementedError, "VTK python wrapper not available");
     Py_Return;
 #endif
@@ -141,6 +142,7 @@ PyObject* FemPostFilterPy::getInputData(PyObject* args)
 
     return Py::new_reference_to(py_dataset);
 #else
+    std::ignore = args;
     PyErr_SetString(PyExc_NotImplementedError, "VTK python wrapper not available");
     Py_Return;
 #endif
