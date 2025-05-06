@@ -10070,7 +10070,7 @@ bool SketchObject::getBlockedState(const Constraint* cstr, bool& blockedstate) c
 void SketchObject::onDocumentRestored()
 {
     try {
-        restoreFinished();
+        onSketchRestore();
         Part::Part2DObject::onDocumentRestored();
     }
     catch (...) {
@@ -10078,6 +10078,12 @@ void SketchObject::onDocumentRestored()
 }
 
 void SketchObject::restoreFinished()
+{
+    App::DocumentObject::restoreFinished();
+    onSketchRestore();
+}
+
+void SketchObject::onSketchRestore()
 {
     try {
         migrateSketch();
