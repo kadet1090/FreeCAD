@@ -30,6 +30,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QLocale>
 #include <QStandardPaths>
 #include <QUrl>
 #endif
@@ -271,8 +272,26 @@ QVariant DisplayedFilesModel::data(const QModelIndex& index, int roleAsInt) cons
             break;
     }
     switch (roleAsInt) {
-        case Qt::ItemDataRole::ToolTipRole:
-            return QString::fromStdString(mapEntry.at(DisplayedFilesModelRoles::path));
+        case Qt::ItemDataRole::ToolTipRole: {
+            auto toolTip = QString::fromStdString(mapEntry.at(DisplayedFilesModelRoles::path));
+            auto addInfo = [&toolTip, &mapEntry](const QString& text,
+                                                 DisplayedFilesModelRoles role) {
+                auto it = mapEntry.find(role);
+                if (it != mapEntry.end()) {
+                    auto str = QString::fromStdString(it->second);
+                    QDateTime dt = QDateTime::fromString(str, Qt::DateFormat::ISODate);
+                    toolTip.append(QLatin1Char('\n'));
+                    toolTip.append(text);
+                    QLocale loc = QLocale::system();
+                    toolTip.append(QString::fromLatin1(" %1").arg(loc.toString(dt)));
+                }
+            };
+
+            addInfo(tr("Created at:"), DisplayedFilesModelRoles::creationTime);
+            addInfo(tr("Modified at:"), DisplayedFilesModelRoles::modifiedTime);
+
+            return toolTip;
+        }
     }
     return {};
 }

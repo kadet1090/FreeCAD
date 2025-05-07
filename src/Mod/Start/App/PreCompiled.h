@@ -52,6 +52,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QLocale>
 #include <QStandardPaths>
 #include <QUrl>
 
