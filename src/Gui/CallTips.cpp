@@ -49,6 +49,7 @@
 #include "CallTips.h"
 
 
+// NOLINTNEXTLINE
 Q_DECLARE_METATYPE( Gui::CallTip ) //< allows use of QVariant
 
 namespace Gui
@@ -59,7 +60,7 @@ namespace Gui
  * Allows variable changes limited to a scope.
  */
 template <typename TYPE>
-class Temporary
+class Temporary  // NOLINT
 {
 public:
     Temporary( TYPE &var, const TYPE tmpVal )
@@ -142,8 +143,9 @@ void CallTipsList::keyboardSearch(const QString& wordPrefix)
         }
     }
 
-    if (currentItem())
+    if (currentItem()) {
         currentItem()->setSelected(false);
+    }
 }
 
 void CallTipsList::validateCursor()
@@ -161,8 +163,9 @@ void CallTipsList::validateCursor()
             // the following text might be an operator, brackets, ...
             const QChar underscore =  QLatin1Char('_');
             const QChar ch = word.at(0);
-            if (!ch.isLetterOrNumber() && ch != underscore)
+            if (!ch.isLetterOrNumber() && ch != underscore) {
                 word.clear();
+            }
         }
         if (currentPos > this->cursorPos+word.length()) {
             hide();
@@ -178,20 +181,24 @@ void CallTipsList::validateCursor()
 
 QString CallTipsList::extractContext(const QString& line) const
 {
+    // NOLINTBEGIN
     int len = line.size();
     int index = len-1;
     for (int i=0; i<len; i++) {
         int pos = len-1-i;
         const char ch = line.at(pos).toLatin1();
-        if ((ch >= 48 && ch <= 57)  ||    // Numbers
-            (ch >= 65 && ch <= 90)  ||    // Uppercase letters
-            (ch >= 97 && ch <= 122) ||    // Lowercase letters
-            (ch == '.') || (ch == '_') || // dot or underscore
-            (ch == ' ') || (ch == '\t'))  // whitespace (between dot and text)
+        if ((ch >= 48 && ch <= 57)  ||      // Numbers
+            (ch >= 65 && ch <= 90)  ||      // Uppercase letters
+            (ch >= 97 && ch <= 122) ||      // Lowercase letters
+            (ch == '.') || (ch == '_') ||   // dot or underscore
+            (ch == ' ') || (ch == '\t')) {  // whitespace (between dot and text)
             index = pos;
-        else
+        }
+        else {
             break;
+        }
     }
+    // NOLINTEND
 
     return line.mid(index);
 }
@@ -200,8 +207,9 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
 {
     Base::PyGILStateLocker lock;
     QMap<QString, CallTip> tips;
-    if (context.isEmpty())
+    if (context.isEmpty()) {
         return tips;
+    }
 
     try {
         PyErr_Clear();
@@ -215,8 +223,9 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
         QStringList items = context.split(QLatin1Char('.'));
         QString modname = items.front();
         items.pop_front();
-        if (!dict.hasKey(std::string(modname.toLatin1())))
+        if (!dict.hasKey(std::string(modname.toLatin1()))) {
             return tips; // unknown object
+        }
         // Don't use hasattr & getattr because if a property is bound to a method this will be executed twice.
         PyObject* code = Py_CompileString(static_cast<const char*>(context.toLatin1()), "<CallTipsList>", Py_eval_input);
         if (!code) {
@@ -280,7 +289,7 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
 
         // If we have an instance of PyObjectBase then determine whether it's valid or not
         if (PyObject_IsInstance(inst.ptr(), typeobj) == 1) {
-            auto baseobj = static_cast<Base::PyObjectBase*>(inst.ptr());
+            auto baseobj = static_cast<Base::PyObjectBase*>(inst.ptr());  // NOLINT
             validObject = baseobj->isValid();
         }
         else {
@@ -303,14 +312,15 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
         // names. So, we add these names to the list, too.
         PyObject* appdoctypeobj = Base::getTypeAsObject(&App::DocumentPy::Type);
         if (PyObject_IsSubclass(type.ptr(), appdoctypeobj) == 1) {
-            auto docpy = static_cast<App::DocumentPy*>(inst.ptr());
+            auto docpy = static_cast<App::DocumentPy*>(inst.ptr());  // NOLINT
             auto document = docpy->getDocumentPtr();
             // Make sure that the C++ object is alive
             if (document) {
                 std::vector<App::DocumentObject*> objects = document->getObjects();
                 Py::List list;
-                for (const auto & object : objects)
+                for (const auto & object : objects) {
                     list.append(Py::String(object->getNameInDocument()));
+                }
                 extractTipsFromObject(inst, list, tips);
             }
         }
@@ -319,15 +329,16 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
         // names. So, we add these names to the list, too.
         PyObject* guidoctypeobj = Base::getTypeAsObject(&Gui::DocumentPy::Type);
         if (PyObject_IsSubclass(type.ptr(), guidoctypeobj) == 1) {
-            auto docpy = static_cast<Gui::DocumentPy*>(inst.ptr());
+            auto docpy = static_cast<Gui::DocumentPy*>(inst.ptr());  // NOLINT
             if (docpy->getDocumentPtr()) {
                 App::Document* document = docpy->getDocumentPtr()->getDocument();
                 // Make sure that the C++ object is alive
                 if (document) {
                     std::vector<App::DocumentObject*> objects = document->getObjects();
                     Py::List list;
-                    for (const auto & object : objects)
+                    for (const auto & object : objects) {
                         list.append(Py::String(object->getNameInDocument()));
+                    }
                     extractTipsFromObject(inst, list, tips);
                 }
             }
@@ -344,20 +355,26 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
     return tips;
 }
 
-bool shibokenMayCrash(void)
+static bool shibokenMayCrash()
 {
     // Shiboken 6.4.8 to 6.7.3 crash if we try to read their object
     // attributes without a current stack frame.
     // FreeCAD issue: https://github.com/FreeCAD/FreeCAD/issues/14101
     // Qt issue: https://bugreports.qt.io/browse/PYSIDE-2796
+    const int minMajor = 6;
+    const int minMinor = 4;
+    const int minPatch = 8;
+    const int maxMajor = 6;
+    const int maxMinor = 7;
+    const int maxPatch = 3;
 
     Py::Module shiboken("shiboken6");
     Py::Tuple version(shiboken.getAttr("__version_info__"));
     int major = Py::Long(version.getItem(0));
     int minor = Py::Long(version.getItem(1));
     int patch = Py::Long(version.getItem(2));
-    bool brokenVersion = (major == 6 && minor >= 4 && minor < 8);
-    bool fixedVersion = (major == 6 && minor == 7 && patch > 2);
+    bool brokenVersion = (major == minMajor && minor >= minMinor && minor < minPatch);
+    bool fixedVersion = (major == maxMajor && minor == maxMinor && patch >= maxPatch);
     return brokenVersion && !fixedVersion;
 }
 
@@ -407,7 +424,7 @@ void CallTipsList::extractTipsFromObject(const Py::Object& obj,
                                          const Py::List& list,
                                          QMap<QString, CallTip>& tips) const
 {
-    for (auto it : list) {  // NOLINT
+    for (auto it : list) {
         try {
             Py::String attrname(it);
             std::string name(attrname.as_string());
@@ -457,8 +474,7 @@ CallTip CallTipsList::extractTipsFromAttribute(const Py::Object& attr, const QSt
     }
 
     if (str == QLatin1String("__doc__") && attr.isString()) {
-        Py::Object help = attr;
-        tryGetDocString(help, tip);
+        tryGetDocString(attr, tip);
     }
     else if (attr.hasAttr("__doc__")) {
         Py::Object help = attr.getAttr("__doc__");
@@ -470,11 +486,13 @@ CallTip CallTipsList::extractTipsFromAttribute(const Py::Object& attr, const QSt
 
 void CallTipsList::extractTipsFromProperties(Py::Object& obj, QMap<QString, CallTip>& tips) const
 {
-    auto cont = static_cast<App::PropertyContainerPy*>(obj.ptr());
+    auto cont = static_cast<App::PropertyContainerPy*>(obj.ptr());  // NOLINT
     App::PropertyContainer* container = cont->getPropertyContainerPtr();
     // Make sure that the C++ object is alive
-    if (!container)
+    if (!container) {
         return;
+    }
+
     std::map<std::string,App::Property*> Map;
     container->getPropertyMap(Map);
 
@@ -556,8 +574,9 @@ void CallTipsList::showTips(const QString& line)
         }
     }
 
-    if (count()==0)
+    if (count()==0) {
         return; // nothing found
+    }
 
     // get the minimum width and height of the box
     int h = 0;
@@ -579,18 +598,21 @@ void CallTipsList::showTips(const QString& line)
     int posX = rect.x();
     int posY = rect.y();
     int boxH = h;
+    const int maxHeight = 250;
 
     // Decide whether to show downstairs or upstairs
     if (posY > textEdit->viewport()->height()/2) {
-        h = qMin(qMin(h,posY), 250);
-        if (h < boxH)
+        h = qMin(qMin(h,posY), maxHeight);
+        if (h < boxH) {
             w += textEdit->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+        }
         setGeometry(posX,posY-h, w, h);
     }
     else {
-        h = qMin(qMin(h,textEdit->viewport()->height()-fontMetrics().height()-posY), 250);
-        if (h < boxH)
+        h = qMin(qMin(h,textEdit->viewport()->height()-fontMetrics().height()-posY), maxHeight);
+        if (h < boxH) {
             w += textEdit->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+        }
         setGeometry(posX, posY+fontMetrics().height(), w, h);
     }
 
@@ -622,51 +644,54 @@ bool CallTipsList::eventFilter(QObject * watched, QEvent * event)
     if (watched->inherits("QLabel")) {
         auto label = qobject_cast<QLabel*>(watched);
         // Ignore the timer events to prevent from being closed
-        if (label->windowFlags() & Qt::ToolTip && event->type() == QEvent::Timer)
+        if (label->windowFlags() & Qt::ToolTip && event->type() == QEvent::Timer) {
             return true;
+        }
     }
     if (isVisible() && watched == textEdit->viewport()) {
-        if (event->type() == QEvent::MouseButtonPress)
+        if (event->type() == QEvent::MouseButtonPress) {
             hide();
+        }
     }
     else if (isVisible() && watched == textEdit) {
         if (event->type() == QEvent::KeyPress) {
-            auto ke = static_cast<QKeyEvent*>(event);
+            auto ke = static_cast<QKeyEvent*>(event);  // NOLINT
             if (ke->key() == Qt::Key_Up || ke->key() == Qt::Key_Down) {
                 keyPressEvent(ke);
                 return true;
             }
-            else if (ke->key() == Qt::Key_PageUp || ke->key() == Qt::Key_PageDown) {
+            if (ke->key() == Qt::Key_PageUp || ke->key() == Qt::Key_PageDown) {
                 keyPressEvent(ke);
                 return true;
             }
-            else if (ke->key() == Qt::Key_Escape) {
+            if (ke->key() == Qt::Key_Escape) {
                 hide();
                 return true;
             }
-            else if ((ke->key() == Qt::Key_Minus) && (ke->modifiers() & Qt::ShiftModifier)) {
+            if ((ke->key() == Qt::Key_Minus) && (ke->modifiers() & Qt::ShiftModifier)) {
                 // do nothing here, but this check is needed to ignore underscore
                 // which in Qt 4.8 gives Key_Minus instead of Key_Underscore
+                return QListWidget::eventFilter(watched, event);
             }
-            else if (this->hideKeys.indexOf(ke->key()) > -1) {
+            if (this->hideKeys.indexOf(ke->key()) > -1) {
                 Q_EMIT itemActivated(currentItem());
                 return false;
             }
-            else if (ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter) {
+            if (ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter) {
                 Q_EMIT itemActivated(currentItem());
                 return true;
             }
-            else if (ke->key() == Qt::Key_Tab) {
+            if (ke->key() == Qt::Key_Tab) {
                 // enable call completion for activating items
                 Temporary<bool> tmp( this->doCallCompletion, true ); //< previous state restored on scope exit
                 Q_EMIT itemActivated( currentItem() );
                 return true;
             }
-            else if (this->compKeys.indexOf(ke->key()) > -1) {
+            if (this->compKeys.indexOf(ke->key()) > -1) {
                 Q_EMIT itemActivated(currentItem());
                 return false;
             }
-            else if (ke->key() == Qt::Key_Shift || ke->key() == Qt::Key_Control ||
+            if (ke->key() == Qt::Key_Shift || ke->key() == Qt::Key_Control ||
                      ke->key() == Qt::Key_Meta || ke->key() == Qt::Key_Alt ||
                      ke->key() == Qt::Key_AltGr) {
                 // filter these meta keys to avoid to call keyboardSearch()
@@ -674,7 +699,7 @@ bool CallTipsList::eventFilter(QObject * watched, QEvent * event)
             }
         }
         else if (event->type() == QEvent::KeyRelease) {
-            auto ke = static_cast<QKeyEvent*>(event);
+            auto ke = static_cast<QKeyEvent*>(event);  // NOLINT
             if (ke->key() == Qt::Key_Up || ke->key() == Qt::Key_Down ||
                 ke->key() == Qt::Key_PageUp || ke->key() == Qt::Key_PageDown) {
                 QList<QListWidgetItem *> items = selectedItems();
@@ -691,8 +716,9 @@ bool CallTipsList::eventFilter(QObject * watched, QEvent * event)
             }
         }
         else if (event->type() == QEvent::FocusOut) {
-            if (!hasFocus())
+            if (!hasFocus()) {
                 hide();
+            }
         }
     }
 
@@ -702,8 +728,9 @@ bool CallTipsList::eventFilter(QObject * watched, QEvent * event)
 void CallTipsList::callTipItemActivated(QListWidgetItem *item)
 {
     hide();
-    if (!item->isSelected())
+    if (!item->isSelected()) {
         return;
+    }
 
     QString text = item->text();
     QTextCursor cursor = textEdit->textCursor();
@@ -714,8 +741,9 @@ void CallTipsList::callTipItemActivated(QListWidgetItem *item)
         // in case the cursor moved too far on the right side
         const QChar underscore =  QLatin1Char('_');
         const QChar ch = sel.at(sel.size()-1);
-        if (!ch.isLetterOrNumber() && ch != underscore)
+        if (!ch.isLetterOrNumber() && ch != underscore) {
             cursor.movePosition(QTextCursor::Left, QTextCursor::KeepAnchor);
+        }
     }
     cursor.insertText( text );
 
@@ -762,14 +790,17 @@ QString CallTipsList::stripWhiteSpace(const QString& str) const
         if (it->size() > 0 && line > 0) {
             int space = 0;
             for (int i=0; i<it->size(); i++) {
-                if ((*it)[i] == QLatin1Char('\t'))
+                if ((*it)[i] == QLatin1Char('\t')) {
                     space++;
-                else
+                }
+                else {
                     break;
+                }
             }
 
-            if (it->size() > space)
+            if (it->size() > space) {
                 minspace = std::min<int>(minspace, space);
+            }
         }
     }
 

@@ -31,6 +31,7 @@ class QPlainTextEdit;
 namespace Py {
 class Object;
 class List;
+class String;
 }
 namespace Gui {
 
@@ -47,24 +48,24 @@ public:
 /**
  * @author Werner Mayer
  */
-class CallTipsList : public QListWidget
+class CallTipsList : public QListWidget  // NOLINT
 {
     Q_OBJECT
 
 public:
     /// Construction
-    CallTipsList(QPlainTextEdit* parent);
+    explicit CallTipsList(QPlainTextEdit* parent);
     /// Destruction
     ~CallTipsList() override;
 
-    void keyboardSearch (const QString&) override;
+    void keyboardSearch (const QString& wordPrefix) override;
     void showTips(const QString&);
     void validateCursor();
 
 protected:
-    bool eventFilter(QObject *, QEvent *) override;
-    void showEvent(QShowEvent*) override;
-    void hideEvent(QHideEvent*) override;
+    bool eventFilter(QObject* watched, QEvent* event) override;
+    void showEvent(QShowEvent* e) override;
+    void hideEvent(QHideEvent* e) override;
 
 private Q_SLOTS:
     void callTipItemActivated(QListWidgetItem *item);
