@@ -72,10 +72,13 @@ private Q_SLOTS:
 private:
     QString extractContext(const QString&) const;
     QMap<QString, CallTip> extractTips(const QString&) const;
-    void extractTipsFromObject(Py::Object&, Py::List&, QMap<QString, CallTip>&) const;
+    void extractTipsFromObject(const Py::Object&, const Py::List&, QMap<QString, CallTip>&) const;
+    CallTip extractTipsFromAttribute(const Py::Object&, const QString&) const;
     void extractTipsFromProperties(Py::Object&, QMap<QString, CallTip>&) const;
     QString stripWhiteSpace(const QString&) const;
-    Py::Object getAttrWorkaround(Py::Object&, Py::String&) const;
+    Py::Object getAttrWorkaround(const Py::Object& obj, const Py::String& name) const;
+    void tryGetDocString(const Py::Object& help, CallTip& tip) const;
+    void tryGetTipFromDocString(const QString&, CallTip& tip) const;
 
 private:
     QPlainTextEdit* textEdit;
