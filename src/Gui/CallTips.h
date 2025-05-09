@@ -85,6 +85,9 @@ private Q_SLOTS:
 private:
     QString extractContext(const QString&) const;
     QMap<QString, CallTip> extractTips(const QString&) const;
+    QMap<QString, CallTip> publicTips(const QMap<QString, CallTip>& tips) const;
+    QMap<QString, CallTip> privateTips(const QMap<QString, CallTip>& tips) const;
+    void addTips(const QMap<QString, CallTip>& tips);
     void extractTipsFromObject(const Py::Object&, const Py::List&, QMap<QString, CallTip>&) const;
     CallTip extractTipsFromAttribute(const Py::Object&, const QString&) const;
     void extractTipsFromProperties(Py::Object&, QMap<QString, CallTip>&) const;

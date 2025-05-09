@@ -233,6 +233,28 @@ QString CallTipsList::extractContext(const QString& line) const
     return line.mid(index);
 }
 
+QMap<QString, CallTip> CallTipsList::publicTips(const QMap<QString, CallTip>& tips) const
+{
+    QMap<QString, CallTip> pub;
+    for (auto it = tips.begin(); it != tips.end(); ++it) {
+        if (!it.key().startsWith(QLatin1String("_"))) {
+            pub.insert(it.key(), it.value());
+        }
+    }
+    return pub;
+}
+
+QMap<QString, CallTip> CallTipsList::privateTips(const QMap<QString, CallTip>& tips) const
+{
+    QMap<QString, CallTip> pub;
+    for (auto it = tips.begin(); it != tips.end(); ++it) {
+        if (it.key().startsWith(QLatin1String("_"))) {
+            pub.insert(it.key(), it.value());
+        }
+    }
+    return pub;
+}
+
 QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
 {
     Base::PyGILStateLocker lock;
@@ -560,7 +582,7 @@ void CallTipsList::extractTipsFromProperties(Py::Object& obj, QMap<QString, Call
     }
 }
 
-void CallTipsList::showTips(const QString& line)
+void CallTipsList::addTips(const QMap<QString, CallTip>& tips)
 {
     // search only once
     static QPixmap type_module_icon = BitmapFactory().pixmap("ClassBrowser/type_module.svg");
@@ -583,12 +605,7 @@ void CallTipsList::showTips(const QString& line)
     static QPixmap forbidden_property_icon =
         BitmapFactory().merge(property_icon, forbidden_icon, BitmapFactoryInst::BottomLeft);
 
-    this->validObject = true;
-    QString context = extractContext(line);
-    context = context.simplified();
-    QMap<QString, CallTip> tips = extractTips(context);
-    clear();
-    for (QMap<QString, CallTip>::Iterator it = tips.begin(); it != tips.end(); ++it) {
+    for (auto it = tips.begin(); it != tips.end(); ++it) {
         addItem(it.key());
         QListWidgetItem* item = this->item(this->count() - 1);
         item->setData(Qt::ToolTipRole, QVariant(it.value().description));
@@ -613,6 +630,19 @@ void CallTipsList::showTips(const QString& line)
                 break;
         }
     }
+}
+
+void CallTipsList::showTips(const QString& line)
+{
+    this->validObject = true;
+    QString context = extractContext(line);
+    context = context.simplified();
+    QMap<QString, CallTip> tips = extractTips(context);
+    QMap<QString, CallTip> pubTips = publicTips(tips);
+    QMap<QString, CallTip> priTips = privateTips(tips);
+    clear();
+    addTips(pubTips);
+    addTips(priTips);
 
     if (count() == 0) {
         return;  // nothing found
