@@ -28,28 +28,40 @@
 
 class QPlainTextEdit;
 
-namespace Py {
+namespace Py
+{
 class Object;
 class List;
 class String;
-}
-namespace Gui {
+}  // namespace Py
+
+namespace Gui
+{
 
 class CallTip
 {
 public:
-    enum Type {Unknown, Module, Class, Method, Member, Property};
+    enum Type
+    {
+        Unknown,
+        Module,
+        Class,
+        Method,
+        Member,
+        Property
+    };
     QString name;
     QString description;
     QString parameter;
-    Type type{Unknown};
+    Type type {Unknown};
 };
 
 /**
  * @author Werner Mayer
  */
-class CallTipsList : public QListWidget  // NOLINT
+class CallTipsList: public QListWidget
 {
+    Q_DISABLE_COPY_MOVE(CallTipsList)
     Q_OBJECT
 
 public:
@@ -58,7 +70,7 @@ public:
     /// Destruction
     ~CallTipsList() override;
 
-    void keyboardSearch (const QString& wordPrefix) override;
+    void keyboardSearch(const QString& wordPrefix) override;
     void showTips(const QString&);
     void validateCursor();
 
@@ -68,7 +80,7 @@ protected:
     void hideEvent(QHideEvent* e) override;
 
 private Q_SLOTS:
-    void callTipItemActivated(QListWidgetItem *item);
+    void callTipItemActivated(QListWidgetItem* item);
 
 private:
     QString extractContext(const QString&) const;
@@ -83,13 +95,13 @@ private:
 
 private:
     QPlainTextEdit* textEdit;
-    int cursorPos;
-    mutable bool validObject;
-    bool doCallCompletion;
+    int cursorPos {0};
+    mutable bool validObject {true};
+    bool doCallCompletion {false};
     QList<int> hideKeys;
     QList<int> compKeys;
 };
 
-} // namespace Gui
+}  // namespace Gui
 
-#endif // GUI_CALLTIPS_H
+#endif  // GUI_CALLTIPS_H
