@@ -197,16 +197,31 @@ void CallTipsList::validateCursor()
 QString CallTipsList::extractContext(const QString& line) const
 {
     // NOLINTBEGIN
-    int len = line.size();
+    const int len = line.size();
     int index = len - 1;
+    bool expectDot = false;
+    bool foundLetterOrNumber = false;
     for (int i = 0; i < len; i++) {
         int pos = len - 1 - i;
-        const char ch = line.at(pos).toLatin1();
-        if ((ch >= 48 && ch <= 57) ||       // Numbers
-            (ch >= 65 && ch <= 90) ||       // Uppercase letters
-            (ch >= 97 && ch <= 122) ||      // Lowercase letters
-            (ch == '.') || (ch == '_') ||   // dot or underscore
-            (ch == ' ') || (ch == '\t')) {  // whitespace (between dot and text)
+        QChar qch = line.at(pos);
+        const char ch = qch.toLatin1();
+        if (qch.isLetterOrNumber() || ch == '_') {
+            foundLetterOrNumber = true;
+            if (expectDot) {
+                break;
+            }
+            index = pos;
+        }
+        else if (ch == '.') {
+            foundLetterOrNumber = false;
+            expectDot = false;
+            index = pos;
+        }
+        // whitespace (between dot and text)
+        else if (ch == ' ' || ch == '\t') {
+            if (foundLetterOrNumber) {
+                expectDot = true;
+            }
             index = pos;
         }
         else {
@@ -274,6 +289,7 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
         PyObject* typeobj = Base::getTypeAsObject(&Base::PyObjectBase::Type);
         PyObject* typedoc = Base::getTypeAsObject(&App::DocumentObjectPy::Type);
         PyObject* basetype = Base::getTypeAsObject(&PyBaseObject_Type);
+        bool extractFromInstance = false;
 
         if (PyObject_IsSubclass(type.ptr(), typedoc) == 1) {
             // From the template Python object we don't query its type object because there we keep
@@ -302,6 +318,7 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
                 if (!typestr.startsWith(QLatin1String("PySide"))
                     && Py_TYPE(obj.ptr())->tp_flags & Py_TPFLAGS_HEAPTYPE) {
                     obj = type;
+                    extractFromInstance = true;
                 }
             }
         }
@@ -365,6 +382,10 @@ QMap<QString, CallTip> CallTipsList::extractTips(const QString& context) const
 
         // These are the attributes from the type object
         extractTipsFromObject(obj, list, tips);
+
+        if (extractFromInstance) {
+            extractTipsFromObject(inst, inst.dir(), tips);
+        }
     }
     catch (Py::Exception& e) {
         // Just clear the Python exception
