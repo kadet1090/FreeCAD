@@ -24,6 +24,7 @@
 
 #include "DlgCAMSimulator.h"
 #include "MillSimulation.h"
+#include <App/Document.h>
 #include "Gui/View3DInventorViewer.h"
 #include <Mod/Part/App/BRepMesh.h>
 #include <QDateTime>
@@ -329,6 +330,15 @@ DlgCAMSimulator* DlgCAMSimulator::GetInstance()
         mInstance->setModality(Qt::ApplicationModal);
         mInstance->setMinimumWidth(700);
         mInstance->setMinimumHeight(400);
+
+        QString title;
+        if (App::Document* doc = App::GetApplication().getActiveDocument()) {
+            title = QString::fromStdString(doc->Label.getStrValue());
+            title.append(QStringLiteral(" - "));
+        }
+
+        title.append(tr("CAM Simulator"));
+        mInstance->setTitle(title);
     }
     return mInstance;
 }
