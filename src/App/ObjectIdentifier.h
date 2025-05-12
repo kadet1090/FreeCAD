@@ -418,6 +418,15 @@ public:
 
     std::string toEscapedString() const;
 
+    /**
+     * @brief Whether the property of the object identifier is touched.
+     *
+     * This method is used to determine if the property that this object
+     * identifier represents is touched.
+     *
+     * @return true if the property of the object identifier is touched, false
+     * otherwise.
+     */
     bool isTouched() const;
 
     App::Property* getProperty(int* ptype = nullptr) const;
