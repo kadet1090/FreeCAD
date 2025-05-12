@@ -115,6 +115,8 @@ locations = [
     ],
     ["App", "../App/Resources/translations", "../App/Resources/App.qrc"],
     ["Arch", "../Mod/BIM/Resources/translations", "../Mod/BIM/Resources/Arch.qrc"],
+    ["App", "../App/Resources/translations", "../App/Resources/App.qrc"],
+    ["Arch", "../Mod/BIM/Resources/translations", "../Mod/BIM/Resources/Arch.qrc"],
     [
         "Assembly",
         "../Mod/Assembly/Gui/Resources/translations",
@@ -126,11 +128,6 @@ locations = [
         "../Mod/Draft/Resources/Draft.qrc",
     ],
     ["Base", "../Base/Resources/translations", "../Base/Resources/Base.qrc"],
-    [
-        "Drawing",
-        "../Mod/Drawing/Gui/Resources/translations",
-        "../Mod/Drawing/Gui/Resources/Drawing.qrc",
-    ],
     [
         "Fem",
         "../Mod/Fem/Gui/Resources/translations",
