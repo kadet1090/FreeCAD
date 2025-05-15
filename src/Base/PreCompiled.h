@@ -76,6 +76,7 @@
 #include <queue>
 #include <memory>
 #include <mutex>
+#include <new>
 #include <bitset>
 #include <algorithm>
 #include <iomanip>
@@ -87,6 +88,7 @@
 #include <sstream>
 
 // Xerces
+#include <xercesc/util/OutOfMemoryException.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XercesVersion.hpp>
 #include <xercesc/dom/DOM.hpp>
@@ -100,6 +102,7 @@
 #include <xercesc/framework/LocalFileInputSource.hpp>
 #include <xercesc/framework/MemBufFormatTarget.hpp>
 #include <xercesc/framework/MemBufInputSource.hpp>
+#include <xercesc/framework/MemoryManager.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/util/XMLUni.hpp>
 #include <xercesc/util/XMLUniDefs.hpp>
