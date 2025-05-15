@@ -38,6 +38,7 @@
 
 using namespace Base;
 
+// NOLINTBEGIN(cppcoreguidelines-*)
 Stream::Stream() = default;
 
 Stream::~Stream() = default;
@@ -904,3 +905,4 @@ TextInputStream& TextInputStream::operator>>(std::string& outputString)
     outputString = _ss.str();
     return *this;
 }
+// NOLINTEND(cppcoreguidelines-*)

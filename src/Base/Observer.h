@@ -121,7 +121,7 @@ public:
      */
     virtual ~Subject()
     {
-        if (_ObserverSet.size() > 0) {
+        if (!observerSet.empty()) {
             Base::Console().DeveloperWarning(std::string("~Subject()"),
                                              "Not detached all observers yet\n");
         }
@@ -136,15 +136,15 @@ public:
     void Attach(Observer<MsgType>* ToObserv)
     {
 #ifdef FC_DEBUG
-        size_t count = _ObserverSet.size();
-        _ObserverSet.insert(ToObserv);
-        if (_ObserverSet.size() == count) {
+        size_t count = observerSet.size();
+        observerSet.insert(ToObserv);
+        if (observerSet.size() == count) {
             Base::Console().DeveloperWarning(std::string("Subject::Attach"),
                                              "Observer %p already attached\n",
                                              static_cast<void*>(ToObserv));
         }
 #else
-        _ObserverSet.insert(ToObserv);
+        observerSet.insert(ToObserv);
 #endif
     }
 
@@ -157,15 +157,15 @@ public:
     void Detach(Observer<MsgType>* ToObserv)
     {
 #ifdef FC_DEBUG
-        size_t count = _ObserverSet.size();
-        _ObserverSet.erase(ToObserv);
-        if (_ObserverSet.size() == count) {
+        size_t count = observerSet.size();
+        observerSet.erase(ToObserv);
+        if (observerSet.size() == count) {
             Base::Console().DeveloperWarning(std::string("Subject::Detach"),
                                              "Observer %p already detached\n",
                                              static_cast<void*>(ToObserv));
         }
 #else
-        _ObserverSet.erase(ToObserv);
+        observerSet.erase(ToObserv);
 #endif
     }
 
@@ -177,11 +177,9 @@ public:
      */
     void Notify(MsgType rcReason)
     {
-        for (typename std::set<Observer<MsgType>*>::iterator Iter = _ObserverSet.begin();
-             Iter != _ObserverSet.end();
-             ++Iter) {
+        for (auto it : observerSet) {
             try {
-                (*Iter)->OnChange(*this, rcReason);  // send OnChange-signal
+                it->OnChange(*this, rcReason);  // send OnChange-signal
             }
             catch (Base::Exception& e) {
                 Base::Console().Error("Unhandled Base::Exception caught when notifying observer.\n"
@@ -207,12 +205,10 @@ public:
     Observer<MsgType>* Get(const char* Name)
     {
         const char* OName = nullptr;
-        for (typename std::set<Observer<MsgType>*>::iterator Iter = _ObserverSet.begin();
-             Iter != _ObserverSet.end();
-             ++Iter) {
-            OName = (*Iter)->Name();  // get the name
+        for (auto it : observerSet) {
+            OName = it->Name();  // get the name
             if (OName && strcmp(OName, Name) == 0) {
-                return *Iter;
+                return it;
             }
         }
 
@@ -224,7 +220,7 @@ public:
      */
     void ClearObserver()
     {
-        _ObserverSet.clear();
+        observerSet.clear();
     }
 
 protected:
@@ -232,7 +228,7 @@ protected:
 
 private:
     /// Vector of attached observers
-    std::set<Observer<MsgType>*> _ObserverSet;
+    std::set<Observer<MsgType>*> observerSet;
 };
 
 // Workaround for MSVC

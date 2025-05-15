@@ -78,8 +78,8 @@
     Class &operator=(const Class &) = default;
 
 #define FC_DEFAULT_MOVE(Class) \
-    Class(Class &&) = default; \
-    Class &operator=(Class &&) = default;
+    Class(Class &&) noexcept = default; \
+    Class &operator=(Class &&) noexcept = default;
 
 #define FC_DEFAULT_COPY_MOVE(Class) \
     FC_DEFAULT_COPY(Class) \

@@ -88,12 +88,12 @@ public:
     /// Construction
     ClassTemplate();
     ClassTemplate(const ClassTemplate&);
-    ClassTemplate(ClassTemplate&&);
+    ClassTemplate(ClassTemplate&&) noexcept;
     /// Destruction
     virtual ~ClassTemplate();
 
     ClassTemplate& operator=(const ClassTemplate&);
-    ClassTemplate& operator=(ClassTemplate&&);
+    ClassTemplate& operator=(ClassTemplate&&) noexcept;
     int testMe(int a, const char* s);
 
     /**

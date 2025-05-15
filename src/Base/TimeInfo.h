@@ -38,7 +38,7 @@ using Clock = std::chrono::system_clock;
 class TimeInfo: public std::chrono::time_point<Clock>
 {
 private:
-    bool _null;
+    bool _null {};
 
 public:
     TimeInfo()
@@ -48,6 +48,8 @@ public:
 
     TimeInfo(const TimeInfo&) = default;
     TimeInfo(TimeInfo&&) = default;
+    TimeInfo& operator=(const TimeInfo&) = default;
+    TimeInfo& operator=(TimeInfo&&) = default;
     ~TimeInfo() = default;
 
     void setCurrent()
@@ -106,6 +108,8 @@ public:
 
     TimeElapsed(const TimeElapsed&) = default;
     TimeElapsed(TimeElapsed&&) = default;
+    TimeElapsed& operator=(const TimeElapsed&) = default;
+    TimeElapsed& operator=(TimeElapsed&&) = default;
     ~TimeElapsed() = default;
 
     void setCurrent()

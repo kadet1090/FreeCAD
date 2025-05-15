@@ -96,17 +96,17 @@ public:
     Py::Object number_invert() override;
     Py::Object number_int() override;
     Py::Object number_float() override;
-    Py::Object number_add(const Py::Object&) override;
-    Py::Object number_subtract(const Py::Object&) override;
-    Py::Object number_multiply(const Py::Object&) override;
-    Py::Object number_remainder(const Py::Object&) override;
-    Py::Object number_divmod(const Py::Object&) override;
-    Py::Object number_lshift(const Py::Object&) override;
-    Py::Object number_rshift(const Py::Object&) override;
-    Py::Object number_and(const Py::Object&) override;
-    Py::Object number_xor(const Py::Object&) override;
-    Py::Object number_or(const Py::Object&) override;
-    Py::Object number_power(const Py::Object&, const Py::Object&) override;
+    Py::Object number_add(const Py::Object& py) override;
+    Py::Object number_subtract(const Py::Object& py) override;
+    Py::Object number_multiply(const Py::Object& py) override;
+    Py::Object number_remainder(const Py::Object& py) override;
+    Py::Object number_divmod(const Py::Object& py) override;
+    Py::Object number_lshift(const Py::Object& py) override;
+    Py::Object number_rshift(const Py::Object& py) override;
+    Py::Object number_and(const Py::Object& py) override;
+    Py::Object number_xor(const Py::Object& py) override;
+    Py::Object number_or(const Py::Object& py) override;
+    Py::Object number_power(const Py::Object& n1, const Py::Object& n2) override;
     //@}
 
     Py::Object isNull(const Py::Tuple&);
@@ -165,7 +165,7 @@ public:
     explicit Vector(const Base::Vector3f&);
     bool accepts(PyObject* obj) const override;
 
-    Vector(const Object& other)
+    explicit Vector(const Object& other)
         : Object(other.ptr())
     {
         validate();
@@ -182,7 +182,7 @@ public:
     Vector& operator=(PyObject* rhsp);
     Vector& operator=(const Base::Vector3d&);
     Vector& operator=(const Base::Vector3f&);
-    operator Base::Vector3d() const
+    explicit operator Base::Vector3d() const
     {
         return toVector();
     }
@@ -229,7 +229,7 @@ public:
         set(new PyT(new T(val)), true);
         validate();
     }
-    GeometryT(const Object& other)
+    explicit GeometryT(const Object& other)
         : Object(other.ptr())
     {
         validate();
@@ -264,7 +264,7 @@ public:
         T* val = (py->*valuePtr)();
         return *val;
     }
-    operator T() const
+    explicit operator T() const
     {
         return getValue();
     }

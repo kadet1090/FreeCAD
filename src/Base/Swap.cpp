@@ -25,6 +25,7 @@
 
 #include "Swap.h"
 
+// NOLINTBEGIN(cppcoreguidelines-*)
 unsigned short Base::SwapOrder()
 {
     unsigned short usDummy = 1;
@@ -102,3 +103,4 @@ void Base::SwapVar(double& d)
     }
     d = dTmp;
 }
+// NOLINTEND(cppcoreguidelines-*)

@@ -70,7 +70,9 @@ SmartPtr::SmartPtr(const SmartPtr& ob)
 
 SmartPtr& SmartPtr::operator=(const SmartPtr& rhs)
 {
-    set(rhs.ptr());
+    if (this != &rhs) {
+        set(rhs.ptr());
+    }
     return *this;
 }
 

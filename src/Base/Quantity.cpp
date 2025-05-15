@@ -250,7 +250,7 @@ Quantity::getUserString(UnitsSchema* schema, double& factor, std::string& unitSt
 std::string Quantity::getSafeUserString() const
 {
     auto ret = getUserString();
-    if (this->myValue) {
+    if (this->myValue != 0.0) {
         auto feedbackQty = parse(ret);
         auto feedbackVal = feedbackQty.getValue();
         if (feedbackVal == 0) {

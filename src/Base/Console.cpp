@@ -58,14 +58,14 @@ public:
     ConsoleEvent(ConsoleSingleton::FreeCAD_ConsoleMsgType type,
                  IntendedRecipient recipient,
                  ContentType content,
-                 const std::string& notifier,
-                 const std::string& msg)
+                 std::string notifier,
+                 std::string msg)
         : QEvent(QEvent::User)
         , msgtype(type)
         , recipient(recipient)
         , content(content)
-        , notifier(notifier)
-        , msg(msg)
+        , notifier(std::move(notifier))
+        , msg(std::move(msg))
     {}
 };
 

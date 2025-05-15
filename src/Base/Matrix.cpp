@@ -33,6 +33,7 @@
 
 using namespace Base;
 
+// NOLINTBEGIN
 // clang-format off
 Matrix4D::Matrix4D()
     : dMtrx4D {{{1., 0., 0., 0.},
@@ -1038,3 +1039,4 @@ std::array<Matrix4D, 4> Matrix4D::decompose() const
     }
     return std::array<Matrix4D, 4> {residualMatrix, scaleMatrix, rotationMatrix, moveMatrix};
 }
+// NOLINTEND

@@ -35,6 +35,7 @@
 
 std::string Base::Tools::getIdentifier(const std::string& name)
 {
+    // NOLINTBEGIN
     if (name.empty()) {
         return "_";
     }
@@ -51,6 +52,7 @@ std::string Base::Tools::getIdentifier(const std::string& name)
             it = '_';                      // it's neither number nor letter
         }
     }
+    // NOLINTEND
 
     return CleanName;
 }

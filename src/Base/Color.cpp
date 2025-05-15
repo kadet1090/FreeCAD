@@ -157,36 +157,36 @@ bool Color::fromHexString(const std::string& hex)
     // #RRGGBB
     if (hex.size() == 7) {
         std::stringstream ss(hex);
-        unsigned int rgb;
+        unsigned int rgb {};
         char ch {};
 
         ss >> ch >> std::hex >> rgb;
-        int rc = (rgb >> 16) & 0xff;
-        int gc = (rgb >> 8) & 0xff;
-        int bc = rgb & 0xff;
+        unsigned int rc = (rgb >> 16) & 0xff;
+        unsigned int gc = (rgb >> 8) & 0xff;
+        unsigned int bc = rgb & 0xff;
 
-        r = rc / 255.0F;
-        g = gc / 255.0F;
-        b = bc / 255.0F;
+        r = static_cast<float>(rc) / 255.0F;
+        g = static_cast<float>(gc) / 255.0F;
+        b = static_cast<float>(bc) / 255.0F;
 
         return true;
     }
     // #RRGGBBAA
     if (hex.size() == 9) {
         std::stringstream ss(hex);
-        unsigned int rgba;
+        unsigned int rgba {};
         char ch {};
 
         ss >> ch >> std::hex >> rgba;
-        int rc = (rgba >> 24) & 0xff;
-        int gc = (rgba >> 16) & 0xff;
-        int bc = (rgba >> 8) & 0xff;
-        int ac = rgba & 0xff;
+        unsigned int rc = (rgba >> 24) & 0xff;
+        unsigned int gc = (rgba >> 16) & 0xff;
+        unsigned int bc = (rgba >> 8) & 0xff;
+        unsigned int ac = rgba & 0xff;
 
-        r = rc / 255.0F;
-        g = gc / 255.0F;
-        b = bc / 255.0F;
-        a = ac / 255.0F;
+        r = static_cast<float>(rc) / 255.0F;
+        g = static_cast<float>(gc) / 255.0F;
+        b = static_cast<float>(bc) / 255.0F;
+        a = static_cast<float>(ac) / 255.0F;
 
         return true;
     }

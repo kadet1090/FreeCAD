@@ -30,7 +30,8 @@
 #include "VectorPy.h"
 
 
-// NOLINTBEGIN(readability-identifier-length)
+// NOLINTBEGIN(readability-identifier-length, cppcoreguidelines-pro-type-reinterpret-cast,
+// modernize-use-auto)
 int Py::Vector::Vector_TypeCheck(PyObject* obj)
 {
     return PyObject_TypeCheck(obj, &(Base::VectorPy::Type));
@@ -84,7 +85,7 @@ Py::Vector& Py::Vector::operator=(const Base::Vector3f& vec)
 Base::Vector3d Py::Vector::toVector() const
 {
     if (Vector_TypeCheck(ptr())) {
-        return static_cast<Base::VectorPy*>(ptr())->value();
+        return static_cast<Base::VectorPy*>(ptr())->value();  // NOLINT
     }
 
     return Base::getVectorFromTuple<double>(ptr());
@@ -249,43 +250,52 @@ Py::Object Vector2dPy::number_multiply(const Py::Object& py)
     throw Py::TypeError("Argument must be Vector2d or Float");
 }
 
-Py::Object Vector2dPy::number_remainder(const Py::Object&)
+Py::Object Vector2dPy::number_remainder(const Py::Object& py)
 {
+    std::ignore = py;
     throw Py::TypeError("Not defined");
 }
 
-Py::Object Vector2dPy::number_divmod(const Py::Object&)
+Py::Object Vector2dPy::number_divmod(const Py::Object& py)
 {
+    std::ignore = py;
     throw Py::TypeError("Not defined");
 }
 
-Py::Object Vector2dPy::number_lshift(const Py::Object&)
+Py::Object Vector2dPy::number_lshift(const Py::Object& py)
 {
+    std::ignore = py;
     throw Py::TypeError("Not defined");
 }
 
-Py::Object Vector2dPy::number_rshift(const Py::Object&)
+Py::Object Vector2dPy::number_rshift(const Py::Object& py)
 {
+    std::ignore = py;
     throw Py::TypeError("Not defined");
 }
 
-Py::Object Vector2dPy::number_and(const Py::Object&)
+Py::Object Vector2dPy::number_and(const Py::Object& py)
 {
+    std::ignore = py;
     throw Py::TypeError("Not defined");
 }
 
-Py::Object Vector2dPy::number_xor(const Py::Object&)
+Py::Object Vector2dPy::number_xor(const Py::Object& py)
 {
+    std::ignore = py;
     throw Py::TypeError("Not defined");
 }
 
-Py::Object Vector2dPy::number_or(const Py::Object&)
+Py::Object Vector2dPy::number_or(const Py::Object& py)
 {
+    std::ignore = py;
     throw Py::TypeError("Not defined");
 }
 
-Py::Object Vector2dPy::number_power(const Py::Object&, const Py::Object&)
+Py::Object Vector2dPy::number_power(const Py::Object& n1, const Py::Object& n2)
 {
+    std::ignore = n1;
+    std::ignore = n2;
     throw Py::TypeError("Not defined");
 }
 
@@ -299,20 +309,23 @@ Py::Object Vector2dPy::isNull(const Py::Tuple& args)
 }
 PYCXX_VARARGS_METHOD_DECL(Vector2dPy, isNull)
 
-Py::Object Vector2dPy::length(const Py::Tuple&)
+Py::Object Vector2dPy::length(const Py::Tuple& py)
 {
+    std::ignore = py;
     return Py::Float(v.Length());  // NOLINT
 }
 PYCXX_VARARGS_METHOD_DECL(Vector2dPy, length)
 
-Py::Object Vector2dPy::atan2(const Py::Tuple&)
+Py::Object Vector2dPy::atan2(const Py::Tuple& py)
 {
+    std::ignore = py;
     return Py::Float(v.Angle());  // NOLINT
 }
 PYCXX_VARARGS_METHOD_DECL(Vector2dPy, atan2)
 
-Py::Object Vector2dPy::square(const Py::Tuple&)
+Py::Object Vector2dPy::square(const Py::Tuple& py)
 {
+    std::ignore = py;
     return Py::Float(v.Sqr());  // NOLINT
 }
 PYCXX_VARARGS_METHOD_DECL(Vector2dPy, square)
@@ -333,8 +346,9 @@ Py::Object Vector2dPy::rotate(const Py::Tuple& args)
 }
 PYCXX_VARARGS_METHOD_DECL(Vector2dPy, rotate)
 
-Py::Object Vector2dPy::normalize(const Py::Tuple&)
+Py::Object Vector2dPy::normalize(const Py::Tuple& py)
 {
+    std::ignore = py;
     v.Normalize();
     return Py::None();
 }
@@ -378,7 +392,8 @@ Py::Object Vector2dPy::projectToLine(const Py::Tuple& args)
     return Py::None();
 }
 PYCXX_VARARGS_METHOD_DECL(Vector2dPy, projectToLine)
-// NOLINTEND(readability-identifier-length)
+// NOLINTEND(readability-identifier-length, cppcoreguidelines-pro-type-reinterpret-cast,
+// modernize-use-auto)
 
 void Vector2dPy::init_type()
 {
@@ -389,6 +404,7 @@ void Vector2dPy::init_type()
     behaviors().supportRepr();
     behaviors().supportNumberType();
 
+    // NOLINTBEGIN
     PYCXX_ADD_VARARGS_METHOD(isNull, isNull, "isNull()");
     PYCXX_ADD_VARARGS_METHOD(length, length, "length()");
     PYCXX_ADD_VARARGS_METHOD(atan2, atan2, "atan2()");
@@ -401,6 +417,7 @@ void Vector2dPy::init_type()
     PYCXX_ADD_VARARGS_METHOD(isEqual, isEqual, "isEqual()");
     PYCXX_ADD_VARARGS_METHOD(getAngle, getAngle, "getAngle()");
     PYCXX_ADD_VARARGS_METHOD(projectToLine, projectToLine, "projectToLine()");
+    // NOLINTEND
 
     // Call to make the type ready for use
     behaviors().readyType();

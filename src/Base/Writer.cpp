@@ -88,6 +88,7 @@ struct cdata_filter
 // ---------------------------------------------------------------------------
 
 Writer::Writer()
+    : charStreamFormat {}
 {
     indBuf[0] = '\0';
 }
@@ -234,7 +235,7 @@ void Writer::setModes(const std::set<std::string>& modes)
 
 bool Writer::getMode(const std::string& mode) const
 {
-    std::set<std::string>::const_iterator it = Modes.find(mode);
+    auto it = Modes.find(mode);
     return (it != Modes.end());
 }
 
@@ -245,7 +246,7 @@ std::set<std::string> Writer::getModes() const
 
 void Writer::clearMode(const std::string& mode)
 {
-    std::set<std::string>::iterator it = Modes.find(mode);
+    auto it = Modes.find(mode);
     if (it != Modes.end()) {
         Modes.erase(it);
     }
@@ -319,7 +320,8 @@ std::string Writer::addFile(const char* Name, const Base::Persistence* Object)
 
 void Writer::incInd()
 {
-    if (indent < 1020) {
+    const short maxInd = 1020;
+    if (indent < maxInd) {
         indBuf[indent] = ' ';
         indBuf[indent + 1] = ' ';
         indBuf[indent + 2] = ' ';

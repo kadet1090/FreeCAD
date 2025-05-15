@@ -66,15 +66,17 @@ namespace
 constexpr const char* BadTypeName = "BadType";
 }
 
+// NOLINTBEGIN
 std::map<std::string, unsigned int> Type::typemap;
 std::vector<TypeData*> Type::typedata;
 std::set<std::string> Type::loadModuleSet;
+// NOLINTEND
 
 const Type Type::BadType;
 
 Type::instantiationMethod Type::getInstantiationMethod() const
 {
-    assert(typedata.size() >= 1 && "Type::init() must be called before creating instances");
+    assert(!typedata.empty() && "Type::init() must be called before creating instances");
     assert(typedata.size() > index && "Type index out of bounds");
     if (isBad() || typedata.size() <= index) {
         return nullptr;
@@ -131,7 +133,7 @@ void Type::importModule(const char* typeName)
     loadModuleSet.insert(mod);
 }
 
-const std::string Type::getModuleName(const char* className)
+std::string Type::getModuleName(const char* className)
 {
     std::string_view classNameView(className);
     auto pos = classNameView.find("::");
@@ -141,9 +143,9 @@ const std::string Type::getModuleName(const char* className)
 }
 
 
-const Type Type::createType(const Type parent, const char* name, instantiationMethod method)
+Type Type::createType(const Type parent, const char* name, instantiationMethod method)
 {
-    assert(name && name[0] != '\0' && "Type name must not be empty");
+    assert(name && name[0] != '\0' && "Type name must not be empty");  // NOLINT
 
     Type newType;
     newType.index = static_cast<unsigned int>(Type::typedata.size());
@@ -158,7 +160,7 @@ const Type Type::createType(const Type parent, const char* name, instantiationMe
 
 void Type::init()
 {
-    assert(Type::typedata.size() == 0 && "Type::init() should only be called once");
+    assert(Type::typedata.empty() && "Type::init() should only be called once");
     typedata.emplace_back(new TypeData(BadTypeName, BadType, BadType, nullptr));
     typemap[BadTypeName] = 0;
 }
@@ -173,7 +175,7 @@ void Type::destruct()
     loadModuleSet.clear();
 }
 
-const Type Type::fromName(const char* name)
+Type Type::fromName(const char* name)
 {
     const auto pos = typemap.find(name);
     if (pos == typemap.end()) {
@@ -183,7 +185,7 @@ const Type Type::fromName(const char* name)
     return typedata[pos->second]->type;
 }
 
-const Type Type::fromKey(TypeId key)
+Type Type::fromKey(TypeId key)
 {
     if (key < typedata.size()) {
         return typedata[key]->type;
@@ -194,14 +196,14 @@ const Type Type::fromKey(TypeId key)
 
 const char* Type::getName() const
 {
-    assert(typedata.size() >= 1
+    assert(!typedata.empty()
            && "Type::init() must be called before fetching names, even for bad types");
     return typedata[index]->name.c_str();
 }
 
-const Type Type::getParent() const
+Type Type::getParent() const
 {
-    assert(typedata.size() >= 1
+    assert(!typedata.empty()
            && "Type::init() must be called before fetching parents, even for bad types");
     return typedata[index]->parent;
 }
@@ -237,7 +239,7 @@ int Type::getNumTypes()
     return static_cast<int>(typedata.size());
 }
 
-const Type Type::getTypeIfDerivedFrom(const char* name, const Type parent, bool loadModule)
+Type Type::getTypeIfDerivedFrom(const char* name, const Type parent, bool loadModule)
 {
     if (loadModule) {
         importModule(name);

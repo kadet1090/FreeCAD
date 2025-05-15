@@ -384,7 +384,7 @@ void PlacementPy::setMatrix(Py::Object arg)
     }
     try {
         mat = arg;
-        getPlacementPtr()->fromMatrix(mat);
+        getPlacementPtr()->fromMatrix(static_cast<Matrix4D>(mat));
     }
     catch (const ValueError& e) {
         throw Py::ValueError(e.what());

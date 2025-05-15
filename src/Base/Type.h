@@ -98,25 +98,25 @@ public:
     using instantiationMethod = void* (*)();
 
     /// Returns a type object by name
-    [[nodiscard]] static const Type fromName(const char* name);
+    [[nodiscard]] static Type fromName(const char* name);
     /// Returns a type object by key
-    [[nodiscard]] static const Type fromKey(TypeId key);
+    [[nodiscard]] static Type fromKey(TypeId key);
     /// Returns the name of the type
     [[nodiscard]] const char* getName() const;
     /// Returns the parent type
-    [[nodiscard]] const Type getParent() const;
+    [[nodiscard]] Type getParent() const;
     /// Checks whether this type is derived from "type"
-    [[nodiscard]] bool isDerivedFrom(const Type type) const;
+    [[nodiscard]] bool isDerivedFrom(Type type) const;
     /// Returns all descendants from the given type
-    static int getAllDerivedFrom(const Type type, std::vector<Type>& list);
+    static int getAllDerivedFrom(Type type, std::vector<Type>& list);
     /// Returns the given named type if is derived from parent type, otherwise return bad type
-    [[nodiscard]] static const Type
-    getTypeIfDerivedFrom(const char* name, const Type parent, bool loadModule = false);
+    [[nodiscard]] static Type
+    getTypeIfDerivedFrom(const char* name, Type parent, bool loadModule = false);
     /// Returns the number of types created so far
     [[nodiscard]] static int getNumTypes();
     /// Creates a new type with the given name, parent and instantiation method
-    [[nodiscard]] static const Type
-    createType(const Type parent, const char* name, instantiationMethod method = nullptr);
+    [[nodiscard]] static Type
+    createType(Type parent, const char* name, instantiationMethod method = nullptr);
     /// Returns the inner index of the type
     [[nodiscard]] TypeId getKey() const;
     /// Checks if the type is invalid
@@ -137,7 +137,7 @@ public:
     static void destruct();
 
     /// Returns the name of the module the class is defined in
-    static const std::string getModuleName(const char* className);
+    static std::string getModuleName(const char* className);
 
 private:
     [[nodiscard]] instantiationMethod getInstantiationMethod() const;
@@ -145,11 +145,12 @@ private:
 
     TypeId index {BadTypeIndex};
 
+    // NOLINTBEGIN
     static std::map<std::string, TypeId> typemap;
     static std::vector<TypeData*> typedata;  // use pointer to hide implementation details
     static std::set<std::string> loadModuleSet;
-
     static constexpr TypeId BadTypeIndex = 0;
+    // NOLINTEND
 };
 
 

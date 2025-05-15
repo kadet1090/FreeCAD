@@ -34,6 +34,7 @@
 
 using namespace Base;
 
+// NOLINTBEGIN(readability-magic-numbers, cppcoreguidelines-*)
 Rotation::Rotation()
     : quat {0.0, 0.0, 0.0, 1.0}
     , _axis {0.0, 0.0, 1.0}
@@ -1086,3 +1087,4 @@ void Rotation::getEulerAngles(EulerSequence theOrder,
     theBeta = Base::toDegrees(theBeta);
     theGamma = Base::toDegrees(theGamma);
 }
+// NOLINTEND(readability-magic-numbers, cppcoreguidelines-*)

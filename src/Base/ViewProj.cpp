@@ -26,6 +26,7 @@
 
 using namespace Base;
 
+// NOLINTBEGIN(readability-magic-numbers)
 ViewProjMethod::ViewProjMethod() = default;
 
 bool ViewProjMethod::isValid() const
@@ -224,3 +225,4 @@ Vector3d ViewOrthoProjMatrix::inverse(const Vector3d& rclPt) const
 {
     return Vector3d(_clMtxInv * rclPt);
 }
+// NOLINTEND(readability-magic-numbers)

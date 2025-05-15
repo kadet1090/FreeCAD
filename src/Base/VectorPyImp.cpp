@@ -238,7 +238,12 @@ PyObject* VectorPy::mapping_subscript(PyObject* self, PyObject* item)
         return sequence_item(self, i);
     }
     if (PySlice_Check(item)) {
-        Py_ssize_t start = 0, stop = 0, step = 0, slicelength = 0, cur = 0, i = 0;
+        Py_ssize_t start = 0;
+        Py_ssize_t stop = 0;
+        Py_ssize_t step = 0;
+        Py_ssize_t slicelength = 0;
+        Py_ssize_t cur = 0;
+        Py_ssize_t i = 0;
         PyObject* slice = item;
 
         if (PySlice_GetIndicesEx(slice, sequence_length(self), &start, &stop, &step, &slicelength)

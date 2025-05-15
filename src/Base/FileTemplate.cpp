@@ -41,7 +41,7 @@ ClassTemplate::ClassTemplate() = default;
 
 ClassTemplate::ClassTemplate(const ClassTemplate&) = default;
 
-ClassTemplate::ClassTemplate(ClassTemplate&&) = default;
+ClassTemplate::ClassTemplate(ClassTemplate&&) noexcept = default;
 
 /**
  * A destructor.
@@ -51,7 +51,7 @@ ClassTemplate::~ClassTemplate() = default;
 
 ClassTemplate& ClassTemplate::operator=(const ClassTemplate&) = default;
 
-ClassTemplate& ClassTemplate::operator=(ClassTemplate&&) = default;
+ClassTemplate& ClassTemplate::operator=(ClassTemplate&&) noexcept = default;
 
 //**************************************************************************
 // separator for other implementation aspects
