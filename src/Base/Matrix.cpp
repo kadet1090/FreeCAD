@@ -28,6 +28,7 @@
 #endif
 
 #include "Matrix.h"
+#include "Numbers.h"
 #include "Converter.h"
 
 
@@ -425,7 +426,7 @@ bool Matrix4D::toAxisAngle(Vector3d& rclBase,
     rfAngle = acos(fCos);  // in [0,PI]
 
     if (rfAngle > 0.0) {
-        if (rfAngle < D_PI) {
+        if (rfAngle < numbers::pi) {
             rclDir.x = (dMtrx4D[2][1] - dMtrx4D[1][2]);
             rclDir.y = (dMtrx4D[0][2] - dMtrx4D[2][0]);
             rclDir.z = (dMtrx4D[1][0] - dMtrx4D[0][1]);
@@ -1006,8 +1007,8 @@ std::array<Matrix4D, 4> Matrix4D::decompose() const
     residualMatrix = rotationMatrix * residualMatrix;
     // To keep signs of the scale factors equal
     if (residualMatrix.determinant() < 0) {
-        rotationMatrix.rotZ(D_PI);
-        residualMatrix.rotZ(D_PI);
+        rotationMatrix.rotZ(numbers::pi);
+        residualMatrix.rotZ(numbers::pi);
     }
     rotationMatrix.inverseGauss();
     // extract scale

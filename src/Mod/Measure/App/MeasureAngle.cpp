@@ -26,6 +26,7 @@
 #include <App/Application.h>
 #include <App/Document.h>
 #include <App/MeasureManager.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 #include <Base/Precision.h>
 
@@ -108,7 +109,7 @@ bool MeasureAngle::isPrioritizedSelection(const App::MeasureSelection& selection
     Base::Vector3d vec2;
     getVec(*ob2, sub2, vec2);
 
-    double angle = std::fmod(vec1.GetAngle(vec2), D_PI);
+    double angle = std::fmod(vec1.GetAngle(vec2), Base::numbers::pi);
     return angle > Base::Precision::Angular();
 }
 

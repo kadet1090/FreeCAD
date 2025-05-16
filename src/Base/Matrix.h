@@ -26,6 +26,7 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 #include <string>
 
 #include "Vector3D.h"
@@ -51,7 +52,7 @@ enum class ScaleType
  */
 class BaseExport Matrix4D  // NOLINT(cppcoreguidelines-special-member-functions)
 {
-    using traits_type = float_traits<double>;
+    using num_limis = std::numeric_limits<double>;
 
 public:
     /// Default constructor
@@ -367,7 +368,7 @@ inline bool Matrix4D::operator==(const Matrix4D& mat) const
 {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            if (fabs(dMtrx4D[i][j] - mat.dMtrx4D[i][j]) > traits_type::epsilon()) {
+            if (fabs(dMtrx4D[i][j] - mat.dMtrx4D[i][j]) > num_limis::epsilon()) {
                 return false;
             }
         }

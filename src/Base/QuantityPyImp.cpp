@@ -21,6 +21,9 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
+#ifndef _PreComp_
+#include <limits>
+#endif
 
 // inclusion of the generated files (generated out of QuantityPy.xml)
 #include "QuantityPy.h"
@@ -88,7 +91,7 @@ int QuantityPy::PyInit(PyObject* args, PyObject* /*kwd*/)
     }
 
     PyErr_Clear();  // set by PyArg_ParseTuple()
-    double f = DOUBLE_MAX;
+    double f = std::numeric_limits<double>::max();
     if (PyArg_ParseTuple(args, "dO!", &f, &(UnitPy::Type), &object)) {
         *self = Quantity(f, *(static_cast<UnitPy*>(object)->getUnitPtr()));
         return 0;
@@ -110,7 +113,7 @@ int QuantityPy::PyInit(PyObject* args, PyObject* /*kwd*/)
     int i8 = 0;
     PyErr_Clear();  // set by PyArg_ParseTuple()
     if (PyArg_ParseTuple(args, "|diiiiiiii", &f, &i1, &i2, &i3, &i4, &i5, &i6, &i7, &i8)) {
-        if (f < DOUBLE_MAX) {
+        if (f < std::numeric_limits<double>::max()) {
             *self = Quantity(f,
                              Unit {static_cast<int8_t>(i1),
                                    static_cast<int8_t>(i2),
@@ -207,7 +210,7 @@ PyObject* QuantityPy::getValueAs(PyObject* args) const
     }
 
     if (!quant.isValid()) {
-        double f = DOUBLE_MAX;
+        double f = std::numeric_limits<double>::max();
         int i1 = 0;
         int i2 = 0;
         int i3 = 0;
@@ -218,7 +221,7 @@ PyObject* QuantityPy::getValueAs(PyObject* args) const
         int i8 = 0;
         PyErr_Clear();
         if (PyArg_ParseTuple(args, "d|iiiiiiii", &f, &i1, &i2, &i3, &i4, &i5, &i6, &i7, &i8)) {
-            if (f < DOUBLE_MAX) {
+            if (f < std::numeric_limits<double>::max()) {
                 quant = Quantity(f,
                                  Unit {static_cast<int8_t>(i1),
                                        static_cast<int8_t>(i2),

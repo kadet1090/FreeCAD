@@ -46,7 +46,6 @@ class BoundBox3
 
 public:
     using num_type = Precision;
-    using traits_type = float_traits<num_type>;
 
     /**  Public attributes */
     //@{

@@ -28,10 +28,18 @@
 #include <boost/math/special_functions/fpclassify.hpp>
 
 #include "Vector3D.h"
+#include "Numbers.h"
 #include "Tools.h"
 
 
 using namespace Base;
+
+template<class float_type>
+typename Vector3<float_type>::num_type Vector3<float_type>::epsilon()
+{
+    using traits_type = float_traits<float_type>;
+    return traits_type::epsilon();
+}
 
 template<class float_type>
 Vector3<float_type>::Vector3(float_type fx, float_type fy, float_type fz)
@@ -193,6 +201,7 @@ bool Vector3<float_type>::IsOnLineSegment(const Vector3<float_type>& startVct,
     Vector3<float_type> crossproduct = vectorAB.Cross(vectorAC);
     float_type dotproduct = vectorAB.Dot(vectorAC);
 
+    using traits_type = float_traits<float_type>;
     if (crossproduct.Length() > traits_type::epsilon()) {
         return false;
     }
@@ -217,6 +226,7 @@ bool Vector3<float_type>::operator!=(const Vector3<float_type>& rcVct) const
 template<class float_type>
 bool Vector3<float_type>::operator==(const Vector3<float_type>& rcVct) const
 {
+    using traits_type = float_traits<float_type>;
     return (std::fabs(x - rcVct.x) <= traits_type::epsilon())
         && (std::fabs(y - rcVct.y) <= traits_type::epsilon())
         && (std::fabs(z - rcVct.z) <= traits_type::epsilon());
@@ -236,6 +246,7 @@ bool Vector3<float_type>::IsParallel(const Vector3<float_type>& rclDir, float_ty
         return false;
     }
 
+    using traits_type = float_traits<float_type>;
     return angle <= tol || traits_type::pi() - angle <= tol;
 }
 
@@ -247,6 +258,7 @@ bool Vector3<float_type>::IsNormal(const Vector3<float_type>& rclDir, float_type
         return false;
     }
 
+    using traits_type = float_traits<float_type>;
     float_type diff = std::abs(traits_type::pi() / 2.0 - angle);  // NOLINT
     return diff <= tol;
 }
@@ -446,6 +458,8 @@ float_type Vector3<float_type>::GetAngle(const Vector3& rcVect) const
 {
     float_type len1 = Length();
     float_type len2 = rcVect.Length();
+
+    using traits_type = float_traits<float_type>;
     if (len1 <= traits_type::epsilon() || len2 <= traits_type::epsilon()) {
         return std::numeric_limits<float_type>::quiet_NaN();  // division by zero
     }
@@ -467,6 +481,7 @@ float_type Vector3<float_type>::GetAngle(const Vector3& rcVect) const
 template<class float_type>
 float_type Vector3<float_type>::GetAngleOriented(const Vector3& rcVect, const Vector3& norm) const
 {
+    using traits_type = float_traits<float_type>;
     float_type angle = GetAngle(rcVect);
 
     Vector3<float_type> crossProduct = Cross(rcVect);

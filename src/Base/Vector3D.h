@@ -26,14 +26,9 @@
 
 
 #include <cmath>
-#include <cfloat>
 
 #ifndef F_PI
 #define F_PI 3.1415926f
-#endif
-
-#ifndef D_PI
-#define D_PI 3.141592653589793
 #endif
 
 #ifndef FLOAT_MAX
@@ -55,46 +50,6 @@
 
 namespace Base
 {
-template<class numT>
-struct float_traits
-{
-};
-
-template<>
-struct float_traits<float>
-{
-    using float_type = float;
-    [[nodiscard]] static constexpr float_type pi()
-    {
-        return F_PI;
-    }
-    [[nodiscard]] static constexpr float_type epsilon()
-    {
-        return FLT_EPSILON;
-    }
-    [[nodiscard]] static constexpr float_type maximum()
-    {
-        return FLT_MAX;
-    }
-};
-
-template<>
-struct float_traits<double>
-{
-    using float_type = double;
-    [[nodiscard]] static constexpr float_type pi()
-    {
-        return D_PI;
-    }
-    [[nodiscard]] static constexpr float_type epsilon()
-    {
-        return DBL_EPSILON;
-    }
-    [[nodiscard]] static constexpr float_type maximum()
-    {
-        return DBL_MAX;
-    }
-};
 
 /** The Vector Base class. */
 template<class float_type>
@@ -102,11 +57,7 @@ class Vector3
 {
 public:
     using num_type = float_type;
-    using traits_type = float_traits<num_type>;
-    [[nodiscard]] static constexpr num_type epsilon()
-    {
-        return traits_type::epsilon();
-    }
+    [[nodiscard]] static num_type epsilon();
 
     /** @name Public data members */
     //@{
@@ -266,7 +217,7 @@ template<class float_type>
     float_type x = v1.x - v2.x;
     float_type y = v1.y - v2.y;
     float_type z = v1.z - v2.z;
-    return static_cast<float_type>(sqrt((x * x) + (y * y) + (z * z)));
+    return static_cast<float_type>(std::sqrt((x * x) + (y * y) + (z * z)));
 }
 
 /// Returns the squared distance between two points

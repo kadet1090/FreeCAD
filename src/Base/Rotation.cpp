@@ -22,6 +22,9 @@
 
 
 #include "PreCompiled.h"
+#ifndef _PreComp_
+#include <limits>
+#endif
 
 #include <boost/algorithm/string/predicate.hpp>
 #include "Base/Exception.h"
@@ -29,6 +32,7 @@
 
 #include "Rotation.h"
 #include "Matrix.h"
+#include "Numbers.h"
 #include "Precision.h"
 
 
@@ -118,7 +122,7 @@ void Rotation::evaluateVector()
         double scale = sin(rfAngle / 2.0);
         // Get a normalized vector
         double l = this->_axis.Length();
-        if (l < Base::Vector3d::epsilon()) {
+        if (l < std::numeric_limits<double>::epsilon()) {
             l = 1;
         }
         this->_axis.x = this->quat[0] * l / scale;
@@ -251,7 +255,8 @@ void Rotation::setValue(const Vector3d& axis, double fAngle)
     //
     // normalization of the angle to be in [0, 2pi[
     _angle = fAngle;
-    double theAngle = fAngle - floor(fAngle / (2.0 * D_PI)) * (2.0 * D_PI);
+    const double pi = numbers::pi;
+    double theAngle = fAngle - floor(fAngle / (2.0 * pi)) * (2.0 * pi);
     this->quat[3] = cos(theAngle / 2.0);
 
     Vector3d norm = axis;
@@ -293,7 +298,7 @@ void Rotation::setValue(const Vector3d& rotateFrom, const Vector3d& rotateTo)
         else {
             // We can use any axis perpendicular to u (and v)
             Vector3d t = u % Vector3d(1.0, 0.0, 0.0);
-            if (t.Length() < Base::Vector3d::epsilon()) {
+            if (t.Length() < std::numeric_limits<double>::epsilon()) {
                 t = u % Vector3d(0.0, 1.0, 0.0);
             }
             this->setValue(t.x, t.y, t.z, 0.0);
@@ -503,11 +508,11 @@ Rotation Rotation::slerp(const Rotation& q0, const Rotation& q1, double t)
         neg = true;
     }
 
-    if ((1.0 - dot) > Base::Vector3d::epsilon()) {
+    if ((1.0 - dot) > std::numeric_limits<double>::epsilon()) {
         double angle = acos(dot);
         double sinangle = sin(angle);
         // If possible calculate spherical interpolation, otherwise use linear interpolation
-        if (sinangle > Base::Vector3d::epsilon()) {
+        if (sinangle > std::numeric_limits<double>::epsilon()) {
             scale0 = double(sin((1.0 - t) * angle)) / sinangle;
             scale1 = double(sin(t * angle)) / sinangle;
         }
@@ -725,22 +730,26 @@ void Rotation::getYawPitchRoll(double& y, double& p, double& r) const
     double qd2 = 2.0 * (q13 - q02);
 
     // handle gimbal lock
-    if (fabs(qd2 - 1.0) <= 16 * DBL_EPSILON) {  // Tolerance copied from OCC "gp_Quaternion.cxx"
+    const double pi = numbers::pi;
+    if (fabs(qd2 - 1.0)
+        <= 16 * std::numeric_limits<double>::epsilon()) {  // Tolerance copied from OCC
+                                                           // "gp_Quaternion.cxx"
         // north pole
         y = 0.0;
-        p = D_PI / 2.0;
+        p = pi / 2.0;
         r = 2.0 * atan2(quat[0], quat[3]);
     }
     else if (fabs(qd2 + 1.0)
-             <= 16 * DBL_EPSILON) {  // Tolerance copied from OCC "gp_Quaternion.cxx"
+             <= 16 * std::numeric_limits<double>::epsilon()) {  // Tolerance copied from OCC
+                                                                // "gp_Quaternion.cxx"
         // south pole
         y = 0.0;
-        p = -D_PI / 2.0;
+        p = -pi / 2.0;
         r = 2.0 * atan2(quat[0], quat[3]);
     }
     else {
         y = atan2(2.0 * (q01 + q23), (q00 + q33) - (q11 + q22));
-        p = qd2 > 1.0 ? D_PI / 2.0 : (qd2 < -1.0 ? -D_PI / 2.0 : asin(qd2));
+        p = qd2 > 1.0 ? pi / 2.0 : (qd2 < -1.0 ? -pi / 2.0 : asin(qd2));
         r = atan2(2.0 * (q12 + q03), (q22 + q33) - (q00 + q11));
     }
 
@@ -1050,7 +1059,7 @@ void Rotation::getEulerAngles(EulerSequence theOrder,
     EulerSequence_Parameters o = translateEulerSequence(theOrder);
     if (o.isTwoAxes) {
         double sy = sqrt(M(o.i, o.j) * M(o.i, o.j) + M(o.i, o.k) * M(o.i, o.k));
-        if (sy > 16 * DBL_EPSILON) {
+        if (sy > 16 * std::numeric_limits<double>::epsilon()) {
             theAlpha = atan2(M(o.i, o.j), M(o.i, o.k));
             theGamma = atan2(M(o.j, o.i), -M(o.k, o.i));
         }
@@ -1062,7 +1071,7 @@ void Rotation::getEulerAngles(EulerSequence theOrder,
     }
     else {
         double cy = sqrt(M(o.i, o.i) * M(o.i, o.i) + M(o.j, o.i) * M(o.j, o.i));
-        if (cy > 16 * DBL_EPSILON) {
+        if (cy > 16 * std::numeric_limits<double>::epsilon()) {
             theAlpha = atan2(M(o.k, o.j), M(o.k, o.k));
             theGamma = atan2(M(o.j, o.i), M(o.i, o.i));
         }

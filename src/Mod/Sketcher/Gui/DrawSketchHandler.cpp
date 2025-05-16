@@ -32,6 +32,7 @@
 
 #include <Base/Console.h>
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Gui/Application.h>
 #include <Gui/BitmapFactory.h>
 #include <Gui/CommandT.h>
@@ -665,7 +666,7 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint>& suggested
 
                 double angle = atan2(projPnt.y, projPnt.x);
                 while (angle < startAngle) {
-                    angle += 2 * D_PI;  // Bring it to range of arc
+                    angle += 2 * Base::numbers::pi;  // Bring it to range of arc
                 }
 
                 // if the point is on correct side of arc
@@ -717,7 +718,7 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint>& suggested
                     2.f * M_PI);
 
                 while (angle < startAngle) {
-                    angle += 2 * D_PI;  // Bring it to range of arc
+                    angle += 2 * Base::numbers::pi;  // Bring it to range of arc
                 }
 
                 // if the point is on correct side of arc

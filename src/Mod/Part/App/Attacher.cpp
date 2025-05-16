@@ -64,6 +64,7 @@
 #include <App/Document.h>
 #include <App/Datums.h>
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 
 #include "Attacher.h"
 #include "AttachExtension.h"
@@ -1912,7 +1913,7 @@ AttachEngine3D::_calculateAttachedPlacement(const std::vector<App::DocumentObjec
                 Base::Vector3d(dirs[2].X(), dirs[2].Y(), dirs[2].Z()),
                 orderString);
             if (this->mapReverse) {
-                rot = rot * Base::Rotation(Base::Vector3d(0, 1, 0), D_PI);
+                rot = rot * Base::Rotation(Base::Vector3d(0, 1, 0), Base::numbers::pi);
             }
 
             Base::Placement plm = Base::Placement(
