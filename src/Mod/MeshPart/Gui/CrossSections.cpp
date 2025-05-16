@@ -22,7 +22,6 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <cfloat>
 #include <sstream>
 
 #include <BRepBuilderAPI_MakePolygon.hxx>

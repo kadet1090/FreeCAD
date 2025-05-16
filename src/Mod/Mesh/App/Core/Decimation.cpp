@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
-#include <cfloat>
+#include <limits>
 #include "Decimation.h"
 #include "MeshKernel.h"
 #include "Simplify.h"
@@ -123,7 +123,7 @@ void MeshSimplify::simplify(int targetSize)
     }
 
     // Simplification starts
-    alg.simplify_mesh(targetSize, FLT_MAX);
+    alg.simplify_mesh(targetSize, std::numeric_limits<float>::max());
 
     // Simplification done
     MeshPointArray new_points;

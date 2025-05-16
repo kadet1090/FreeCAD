@@ -47,7 +47,6 @@
 #endif
 
 #include <algorithm>
-#include <cfloat>
 #include <future>
 #include <iostream>
 #include <limits>
@@ -2245,6 +2244,8 @@ int System::solve_LM(SubSystem* subsys, bool isRedundantsolving)
             mu = tau * diag_A.lpNorm<Eigen::Infinity>();
         }
 
+        const double dbl_eps = std::numeric_limits<double>::epsilon();
+
         double h_norm {};
         // determine increment using adaptive damping
         int k = 0;
@@ -2275,7 +2276,7 @@ int System::solve_LM(SubSystem* subsys, bool isRedundantsolving)
                     stop = 3;
                     break;
                 }
-                else if (h_norm >= (x.norm() + eps1) / (DBL_EPSILON * DBL_EPSILON)) {
+                else if (h_norm >= (x.norm() + eps1) / (dbl_eps * dbl_eps)) {
                     // almost singular
                     stop = 4;
                     break;

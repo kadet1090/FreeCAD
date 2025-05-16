@@ -22,6 +22,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
+# include <limits>
 # include <Inventor/SbViewportRegion.h>
 # include <Inventor/SoPickedPoint.h>
 # include <Inventor/actions/SoGetBoundingBoxAction.h>
@@ -717,9 +718,10 @@ void NavigationStyle::zoom(SoCamera * cam, float diffvalue)
         // inversely; isinfite()), but those only became standardized with
         // C99.)
         const float distorigo = newpos.length();
-        // sqrt(FLT_MAX) == ~ 1e+19, which should be both safe for further
+        const float flt_max = std::numeric_limits<float>::max();
+        // sqrt(flt_max) == ~ 1e+19, which should be both safe for further
         // calculations and ok for the end-user and app-programmer.
-        if (distorigo > float(sqrt(FLT_MAX))) {
+        if (distorigo > float(sqrt(flt_max))) {
             // do nothing here
         }
         else {

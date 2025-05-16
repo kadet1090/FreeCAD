@@ -34,8 +34,8 @@
 # endif
 
 # include <algorithm>
-# include <cfloat>
 # include <cmath>
+# include <limits>
 # include <QFontMetrics>
 # include <QPainter>
 
@@ -58,6 +58,7 @@
 constexpr const float ZCONSTR {0.006F};
 
 using namespace Gui;
+using num_float = std::numeric_limits<float>;
 
 // ------------------------------------------------------
 
@@ -240,11 +241,12 @@ public:
 private:
     void getBBox(const std::vector<SbVec3f>& corners, SbBox3f& box, SbVec3f& center) const
     {
+        const float max = std::numeric_limits<float>::max();
         if (corners.size() > 1) {
-            float minX = FLT_MAX;
-            float minY = FLT_MAX;
-            float maxX = -FLT_MAX;
-            float maxY = -FLT_MAX;
+            float minX = max;
+            float minY = max;
+            float maxX = -max;
+            float maxY = -max;
             for (SbVec3f it : corners) {
                 minX = (it[0] < minX) ? it[0] : minX;
                 minY = (it[1] < minY) ? it[1] : minY;
@@ -294,10 +296,10 @@ private:
             dir = (p2-p1);
         }
         else if (label->datumtype.getValue() == SoDatumLabel::DISTANCEX) {
-            dir = SbVec3f( (p2[0] - p1[0] >= FLT_EPSILON) ? 1 : -1, 0, 0);
+            dir = SbVec3f( (p2[0] - p1[0] >= num_float::epsilon()) ? 1 : -1, 0, 0);
         }
         else if (label->datumtype.getValue() == SoDatumLabel::DISTANCEY) {
-            dir = SbVec3f(0, (p2[1] - p1[1] >= FLT_EPSILON) ? 1 : -1, 0);
+            dir = SbVec3f(0, (p2[1] - p1[1] >= num_float::epsilon()) ? 1 : -1, 0);
         }
 
         dir.normalize();
@@ -634,10 +636,10 @@ SbVec3f SoDatumLabel::getLabelTextCenterDistance(const SbVec3f& p1, const SbVec3
         dir = (p2 - p1);
     }
     else if (datumtype.getValue() == SoDatumLabel::DISTANCEX) {
-        dir = SbVec3f((p2[0] - p1[0] >= FLT_EPSILON) ? 1 : -1, 0, 0);
+        dir = SbVec3f((p2[0] - p1[0] >= num_float::epsilon()) ? 1 : -1, 0, 0);
     }
     else if (datumtype.getValue() == SoDatumLabel::DISTANCEY) {
-        dir = SbVec3f(0, (p2[1] - p1[1] >= FLT_EPSILON) ? 1 : -1, 0);
+        dir = SbVec3f(0, (p2[1] - p1[1] >= num_float::epsilon()) ? 1 : -1, 0);
     }
 
     dir.normalize();
@@ -714,9 +716,9 @@ void SoDatumLabel::generateDistancePrimitives(SoAction * action, const SbVec3f& 
     if (this->datumtype.getValue() == DISTANCE) {
         dir = (p2-p1);
     } else if (this->datumtype.getValue() == DISTANCEX) {
-        dir = SbVec3f( (p2[0] - p1[0] >= FLT_EPSILON) ? 1 : -1, 0, 0);
+        dir = SbVec3f( (p2[0] - p1[0] >= num_float::epsilon()) ? 1 : -1, 0, 0);
     } else if (this->datumtype.getValue() == DISTANCEY) {
-        dir = SbVec3f(0, (p2[1] - p1[1] >= FLT_EPSILON) ? 1 : -1, 0);
+        dir = SbVec3f(0, (p2[1] - p1[1] >= num_float::epsilon()) ? 1 : -1, 0);
     }
 
     dir.normalize();
@@ -959,7 +961,7 @@ void SoDatumLabel::generateArcLengthPrimitives(SoAction * action, const SbVec3f&
 void SoDatumLabel::generatePrimitives(SoAction * action)
 {
     // Initialisation check (needs something more sensible) prevents an infinite loop bug
-    if (this->imgHeight <= FLT_EPSILON || this->imgWidth <= FLT_EPSILON) {
+    if (this->imgHeight <= num_float::epsilon() || this->imgWidth <= num_float::epsilon()) {
         return;
     }
 
@@ -1173,9 +1175,9 @@ void SoDatumLabel::drawDistance(const SbVec3f* points, float scale, int srch, fl
     if (this->datumtype.getValue() == DISTANCE) {
         dir = (p2-p1);
     } else if (this->datumtype.getValue() == DISTANCEX) {
-        dir = SbVec3f( (p2[0] - p1[0] >= FLT_EPSILON) ? 1 : -1, 0, 0);
+        dir = SbVec3f( (p2[0] - p1[0] >= num_float::epsilon()) ? 1 : -1, 0, 0);
     } else if (this->datumtype.getValue() == DISTANCEY) {
-        dir = SbVec3f(0, (p2[1] - p1[1] >= FLT_EPSILON) ? 1 : -1, 0);
+        dir = SbVec3f(0, (p2[1] - p1[1] >= num_float::epsilon()) ? 1 : -1, 0);
     }
 
     dir.normalize();
@@ -1608,7 +1610,7 @@ void SoDatumLabel::drawText(SoState *state, int srcw, int srch, float angle, con
     const SbViewVolume & vv = SoViewVolumeElement::get(state);
     SbVec3f z = vv.zVector();
 
-    bool flip = norm.getValue().dot(z) > FLT_EPSILON;
+    bool flip = norm.getValue().dot(z) > num_float::epsilon();
 
     static bool init = false;
     static bool npot = false;

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <Base/Numbers.h>
 #include <Base/Vector3D.h>
 
 // NOLINTBEGIN

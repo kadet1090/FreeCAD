@@ -142,7 +142,7 @@ void DrawProjGroup::onChanged(const App::Property* prop)
     if (prop == &ScaleType) {
         if (ScaleType.isValue("Page")) {
             double newScale = page->Scale.getValue();
-            if (std::abs(getScale() - newScale) > FLT_EPSILON) {
+            if (std::abs(getScale() - newScale) > std::numeric_limits<float>::epsilon()) {
                 Scale.setValue(newScale);
                 updateChildrenScale();
             }

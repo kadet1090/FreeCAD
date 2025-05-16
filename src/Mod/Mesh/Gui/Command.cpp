@@ -25,6 +25,7 @@
 #ifdef FC_OS_WIN32
 #include <windows.h>
 #endif
+#include <limits>
 #include <map>
 
 #include <QApplication>
@@ -1798,7 +1799,7 @@ void CmdMeshScale::activated(int)
                                             QObject::tr("Enter scaling factor:"),
                                             1,
                                             0,
-                                            DBL_MAX,
+                                            std::numeric_limits<double>::max(),
                                             5,
                                             &ok,
                                             Qt::MSWindowsFixedSizeDialogHint);

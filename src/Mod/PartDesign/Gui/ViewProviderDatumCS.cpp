@@ -24,6 +24,7 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+# include <limits>
 # include <Inventor/details/SoLineDetail.h>
 # include <Inventor/nodes/SoCoordinate3.h>
 # include <Inventor/nodes/SoDrawStyle.h>
@@ -44,9 +45,11 @@
 using namespace PartDesignGui;
 
 PROPERTY_SOURCE(PartDesignGui::ViewProviderDatumCoordinateSystem,PartDesignGui::ViewProviderDatum)
+using num_double = std::numeric_limits<double>;
+using num_int = std::numeric_limits<int>;
 
-const App::PropertyFloatConstraint::Constraints ZoomConstraint = {0.0,DBL_MAX,0.2};
-const App::PropertyIntegerConstraint::Constraints FontConstraint = {1,INT_MAX,1};
+const App::PropertyFloatConstraint::Constraints ZoomConstraint = {0.0, num_double::max(), 0.2};
+const App::PropertyIntegerConstraint::Constraints FontConstraint = {1, num_int::max(), 1};
 
 ViewProviderDatumCoordinateSystem::ViewProviderDatumCoordinateSystem()
 {

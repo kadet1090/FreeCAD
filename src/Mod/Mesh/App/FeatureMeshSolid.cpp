@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
-#include <cfloat>
+#include <limits>
 #include <App/Document.h>
 
 #include "FeatureMeshSolid.h"
@@ -29,8 +29,10 @@
 
 namespace Mesh
 {
-const App::PropertyIntegerConstraint::Constraints intSampling = {0, INT_MAX, 1};
-const App::PropertyLength::Constraints floatRange = {0.0, FLT_MAX, 1.0};
+using num_int = std::numeric_limits<int>;
+using num_flt = std::numeric_limits<float>;
+const App::PropertyIntegerConstraint::Constraints intSampling = {0, num_int::max(), 1};
+const App::PropertyLength::Constraints floatRange = {0.0, num_flt::max(), 1.0};
 }  // namespace Mesh
 
 using namespace Mesh;

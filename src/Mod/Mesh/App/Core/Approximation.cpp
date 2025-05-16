@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iterator>
+#include <limits>
 #endif
 
 #include <Base/BoundBox.h>
@@ -1318,8 +1319,8 @@ float CylinderFit::GetStdDeviation() const
 
 void CylinderFit::GetBounding(Base::Vector3f& bottom, Base::Vector3f& top) const
 {
-    float distMin = FLT_MAX;
-    float distMax = FLT_MIN;
+    float distMin = std::numeric_limits<float>::max();
+    float distMax = std::numeric_limits<float>::min();
 
     std::list<Base::Vector3f>::const_iterator cIt;
     for (cIt = _vPoints.begin(); cIt != _vPoints.end(); ++cIt) {

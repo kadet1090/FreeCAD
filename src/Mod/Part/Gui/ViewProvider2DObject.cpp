@@ -23,9 +23,6 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-# include <cfloat>
-
-
 # include <Inventor/nodes/SoAnnotation.h>
 # include <Inventor/nodes/SoBaseColor.h>
 # include <Inventor/nodes/SoDepthBuffer.h>
@@ -106,10 +103,11 @@ SoSeparator* ViewProvider2DObjectGrid::createGrid()
     else {
         // make sure that nine of the numbers are exactly zero because log(0)
         // is not defined
-        float xMin = std::abs(MinX) < FLT_EPSILON ? 0.01f : MinX;
-        float xMax = std::abs(MaxX) < FLT_EPSILON ? 0.01f : MaxX;
-        float yMin = std::abs(MinY) < FLT_EPSILON ? 0.01f : MinY;
-        float yMax = std::abs(MaxY) < FLT_EPSILON ? 0.01f : MaxY;
+        const float eps = std::numeric_limits<float>::epsilon();
+        float xMin = std::abs(MinX) < eps ? 0.01f : MinX;
+        float xMax = std::abs(MaxX) < eps ? 0.01f : MaxX;
+        float yMin = std::abs(MinY) < eps ? 0.01f : MinY;
+        float yMax = std::abs(MaxY) < eps ? 0.01f : MaxY;
         MiX = -exp(ceil(log(std::abs(xMin))));
         MiX = std::min<float>(MiX,(float)-exp(ceil(log(std::abs(0.1f*xMax)))));
         MaX = exp(ceil(log(std::abs(xMax))));

@@ -23,7 +23,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-# include <cfloat>
+# include <limits>
 # include <gp_Dir.hxx>
 # include <BRep_Builder.hxx>
 # include <Mod/Part/App/FCBRepAlgoAPI_Cut.h>
@@ -730,10 +730,11 @@ const char* Hole::ThreadClass_BSF_Enums[] = { "Medium", "Normal", nullptr };
 const char* Hole::ThreadDirectionEnums[]  = { "Right", "Left", nullptr};
 
 PROPERTY_SOURCE(PartDesign::Hole, PartDesign::ProfileBased)
+using num_float = std::numeric_limits<float>;
 
 const App::PropertyAngle::Constraints Hole::floatAngle = { Base::toDegrees<double>(Precision::Angular()), 180.0 - Base::toDegrees<double>(Precision::Angular()), 1.0 };
 // OCC can only create holes with a min diameter of 10 times the Precision::Confusion()
-const App::PropertyQuantityConstraint::Constraints diameterRange = { 10 * Precision::Confusion(), FLT_MAX, 1.0 };
+const App::PropertyQuantityConstraint::Constraints diameterRange = { 10 * Precision::Confusion(), num_float::max(), 1.0 };
 
 Hole::Hole()
 {

@@ -24,7 +24,7 @@
 
 #ifndef _PreComp_
 #include <cmath>
-
+#include <limits>
 #include <Inventor/actions/SoSearchAction.h>
 #include <Inventor/draggers/SoHandleBoxDragger.h>
 #include <Inventor/draggers/SoJackDragger.h>
@@ -757,7 +757,10 @@ void CylinderWidget::radiusChanged(double)
 
 PROPERTY_SOURCE(FemGui::ViewProviderFemPostPlaneFunction, FemGui::ViewProviderFemPostFunction)
 // NOTE: The technical lower limit is at 1e-4 that the Coin3D manipulator can handle
-static const App::PropertyFloatConstraint::Constraints scaleConstraint = {1e-4, DBL_MAX, 1.0};
+using num_double = std::numeric_limits<double>;
+static const App::PropertyFloatConstraint::Constraints scaleConstraint = {1e-4,
+                                                                          num_double::max(),
+                                                                          1.0};
 
 ViewProviderFemPostPlaneFunction::ViewProviderFemPostPlaneFunction()
     : m_detectscale(false)

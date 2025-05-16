@@ -23,7 +23,6 @@
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <cassert>
-# include <cfloat>
 # include <limits>
 
 # include <QGraphicsScene>
@@ -51,11 +50,12 @@
 
 using namespace TechDraw;
 using namespace TechDrawGui;
+using num_float = std::numeric_limits<float>;
 
 QGTracker::QGTracker(QGSPage* inScene, TrackerMode m):
     m_sleep(false),
     m_qgParent(nullptr),
-    m_lastClick(QPointF(FLT_MAX, FLT_MAX))
+    m_lastClick(QPointF(num_float::max(), num_float::max()))
 {
     setTrackerMode(m);
     if (inScene) {

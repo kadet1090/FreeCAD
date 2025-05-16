@@ -28,7 +28,7 @@
 
 #ifndef _PreComp_
 # include <cmath>
-
+# include <limits>
 # include <QApplication>
 # include <QGraphicsRectItem>
 # include <QGraphicsScene>
@@ -2285,28 +2285,29 @@ Base::Vector3d QGIViewDimension::findIsoDir(Base::Vector3d ortho) const
 //! find the iso extension direction corresponding to an iso dist direction
 Base::Vector3d QGIViewDimension::findIsoExt(Base::Vector3d dir) const
 {
+    const float eps = std::numeric_limits<float>::epsilon();
     Base::Vector3d isoX(0.866, 0.5, 0.0);   //iso X
     Base::Vector3d isoXr(-0.866, -0.5, 0.0);//iso -X
     Base::Vector3d isoY(-0.866, 0.5, 0.0);  //iso -Y?
     Base::Vector3d isoYr(0.866, -0.5, 0.0); //iso +Y?
     Base::Vector3d isoZ(0.0, 1.0, 0.0);     //iso Z
     Base::Vector3d isoZr(0.0, -1.0, 0.0);   //iso -Z
-    if (dir.IsEqual(isoX, FLT_EPSILON)) {
+    if (dir.IsEqual(isoX, eps)) {
         return isoY;
     }
-    else if (dir.IsEqual(-isoX, FLT_EPSILON)) {
+    if (dir.IsEqual(-isoX, eps)) {
         return -isoY;
     }
-    else if (dir.IsEqual(isoY, FLT_EPSILON)) {
+    if (dir.IsEqual(isoY, eps)) {
         return isoZ;
     }
-    else if (dir.IsEqual(-isoY, FLT_EPSILON)) {
+    if (dir.IsEqual(-isoY, eps)) {
         return -isoZ;
     }
-    else if (dir.IsEqual(isoZ, FLT_EPSILON)) {
+    if (dir.IsEqual(isoZ, eps)) {
         return isoX;
     }
-    else if (dir.IsEqual(-isoZ, FLT_EPSILON)) {
+    if (dir.IsEqual(-isoZ, eps)) {
         return -isoX;
     }
 

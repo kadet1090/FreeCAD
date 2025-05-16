@@ -40,11 +40,12 @@
 
 
 using namespace PartDesign;
+using num_float = std::numeric_limits<float>;
 
 
 PROPERTY_SOURCE(PartDesign::Fillet, PartDesign::DressUp)
 
-const App::PropertyQuantityConstraint::Constraints floatRadius = {0.0,FLT_MAX,0.1};
+const App::PropertyQuantityConstraint::Constraints floatRadius = {0.0, num_float::max(), 0.1};
 
 Fillet::Fillet()
 {
