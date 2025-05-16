@@ -271,6 +271,7 @@ SET(FreeCADBase_HPP_SRCS
     InputSource.h
     Interpreter.h
     Matrix.h
+    Numbers.h
     Observer.h
     Parameter.h
     ParameterObserver.h
