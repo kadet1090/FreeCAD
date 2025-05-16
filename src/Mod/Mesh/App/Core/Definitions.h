@@ -41,10 +41,6 @@
  */
 #define FLOAT_EPS 1.0e-4F
 
-#ifndef FLOAT_MAX
-#define FLOAT_MAX 1e30F
-#endif
-
 namespace MeshCore
 {
 

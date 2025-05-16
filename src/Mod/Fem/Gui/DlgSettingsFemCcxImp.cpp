@@ -27,6 +27,7 @@
 #ifndef _PreComp_
 #include <QMessageBox>
 #include <QThread>
+#include <limits>
 #endif
 
 #include <App/Application.h>
@@ -43,8 +44,8 @@ DlgSettingsFemCcxImp::DlgSettingsFemCcxImp(QWidget* parent)
 {
     ui->setupUi(this);
     // set ranges
-    ui->dsb_ccx_analysis_time->setMaximum(FLOAT_MAX);
-    ui->dsb_ccx_initial_time_step->setMaximum(FLOAT_MAX);
+    ui->dsb_ccx_analysis_time->setMaximum(std::numeric_limits<float>::max());
+    ui->dsb_ccx_initial_time_step->setMaximum(std::numeric_limits<float>::max());
 
     connect(ui->fc_ccx_binary_path,
             &Gui::PrefFileChooser::fileNameChanged,

@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
-
+#include <cfloat>
 #include <App/Document.h>
 
 #include "FeatureMeshSolid.h"

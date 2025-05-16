@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <boost/core/ignore_unused.hpp>
 #include <cmath>
+#include <limits>
 #include <queue>
 #include <utility>
 #endif
@@ -1251,7 +1252,7 @@ void MeshTopoAlgorithm::SplitFacet(FacetIndex ulFacetPos,
 
 void MeshTopoAlgorithm::SplitFacetOnOneEdge(FacetIndex ulFacetPos, const Base::Vector3f& rP)
 {
-    float fMinDist = FLOAT_MAX;
+    float fMinDist = std::numeric_limits<float>::max();
     unsigned short iEdgeNo = USHRT_MAX;
     MeshFacet& rFace = _rclMesh._aclFacetArray[ulFacetPos];
 
@@ -1283,7 +1284,8 @@ void MeshTopoAlgorithm::SplitFacetOnTwoEdges(FacetIndex ulFacetPos,
 {
     // search for the matching edges
     unsigned short iEdgeNo1 = USHRT_MAX, iEdgeNo2 = USHRT_MAX;
-    float fMinDist1 = FLOAT_MAX, fMinDist2 = FLOAT_MAX;
+    float fMinDist1 = std::numeric_limits<float>::max();
+    float fMinDist2 = std::numeric_limits<float>::max();
     MeshFacet& rFace = _rclMesh._aclFacetArray[ulFacetPos];
 
     for (unsigned short i = 0; i < 3; i++) {

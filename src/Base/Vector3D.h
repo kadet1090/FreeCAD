@@ -27,15 +27,6 @@
 
 #include <cmath>
 
-#ifndef FLOAT_MAX
-#define FLOAT_MAX 3.402823466E+38F
-#endif
-
-#ifndef FLOAT_MIN
-#define FLOAT_MIN 1.175494351E-38F
-#endif
-
-
 namespace Base
 {
 

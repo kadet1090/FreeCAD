@@ -23,6 +23,7 @@
 #include "PreCompiled.h"
 #ifndef _PreComp_
 #include <cmath>
+#include <limits>
 #include <queue>
 #endif
 
@@ -144,7 +145,7 @@ Base::Matrix4D AbstractPolygonTriangulator::GetTransformToFitPlane() const
         planeFit.AddPoint(point);
     }
 
-    if (planeFit.Fit() >= FLOAT_MAX) {
+    if (planeFit.Fit() >= std::numeric_limits<float>::max()) {
         throw Base::RuntimeError("Plane fit failed");
     }
 
@@ -215,7 +216,7 @@ void AbstractPolygonTriangulator::PostProcessing(const std::vector<Base::Vector3
         polyFit.AddPoint(pt);
     }
 
-    if (polyFit.CountPoints() >= uMinPts && polyFit.Fit() < FLOAT_MAX) {
+    if (polyFit.CountPoints() >= uMinPts && polyFit.Fit() < std::numeric_limits<float>::max()) {
         for (auto& newpoint : _newpoints) {
             newpoint.z = static_cast<float>(polyFit.Value(newpoint.x, newpoint.y));
         }

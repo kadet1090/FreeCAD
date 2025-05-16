@@ -24,6 +24,7 @@
 #ifndef _PreComp_
 #include <QMessageBox>
 #include <algorithm>
+#include <limits>
 #endif
 
 #include <App/ComplexGeoData.h>
@@ -122,7 +123,7 @@ void FitBSplineSurfaceWidget::onMakePlacementClicked()
                                });
                 MeshCore::PlaneFit fit;
                 fit.AddPoints(data);
-                if (fit.Fit() < FLOAT_MAX) {
+                if (fit.Fit() < std::numeric_limits<float>::max()) {
                     Base::Vector3f base = fit.GetBase();
                     Base::Vector3f dirU = fit.GetDirU();
                     Base::Vector3f norm = fit.GetNormal();

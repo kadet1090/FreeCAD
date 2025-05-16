@@ -23,6 +23,7 @@
 #ifndef MESH_GRID_H
 #define MESH_GRID_H
 
+#include <limits>
 #include <set>
 
 #include <Base/BoundBox.h>
@@ -447,7 +448,8 @@ private:
     Base::Vector3f _clPt;     /**< Base point of search ray. */
     Base::Vector3f _clDir;    /**< Direction of search ray. */
     bool _bValidRay {false};  /**< Search ray ok? */
-    float _fMaxSearchArea {FLOAT_MAX};
+    using num = std::numeric_limits<float>;
+    float _fMaxSearchArea {num::max()};
     /** Checks if a grid position is already visited by NextOnRay(). */
     struct GridElement
     {

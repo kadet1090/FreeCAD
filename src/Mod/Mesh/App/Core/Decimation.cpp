@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
-
+#include <cfloat>
 #include "Decimation.h"
 #include "MeshKernel.h"
 #include "Simplify.h"

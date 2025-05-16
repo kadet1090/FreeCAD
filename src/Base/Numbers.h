@@ -28,12 +28,6 @@
 #include <limits>
 #include <type_traits>
 
-// NOLINTBEGIN
-#ifndef FLOAT_MAX
-#define FLOAT_MAX 3.402823466E+38F
-#endif
-// NOLINTEND
-
 // clang-format off
 namespace Base
 {
@@ -91,9 +85,9 @@ template<typename float_type>
     = _Enable_if_floating<float_type>(1.414213562373095048801688724209698079L);
 
 /// sqrt(3)
-template<typename _Tp>
-  inline constexpr _Tp sqrt3_v
-    = _Enable_if_floating<_Tp>(1.732050807568877293527446341505872367L);
+template<typename float_type>
+  inline constexpr float_type sqrt3_v
+    = _Enable_if_floating<float_type>(1.732050807568877293527446341505872367L);
 
 /// 1/sqrt(3)
 template<typename float_type>
