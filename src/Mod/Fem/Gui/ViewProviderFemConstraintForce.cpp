@@ -29,6 +29,7 @@
 #include <Inventor/SbVec3f.h>
 #endif
 
+#include <Base/Numbers.h>
 #include "Gui/Control.h"
 #include <Mod/Fem/App/FemConstraintForce.h>
 
@@ -88,7 +89,7 @@ void ViewProviderFemConstraintForce::transformSymbol(const Base::Vector3d& point
     // Place each symbol outside the boundary
     Base::Vector3d dir = (rev ? -1.0 : 1.0) * obj->DirectionVector.getValue();
     float symTraY = dir.Dot(normal) < 0 ? -1 * symLen : 0.0f;
-    float rotAngle = rev ? F_PI : 0.0f;
+    float rotAngle = rev ? Base::numbers::pi_v<float> : 0.0f;
     SbMatrix mat0, mat1;
     mat0.setTransform(SbVec3f(0, symTraY, 0),
                       SbRotation(SbVec3f(0, 0, 1), rotAngle),

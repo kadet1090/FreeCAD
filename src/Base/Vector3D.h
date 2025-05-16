@@ -27,10 +27,6 @@
 
 #include <cmath>
 
-#ifndef F_PI
-#define F_PI 3.1415926f
-#endif
-
 #ifndef FLOAT_MAX
 #define FLOAT_MAX 3.402823466E+38F
 #endif
