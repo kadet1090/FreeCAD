@@ -23,6 +23,7 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+# include <limits>
 # include <Approx_Curve3d.hxx>
 # include <BRep_Tool.hxx>
 # include <BRepAdaptor_Curve.hxx>
@@ -1095,7 +1096,7 @@ double Generic::slope()
 {
     Base::Vector3d v = asVector();
     if (v.x == 0.0) {
-        return DOUBLE_MAX;
+        return std::numeric_limits<double>::max();
     } else {
         return v.y/v.x;
     }

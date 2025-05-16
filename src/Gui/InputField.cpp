@@ -23,6 +23,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
+# include <limits>
 # include <QContextMenuEvent>
 # include <QMenu>
 # include <QPixmapCache>
@@ -71,8 +72,8 @@ InputField::InputField(QWidget * parent)
     ExpressionWidget(),
     validInput(true),
     actUnitValue(0),
-    Maximum(DOUBLE_MAX),
-    Minimum(-DOUBLE_MAX),
+    Maximum(std::numeric_limits<double>::max()),
+    Minimum(-std::numeric_limits<double>::max()),
     StepSize(1.0),
     HistorySize(5),
     SaveSize(5)

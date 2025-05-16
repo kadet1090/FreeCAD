@@ -70,9 +70,6 @@ FC_LOG_LEVEL_INIT("Expression", true, true)
 #ifndef M_E
 #define M_E        2.71828182845904523536
 #endif
-#ifndef  DOUBLE_MAX
-# define DOUBLE_MAX 1.7976931348623157E+308    /* max decimal value of a "double"*/
-#endif
 
 #if defined(_MSC_VER)
 #define strtoll _strtoi64
