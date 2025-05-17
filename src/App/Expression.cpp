@@ -34,6 +34,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/trunc.hpp>
 
+#include <limits>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -2182,7 +2183,7 @@ Py::Object FunctionExpression::evaluate(const Expression *expr, int f, const std
         Py::Object pyobj = args[0]->getPyValue();
         if (PyObject_TypeCheck(pyobj.ptr(), &Base::MatrixPy::Type)) {
             auto m = static_cast<Base::MatrixPy*>(pyobj.ptr())->value();
-            if (fabs(m.determinant()) <= DBL_EPSILON)
+            if (fabs(m.determinant()) <= std::numeric_limits<double>::epsilon())
                 _EXPR_THROW("Cannot invert singular matrix.", expr);
             m.inverseGauss();
             return Py::asObject(new Base::MatrixPy(m));

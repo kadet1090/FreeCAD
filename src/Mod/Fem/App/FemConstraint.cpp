@@ -69,13 +69,16 @@
 
 using namespace Fem;
 namespace sp = std::placeholders;
+using num_double = std::numeric_limits<double>;
 
 #if OCC_VERSION_HEX >= 0x070600
 using Adaptor3d_HSurface = Adaptor3d_Surface;
 using BRepAdaptor_HSurface = BRepAdaptor_Surface;
 #endif
 
-static const App::PropertyFloatConstraint::Constraints scaleConstraint = {0.0, DBL_MAX, 0.1};
+static const App::PropertyFloatConstraint::Constraints scaleConstraint = {0.0,
+                                                                          num_double::max(),
+                                                                          0.1};
 
 PROPERTY_SOURCE(Fem::Constraint, App::DocumentObject)
 

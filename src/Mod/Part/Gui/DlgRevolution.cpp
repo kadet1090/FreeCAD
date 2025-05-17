@@ -103,16 +103,17 @@ DlgRevolution::DlgRevolution(QWidget* parent, Qt::WindowFlags fl)
     ui->setupUi(this);
     setupConnections();
 
-    ui->xPos->setRange(-DBL_MAX,DBL_MAX);
-    ui->yPos->setRange(-DBL_MAX,DBL_MAX);
-    ui->zPos->setRange(-DBL_MAX,DBL_MAX);
+    const double max = std::numeric_limits<double>::max();
+    ui->xPos->setRange(-max, max);
+    ui->yPos->setRange(-max, max);
+    ui->zPos->setRange(-max, max);
     ui->xPos->setUnit(Base::Unit::Length);
     ui->yPos->setUnit(Base::Unit::Length);
     ui->zPos->setUnit(Base::Unit::Length);
 
-    ui->xDir->setRange(-DBL_MAX,DBL_MAX);
-    ui->yDir->setRange(-DBL_MAX,DBL_MAX);
-    ui->zDir->setRange(-DBL_MAX,DBL_MAX);
+    ui->xDir->setRange(-max, max);
+    ui->yDir->setRange(-max, max);
+    ui->zDir->setRange(-max, max);
     ui->xDir->setUnit(Base::Unit());
     ui->yDir->setUnit(Base::Unit());
     ui->zDir->setUnit(Base::Unit());

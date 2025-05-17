@@ -1251,7 +1251,7 @@ void PropertyFloatConstraint::setPyObject(PyObject* value)
 
         double stepSize = valConstr[3];
         // need a value > 0
-        if (stepSize < DBL_EPSILON) {
+        if (stepSize < std::numeric_limits<double>::epsilon()) {
             throw Base::ValueError("Step size must be greater than zero");
         }
 
@@ -1283,7 +1283,8 @@ TYPESYSTEM_SOURCE(App::PropertyPrecision, App::PropertyFloatConstraint)
 //**************************************************************************
 // Construction/Destruction
 //
-const PropertyFloatConstraint::Constraints PrecisionStandard = {0.0, DBL_MAX, 0.001};
+using num_double = std::numeric_limits<double>;
+const PropertyFloatConstraint::Constraints PrecisionStandard = {0.0, num_double::max(), 0.001};
 
 PropertyPrecision::PropertyPrecision()
 {

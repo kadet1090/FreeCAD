@@ -228,7 +228,7 @@ void TaskDimension::onEqualToleranceChanged()
         ui->leFormatSpecifierUnderTolerance->setDisabled(true);
     }
     else {
-        ui->qsbOvertolerance->setMinimum(-DBL_MAX);
+        ui->qsbOvertolerance->setMinimum(-std::numeric_limits<double>::max());
         if (!ui->cbTheoreticallyExact->isChecked()) {
             ui->qsbUndertolerance->setDisabled(false);
             ui->leFormatSpecifierUnderTolerance->setDisabled(false);

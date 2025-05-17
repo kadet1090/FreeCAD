@@ -1270,19 +1270,20 @@ protected:
             return;
         }
 
-        double minX = DBL_MAX;
-        double minY = DBL_MAX;
-        double maxX = -DBL_MAX;
-        double maxY = -DBL_MAX;
+        const double max_value = std::numeric_limits<double>::max();
+        double minX = max_value;
+        double minY = max_value;
+        double maxX = -max_value;
+        double maxY = -max_value;
         for (auto dim : dims) {
             TechDraw::pointPair pp = dim->getLinearPoints();
             Base::Vector3d pnt1 = Rez::guiX(pp.first());
             Base::Vector3d pnt2 = Rez::guiX(pp.second());
 
-            minX = min(minX, min(pnt1.x, pnt2.x));
-            maxX = max(maxX, max(pnt1.x, pnt2.x));
-            minY = min(minY, min(pnt1.y, pnt2.y));
-            maxY = max(maxY, max(pnt1.y, pnt2.y));
+            minX = std::min(minX, std::min(pnt1.x, pnt2.x));
+            maxX = std::max(maxX, std::max(pnt1.x, pnt2.x));
+            minY = std::min(minY, std::min(pnt1.y, pnt2.y));
+            maxY = std::max(maxY, std::max(pnt1.y, pnt2.y));
         }
 
         QPointF fpos = getDimPositionToBe(mousePos);

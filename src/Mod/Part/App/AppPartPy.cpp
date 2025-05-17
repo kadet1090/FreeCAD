@@ -22,6 +22,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
+# include <limits>
 # include <BRep_Builder.hxx>
 # include <BRep_Tool.hxx>
 # include <BRepAdaptor_Curve.hxx>
@@ -1621,7 +1622,8 @@ private:
     }
     Py::Object makeRevolution(const Py::Tuple& args)
     {
-        double vmin = DBL_MAX, vmax=-DBL_MAX;
+        const double max = std::numeric_limits<double>::max();
+        double vmin = max, vmax=-max;
         double angle=360;
         PyObject *pPnt=nullptr, *pDir=nullptr, *pCrv;
         Handle(Geom_Curve) curve;
@@ -1640,10 +1642,10 @@ private:
                 if (curve.IsNull()) {
                     throw Py::Exception(PyExc_TypeError, "geometry is not a curve");
                 }
-                if (vmin == DBL_MAX)
+                if (vmin == max)
                     vmin = curve->FirstParameter();
 
-                if (vmax == -DBL_MAX)
+                if (vmax == -max)
                     vmax = curve->LastParameter();
                 break;
             }
@@ -1674,9 +1676,9 @@ private:
                     throw Py::Exception(PartExceptionOCCError, "invalid curve in edge");
                 }
 
-                if (vmin == DBL_MAX)
+                if (vmin == max)
                     vmin = adapt.FirstParameter();
-                if (vmax == -DBL_MAX)
+                if (vmax == -max)
                     vmax = adapt.LastParameter();
                 break;
             }

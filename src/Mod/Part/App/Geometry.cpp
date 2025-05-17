@@ -105,6 +105,7 @@
 # include <boost/random.hpp>
 # include <cmath>
 # include <ctime>
+# include <limits>
 #endif //_PreComp_
 
 #include <Base/Console.h>
@@ -4684,10 +4685,10 @@ void GeomLineSegment::Restore    (Base::XMLReader &reader)
         reader.setPartialRestore(true);
 
         if(start.x == 0) {
-            end = start + Base::Vector3d(DBL_EPSILON,0,0);
+            end = start + Base::Vector3d(std::numeric_limits<double>::epsilon(),0,0);
         }
         else {
-            end = start + Base::Vector3d(start.x*DBL_EPSILON,0,0);
+            end = start + Base::Vector3d(start.x*std::numeric_limits<double>::epsilon(),0,0);
         }
 
         setPoints(start, end);

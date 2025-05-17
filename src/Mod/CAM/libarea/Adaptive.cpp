@@ -26,6 +26,7 @@
 #include <cstring>
 #include <ctime>
 #include <algorithm>
+#include <limits>
 
 namespace ClipperLib
 {
@@ -374,7 +375,7 @@ double DistancePointToPathsSqrd(const Paths& paths,
                                 size_t& clpSegmentIndex,
                                 double& clpParameter)
 {
-    double minDistSq = __DBL_MAX__;
+    double minDistSq = std::numeric_limits<double>::max();
     IntPoint clp;
     // iterate though paths
     for (Path::size_type i = 0; i < paths.size(); i++) {
@@ -768,7 +769,7 @@ bool PopPathWithClosestPoint(Paths& paths /*closest path is removed from collect
         return false;
     }
 
-    double minDistSqrd = __DBL_MAX__;
+    double minDistSqrd = std::numeric_limits<double>::max();
     size_t closestPathIndex = 0;
     long closestPointIndex = 0;
     for (size_t pathIndex = 0; pathIndex < paths.size(); pathIndex++) {
@@ -1247,7 +1248,7 @@ public:
             }
         }
 
-        double minDistSq = __DBL_MAX__;
+        double minDistSq = std::numeric_limits<double>::max();
         size_t minPathIndex = state.currentPathIndex;
         size_t minSegmentIndex = state.currentSegmentIndex;
         double minSegmentPos = state.segmentPos;
@@ -1550,7 +1551,7 @@ double Adaptive2d::CalcCutArea(Clipper& clip,
             IntPoint midPoint(long(c2.X + toolRadiusScaled * cos(0.5 * (maxFi + minFi))),
                               long(c2.Y + toolRadiusScaled * sin(0.5 * (maxFi + minFi))));
             if (PointSideOfLine(c1, c2, midPoint) < 0) {
-                area = __DBL_MAX__;
+                area = std::numeric_limits<double>::max();
                 Perf_CalcCutAreaCirc.Stop();
                 // #ifdef DEV_MODE
                 // 	cout << "Break: @(" << double(c2.X)/scaleFactor << "," <<
@@ -2919,7 +2920,7 @@ void Adaptive2d::ProcessPolyNode(Paths boundPaths, Paths toolBoundPaths)
             /******************************/
             Perf_PointIterations.Start();
             int iteration;
-            double prev_error = __DBL_MAX__;
+            double prev_error = std::numeric_limits<double>::max();
             for (iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
                 total_iterations++;
                 if (iteration == 0) {

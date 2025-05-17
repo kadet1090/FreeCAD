@@ -22,6 +22,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
+# include <limits>
 # include <BRep_Builder.hxx>
 # include <BRep_Tool.hxx>
 # include <BRepAdaptor_Curve.hxx>
@@ -126,7 +127,8 @@ int TopoShapeEdgePy::PyInit(PyObject* args, PyObject* /*kwd*/)
 
     PyErr_Clear();
     PyObject *pcObj, *pcObj2;
-    double first=DBL_MAX, last=DBL_MAX;
+    const double max = std::numeric_limits<double>::max();
+    double first=max, last=max;
     if (PyArg_ParseTuple(args, "O!|dd", &(Part::GeometryPy::Type), &pcObj, &first, &last)) {
         Geometry* geom = static_cast<GeometryPy*>(pcObj)->getGeometryPtr();
         Handle(Geom_Curve) curve = Handle(Geom_Curve)::DownCast(geom->handle());
@@ -135,9 +137,9 @@ int TopoShapeEdgePy::PyInit(PyObject* args, PyObject* /*kwd*/)
             return -1;
         }
 
-        if (first==DBL_MAX)
+        if (first==max)
             first = curve->FirstParameter();
-        if (last==DBL_MAX)
+        if (last==max)
             last = curve->LastParameter();
 
         try {

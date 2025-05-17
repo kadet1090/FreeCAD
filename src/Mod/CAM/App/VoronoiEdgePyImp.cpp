@@ -22,6 +22,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
+#include <limits>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <Geom_Parabola.hxx>
 #endif
@@ -466,12 +467,12 @@ PyObject* VoronoiEdgePy::isBorderline(PyObject* args) const
 PyObject* VoronoiEdgePy::toShape(PyObject* args) const
 {
     double z0 = 0.0;
-    double z1 = DBL_MAX;
+    double z1 = std::numeric_limits<double>::max();
     int dbg = 0;
     if (!PyArg_ParseTuple(args, "|ddp", &z0, &z1, &dbg)) {
         throw Py::RuntimeError("no, one or two arguments of type double accepted");
     }
-    if (z1 == DBL_MAX) {
+    if (z1 == std::numeric_limits<double>::max()) {
         z1 = z0;
     }
     VoronoiEdge* e = getVoronoiEdgePtr();

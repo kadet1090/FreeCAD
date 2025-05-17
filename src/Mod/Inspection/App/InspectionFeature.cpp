@@ -458,7 +458,7 @@ float InspectNominalPoints::getDistance(const Base::Vector3f& point) const
     _pGrid->Position(pointd, x, y, z);
     _pGrid->GetElements(x, y, z, indices);
 
-    double fMinDist = DBL_MAX;
+    double fMinDist = std::numeric_limits<double>::max();
     for (unsigned long it : indices) {
         Base::Vector3d pt = _rKernel.getPoint(it);
         double fDist = Base::Distance(pointd, pt);

@@ -181,9 +181,10 @@ Mirroring::Mirroring(QWidget* parent)
   : QWidget(parent), ui(new Ui_Mirroring)
 {
     ui->setupUi(this);
-    ui->baseX->setRange(-DBL_MAX, DBL_MAX);
-    ui->baseY->setRange(-DBL_MAX, DBL_MAX);
-    ui->baseZ->setRange(-DBL_MAX, DBL_MAX);
+    const double max = std::numeric_limits<double>::max();
+    ui->baseX->setRange(-max, max);
+    ui->baseY->setRange(-max, max);
+    ui->baseZ->setRange(-max, max);
     ui->baseX->setUnit(Base::Unit::Length);
     ui->baseY->setUnit(Base::Unit::Length);
     ui->baseZ->setUnit(Base::Unit::Length);

@@ -26,7 +26,7 @@
 #define BOOST_GEOMETRY_DISABLE_DEPRECATED_03_WARNING
 
 #ifndef _PreComp_
-#include <cfloat>
+#include <limits>
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
@@ -3704,7 +3704,7 @@ std::list<TopoDS_Shape> Area::sortWires(const std::list<TopoDS_Shape>& shapes,
     double max_dist = sort_mode == SortModeGreedy ? threshold * threshold : 0;
     while (!shape_list.empty()) {
         AREA_TRACE("sorting " << shape_list.size() << ' ' << AREA_XYZ(pstart));
-        double best_d = DBL_MAX;
+        double best_d = std::numeric_limits<double>::max();
         auto best_it = shape_list.begin();
         for (auto it = best_it; it != shape_list.end(); ++it) {
             double d;

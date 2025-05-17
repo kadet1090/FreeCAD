@@ -47,10 +47,11 @@
 FC_LOG_LEVEL_INIT("PartDesign", true, true)
 
 using namespace PartDesign;
+using num_double = std::numeric_limits<double>;
 
 PROPERTY_SOURCE(PartDesign::FeatureExtrude, PartDesign::ProfileBased)
 
-App::PropertyQuantityConstraint::Constraints FeatureExtrude::signedLengthConstraint = { -DBL_MAX, DBL_MAX, 1.0 };
+App::PropertyQuantityConstraint::Constraints FeatureExtrude::signedLengthConstraint = { -num_double::max(), num_double::max(), 1.0 };
 double FeatureExtrude::maxAngle = 90 - Base::toDegrees<double>(Precision::Angular());
 App::PropertyAngle::Constraints FeatureExtrude::floatAngle = { -maxAngle, maxAngle, 1.0 };
 

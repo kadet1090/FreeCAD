@@ -24,6 +24,7 @@
 #ifndef _PreComp_
 #include <QPainter>
 #include <QRegularExpression>
+#include <limits>
 #include <memory>
 
 #include <Inventor/SbImage.h>
@@ -1340,7 +1341,7 @@ Restart:
                                     p1[1] = line1->getEndPoint();
                                     p2[0] = line2->getStartPoint();
                                     p2[1] = line2->getEndPoint();
-                                    double length = DBL_MAX;
+                                    double length = std::numeric_limits<double>::max();
                                     for (int i = 0; i <= 1; i++) {
                                         for (int j = 0; j <= 1; j++) {
                                             double tmp = (p2[j] - p1[i]).Length();

@@ -49,12 +49,13 @@
 
 using namespace PartGui;
 using namespace std;
+using num_double = std::numeric_limits<double>;
 
 //**************************************************************************
 // Construction/Destruction
 
 const char* ViewProvider2DObjectGrid::GridStyleEnums[]= {"Dashed","Light",nullptr};
-App::PropertyQuantityConstraint::Constraints ViewProvider2DObjectGrid::GridSizeRange = {0.001,DBL_MAX,1.0};
+App::PropertyQuantityConstraint::Constraints ViewProvider2DObjectGrid::GridSizeRange = {0.001, num_double::max(), 1.0};
 
 PROPERTY_SOURCE(PartGui::ViewProvider2DObjectGrid, PartGui::ViewProvider2DObject)
 

@@ -22,6 +22,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
+#include <limits>
 #include <Precision.hxx>
 #include <QPainter>
 #endif
@@ -319,7 +320,7 @@ bool SketcherGui::calculateAngle(Sketcher::SketchObject* Obj, int& GeoId1, int& 
     }
     else {
         // if all points are collinear
-        double length = DBL_MAX;
+        double length = std::numeric_limits<double>::max();
         for (int i = 0; i <= 1; i++) {
             for (int j = 0; j <= 1; j++) {
                 double tmp = Base::DistanceP2(p2[j], p1[i]);
