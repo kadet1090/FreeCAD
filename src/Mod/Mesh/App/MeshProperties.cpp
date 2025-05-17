@@ -200,8 +200,8 @@ void PropertyNormalList::transformGeometry(const Base::Matrix4D& mat)
     // Set up the rotation matrix: zero the translations and make the scale factors = 1
     Base::Matrix4D rot;
     rot.setToUnity();
-    for (unsigned short i = 0; i < 3; i++) {
-        for (unsigned short j = 0; j < 3; j++) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
             rot[i][j] = mat[i][j] / s[i];
         }
     }
@@ -296,8 +296,8 @@ void PropertyCurvatureList::transformGeometry(const Base::Matrix4D& mat)
     // Set up the rotation matrix: zero the translations and make the scale factors = 1
     Base::Matrix4D rot;
     rot.setToUnity();
-    for (unsigned short i = 0; i < 3; i++) {
-        for (unsigned short j = 0; j < 3; j++) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
             rot[i][j] = mat[i][j] / s[i];
         }
     }

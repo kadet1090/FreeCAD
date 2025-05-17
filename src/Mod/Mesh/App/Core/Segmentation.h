@@ -376,7 +376,7 @@ public:
                     const MeshFacet&,
                     FacetIndex,
                     unsigned long,
-                    unsigned short neighbourIndex) override;
+                    SideIndex neighbourIndex) override;
     bool Visit(const MeshFacet& face, const MeshFacet&, FacetIndex ulFInd, unsigned long) override;
 
 private:

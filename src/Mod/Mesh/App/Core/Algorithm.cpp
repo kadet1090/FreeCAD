@@ -267,7 +267,7 @@ bool MeshAlgorithm::FirstFacetToVertex(const Base::Vector3f& rPt,
         // if not then check the distance to the border of the triangle
         Base::Vector3f res;
         float fDist {};
-        unsigned short uSide {};
+        SideIndex uSide {};
         cFacet.ProjectPointToPlane(rPt, res);
         cFacet.NearestEdgeToPoint(res, fDist, uSide);
         if (fDist < fEps) {
@@ -388,7 +388,7 @@ void MeshAlgorithm::GetFacetBorders(const std::vector<FacetIndex>& raulInd,
     std::list<std::pair<PointIndex, PointIndex>> aclEdges;
     for (FacetIndex it : raulInd) {
         const MeshFacet& rclFacet = rclFAry[it];
-        for (unsigned short i = 0; i < 3; i++) {
+        for (SideIndex i = 0; i < 3; i++) {
             FacetIndex ulNB = rclFacet._aulNeighbours[i];
             if (ulNB != FACET_INDEX_MAX) {
                 if (rclFAry[ulNB].IsFlag(MeshFacet::VISIT)) {
@@ -479,7 +479,7 @@ void MeshAlgorithm::GetFacetBorder(FacetIndex uFacet, std::list<PointIndex>& rBo
     }
     // add the open edge to the beginning of the list
     auto face = rFAry.begin() + uFacet;
-    for (unsigned short i = 0; i < 3; i++) {
+    for (SideIndex i = 0; i < 3; i++) {
         if (face->_aulNeighbours[i] == FACET_INDEX_MAX) {
             openEdges.push_back(face->GetEdge(i));
         }
@@ -493,7 +493,7 @@ void MeshAlgorithm::GetFacetBorder(FacetIndex uFacet, std::list<PointIndex>& rBo
         if (it == face) {
             continue;
         }
-        for (unsigned short i = 0; i < 3; i++) {
+        for (SideIndex i = 0; i < 3; i++) {
             if (it->_aulNeighbours[i] == FACET_INDEX_MAX) {
                 openEdges.push_back(it->GetEdge(i));
             }
@@ -788,17 +788,17 @@ bool MeshAlgorithm::FillupHole(const std::vector<PointIndex>& boundary,
 
         // Get the new neighbour to our reference facet
         MeshFacet facet;
-        unsigned short ref_side = rFace.Side(refPoint0, refPoint1);
-        unsigned short tri_side = USHRT_MAX;
+        SideIndex ref_side = rFace.Side(refPoint0, refPoint1);
+        SideIndex tri_side = SIDE_INDEX_MAX;
         if (cTria.NeedsReindexing()) {
             // the referenced indices of the polyline
             refPoint0 = 0;
             refPoint1 = 1;
         }
-        if (ref_side < USHRT_MAX) {
+        if (ref_side < SIDE_INDEX_MAX) {
             for (const auto& face : faces) {
                 tri_side = face.Side(refPoint0, refPoint1);
-                if (tri_side < USHRT_MAX) {
+                if (tri_side < SIDE_INDEX_MAX) {
                     facet = face;
                     break;
                 }
@@ -806,7 +806,7 @@ bool MeshAlgorithm::FillupHole(const std::vector<PointIndex>& boundary,
         }
 
         // in case the reference facet has not an open edge print a log message
-        if (ref_side == USHRT_MAX || tri_side == USHRT_MAX) {
+        if (ref_side == SIDE_INDEX_MAX || tri_side == SIDE_INDEX_MAX) {
             Base::Console().Log(
                 "MeshAlgorithm::FillupHole: Expected open edge for facet <%d, %d, %d>\n",
                 rFace._aulPoints[0],

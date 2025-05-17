@@ -58,7 +58,7 @@ unsigned long MeshKernel::VisitNeighbourFacets(MeshFacetVisitor& rclFVisitor,
             clCurrFacet = _aclFacetArray.begin() + *clCurrIter;
 
             // visit all neighbours of the current level if not yet done
-            for (unsigned short i = 0; i < 3; i++) {
+            for (SideIndex i = 0; i < 3; i++) {
                 auto j = clCurrFacet->_aulNeighbours[i];  // index to neighbour facet
                 if (j == FACET_INDEX_MAX) {
                     continue;  // no neighbour facet
@@ -228,7 +228,7 @@ bool MeshPlaneVisitor::AllowVisit(const MeshFacet& face,
                                   const MeshFacet&,
                                   FacetIndex,
                                   unsigned long,
-                                  unsigned short)
+                                  SideIndex)
 {
     if (!fitter->Done()) {
         fitter->Fit();

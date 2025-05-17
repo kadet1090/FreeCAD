@@ -138,7 +138,7 @@ private:
     //    EdgeInfo>& edges, int side, float mult, Base::Builder3D& builder); bool Visit (MeshFacet
     //    &rclFacet, const MeshFacet &rclFrom, unsigned long ulFInd, unsigned long ulLevel); bool
     //    AllowVisit (MeshFacet& rclFacet, MeshFacet& rclFrom, unsigned long ulFInd, unsigned long
-    //    ulLevel, unsigned short neighbourIndex);
+    //    ulLevel, SideIndex neighbourIndex);
     //};
 
     class CollectFacetVisitor: public MeshFacetVisitor
@@ -166,7 +166,7 @@ private:
                         const MeshFacet& rclFrom,
                         FacetIndex ulFInd,
                         unsigned long ulLevel,
-                        unsigned short neighbourIndex) override;
+                        SideIndex neighbourIndex) override;
     };
 
     /** all points from cut */

@@ -1302,9 +1302,9 @@ float MeshGeomFacet::CenterOfCircumCircle(Base::Vector3f& rclCenter) const
     return fRadius;
 }
 
-unsigned short MeshGeomFacet::NearestEdgeToPoint(const Base::Vector3f& rclPt) const
+SideIndex MeshGeomFacet::NearestEdgeToPoint(const Base::Vector3f& rclPt) const
 {
-    unsigned short usSide {};
+    SideIndex usSide {};
 
     const Base::Vector3f& rcP1 = _aclPoints[0];
     const Base::Vector3f& rcP2 = _aclPoints[1];
@@ -1378,7 +1378,7 @@ unsigned short MeshGeomFacet::NearestEdgeToPoint(const Base::Vector3f& rclPt) co
 
 void MeshGeomFacet::NearestEdgeToPoint(const Base::Vector3f& rclPt,
                                        float& fDistance,
-                                       unsigned short& usSide) const
+                                       SideIndex& usSide) const
 {
     const Base::Vector3f& rcP1 = _aclPoints[0];
     const Base::Vector3f& rcP2 = _aclPoints[1];

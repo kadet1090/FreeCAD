@@ -537,7 +537,7 @@ bool MeshSurfaceVisitor::AllowVisit(const MeshFacet& face,
                                     const MeshFacet&,
                                     FacetIndex,
                                     unsigned long,
-                                    unsigned short)
+                                    SideIndex)
 {
     return segm.TestFacet(face);
 }

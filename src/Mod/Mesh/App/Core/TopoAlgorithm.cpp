@@ -112,7 +112,7 @@ bool MeshTopoAlgorithm::SnapVertex(FacetIndex ulFacetPos, const Base::Vector3f& 
         return false;
     }
     Base::Vector3f cNo1 = _rclMesh.GetNormal(rFace);
-    for (unsigned short i = 0; i < 3; i++) {
+    for (SideIndex i = 0; i < 3; i++) {
         if (rFace._aulNeighbours[i] == FACET_INDEX_MAX) {
             const Base::Vector3f& rPt1 = _rclMesh._aclPointArray[rFace._aulPoints[i]];
             const Base::Vector3f& rPt2 = _rclMesh._aclPointArray[rFace._aulPoints[(i + 1) % 3]];
@@ -199,8 +199,8 @@ void MeshTopoAlgorithm::OptimizeTopology(float fMaxAngle)
 
             MeshFacet& rF1 = _rclMesh._aclFacetArray[pE->second[0]];
             MeshFacet& rF2 = _rclMesh._aclFacetArray[pE->second[1]];
-            unsigned short side1 = rF1.Side(aEdge.first, aEdge.second);
-            unsigned short side2 = rF2.Side(aEdge.first, aEdge.second);
+            SideIndex side1 = rF1.Side(aEdge.first, aEdge.second);
+            SideIndex side2 = rF2.Side(aEdge.first, aEdge.second);
 
             // adjust the edge list
             for (int i = 0; i < 3; i++) {
@@ -290,8 +290,8 @@ float MeshTopoAlgorithm::SwapEdgeBenefit(FacetIndex f, int e) const
     PointIndex v1 = faces[f]._aulPoints[e];
     PointIndex v2 = faces[f]._aulPoints[(e + 1) % 3];
     PointIndex v3 = faces[f]._aulPoints[(e + 2) % 3];
-    unsigned short s = faces[n].Side(faces[f]);
-    if (s == USHRT_MAX) {
+    SideIndex s = faces[n].Side(faces[f]);
+    if (s == SIDE_INDEX_MAX) {
         std::cerr << "MeshTopoAlgorithm::SwapEdgeBenefit: error in neighbourhood "
                   << "of faces " << f << " and " << n << std::endl;
         return 0.0F;  // topological error
@@ -379,7 +379,7 @@ void MeshTopoAlgorithm::DelaunayFlip(float fMaxAngle)
             radius *= radius;
             const MeshFacet& face_1 = _rclMesh._aclFacetArray[edge.first];
             const MeshFacet& face_2 = _rclMesh._aclFacetArray[edge.second];
-            unsigned short side = face_2.Side(edge.first);
+            SideIndex side = face_2.Side(edge.first);
             MeshPoint vertex = _rclMesh.GetPoint(face_2._aulPoints[(side + 1) % 3]);
             if (Base::DistanceP2(center, vertex) < radius) {
                 SwapEdge(edge.first, edge.second);
@@ -423,7 +423,7 @@ int MeshTopoAlgorithm::DelaunayFlip()
                 if (n_face.IsFlag(MeshFacet::TMP0)) {
                     continue;
                 }
-                unsigned short k = n_face.Side(f_face);
+                SideIndex k = n_face.Side(f_face);
                 MeshGeomFacet f1 = _rclMesh.GetFacet(f_face);
                 MeshGeomFacet f2 = _rclMesh.GetFacet(n_face);
                 Base::Vector3f c1, c2, p1, p2;
@@ -504,7 +504,7 @@ void MeshTopoAlgorithm::AdjustEdgesToCurvatureDirection()
             }
 
             PointIndex uPt3 {}, uPt4 {};
-            unsigned short side = rFace1.Side(uPt1, uPt2);
+            SideIndex side = rFace1.Side(uPt1, uPt2);
             uPt3 = rFace1._aulPoints[(side + 2) % 3];
             side = rFace2.Side(uPt1, uPt2);
             uPt4 = rFace2._aulPoints[(side + 2) % 3];
@@ -598,10 +598,10 @@ bool MeshTopoAlgorithm::IsSwapEdgeLegal(FacetIndex ulFacetPos, FacetIndex ulNeig
     MeshFacet& rclF = _rclMesh._aclFacetArray[ulFacetPos];
     MeshFacet& rclN = _rclMesh._aclFacetArray[ulNeighbour];
 
-    unsigned short uFSide = rclF.Side(rclN);
-    unsigned short uNSide = rclN.Side(rclF);
+    SideIndex uFSide = rclF.Side(rclN);
+    SideIndex uNSide = rclN.Side(rclF);
 
-    if (uFSide == USHRT_MAX || uNSide == USHRT_MAX) {
+    if (uFSide == SIDE_INDEX_MAX || uNSide == SIDE_INDEX_MAX) {
         return false;  // not neighbours
     }
 
@@ -649,8 +649,8 @@ bool MeshTopoAlgorithm::ShouldSwapEdge(FacetIndex ulFacetPos,
     MeshFacet& rclF = _rclMesh._aclFacetArray[ulFacetPos];
     MeshFacet& rclN = _rclMesh._aclFacetArray[ulNeighbour];
 
-    unsigned short uFSide = rclF.Side(rclN);
-    unsigned short uNSide = rclN.Side(rclF);
+    SideIndex uFSide = rclF.Side(rclN);
+    SideIndex uNSide = rclN.Side(rclF);
 
     Base::Vector3f cP1 = _rclMesh._aclPointArray[rclF._aulPoints[uFSide]];
     Base::Vector3f cP2 = _rclMesh._aclPointArray[rclF._aulPoints[(uFSide + 1) % 3]];
@@ -684,10 +684,10 @@ void MeshTopoAlgorithm::SwapEdge(FacetIndex ulFacetPos, FacetIndex ulNeighbour)
     MeshFacet& rclF = _rclMesh._aclFacetArray[ulFacetPos];
     MeshFacet& rclN = _rclMesh._aclFacetArray[ulNeighbour];
 
-    unsigned short uFSide = rclF.Side(rclN);
-    unsigned short uNSide = rclN.Side(rclF);
+    SideIndex uFSide = rclF.Side(rclN);
+    SideIndex uNSide = rclN.Side(rclF);
 
-    if (uFSide == USHRT_MAX || uNSide == USHRT_MAX) {
+    if (uFSide == SIDE_INDEX_MAX || uNSide == SIDE_INDEX_MAX) {
         return;  // not neighbours
     }
 
@@ -718,10 +718,10 @@ bool MeshTopoAlgorithm::SplitEdge(FacetIndex ulFacetPos,
     MeshFacet& rclF = _rclMesh._aclFacetArray[ulFacetPos];
     MeshFacet& rclN = _rclMesh._aclFacetArray[ulNeighbour];
 
-    unsigned short uFSide = rclF.Side(rclN);
-    unsigned short uNSide = rclN.Side(rclF);
+    SideIndex uFSide = rclF.Side(rclN);
+    SideIndex uNSide = rclN.Side(rclF);
 
-    if (uFSide == USHRT_MAX || uNSide == USHRT_MAX) {
+    if (uFSide == SIDE_INDEX_MAX || uNSide == SIDE_INDEX_MAX) {
         return false;  // not neighbours
     }
 
@@ -774,7 +774,7 @@ bool MeshTopoAlgorithm::SplitEdge(FacetIndex ulFacetPos,
 }
 
 bool MeshTopoAlgorithm::SplitOpenEdge(FacetIndex ulFacetPos,
-                                      unsigned short uSide,
+                                      SideIndex uSide,
                                       const Base::Vector3f& rP)
 {
     MeshFacet& rclF = _rclMesh._aclFacetArray[ulFacetPos];
@@ -978,10 +978,10 @@ bool MeshTopoAlgorithm::CollapseEdge(FacetIndex ulFacetPos, FacetIndex ulNeighbo
     MeshFacet& rclF = _rclMesh._aclFacetArray[ulFacetPos];
     MeshFacet& rclN = _rclMesh._aclFacetArray[ulNeighbour];
 
-    unsigned short uFSide = rclF.Side(rclN);
-    unsigned short uNSide = rclN.Side(rclF);
+    SideIndex uFSide = rclF.Side(rclN);
+    SideIndex uNSide = rclN.Side(rclF);
 
-    if (uFSide == USHRT_MAX || uNSide == USHRT_MAX) {
+    if (uFSide == SIDE_INDEX_MAX || uNSide == SIDE_INDEX_MAX) {
         return false;  // not neighbours
     }
 
@@ -1172,7 +1172,7 @@ bool MeshTopoAlgorithm::CollapseFacet(FacetIndex ulFacetPos)
             continue;
         }
         MeshFacet& rclN = _rclMesh._aclFacetArray[nbIndex];
-        unsigned short uNSide = rclN.Side(rclF);
+        SideIndex uNSide = rclN.Side(rclF);
 
         if (rclN._aulNeighbours[(uNSide + 1) % 3] != FACET_INDEX_MAX) {
             _rclMesh._aclFacetArray[rclN._aulNeighbours[(uNSide + 1) % 3]].ReplaceNeighbour(
@@ -1216,7 +1216,7 @@ void MeshTopoAlgorithm::SplitFacet(FacetIndex ulFacetPos,
     MeshPoint& rVertex2 = _rclMesh._aclPointArray[rFace._aulPoints[2]];
 
     auto pointIndex = [=](const Base::Vector3f& rP) {
-        unsigned short equalP = USHRT_MAX;
+        SideIndex equalP = SIDE_INDEX_MAX;
         if (Base::Distance(rVertex0, rP) < fEps) {
             equalP = 0;
         }
@@ -1229,19 +1229,19 @@ void MeshTopoAlgorithm::SplitFacet(FacetIndex ulFacetPos,
         return equalP;
     };
 
-    unsigned short equalP1 = pointIndex(rP1);
-    unsigned short equalP2 = pointIndex(rP2);
+    SideIndex equalP1 = pointIndex(rP1);
+    SideIndex equalP2 = pointIndex(rP2);
 
     // both points are coincident with the corner points
-    if (equalP1 != USHRT_MAX && equalP2 != USHRT_MAX) {
+    if (equalP1 != SIDE_INDEX_MAX && equalP2 != SIDE_INDEX_MAX) {
         return;  // must not split the facet
     }
 
-    if (equalP1 != USHRT_MAX) {
+    if (equalP1 != SIDE_INDEX_MAX) {
         // get the edge to the second given point and perform a split edge operation
         SplitFacetOnOneEdge(ulFacetPos, rP2);
     }
-    else if (equalP2 != USHRT_MAX) {
+    else if (equalP2 != SIDE_INDEX_MAX) {
         // get the edge to the first given point and perform a split edge operation
         SplitFacetOnOneEdge(ulFacetPos, rP1);
     }
@@ -1253,10 +1253,10 @@ void MeshTopoAlgorithm::SplitFacet(FacetIndex ulFacetPos,
 void MeshTopoAlgorithm::SplitFacetOnOneEdge(FacetIndex ulFacetPos, const Base::Vector3f& rP)
 {
     float fMinDist = std::numeric_limits<float>::max();
-    unsigned short iEdgeNo = USHRT_MAX;
+    SideIndex iEdgeNo = SIDE_INDEX_MAX;
     MeshFacet& rFace = _rclMesh._aclFacetArray[ulFacetPos];
 
-    for (unsigned short i = 0; i < 3; i++) {
+    for (SideIndex i = 0; i < 3; i++) {
         Base::Vector3f cBase(_rclMesh._aclPointArray[rFace._aulPoints[i]]);
         Base::Vector3f cEnd(_rclMesh._aclPointArray[rFace._aulPoints[(i + 1) % 3]]);
         Base::Vector3f cDir = cEnd - cBase;
@@ -1283,12 +1283,12 @@ void MeshTopoAlgorithm::SplitFacetOnTwoEdges(FacetIndex ulFacetPos,
                                              const Base::Vector3f& rP2)
 {
     // search for the matching edges
-    unsigned short iEdgeNo1 = USHRT_MAX, iEdgeNo2 = USHRT_MAX;
+    SideIndex iEdgeNo1 = SIDE_INDEX_MAX, iEdgeNo2 = SIDE_INDEX_MAX;
     float fMinDist1 = std::numeric_limits<float>::max();
     float fMinDist2 = std::numeric_limits<float>::max();
     MeshFacet& rFace = _rclMesh._aclFacetArray[ulFacetPos];
 
-    for (unsigned short i = 0; i < 3; i++) {
+    for (SideIndex i = 0; i < 3; i++) {
         Base::Vector3f cBase(_rclMesh._aclPointArray[rFace._aulPoints[i]]);
         Base::Vector3f cEnd(_rclMesh._aclPointArray[rFace._aulPoints[(i + 1) % 3]]);
         Base::Vector3f cDir = cEnd - cBase;
@@ -1322,9 +1322,9 @@ void MeshTopoAlgorithm::SplitFacetOnTwoEdges(FacetIndex ulFacetPos,
     PointIndex cntPts2 = this->GetOrAddIndex(cP2);
     FacetIndex cntFts = _rclMesh.CountFacets();
 
-    unsigned short v0 = (iEdgeNo2 + 1) % 3;
-    unsigned short v1 = iEdgeNo1;
-    unsigned short v2 = iEdgeNo2;
+    SideIndex v0 = (iEdgeNo2 + 1) % 3;
+    SideIndex v1 = iEdgeNo1;
+    SideIndex v2 = iEdgeNo2;
 
     PointIndex p0 = rFace._aulPoints[v0];
     PointIndex p1 = rFace._aulPoints[v1];
@@ -1394,8 +1394,8 @@ void MeshTopoAlgorithm::SplitFacet(FacetIndex ulFacetPos,
                                    PointIndex Pn)
 {
     MeshFacet& rFace = _rclMesh._aclFacetArray[ulFacetPos];
-    unsigned short side = rFace.Side(P1, P2);
-    if (side != USHRT_MAX) {
+    SideIndex side = rFace.Side(P1, P2);
+    if (side != SIDE_INDEX_MAX) {
         PointIndex V1 = rFace._aulPoints[(side + 1) % 3];
         PointIndex V2 = rFace._aulPoints[(side + 2) % 3];
         FacetIndex size = _rclMesh._aclFacetArray.size();
@@ -1457,19 +1457,19 @@ void MeshTopoAlgorithm::HarmonizeNeighbours(FacetIndex facet1, FacetIndex facet2
     MeshFacet& rFace1 = _rclMesh._aclFacetArray[facet1];
     MeshFacet& rFace2 = _rclMesh._aclFacetArray[facet2];
 
-    unsigned short side = rFace1.Side(rFace2);
-    if (side != USHRT_MAX) {
+    SideIndex side = rFace1.Side(rFace2);
+    if (side != SIDE_INDEX_MAX) {
         rFace1._aulNeighbours[side] = facet2;
     }
 
     side = rFace2.Side(rFace1);
-    if (side != USHRT_MAX) {
+    if (side != SIDE_INDEX_MAX) {
         rFace2._aulNeighbours[side] = facet1;
     }
 }
 
 void MeshTopoAlgorithm::SplitNeighbourFacet(FacetIndex ulFacetPos,
-                                            unsigned short uFSide,
+                                            SideIndex uFSide,
                                             const Base::Vector3f& rPoint)
 {
     MeshFacet& rclF = _rclMesh._aclFacetArray[ulFacetPos];
@@ -1477,7 +1477,7 @@ void MeshTopoAlgorithm::SplitNeighbourFacet(FacetIndex ulFacetPos,
     FacetIndex ulNeighbour = rclF._aulNeighbours[uFSide];
     MeshFacet& rclN = _rclMesh._aclFacetArray[ulNeighbour];
 
-    unsigned short uNSide = rclN.Side(rclF);
+    SideIndex uNSide = rclN.Side(rclF);
 
     PointIndex uPtInd = this->GetOrAddIndex(rPoint);
     FacetIndex ulSize = _rclMesh._aclFacetArray.size();
@@ -1573,7 +1573,7 @@ bool MeshTopoAlgorithm::RemoveDegeneratedFacet(FacetIndex index)
             if (uN1 != FACET_INDEX_MAX) {
                 // get the neighbour and common edge side
                 MeshFacet& rNb = _rclMesh._aclFacetArray[uN1];
-                unsigned short side = rNb.Side(index);
+                SideIndex side = rNb.Side(index);
 
                 // bend the point indices
                 rFace._aulPoints[(j + 2) % 3] = rNb._aulPoints[(side + 2) % 3];

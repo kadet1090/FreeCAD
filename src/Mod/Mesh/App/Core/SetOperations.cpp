@@ -496,7 +496,7 @@ bool SetOperations::CollectFacetVisitor::AllowVisit(const MeshFacet& rclFacet,
                                                     const MeshFacet& rclFrom,
                                                     FacetIndex ulFInd,
                                                     unsigned long ulLevel,
-                                                    unsigned short neighbourIndex)
+                                                    SideIndex neighbourIndex)
 {
     (void)ulFInd;
     (void)ulLevel;

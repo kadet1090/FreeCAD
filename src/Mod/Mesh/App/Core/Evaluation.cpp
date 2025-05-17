@@ -437,7 +437,7 @@ bool MeshFixTopology::Fixup()
         non_mf.reserve(it.size());
         for (FacetIndex jt : it) {
             // facet is only connected with one edge and there causes a non-manifold
-            unsigned short numOpenEdges = rFaces[jt].CountOpenEdges();
+            SideIndex numOpenEdges = rFaces[jt].CountOpenEdges();
             if (numOpenEdges == 2) {
                 non_mf.push_back(jt);
             }
@@ -781,8 +781,8 @@ std::vector<FacetIndex> MeshFixSelfIntersection::GetFacets() const
     std::vector<FacetIndex> indices;
     const MeshFacetArray& rFaces = _rclMesh.GetFacets();
     for (const auto& it : selfIntersectons) {
-        unsigned short numOpenEdges1 = rFaces[it.first].CountOpenEdges();
-        unsigned short numOpenEdges2 = rFaces[it.second].CountOpenEdges();
+        SideIndex numOpenEdges1 = rFaces[it.first].CountOpenEdges();
+        SideIndex numOpenEdges2 = rFaces[it.second].CountOpenEdges();
 
         // often we have only single or border facets that intersect other facets
         // in this case remove only these facets and keep the other one
@@ -862,8 +862,8 @@ bool MeshEvalNeighbourhood::Evaluate()
             if (count == 2) {
                 const MeshFacet& rFace0 = rclFAry[f0];
                 const MeshFacet& rFace1 = rclFAry[f1];
-                unsigned short side0 = rFace0.Side(p0, p1);
-                unsigned short side1 = rFace1.Side(p0, p1);
+                SideIndex side0 = rFace0.Side(p0, p1);
+                SideIndex side1 = rFace1.Side(p0, p1);
                 // Check whether rFace0 and rFace1 reference each other as
                 // neighbours
                 if (rFace0._aulNeighbours[side0] != f1 || rFace1._aulNeighbours[side1] != f0) {
@@ -872,7 +872,7 @@ bool MeshEvalNeighbourhood::Evaluate()
             }
             else if (count == 1) {
                 const MeshFacet& rFace = rclFAry[f0];
-                unsigned short side = rFace.Side(p0, p1);
+                SideIndex side = rFace.Side(p0, p1);
                 // should be "open edge" but isn't marked as such
                 if (rFace._aulNeighbours[side] != FACET_INDEX_MAX) {
                     return false;
@@ -929,8 +929,8 @@ std::vector<FacetIndex> MeshEvalNeighbourhood::GetIndices() const
             if (count == 2) {
                 const MeshFacet& rFace0 = rclFAry[f0];
                 const MeshFacet& rFace1 = rclFAry[f1];
-                unsigned short side0 = rFace0.Side(p0, p1);
-                unsigned short side1 = rFace1.Side(p0, p1);
+                SideIndex side0 = rFace0.Side(p0, p1);
+                SideIndex side1 = rFace1.Side(p0, p1);
                 // Check whether rFace0 and rFace1 reference each other as
                 // neighbours
                 if (rFace0._aulNeighbours[side0] != f1 || rFace1._aulNeighbours[side1] != f0) {
@@ -940,7 +940,7 @@ std::vector<FacetIndex> MeshEvalNeighbourhood::GetIndices() const
             }
             else if (count == 1) {
                 const MeshFacet& rFace = rclFAry[f0];
-                unsigned short side = rFace.Side(p0, p1);
+                SideIndex side = rFace.Side(p0, p1);
                 // should be "open edge" but isn't marked as such
                 if (rFace._aulNeighbours[side] != FACET_INDEX_MAX) {
                     inds.push_back(f0);
@@ -1004,14 +1004,14 @@ void MeshKernel::RebuildNeighbours(FacetIndex index)
             if (count == 2) {
                 MeshFacet& rFace0 = this->_aclFacetArray[f0];
                 MeshFacet& rFace1 = this->_aclFacetArray[f1];
-                unsigned short side0 = rFace0.Side(p0, p1);
-                unsigned short side1 = rFace1.Side(p0, p1);
+                SideIndex side0 = rFace0.Side(p0, p1);
+                SideIndex side1 = rFace1.Side(p0, p1);
                 rFace0._aulNeighbours[side0] = f1;
                 rFace1._aulNeighbours[side1] = f0;
             }
             else if (count == 1) {
                 MeshFacet& rFace = this->_aclFacetArray[f0];
-                unsigned short side = rFace.Side(p0, p1);
+                SideIndex side = rFace.Side(p0, p1);
                 rFace._aulNeighbours[side] = FACET_INDEX_MAX;
             }
 
@@ -1027,14 +1027,14 @@ void MeshKernel::RebuildNeighbours(FacetIndex index)
     if (count == 2) {
         MeshFacet& rFace0 = this->_aclFacetArray[f0];
         MeshFacet& rFace1 = this->_aclFacetArray[f1];
-        unsigned short side0 = rFace0.Side(p0, p1);
-        unsigned short side1 = rFace1.Side(p0, p1);
+        SideIndex side0 = rFace0.Side(p0, p1);
+        SideIndex side1 = rFace1.Side(p0, p1);
         rFace0._aulNeighbours[side0] = f1;
         rFace1._aulNeighbours[side1] = f0;
     }
     else if (count == 1) {
         MeshFacet& rFace = this->_aclFacetArray[f0];
-        unsigned short side = rFace.Side(p0, p1);
+        SideIndex side = rFace.Side(p0, p1);
         rFace._aulNeighbours[side] = FACET_INDEX_MAX;
     }
 }

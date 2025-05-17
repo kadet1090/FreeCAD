@@ -98,7 +98,7 @@ public:
      * point \a rP must be near to this edge and must not be coincident with any
      * corner vertices of the facet.
      */
-    bool SplitOpenEdge(FacetIndex ulFacetPos, unsigned short uSide, const Base::Vector3f& rP);
+    bool SplitOpenEdge(FacetIndex ulFacetPos, SideIndex uSide, const Base::Vector3f& rP);
     /**
      * Splits the facet with index \a ulFacetPos into up to three facets. The points
      * \a rP1 and \a rP2 should lie on two different edges of the facet. This method
@@ -285,8 +285,7 @@ private:
     /**
      * Splits the neighbour facet of \a ulFacetPos on side \a uSide.
      */
-    void
-    SplitNeighbourFacet(FacetIndex ulFacetPos, unsigned short uFSide, const Base::Vector3f& rPoint);
+    void SplitNeighbourFacet(FacetIndex ulFacetPos, SideIndex uSide, const Base::Vector3f& rPoint);
     void SplitFacetOnOneEdge(FacetIndex ulFacetPos, const Base::Vector3f& rP1);
     void SplitFacetOnTwoEdges(FacetIndex ulFacetPos,
                               const Base::Vector3f& rP1,

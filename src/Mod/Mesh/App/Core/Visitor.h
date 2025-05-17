@@ -66,7 +66,7 @@ public:
                             const MeshFacet& rclFrom,
                             FacetIndex ulFInd,
                             unsigned long ulLevel,
-                            unsigned short neighbourIndex)
+                            SideIndex neighbourIndex)
     {
         (void)rclFacet;
         (void)rclFrom;
@@ -173,7 +173,7 @@ public:
                     const MeshFacet&,
                     FacetIndex,
                     unsigned long,
-                    unsigned short neighbourIndex) override;
+                    SideIndex neighbourIndex) override;
     bool Visit(const MeshFacet& face, const MeshFacet&, FacetIndex ulFInd, unsigned long) override;
 
 protected:

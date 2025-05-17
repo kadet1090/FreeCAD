@@ -557,13 +557,13 @@ bool QuasiDelaunayTriangulator::Triangulate()
 
         MeshFacet& rF1 = _facets[pE->second[0]];
         MeshFacet& rF2 = _facets[pE->second[1]];
-        unsigned short side1 = rF1.Side(aEdge.first, aEdge.second);
+        SideIndex side1 = rF1.Side(aEdge.first, aEdge.second);
 
         Base::Vector3f cP1 = _points[rF1._aulPoints[side1]];
         Base::Vector3f cP2 = _points[rF1._aulPoints[(side1 + 1) % 3]];
         Base::Vector3f cP3 = _points[rF1._aulPoints[(side1 + 2) % 3]];
 
-        unsigned short side2 = rF2.Side(aEdge.first, aEdge.second);
+        SideIndex side2 = rF2.Side(aEdge.first, aEdge.second);
         Base::Vector3f cP4 = _points[rF2._aulPoints[(side2 + 2) % 3]];
 
         MeshGeomFacet cT1(cP1, cP2, cP3);

@@ -175,7 +175,7 @@ public:
                               MeshFacetIterator& rclN1,
                               MeshFacetIterator& rclN2) const;
     /// Sets the iterator to the current facet's neighbour of the side \a usN.
-    inline void SetToNeighbour(unsigned short usN);
+    inline void SetToNeighbour(SideIndex usN);
     /// Returns the property information to the current facet.
     inline unsigned long GetProperty() const;
     /// Checks if the iterator points to a valid element inside the array.
@@ -530,7 +530,7 @@ inline void MeshFacetIterator::GetNeighbours(MeshFacetIterator& rclN0,
     }
 }
 
-inline void MeshFacetIterator::SetToNeighbour(unsigned short usN)
+inline void MeshFacetIterator::SetToNeighbour(SideIndex usN)
 {
     if (_clIter->_aulNeighbours[usN] != FACET_INDEX_MAX) {
         _clIter = _rclFAry.begin() + _clIter->_aulNeighbours[usN];

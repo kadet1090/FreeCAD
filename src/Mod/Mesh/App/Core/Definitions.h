@@ -45,6 +45,8 @@ namespace MeshCore
 {
 
 // type definitions
+using SideIndex = unsigned short;
+const SideIndex SIDE_INDEX_MAX = USHRT_MAX;
 using ElementIndex = unsigned long;
 const ElementIndex ELEMENT_INDEX_MAX = ULONG_MAX;
 using FacetIndex = ElementIndex;

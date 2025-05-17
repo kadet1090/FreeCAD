@@ -64,8 +64,8 @@ public:
 class MeshExport MeshIndexEdge
 {
 public:
-    FacetIndex _ulFacetIndex;      // Facet index
-    unsigned short _ausCorner[2];  // corner point indices of the facet
+    FacetIndex _ulFacetIndex;  // Facet index
+    SideIndex _ausCorner[2];   // corner point indices of the facet
 };
 
 /** MeshEdge just a pair of two point indices */
@@ -346,26 +346,26 @@ public:
     /**
      * Returns the indices of the corner points of the given edge number.
      */
-    inline void GetEdge(unsigned short usSide, MeshHelpEdge& rclEdge) const;
+    inline void GetEdge(SideIndex usSide, MeshHelpEdge& rclEdge) const;
     /**
      * Returns the indices of the corner points of the given edge number.
      */
-    inline std::pair<PointIndex, PointIndex> GetEdge(unsigned short usSide) const;
+    inline std::pair<PointIndex, PointIndex> GetEdge(SideIndex usSide) const;
     /**
      * Returns the edge-number to the given index of neighbour facet.
-     * If \a ulNIndex is not a neighbour USHRT_MAX is returned.
+     * If \a ulNIndex is not a neighbour SIDE_INDEX_MAX is returned.
      */
-    inline unsigned short Side(FacetIndex ulNIndex) const;
+    inline SideIndex Side(FacetIndex ulNIndex) const;
     /**
      * Returns the edge-number defined by two points. If one point is
-     * not a corner point USHRT_MAX is returned.
+     * not a corner point SIDE_INDEX_MAX is returned.
      */
-    inline unsigned short Side(PointIndex ulP0, PointIndex P1) const;
+    inline SideIndex Side(PointIndex ulP0, PointIndex P1) const;
     /**
      * Returns the edge-number defined by the shared edge of both facets. If the facets don't
-     * share a common edge USHRT_MAX is returned.
+     * share a common edge SIDE_INDEX_MAX is returned.
      */
-    inline unsigned short Side(const MeshFacet& rFace) const;
+    inline SideIndex Side(const MeshFacet& rFace) const;
     /**
      * Returns true if this facet shares the same three points as \a rcFace.
      * The orientation is not of interest in this case.
@@ -394,7 +394,7 @@ public:
     /**
      * Checks if the neighbour exists at the given edge-number.
      */
-    bool HasNeighbour(unsigned short usSide) const
+    bool HasNeighbour(SideIndex usSide) const
     {
         return (_aulNeighbours[usSide] != FACET_INDEX_MAX);
     }
@@ -406,7 +406,7 @@ public:
         return Side(index) < 3;
     }
     /** Counts the number of edges without neighbour. */
-    inline unsigned short CountOpenEdges() const;
+    inline SideIndex CountOpenEdges() const;
     /** Returns true if there is an edge without neighbour, otherwise false. */
     inline bool HasOpenEdge() const;
     /** Returns true if the two facets have the same orientation, false otherwise
@@ -631,11 +631,10 @@ public:
     /** Calculates the center and radius of the circum circle of the facet. */
     float CenterOfCircumCircle(Base::Vector3f& rclCenter) const;
     /** Returns the edge number of the facet that is nearest to the point \a rclPt. */
-    unsigned short NearestEdgeToPoint(const Base::Vector3f& rclPt) const;
+    SideIndex NearestEdgeToPoint(const Base::Vector3f& rclPt) const;
     /** Returns the edge number \a side of the facet and the distance to the edge that is nearest to
      * the point \a rclPt. */
-    void
-    NearestEdgeToPoint(const Base::Vector3f& rclPt, float& fDistance, unsigned short& side) const;
+    void NearestEdgeToPoint(const Base::Vector3f& rclPt, float& fDistance, SideIndex& side) const;
     /** Returns the edge for \a side. */
     MeshGeomEdge GetEdge(short side) const;
     /** The center and radius of the circum circle define a sphere in 3D. If the point \a rP is part
@@ -1025,13 +1024,13 @@ void MeshFacet::SetNeighbours(FacetIndex n1, FacetIndex n2, FacetIndex n3)
     _aulNeighbours[2] = n3;
 }
 
-inline void MeshFacet::GetEdge(unsigned short usSide, MeshHelpEdge& rclEdge) const
+inline void MeshFacet::GetEdge(SideIndex usSide, MeshHelpEdge& rclEdge) const
 {
     rclEdge._ulIndex[0] = _aulPoints[usSide];
     rclEdge._ulIndex[1] = _aulPoints[(usSide + 1) % 3];
 }
 
-inline std::pair<PointIndex, PointIndex> MeshFacet::GetEdge(unsigned short usSide) const
+inline std::pair<PointIndex, PointIndex> MeshFacet::GetEdge(SideIndex usSide) const
 {
     return {_aulPoints[usSide], _aulPoints[(usSide + 1) % 3]};
 }
@@ -1089,10 +1088,10 @@ inline void MeshFacet::ReplaceNeighbour(FacetIndex ulOrig, FacetIndex ulNew)
     }
 }
 
-inline unsigned short MeshFacet::CountOpenEdges() const
+inline SideIndex MeshFacet::CountOpenEdges() const
 {
-    unsigned short ct = 0;
-    for (unsigned short i = 0; i < 3; i++) {
+    SideIndex ct = 0;
+    for (SideIndex i = 0; i < 3; i++) {
         if (!HasNeighbour(i)) {
             ct++;
         }
@@ -1135,7 +1134,7 @@ inline bool MeshFacet::IsDegenerated() const
     return false;
 }
 
-inline unsigned short MeshFacet::Side(FacetIndex ulNIndex) const
+inline SideIndex MeshFacet::Side(FacetIndex ulNIndex) const
 {
     if (_aulNeighbours[0] == ulNIndex) {
         return 0;
@@ -1147,10 +1146,10 @@ inline unsigned short MeshFacet::Side(FacetIndex ulNIndex) const
         return 2;
     }
 
-    return USHRT_MAX;
+    return SIDE_INDEX_MAX;
 }
 
-inline unsigned short MeshFacet::Side(PointIndex ulP0, PointIndex ulP1) const
+inline SideIndex MeshFacet::Side(PointIndex ulP0, PointIndex ulP1) const
 {
     if (_aulPoints[0] == ulP0) {
         if (_aulPoints[1] == ulP1) {
@@ -1177,20 +1176,20 @@ inline unsigned short MeshFacet::Side(PointIndex ulP0, PointIndex ulP1) const
         }
     }
 
-    return USHRT_MAX;
+    return SIDE_INDEX_MAX;
 }
 
-inline unsigned short MeshFacet::Side(const MeshFacet& rFace) const
+inline SideIndex MeshFacet::Side(const MeshFacet& rFace) const
 {
-    unsigned short side {};
+    SideIndex side {};
     for (int i = 0; i < 3; i++) {
         side = Side(rFace._aulPoints[i], rFace._aulPoints[(i + 1) % 3]);
-        if (side != USHRT_MAX) {
+        if (side != SIDE_INDEX_MAX) {
             return side;
         }
     }
 
-    return USHRT_MAX;
+    return SIDE_INDEX_MAX;
 }
 
 inline bool MeshFacet::IsEqual(const MeshFacet& rcFace) const
