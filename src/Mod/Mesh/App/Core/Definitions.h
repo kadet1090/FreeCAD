@@ -30,16 +30,16 @@
 #include <climits>
 
 // default values
-#define MESH_MIN_PT_DIST 1.0e-6F
-#define MESH_MIN_EDGE_LEN 1.0e-3F
-#define MESH_MIN_EDGE_ANGLE 2.0
-#define MESH_REMOVE_MIN_LEN true
-#define MESH_REMOVE_G3_EDGES true
+constexpr const float MESH_MIN_PT_DIST = 1.0e-6F;
+constexpr const float MESH_MIN_EDGE_LEN = 1.0e-3F;
+constexpr const float MESH_MIN_EDGE_ANGLE = 2.0F;
+constexpr const bool MESH_REMOVE_MIN_LEN = true;
+constexpr const bool MESH_REMOVE_G3_EDGES = true;
 
 /*
  * general constant definitions
  */
-#define FLOAT_EPS 1.0e-4F
+constexpr const float FLOAT_EPS = 1.0e-4F;
 
 namespace MeshCore
 {

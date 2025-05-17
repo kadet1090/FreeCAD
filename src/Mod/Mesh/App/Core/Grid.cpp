@@ -639,7 +639,7 @@ unsigned long
 MeshGrid::GetIndexToPosition(unsigned long ulX, unsigned long ulY, unsigned long ulZ) const
 {
     if (!CheckPos(ulX, ulY, ulZ)) {
-        return ULONG_MAX;
+        return ELEMENT_INDEX_MAX;
     }
     return (ulZ * _ulCtGridsY + ulY) * _ulCtGridsX + ulX;
 }
@@ -654,9 +654,9 @@ bool MeshGrid::GetPositionToIndex(unsigned long id,
     ulZ = id / (_ulCtGridsX * _ulCtGridsY);
 
     if (!CheckPos(ulX, ulY, ulZ)) {
-        ulX = ULONG_MAX;
-        ulY = ULONG_MAX;
-        ulZ = ULONG_MAX;
+        ulX = ELEMENT_INDEX_MAX;
+        ulY = ELEMENT_INDEX_MAX;
+        ulZ = ELEMENT_INDEX_MAX;
         return false;
     }
 
