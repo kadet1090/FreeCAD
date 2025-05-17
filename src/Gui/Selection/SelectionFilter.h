@@ -172,7 +172,11 @@ private:
 
 struct Node_Slice
 {
-    explicit Node_Slice(int min=1,int max=INT_MAX):Min(min),Max(max){}
+    using num_int = std::numeric_limits<int>;
+    explicit Node_Slice(int min=1, int max = num_int::max())
+        : Min(min)
+        , Max(max)
+    {}
     int Min,Max;
 
 };

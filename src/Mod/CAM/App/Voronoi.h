@@ -51,7 +51,7 @@ public:
     ~Voronoi() override;
 
     using color_type = std::size_t;
-    static const int InvalidIndex = INT_MAX;
+    static const int InvalidIndex = std::numeric_limits<int>::max();
     static const color_type ColorMask = PATH_VORONOI_COLOR_MASK;
 
     // types

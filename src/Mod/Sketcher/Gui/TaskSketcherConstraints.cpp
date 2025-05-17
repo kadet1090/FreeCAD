@@ -720,8 +720,8 @@ ConstraintFilterList::ConstraintFilterList(QWidget* parent)
 {
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
         "User parameter:BaseApp/Preferences/Mod/Sketcher/General");
-    int filterState = hGrp->GetInt("ConstraintFilterState",
-                                   INT_MAX);// INT_MAX = 1111111111111111111111111111111 in binary.
+    // INT_MAX = 1111111111111111111111111111111 in binary.
+    int filterState = hGrp->GetInt("ConstraintFilterState", std::numeric_limits<int>::max());
 
     normalFilterCount = filterItems.size() - 2;// All filter but selected and associated
     selectedFilterIndex = normalFilterCount;

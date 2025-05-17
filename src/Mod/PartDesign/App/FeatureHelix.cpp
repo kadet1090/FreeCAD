@@ -59,10 +59,11 @@ using namespace PartDesign;
 const char* Helix::ModeEnums[] = { "pitch-height-angle", "pitch-turns-angle", "height-turns-angle", "height-turns-growth", nullptr };
 
 PROPERTY_SOURCE(PartDesign::Helix, PartDesign::ProfileBased)
+using num_int = std::numeric_limits<int>;
 
 // we purposely use not FLT_MAX because this would not be computable
-const App::PropertyFloatConstraint::Constraints Helix::floatTurns = { Precision::Confusion(), INT_MAX, 1.0 };
-const App::PropertyFloatConstraint::Constraints Helix::floatTolerance = { 0.1, INT_MAX, 1.0 };
+const App::PropertyFloatConstraint::Constraints Helix::floatTurns = { Precision::Confusion(), num_int::max(), 1.0 };
+const App::PropertyFloatConstraint::Constraints Helix::floatTolerance = { 0.1, num_int::max(), 1.0 };
 const App::PropertyAngle::Constraints Helix::floatAngle = { -89.0, 89.0, 1.0 };
 
 Helix::Helix()

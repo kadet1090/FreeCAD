@@ -607,7 +607,7 @@ void SoFCMeshObjectShape::initClass()
 }
 
 SoFCMeshObjectShape::SoFCMeshObjectShape()
-    : renderTriangleLimit(UINT_MAX)
+    : renderTriangleLimit(std::numeric_limits<unsigned int>::max())
 {
     SO_NODE_CONSTRUCTOR(SoFCMeshObjectShape);
     setName(SoFCMeshObjectShape::getClassTypeId().getName());
@@ -1235,7 +1235,7 @@ void SoFCMeshSegmentShape::initClass()
 }
 
 SoFCMeshSegmentShape::SoFCMeshSegmentShape()
-    : renderTriangleLimit(UINT_MAX)
+    : renderTriangleLimit(std::numeric_limits<unsigned int>::max())
 {
     SO_NODE_CONSTRUCTOR(SoFCMeshSegmentShape);
     SO_NODE_ADD_FIELD(index, (0));

@@ -226,7 +226,7 @@ UnsignedValidator::UnsignedValidator( QObject * parent )
   : QValidator( parent )
 {
     b =  0;
-    t =  UINT_MAX;
+    t =  std::numeric_limits<unsigned int>::max();
 }
 
 UnsignedValidator::UnsignedValidator( uint minimum, uint maximum, QObject * parent )
@@ -283,27 +283,27 @@ public:
     uint mapToUInt( int v ) const
     {
         uint ui;
-        if ( v == INT_MIN ) {
+        if ( v == std::numeric_limits<int>::min() ) {
             ui = 0;
-        } else if ( v == INT_MAX ) {
-            ui = UINT_MAX;
+        } else if ( v == std::numeric_limits<int>::max() ) {
+            ui = std::numeric_limits<unsigned int>::max();
         } else if ( v < 0 ) {
-            v -= INT_MIN; ui = (uint)v;
+            v -= std::numeric_limits<int>::min(); ui = (uint)v;
         } else {
-            ui = (uint)v; ui -= INT_MIN;
+            ui = (uint)v; ui -= std::numeric_limits<int>::min();
         } return ui;
     }
     int mapToInt( uint v ) const
     {
         int in;
-        if ( v == UINT_MAX ) {
-            in = INT_MAX;
+        if ( v == std::numeric_limits<unsigned int>::max() ) {
+            in = std::numeric_limits<int>::max();
         } else if ( v == 0 ) {
-            in = INT_MIN;
-        } else if ( v > INT_MAX ) {
-            v += INT_MIN; in = (int)v;
+            in = std::numeric_limits<int>::min();
+        } else if ( v > std::numeric_limits<int>::max() ) {
+            v += std::numeric_limits<int>::min(); in = (int)v;
         } else {
-            in = v; in += INT_MIN;
+            in = v; in += std::numeric_limits<int>::min();
         } return in;
     }
 };

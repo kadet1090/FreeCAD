@@ -60,7 +60,7 @@ Segmentation::Segmentation(Mesh::Feature* mesh, QWidget* parent, Qt::WindowFlags
     , myMesh(mesh)
 {
     ui->setupUi(this);
-    ui->numPln->setRange(1, INT_MAX);
+    ui->numPln->setRange(1, std::numeric_limits<int>::max());
     ui->numPln->setValue(100);
 
     ui->checkBoxSmooth->setChecked(false);

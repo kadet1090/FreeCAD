@@ -25,6 +25,7 @@
 #define APP_PATH_H
 
 #include <bitset>
+#include <limits>
 #include <map>
 #include <set>
 #include <string>
@@ -76,6 +77,7 @@ AppExport std::string quote(const std::string& input, bool toPython = false);
 
 class AppExport ObjectIdentifier
 {
+    using num_int = std::numeric_limits<int>;
 
 public:
     class AppExport DocumentMapper
@@ -211,13 +213,13 @@ public:
 
         Component(const String& _name = String(),
                   typeEnum _type = SIMPLE,
-                  int begin = INT_MAX,
-                  int end = INT_MAX,
+                  int begin = num_int::max(),
+                  int end = num_int::max(),
                   int step = 1);  // explicit bombs
         Component(String&& _name,
                   typeEnum _type = SIMPLE,
-                  int begin = INT_MAX,
-                  int end = INT_MAX,
+                  int begin = num_int::max(),
+                  int end = num_int::max(),
                   int step = 1);  // explicit bombs
 
         static Component SimpleComponent(const char* _component);
@@ -342,11 +344,11 @@ public:
 
     explicit ObjectIdentifier(const App::PropertyContainer* _owner = nullptr,
                               const std::string& property = std::string(),
-                              int index = INT_MAX);
+                              int index = num_int::max());
 
     ObjectIdentifier(const App::PropertyContainer* _owner, bool localProperty);
 
-    ObjectIdentifier(const App::Property& prop, int index = INT_MAX);  // explicit bombs
+    ObjectIdentifier(const App::Property& prop, int index = num_int::max());  // explicit bombs
 
     FC_DEFAULT_CTORS(ObjectIdentifier)
     {

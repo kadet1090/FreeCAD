@@ -132,7 +132,7 @@ ObjectIdentifier::ObjectIdentifier(const App::PropertyContainer* _owner,
     }
     if (!property.empty()) {
         addComponent(SimpleComponent(property));
-        if (index != INT_MAX) {
+        if (index != std::numeric_limits<int>::max()) {
             addComponent(ArrayComponent(index));
         }
     }
@@ -181,7 +181,7 @@ ObjectIdentifier::ObjectIdentifier(const Property& prop, int index)
     setDocumentObjectName(docObj);
 
     addComponent(SimpleComponent(String(prop.getName())));
-    if (index != INT_MAX) {
+    if (index != std::numeric_limits<int>::max()) {
         addComponent(ArrayComponent(index));
     }
 }
@@ -706,7 +706,7 @@ Py::Object ObjectIdentifier::Component::get(const Py::Object& pyobj) const
     else {
         assert(isRange());
         Py::Object slice(PySlice_New(Py::Long(begin).ptr(),
-                                     end != INT_MAX ? Py::Long(end).ptr() : nullptr,
+                                     end != num_int::max() ? Py::Long(end).ptr() : nullptr,
                                      step != 1 ? Py::Long(step).ptr() : nullptr),
                          true);
         PyObject* r = PyObject_GetItem(pyobj.ptr(), slice.ptr());
@@ -745,7 +745,7 @@ void ObjectIdentifier::Component::set(Py::Object& pyobj, const Py::Object& value
     else {
         assert(isRange());
         Py::Object slice(PySlice_New(Py::Long(begin).ptr(),
-                                     end != INT_MAX ? Py::Long(end).ptr() : nullptr,
+                                     end != num_int::max() ? Py::Long(end).ptr() : nullptr,
                                      step != 1 ? Py::Long(step).ptr() : nullptr),
                          true);
         if (PyObject_SetItem(pyobj.ptr(), slice.ptr(), value.ptr()) < 0) {
@@ -773,7 +773,7 @@ void ObjectIdentifier::Component::del(Py::Object& pyobj) const
     else {
         assert(isRange());
         Py::Object slice(PySlice_New(Py::Long(begin).ptr(),
-                                     end != INT_MAX ? Py::Long(end).ptr() : nullptr,
+                                     end != num_int::max() ? Py::Long(end).ptr() : nullptr,
                                      step != 1 ? Py::Long(step).ptr() : nullptr),
                          true);
         if (PyObject_DelItem(pyobj.ptr(), slice.ptr()) < 0) {
@@ -899,11 +899,11 @@ void ObjectIdentifier::Component::toString(std::ostream& ss, bool toPython) cons
             break;
         case Component::RANGE:
             ss << '[';
-            if (begin != INT_MAX) {
+            if (begin != num_int::max()) {
                 ss << begin;
             }
             ss << ':';
-            if (end != INT_MAX) {
+            if (end != num_int::max()) {
                 ss << end;
             }
             if (step != 1) {

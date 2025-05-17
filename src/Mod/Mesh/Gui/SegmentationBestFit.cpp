@@ -229,7 +229,7 @@ ParametersDialog::ParametersDialog(std::vector<float>& val,
 
         QDoubleSpinBox* doubleSpinBox = new QDoubleSpinBox(groupBox);
         doubleSpinBox->setObjectName(it.first);
-        doubleSpinBox->setRange(-INT_MAX, INT_MAX);
+        doubleSpinBox->setRange(-std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
         doubleSpinBox->setValue(it.second);
         layout->addWidget(doubleSpinBox, index, 1, 1, 1);
         spinBoxes.push_back(doubleSpinBox);
@@ -336,11 +336,11 @@ SegmentationBestFit::SegmentationBestFit(Mesh::Feature* mesh, QWidget* parent, Q
     ui->setupUi(this);
     setupConnections();
 
-    ui->numPln->setRange(1, INT_MAX);
+    ui->numPln->setRange(1, std::numeric_limits<int>::max());
     ui->numPln->setValue(100);
-    ui->numCyl->setRange(1, INT_MAX);
+    ui->numCyl->setRange(1, std::numeric_limits<int>::max());
     ui->numCyl->setValue(100);
-    ui->numSph->setRange(1, INT_MAX);
+    ui->numSph->setRange(1, std::numeric_limits<int>::max());
     ui->numSph->setValue(100);
 
     Gui::SelectionObject obj(myMesh);

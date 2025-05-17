@@ -239,8 +239,8 @@ PlanePrimitive::PlanePrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Plane
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->planeLength->setRange(0, INT_MAX);
-    ui->planeWidth->setRange(0, INT_MAX);
+    ui->planeLength->setRange(0, std::numeric_limits<int>::max());
+    ui->planeWidth->setRange(0, std::numeric_limits<int>::max());
 
     if (feature) {
         ui->planeLength->setValue(feature->Length.getQuantityValue());
@@ -308,9 +308,9 @@ BoxPrimitive::BoxPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Box* feat
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->boxLength->setRange(0, INT_MAX);
-    ui->boxWidth->setRange(0, INT_MAX);
-    ui->boxHeight->setRange(0, INT_MAX);
+    ui->boxLength->setRange(0, std::numeric_limits<int>::max());
+    ui->boxWidth->setRange(0, std::numeric_limits<int>::max());
+    ui->boxHeight->setRange(0, std::numeric_limits<int>::max());
 
     if (feature) {
         ui->boxLength->setValue(feature->Length.getQuantityValue());
@@ -388,8 +388,8 @@ CylinderPrimitive::CylinderPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part:
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->cylinderRadius->setRange(0, INT_MAX);
-    ui->cylinderHeight->setRange(0, INT_MAX);
+    ui->cylinderRadius->setRange(0, std::numeric_limits<int>::max());
+    ui->cylinderHeight->setRange(0, std::numeric_limits<int>::max());
     ui->cylinderAngle->setRange(0, 360);
 
     if (feature) {
@@ -488,9 +488,9 @@ ConePrimitive::ConePrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Cone* f
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->coneRadius1->setRange(0, INT_MAX);
-    ui->coneRadius2->setRange(0, INT_MAX);
-    ui->coneHeight->setRange(0, INT_MAX);
+    ui->coneRadius1->setRange(0, std::numeric_limits<int>::max());
+    ui->coneRadius2->setRange(0, std::numeric_limits<int>::max());
+    ui->coneHeight->setRange(0, std::numeric_limits<int>::max());
     ui->coneAngle->setRange(0, 360);
 
     if (feature) {
@@ -579,7 +579,7 @@ SpherePrimitive::SpherePrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Sph
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->sphereRadius->setRange(0, INT_MAX);
+    ui->sphereRadius->setRange(0, std::numeric_limits<int>::max());
     ui->sphereAngle1->setRange(-90, 90);
     ui->sphereAngle2->setRange(-90, 90);
     ui->sphereAngle3->setRange(0, 360);
@@ -670,9 +670,9 @@ EllipsoidPrimitive::EllipsoidPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Par
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->ellipsoidRadius1->setRange(0, INT_MAX);
-    ui->ellipsoidRadius2->setRange(0, INT_MAX);
-    ui->ellipsoidRadius3->setRange(0, INT_MAX);
+    ui->ellipsoidRadius1->setRange(0, std::numeric_limits<int>::max());
+    ui->ellipsoidRadius2->setRange(0, std::numeric_limits<int>::max());
+    ui->ellipsoidRadius3->setRange(0, std::numeric_limits<int>::max());
     ui->ellipsoidAngle1->setRange(-90, 90);
     ui->ellipsoidAngle2->setRange(-90, 90);
     ui->ellipsoidAngle3->setRange(0, 360);
@@ -784,8 +784,8 @@ TorusPrimitive::TorusPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Torus
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->torusRadius1->setRange(0, INT_MAX);
-    ui->torusRadius2->setRange(0, INT_MAX);
+    ui->torusRadius1->setRange(0, std::numeric_limits<int>::max());
+    ui->torusRadius2->setRange(0, std::numeric_limits<int>::max());
     ui->torusAngle1->setRange(-180, 180);
     ui->torusAngle2->setRange(-180, 180);
     ui->torusAngle3->setRange(0, 360);
@@ -886,8 +886,8 @@ PrismPrimitive::PrismPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Prism
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->prismCircumradius->setRange(0, INT_MAX);
-    ui->prismHeight->setRange(0, INT_MAX);
+    ui->prismCircumradius->setRange(0, std::numeric_limits<int>::max());
+    ui->prismHeight->setRange(0, std::numeric_limits<int>::max());
 
     if (feature) {
         ui->prismPolygon->setValue(feature->Polygon.getValue());
@@ -984,26 +984,26 @@ WedgePrimitive::WedgePrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Wedge
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->wedgeXmin->setMinimum(INT_MIN);
-    ui->wedgeXmin->setMaximum(INT_MAX);
-    ui->wedgeYmin->setMinimum(INT_MIN);
-    ui->wedgeYmin->setMaximum(INT_MAX);
-    ui->wedgeZmin->setMinimum(INT_MIN);
-    ui->wedgeZmin->setMaximum(INT_MAX);
-    ui->wedgeX2min->setMinimum(INT_MIN);
-    ui->wedgeX2min->setMaximum(INT_MAX);
-    ui->wedgeZ2min->setMinimum(INT_MIN);
-    ui->wedgeZ2min->setMaximum(INT_MAX);
-    ui->wedgeXmax->setMinimum(INT_MIN);
-    ui->wedgeXmax->setMaximum(INT_MAX);
-    ui->wedgeYmax->setMinimum(INT_MIN);
-    ui->wedgeYmax->setMaximum(INT_MAX);
-    ui->wedgeZmax->setMinimum(INT_MIN);
-    ui->wedgeZmax->setMaximum(INT_MAX);
-    ui->wedgeX2max->setMinimum(INT_MIN);
-    ui->wedgeX2max->setMaximum(INT_MAX);
-    ui->wedgeZ2max->setMinimum(INT_MIN);
-    ui->wedgeZ2max->setMaximum(INT_MAX);
+    ui->wedgeXmin->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeXmin->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeYmin->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeYmin->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeZmin->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeZmin->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeX2min->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeX2min->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeZ2min->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeZ2min->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeXmax->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeXmax->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeYmax->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeYmax->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeZmax->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeZmax->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeX2max->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeX2max->setMaximum(std::numeric_limits<int>::max());
+    ui->wedgeZ2max->setMinimum(std::numeric_limits<int>::min());
+    ui->wedgeZ2max->setMaximum(std::numeric_limits<int>::max());
 
     if (feature) {
         ui->wedgeXmin->setValue(feature->Xmin.getQuantityValue());
@@ -1151,9 +1151,9 @@ HelixPrimitive::HelixPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Helix
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->helixPitch->setRange(0, INT_MAX);
-    ui->helixHeight->setRange(0, INT_MAX);
-    ui->helixRadius->setRange(0, INT_MAX);
+    ui->helixPitch->setRange(0, std::numeric_limits<int>::max());
+    ui->helixHeight->setRange(0, std::numeric_limits<int>::max());
+    ui->helixRadius->setRange(0, std::numeric_limits<int>::max());
     ui->helixAngle->setRange(-89.9, 89.9);
 
     if (feature) {
@@ -1252,9 +1252,9 @@ SpiralPrimitive::SpiralPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Spi
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->spiralGrowth->setRange(0, INT_MAX);
-    ui->spiralRotation->setRange(0, INT_MAX);
-    ui->spiralRadius->setRange(0, INT_MAX);
+    ui->spiralGrowth->setRange(0, std::numeric_limits<int>::max());
+    ui->spiralRotation->setRange(0, std::numeric_limits<int>::max());
+    ui->spiralRadius->setRange(0, std::numeric_limits<int>::max());
 
     if (feature) {
         ui->spiralGrowth->setValue(feature->Growth.getQuantityValue());
@@ -1331,7 +1331,7 @@ CirclePrimitive::CirclePrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Cir
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->circleRadius->setRange(0, INT_MAX);
+    ui->circleRadius->setRange(0, std::numeric_limits<int>::max());
     ui->circleAngle1->setRange(0, 360);
     ui->circleAngle2->setRange(0, 360);
 
@@ -1411,8 +1411,8 @@ EllipsePrimitive::EllipsePrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::E
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->ellipseMajorRadius->setRange(0, INT_MAX);
-    ui->ellipseMinorRadius->setRange(0, INT_MAX);
+    ui->ellipseMajorRadius->setRange(0, std::numeric_limits<int>::max());
+    ui->ellipseMinorRadius->setRange(0, std::numeric_limits<int>::max());
     ui->ellipseAngle1->setRange(0, 360);
     ui->ellipseAngle2->setRange(0, 360);
 
@@ -1502,7 +1502,7 @@ PolygonPrimitive::PolygonPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::R
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->regularPolygonCircumradius->setRange(0, INT_MAX);
+    ui->regularPolygonCircumradius->setRange(0, std::numeric_limits<int>::max());
 
     if (feature) {
         ui->regularPolygonPolygon->setValue(feature->Polygon.getValue());
@@ -1569,18 +1569,18 @@ LinePrimitive::LinePrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Line* f
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->edgeX1->setMaximum(INT_MAX);
-    ui->edgeX1->setMinimum(INT_MIN);
-    ui->edgeY1->setMaximum(INT_MAX);
-    ui->edgeY1->setMinimum(INT_MIN);
-    ui->edgeZ1->setMaximum(INT_MAX);
-    ui->edgeZ1->setMinimum(INT_MIN);
-    ui->edgeX2->setMaximum(INT_MAX);
-    ui->edgeX2->setMinimum(INT_MIN);
-    ui->edgeY2->setMaximum(INT_MAX);
-    ui->edgeY2->setMinimum(INT_MIN);
-    ui->edgeZ2->setMaximum(INT_MAX);
-    ui->edgeZ2->setMinimum(INT_MIN);
+    ui->edgeX1->setMaximum(std::numeric_limits<int>::max());
+    ui->edgeX1->setMinimum(std::numeric_limits<int>::min());
+    ui->edgeY1->setMaximum(std::numeric_limits<int>::max());
+    ui->edgeY1->setMinimum(std::numeric_limits<int>::min());
+    ui->edgeZ1->setMaximum(std::numeric_limits<int>::max());
+    ui->edgeZ1->setMinimum(std::numeric_limits<int>::min());
+    ui->edgeX2->setMaximum(std::numeric_limits<int>::max());
+    ui->edgeX2->setMinimum(std::numeric_limits<int>::min());
+    ui->edgeY2->setMaximum(std::numeric_limits<int>::max());
+    ui->edgeY2->setMinimum(std::numeric_limits<int>::min());
+    ui->edgeZ2->setMaximum(std::numeric_limits<int>::max());
+    ui->edgeZ2->setMinimum(std::numeric_limits<int>::min());
 
     if (feature) {
         ui->edgeX1->setValue(feature->X1.getQuantityValue());
@@ -1688,12 +1688,12 @@ VertexPrimitive::VertexPrimitive(std::shared_ptr<Ui_DlgPrimitives> ui, Part::Ver
     : AbstractPrimitive(feature)
     , ui(ui)
 {
-    ui->vertexX->setMaximum(INT_MAX);
-    ui->vertexY->setMaximum(INT_MAX);
-    ui->vertexZ->setMaximum(INT_MAX);
-    ui->vertexX->setMinimum(INT_MIN);
-    ui->vertexY->setMinimum(INT_MIN);
-    ui->vertexZ->setMinimum(INT_MIN);
+    ui->vertexX->setMaximum(std::numeric_limits<int>::max());
+    ui->vertexY->setMaximum(std::numeric_limits<int>::max());
+    ui->vertexZ->setMaximum(std::numeric_limits<int>::max());
+    ui->vertexX->setMinimum(std::numeric_limits<int>::min());
+    ui->vertexY->setMinimum(std::numeric_limits<int>::min());
+    ui->vertexZ->setMinimum(std::numeric_limits<int>::min());
 
     if (feature) {
         ui->vertexX->setValue(feature->X.getQuantityValue());

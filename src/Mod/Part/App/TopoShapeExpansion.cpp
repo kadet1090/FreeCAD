@@ -1609,6 +1609,7 @@ TopoShape& TopoShape::makeShapeWithElementMap(const TopoDS_Shape& shape,
     // there are still any unnamed elements left after we go through the process
     // below, we set delayed=true, and start using those excluded names.
     bool delayed = false;
+    const int min_int = std::numeric_limits<int>::min();
 
     while (true) {
 
@@ -1632,7 +1633,7 @@ TopoShape& TopoShape::makeShapeWithElementMap(const TopoDS_Shape& shape,
             const auto& first_key = names.begin()->first;
             auto& first_info = names.begin()->second;
 
-            if (!delayed && first_key.shapetype >= 3 && first_info.index > INT_MIN + 1) {
+            if (!delayed && first_key.shapetype >= 3 && first_info.index > min_int + 1) {
                 // This name is mapped from high level (shell, solid, etc.)
                 // Delay till next round.
                 //
@@ -1680,10 +1681,10 @@ TopoShape& TopoShape::makeShapeWithElementMap(const TopoDS_Shape& shape,
                         // 'K' marks the additional source shape of this
                         // generate (or modified) shape.
                         ss2 << elementMapPrefix() << 'K';
-                        if (other_info.index == INT_MIN) {
+                        if (other_info.index == min_int) {
                             ss2 << '0';
                         }
-                        else if (other_info.index == INT_MIN + 1) {
+                        else if (other_info.index == min_int + 1) {
                             ss2 << "00";
                         }
                         else {
@@ -1740,10 +1741,10 @@ TopoShape& TopoShape::makeShapeWithElementMap(const TopoDS_Shape& shape,
             else {
                 ss << modgenPostfix();
             }
-            if (first_info.index == INT_MIN) {
+            if (first_info.index == min_int) {
                 ss << '0';
             }
-            else if (first_info.index == INT_MIN + 1) {
+            else if (first_info.index == min_int + 1) {
                 ss << "00";
             }
             else if (abs(first_info.index) > 1) {

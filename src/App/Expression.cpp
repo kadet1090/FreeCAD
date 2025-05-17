@@ -333,22 +333,22 @@ static inline int essentiallyInteger(double a, long &l, int &i) {
     double intpart;
     if (std::modf(a,&intpart) == 0.0) {
         if (intpart<0.0) {
-            if (intpart >= INT_MIN) {
+            if (intpart >= std::numeric_limits<int>::min()) {
                 i = static_cast<int>(intpart);
                 l = i;
                 return 1;
             }
-            if (intpart >= LONG_MIN) {
+            if (intpart >= std::numeric_limits<long>::min()) {
                 l = static_cast<long>(intpart);
                 return 2;
             }
         }
-        else if (intpart <= INT_MAX) {
+        else if (intpart <= std::numeric_limits<int>::max()) {
             i = static_cast<int>(intpart);
             l = i;
             return 1;
         }
-        else if (intpart <= static_cast<double>(LONG_MAX)) {
+        else if (intpart <= static_cast<double>(std::numeric_limits<long>::max())) {
             l = static_cast<int>(intpart);
             return 2;
         }
@@ -360,12 +360,12 @@ static inline bool essentiallyInteger(double a, long &l) {
     double intpart;
     if (std::modf(a,&intpart) == 0.0) {
         if (intpart<0.0) {
-            if (intpart >= LONG_MIN) {
+            if (intpart >= std::numeric_limits<long>::min()) {
                 l = static_cast<long>(intpart);
                 return true;
             }
         }
-        else if (intpart <= static_cast<double>(LONG_MAX)) {
+        else if (intpart <= static_cast<double>(std::numeric_limits<long>::max())) {
             l = static_cast<long>(intpart);
             return true;
         }

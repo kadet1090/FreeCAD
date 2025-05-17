@@ -783,12 +783,13 @@ public:
                        TopoDS_Edge& ev2,
                        const bool isLinear)
     {
+        const int max_int = std::numeric_limits<int>::max();
         std::unique_ptr<Geometry> geo;
-        for (auto vit = vmap.qbegin(bgi::nearest(p1, INT_MAX)); vit != vmap.qend(); ++vit) {
+        for (auto vit = vmap.qbegin(bgi::nearest(p1, max_int)); vit != vmap.qend(); ++vit) {
             auto& vinfo = *vit;
             if (canShowShape()) {
 #if OCC_VERSION_HEX < 0x070800
-                FC_MSG("addcheck " << vinfo.edge().HashCode(INT_MAX));
+                FC_MSG("addcheck " << vinfo.edge().HashCode(max_int));
 #else
                 FC_MSG("addcheck " << std::hash<TopoDS_Edge> {}(vinfo.edge()));
 #endif
@@ -1528,6 +1529,7 @@ public:
 
     void buildAdjacentListPopulate()
     {
+        const int max_int = std::numeric_limits<int>::max();
         // populate adjacent list
         for (auto& info : edges) {
             if (info.iteration == -2) {
@@ -1568,7 +1570,7 @@ public:
                 }
                 info.iEnd[ic] = info.iStart[ic] = (int)adjacentList.size();
 
-                for (auto vit = vmap.qbegin(bgi::nearest(pt[ic], INT_MAX)); vit != vmap.qend();
+                for (auto vit = vmap.qbegin(bgi::nearest(pt[ic], max_int)); vit != vmap.qend();
                      ++vit) {
                     auto& vinfo = *vit;
                     if (vinfo.pt().SquareDistance(pt[ic]) > myTol2) {
@@ -2714,10 +2716,11 @@ public:
     void printHistoryInit(const Handle(BRepTools_History)& newHistory,
                           const std::vector<TopoShape>& inputEdges)
     {
+        const int max_int = std::numeric_limits<int>::max();
         FC_MSG("init:");
         for (const auto& shape : sourceEdges) {
 #if OCC_VERSION_HEX < 0x070800
-            FC_MSG(shape.getShape().TShape().get() << ", " << shape.getShape().HashCode(INT_MAX));
+            FC_MSG(shape.getShape().TShape().get() << ", " << shape.getShape().HashCode(max_int));
 #else
             FC_MSG(shape.getShape().TShape().get()
                    << ", " << std::hash<TopoDS_Shape> {}(shape.getShape()));
@@ -2731,12 +2734,13 @@ public:
     // complexity
     void printHistoryFinal()
     {
+        const int max_int = std::numeric_limits<int>::max();
         printHistory(aHistory, sourceEdges);
         FC_MSG("final:");
         for (int i = 1; i <= wireData->NbEdges(); ++i) {
             auto shape = wireData->Edge(i);
 #if OCC_VERSION_HEX < 0x070800
-            FC_MSG(shape.TShape().get() << ", " << shape.HashCode(INT_MAX));
+            FC_MSG(shape.TShape().get() << ", " << shape.HashCode(max_int));
 #else
             FC_MSG(shape.TShape().get() << ", " << std::hash<TopoDS_Edge> {}(shape));
 #endif
@@ -2797,12 +2801,13 @@ public:
     template<class T>
     void printHistoryOfShape(const Handle(BRepTools_History)& hist, const T& shape)
     {
+        const int max_int = std::numeric_limits<int>::max();
         for (TopTools_ListIteratorOfListOfShape it(hist->Modified(shape.getShape())); it.More();
              it.Next()) {
 #if OCC_VERSION_HEX < 0x070800
             FC_MSG(shape.getShape().TShape().get()
-                   << ", " << shape.getShape().HashCode(INT_MAX) << " -> "
-                   << it.Value().TShape().get() << ", " << it.Value().HashCode(INT_MAX));
+                   << ", " << shape.getShape().HashCode(max_int) << " -> "
+                   << it.Value().TShape().get() << ", " << it.Value().HashCode(max_int));
 #else
             FC_MSG(shape.getShape().TShape().get()
                    << ", " << std::hash<TopoDS_Shape> {}(shape.getShape()) << " -> "

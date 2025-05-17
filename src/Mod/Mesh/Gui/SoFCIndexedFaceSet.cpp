@@ -459,7 +459,7 @@ void SoFCIndexedFaceSet::initClass()
 }
 
 SoFCIndexedFaceSet::SoFCIndexedFaceSet()
-    : renderTriangleLimit(UINT_MAX)
+    : renderTriangleLimit(std::numeric_limits<unsigned int>::max())
 {
     SO_NODE_CONSTRUCTOR(SoFCIndexedFaceSet);
     SO_NODE_ADD_FIELD(updateGLArray, (false));

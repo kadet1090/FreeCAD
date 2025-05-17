@@ -1222,7 +1222,7 @@ struct WireJoiner
                 info.iEnd[i] = info.iStart[i] = (int)adjacentList.size();
 
                 // populate adjacent list
-                for (auto vit = vmap.qbegin(bgi::nearest(pt[i], INT_MAX)); vit != vmap.qend();
+                for (auto vit = vmap.qbegin(bgi::nearest(pt[i], std::numeric_limits<int>::max())); vit != vmap.qend();
                      ++vit) {
                     ++rcount;
                     if (vit->pt().SquareDistance(pt[i]) > tol) {

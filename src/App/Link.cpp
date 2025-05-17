@@ -25,6 +25,7 @@
 
 #include <boost/range.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <limits>
 #include <Base/Tools.h>
 #include <Base/Uuid.h>
 
@@ -2619,12 +2620,13 @@ template class AppExport ExtensionPythonT<App::LinkExtension>;
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 PROPERTY_SOURCE_WITH_EXTENSIONS(App::Link, App::DocumentObject)
+using num_int = std::numeric_limits<int>;
 
 Link::Link()
 {
     LINK_PROPS_ADD(LINK_PARAMS_LINK);
     LinkExtension::initExtension(this);
-    static const PropertyIntegerConstraint::Constraints s_constraints = {0, INT_MAX, 1};
+    static const PropertyIntegerConstraint::Constraints s_constraints = {0, num_int::max(), 1};
     ElementCount.setConstraints(&s_constraints);
 }
 

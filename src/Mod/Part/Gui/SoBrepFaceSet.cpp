@@ -191,7 +191,7 @@ void SoBrepFaceSet::doAction(SoAction* action)
         const SoDetail* detail = hlaction->getElement();
         if (!detail) {
             SelContextPtr ctx = Gui::SoFCSelectionRoot::getActionContext(action,this,selContext);
-            ctx->highlightIndex = INT_MAX;
+            ctx->highlightIndex = std::numeric_limits<int>::max();
             ctx->highlightColor = hlaction->getColor();
             touch();
         }else {
@@ -544,7 +544,7 @@ void SoBrepFaceSet::GLRender(SoGLRenderAction *action)
         // Transparency complicates stuff even more, but not here. It will be handled inside
         // overrideMaterialBinding()
         //
-        if(ctx && ctx->highlightIndex==INT_MAX) {
+        if(ctx && ctx->highlightIndex==std::numeric_limits<int>::max()) {
             if(ctx->selectionIndex.empty() || ctx->isSelectAll()) {
                 if(ctx2) {
                     ctx2->selectionColor = ctx->highlightColor;
@@ -1217,7 +1217,7 @@ void SoBrepFaceSet::renderHighlight(SoGLRenderAction *action, SelContextPtr ctx)
     mb.sendFirst(); // make sure we have the correct material
 
     int id = ctx->highlightIndex;
-    if (id!=INT_MAX && id >= this->partIndex.getNum()) {
+    if (id != std::numeric_limits<int>::max() && id >= this->partIndex.getNum()) {
         SoDebugError::postWarning("SoBrepFaceSet::renderHighlight", "highlightIndex out of range");
     }
     else {
@@ -1229,7 +1229,7 @@ void SoBrepFaceSet::renderHighlight(SoGLRenderAction *action, SelContextPtr ctx)
         // coords
         int start=0;
         int length;
-        if(id==INT_MAX) {
+        if(id == std::numeric_limits<int>::max()) {
             length = numindices;
             id = 0;
         } else {

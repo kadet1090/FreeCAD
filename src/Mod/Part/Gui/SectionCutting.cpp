@@ -140,9 +140,10 @@ SectionCut::SectionCut(QWidget* parent)
 
 void SectionCut::initSpinBoxes()
 {
-    ui->cutX->setRange(-INT_MAX, INT_MAX);
-    ui->cutY->setRange(-INT_MAX, INT_MAX);
-    ui->cutZ->setRange(-INT_MAX, INT_MAX);
+    const int max = std::numeric_limits<int>::max();
+    ui->cutX->setRange(-max, max);
+    ui->cutY->setRange(-max, max);
+    ui->cutZ->setRange(-max, max);
 }
 
 void SectionCut::initControls(const Base::BoundBox3d& BoundCompound)

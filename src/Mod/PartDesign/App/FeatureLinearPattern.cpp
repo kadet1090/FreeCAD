@@ -49,7 +49,8 @@ namespace PartDesign {
 
 PROPERTY_SOURCE(PartDesign::LinearPattern, PartDesign::Transformed)
 
-const App::PropertyIntegerConstraint::Constraints LinearPattern::intOccurrences = { 1, INT_MAX, 1 };
+using num_int = std::numeric_limits<int>;
+const App::PropertyIntegerConstraint::Constraints LinearPattern::intOccurrences = { 1, num_int::max(), 1 };
 
 const char* LinearPattern::ModeEnums[] = { "length", "offset", nullptr };
 

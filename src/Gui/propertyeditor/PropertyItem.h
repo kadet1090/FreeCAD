@@ -363,8 +363,9 @@ protected:
     PropertyIntegerConstraintItem();
 
 private:
-    int min = INT_MIN;
-    int max = INT_MAX;
+    using num_int = std::numeric_limits<int>;
+    int min = num_int::min();
+    int max = num_int::max();
     int steps = 1;
 };
 
@@ -437,8 +438,9 @@ protected:
     PropertyUnitConstraintItem();
 
 private:
-    double min = double(INT_MIN);
-    double max = double(INT_MAX);
+    using num_int = std::numeric_limits<int>;
+    double min = double(num_int::min());
+    double max = double(num_int::max());
     double steps = 0.1;
 };
 
@@ -475,8 +477,9 @@ protected:
     PropertyFloatConstraintItem();
 
 private:
-    double min = double(INT_MIN);
-    double max = double(INT_MAX);
+    using num_int = std::numeric_limits<int>;
+    double min = double(num_int::min());
+    double max = double(num_int::max());
     double steps = 0.1;
 };
 

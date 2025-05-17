@@ -48,7 +48,7 @@ SegmentationManual::SegmentationManual(QWidget* parent, Qt::WindowFlags fl)
 {
     ui->setupUi(this);
     setupConnections();
-    ui->spSelectComp->setRange(1, INT_MAX);
+    ui->spSelectComp->setRange(1, std::numeric_limits<int>::max());
     ui->spSelectComp->setValue(10);
 
     Gui::Selection().clearSelection();
