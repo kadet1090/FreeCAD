@@ -134,7 +134,6 @@ private:
     Connection connectPropChanged;
 
     std::unique_ptr<Observer> observer;
-    bool isApplying;
     QWidget* proxy;
     std::unique_ptr<Ui_TaskHoleParameters> ui;
 };
