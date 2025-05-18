@@ -150,6 +150,15 @@ App::DocumentObjectExecReturn *Revolution::execute()
 
         //apply "midplane" symmetry
         TopoShape sourceShape = Feature::getTopoShape(link);
+
+        TopoDS_Shape shape = sourceShape.getShape();
+        if (shape.IsNull()) {
+            return new App::DocumentObjectExecReturn("Cannot revolve null shape");
+        }
+        if (shape.Infinite()) {
+            return new App::DocumentObjectExecReturn("Cannot revolve infinite shape");
+        }
+
         if (Symmetric.getValue()) {
             //rotate source shape backwards by half angle, to make resulting revolution symmetric to the profile
             gp_Trsf mov;
