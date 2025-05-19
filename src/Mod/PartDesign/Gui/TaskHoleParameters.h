@@ -125,6 +125,22 @@ protected:
     void changedObject(const App::Document&, const App::Property& Prop);
 
 private:
+    void addThreadTypes();
+    void addThreadSizes(PartDesign::Hole* hole);
+    void addThreadClasses(PartDesign::Hole* hole);
+    void addCutTypes(PartDesign::Hole* hole);
+    void showOrHideThreadSize(PartDesign::Hole* hole);
+    void setThreadType(PartDesign::Hole* hole);
+    void setThreadFit(PartDesign::Hole* hole);
+    void setDiameter(PartDesign::Hole* hole);
+    void setDirection(PartDesign::Hole* hole);
+    void setCutValues(PartDesign::Hole* hole);
+    void setDepthValue(PartDesign::Hole* hole);
+    void setDrillPoint(PartDesign::Hole* hole);
+    void setTaperedAngle(PartDesign::Hole* hole);
+    void setThreadValues(PartDesign::Hole* hole);
+    void bindProperties(PartDesign::Hole* hole);
+    void setupConnections();
     void onSelectionChanged(const Gui::SelectionChanges &msg) override;
     void updateHoleCutLimits(PartDesign::Hole* hole);
 
