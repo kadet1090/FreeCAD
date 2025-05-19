@@ -26,7 +26,7 @@
 #include <Base/Tools.h>
 #include <App/Document.h>
 #include <Gui/Application.h>
-#include <Gui/Command.h>
+#include <Gui/CommandT.h>
 #include <Gui/Document.h>
 #include <Gui/Selection/Selection.h>
 #include <Gui/ViewProvider.h>
@@ -52,10 +52,10 @@ namespace sp = std::placeholders;
 TaskHoleParameters::TaskHoleParameters(ViewProviderHole* HoleView, QWidget* parent)
     : TaskSketchBasedParameters(HoleView, parent, "PartDesign_Hole", tr("Hole parameters"))
     , observer(new Observer(this, getObject<PartDesign::Hole>()))
+    , proxy(new QWidget(this))
     , ui(new Ui_TaskHoleParameters)
 {
     // we need a separate container widget to add all controls to
-    proxy = new QWidget(this);
     ui->setupUi(proxy);
     QMetaObject::connectSlotsByName(this);
 
@@ -132,7 +132,7 @@ void TaskHoleParameters::addThreadSizes(PartDesign::Hole* hole)
     for (const auto& it : cursor) {
         ui->ThreadSize->addItem(tr(it.c_str()));
     }
-    ui->ThreadSize->setCurrentIndex(hole->ThreadSize.getValue());
+    ui->ThreadSize->setCurrentIndex(static_cast<int>(hole->ThreadSize.getValue()));
 }
 
 void TaskHoleParameters::addThreadClasses(PartDesign::Hole* hole)
@@ -142,7 +142,7 @@ void TaskHoleParameters::addThreadClasses(PartDesign::Hole* hole)
     for (const auto& it : cursor) {
         ui->ThreadClass->addItem(tr(it.c_str()));
     }
-    ui->ThreadClass->setCurrentIndex(hole->ThreadClass.getValue());
+    ui->ThreadClass->setCurrentIndex(static_cast<int>(hole->ThreadClass.getValue()));
 
     // Class is only enabled (sensible) if threaded
     ui->ThreadClass->setEnabled(hole->Threaded.getValue());
@@ -155,11 +155,12 @@ void TaskHoleParameters::addCutTypes(PartDesign::Hole* hole)
     for (const auto& it : cursor) {
         ui->HoleCutType->addItem(tr(it.c_str()));
     }
-    ui->HoleCutType->setCurrentIndex(hole->HoleCutType.getValue());
+    ui->HoleCutType->setCurrentIndex(static_cast<int>(hole->HoleCutType.getValue()));
 
     ui->HoleCutCustomValues->setChecked(hole->HoleCutCustomValues.getValue());
+    const long maxHoleCutEnums = 5;
     ui->HoleCutCustomValues->setHidden(
-        hole->HoleCutType.getValue() < 5
+        hole->HoleCutType.getValue() < maxHoleCutEnums
         || hole->HoleCutCustomValues.isReadOnly()
     );
 }
@@ -175,12 +176,12 @@ void TaskHoleParameters::showOrHideThreadSize(PartDesign::Hole* hole)
 void TaskHoleParameters::setThreadType(PartDesign::Hole* hole)
 {
     ui->Threaded->setChecked(hole->Threaded.getValue());
-    ui->ThreadType->setCurrentIndex(hole->ThreadType.getValue());
+    ui->ThreadType->setCurrentIndex(static_cast<int>(hole->ThreadType.getValue()));
 }
 
 void TaskHoleParameters::setThreadFit(PartDesign::Hole* hole)
 {
-    ui->ThreadFit->setCurrentIndex(hole->ThreadFit.getValue());
+    ui->ThreadFit->setCurrentIndex(static_cast<int>(hole->ThreadFit.getValue()));
     // Fit is only enabled (sensible) if not threaded
     ui->ThreadFit->setEnabled(!hole->Threaded.getValue() && hole->ThreadType.getValue() != 0L);
 }
@@ -222,7 +223,7 @@ void TaskHoleParameters::setCutValues(PartDesign::Hole* hole)
 
 void TaskHoleParameters::setDepthValue(PartDesign::Hole* hole)
 {
-    ui->DepthType->setCurrentIndex(hole->DepthType.getValue());
+    ui->DepthType->setCurrentIndex(static_cast<int>(hole->DepthType.getValue()));
     ui->Depth->setValue(hole->Depth.getValue());
 }
 
@@ -263,7 +264,7 @@ void TaskHoleParameters::setThreadValues(PartDesign::Hole* hole)
     ui->ModelThread->setChecked(isModeled);
     ui->UseCustomThreadClearance->setChecked(hole->UseCustomThreadClearance.getValue());
     ui->CustomThreadClearance->setValue(hole->CustomThreadClearance.getValue());
-    ui->ThreadDepthType->setCurrentIndex(hole->ThreadDepthType.getValue());
+    ui->ThreadDepthType->setCurrentIndex(static_cast<int>(hole->ThreadDepthType.getValue()));
     ui->ThreadDepth->setValue(hole->ThreadDepth.getValue());
 
     ui->ModelThread->setEnabled(ui->Threaded->isChecked() && ui->ThreadType->currentIndex() != 0);
@@ -852,8 +853,11 @@ void TaskHoleParameters::changeEvent(QEvent* e)
     }
 }
 
-void TaskHoleParameters::changedObject(const App::Document&, const App::Property& Prop)
+// NOLINTBEGIN(readability-*)
+void TaskHoleParameters::changedObject(const App::Document& doc, const App::Property& Prop)
 {
+    Q_UNUSED(doc)
+
     auto hole = getObject<PartDesign::Hole>();
     if (!hole) {
         return; // happens when aborting the command
@@ -892,7 +896,7 @@ void TaskHoleParameters::changedObject(const App::Document&, const App::Property
     }
     else if (&Prop == &hole->ThreadType) {
         ui->ThreadType->setEnabled(true);
-        updateComboBox(ui->ThreadType, hole->ThreadType.getValue());
+        updateComboBox(ui->ThreadType, static_cast<int>(hole->ThreadType.getValue()));
 
         // Thread type also updates related properties
         auto updateComboBoxItems = [&](QComboBox* widget, const auto& values, int selected) {
@@ -904,21 +908,27 @@ void TaskHoleParameters::changedObject(const App::Document&, const App::Property
             widget->setCurrentIndex(selected);
         };
 
-        updateComboBoxItems(ui->ThreadSize, hole->ThreadSize.getEnumVector(), hole->ThreadSize.getValue());
-        updateComboBoxItems(ui->HoleCutType, hole->HoleCutType.getEnumVector(), hole->HoleCutType.getValue());
-        updateComboBoxItems(ui->ThreadClass, hole->ThreadClass.getEnumVector(), hole->ThreadClass.getValue());
+        updateComboBoxItems(ui->ThreadSize,
+                            hole->ThreadSize.getEnumVector(),
+                            static_cast<int>(hole->ThreadSize.getValue()));
+        updateComboBoxItems(ui->HoleCutType,
+                            hole->HoleCutType.getEnumVector(),
+                            static_cast<int>(hole->HoleCutType.getValue()));
+        updateComboBoxItems(ui->ThreadClass,
+                            hole->ThreadClass.getEnumVector(),
+                            static_cast<int>(hole->ThreadClass.getValue()));
     }
     else if (&Prop == &hole->ThreadSize) {
         ui->ThreadSize->setEnabled(true);
-        updateComboBox(ui->ThreadSize, hole->ThreadSize.getValue());
+        updateComboBox(ui->ThreadSize, static_cast<int>(hole->ThreadSize.getValue()));
     }
     else if (&Prop == &hole->ThreadClass) {
         ui->ThreadClass->setEnabled(true);
-        updateComboBox(ui->ThreadClass, hole->ThreadClass.getValue());
+        updateComboBox(ui->ThreadClass, static_cast<int>(hole->ThreadClass.getValue()));
     }
     else if (&Prop == &hole->ThreadFit) {
         ui->ThreadFit->setEnabled(true);
-        updateComboBox(ui->ThreadFit, hole->ThreadFit.getValue());
+        updateComboBox(ui->ThreadFit, static_cast<int>(hole->ThreadFit.getValue()));
     }
     else if (&Prop == &hole->Diameter) {
         ui->Diameter->setEnabled(true);
@@ -935,7 +945,7 @@ void TaskHoleParameters::changedObject(const App::Document&, const App::Property
     }
     else if (&Prop == &hole->HoleCutType) {
         ui->HoleCutType->setEnabled(true);
-        updateComboBox(ui->HoleCutType, hole->HoleCutType.getValue());
+        updateComboBox(ui->HoleCutType, static_cast<int>(hole->HoleCutType.getValue()));
     }
     else if (&Prop == &hole->HoleCutDiameter) {
         ui->HoleCutDiameter->setEnabled(true);
@@ -951,7 +961,7 @@ void TaskHoleParameters::changedObject(const App::Document&, const App::Property
     }
     else if (&Prop == &hole->DepthType) {
         ui->DepthType->setEnabled(true);
-        updateComboBox(ui->DepthType, hole->DepthType.getValue());
+        updateComboBox(ui->DepthType, static_cast<int>(hole->DepthType.getValue()));
     }
     else if (&Prop == &hole->Depth) {
         ui->Depth->setEnabled(true);
@@ -991,13 +1001,14 @@ void TaskHoleParameters::changedObject(const App::Document&, const App::Property
     }
     else if (&Prop == &hole->ThreadDepthType) {
         ui->ThreadDepthType->setEnabled(true);
-        updateComboBox(ui->ThreadDepthType, hole->ThreadDepthType.getValue());
+        updateComboBox(ui->ThreadDepthType, static_cast<int>(hole->ThreadDepthType.getValue()));
     }
     else if (&Prop == &hole->ThreadDepth) {
         ui->ThreadDepth->setEnabled(true);
         updateSpinBox(ui->ThreadDepth, hole->ThreadDepth.getValue());
     }
 }
+// NOLINTEND(readability-*)
 
 void TaskHoleParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
 {
@@ -1019,9 +1030,8 @@ long TaskHoleParameters::getThreadSize() const
     if (ui->ThreadSize->currentIndex() == -1) {
         return 0;
     }
-    else {
-        return ui->ThreadSize->currentIndex();
-    }
+
+    return ui->ThreadSize->currentIndex();
 }
 
 long TaskHoleParameters::getThreadClass() const
@@ -1029,9 +1039,8 @@ long TaskHoleParameters::getThreadClass() const
     if (ui->ThreadSize->currentIndex() == -1) {
         return 0;
     }
-    else {
-        return ui->ThreadClass->currentIndex();
-    }
+
+    return ui->ThreadClass->currentIndex();
 }
 
 long TaskHoleParameters::getThreadFit() const
@@ -1048,12 +1057,7 @@ Base::Quantity TaskHoleParameters::getDiameter() const
 
 long TaskHoleParameters::getThreadDirection() const
 {
-    if (ui->directionRightHand->isChecked()) {
-        return 0;
-    }
-    else {
-        return 1;
-    }
+    return ui->directionRightHand->isChecked() ? 0L : 1L;
 }
 
 long TaskHoleParameters::getHoleCutType() const
@@ -1061,9 +1065,8 @@ long TaskHoleParameters::getHoleCutType() const
     if (ui->HoleCutType->currentIndex() == -1) {
         return 0;
     }
-    else {
-        return ui->HoleCutType->currentIndex();
-    }
+
+    return ui->HoleCutType->currentIndex();
 }
 
 bool TaskHoleParameters::getHoleCutCustomValues() const
@@ -1146,8 +1149,10 @@ double TaskHoleParameters::getThreadDepth() const
     return ui->ThreadDepth->value().getValue();
 }
 
+// NOLINTBEGIN(readability-*)
 void TaskHoleParameters::apply()
 {
+    using output = std::stringstream;
     auto hole = getObject<PartDesign::Hole>();
 
     ui->Diameter->apply();
@@ -1159,58 +1164,61 @@ void TaskHoleParameters::apply()
     ui->TaperedAngle->apply();
 
     if (!hole->Threaded.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "Threaded = " << (getThreaded() ? 1 : 0));
+        Gui::cmdAppObject(hole, output() << "Threaded = " << (getThreaded() ? 1 : 0));
     }
     if (!hole->ModelThread.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "ModelThread = " << (getModelThread() ? 1 : 0));
+        Gui::cmdAppObject(hole, output() << "ModelThread = " << (getModelThread() ? 1 : 0));
     }
     if (!hole->ThreadDepthType.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "ThreadDepthType = " << getThreadDepthType());
+        Gui::cmdAppObject(hole, output() << "ThreadDepthType = " << getThreadDepthType());
     }
     if (!hole->ThreadDepth.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "ThreadDepth = " << getThreadDepth());
+        Gui::cmdAppObject(hole, output() << "ThreadDepth = " << getThreadDepth());
     }
     if (!hole->UseCustomThreadClearance.isReadOnly()) {
-        FCMD_OBJ_CMD(hole,
-                     "UseCustomThreadClearance = " << (getUseCustomThreadClearance() ? 1 : 0));
+        Gui::cmdAppObject(hole, output() << "UseCustomThreadClearance = "
+                                         << (getUseCustomThreadClearance() ? 1 : 0));
     }
     if (!hole->CustomThreadClearance.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "CustomThreadClearance = " << getCustomThreadClearance());
+        Gui::cmdAppObject(hole, output() << "CustomThreadClearance = "
+                                         << getCustomThreadClearance());
     }
     if (!hole->ThreadType.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "ThreadType = " << getThreadType());
+        Gui::cmdAppObject(hole, output() << "ThreadType = " << getThreadType());
     }
     if (!hole->ThreadSize.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "ThreadSize = " << getThreadSize());
+        Gui::cmdAppObject(hole, output() << "ThreadSize = " << getThreadSize());
     }
     if (!hole->ThreadClass.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "ThreadClass = " << getThreadClass());
+        Gui::cmdAppObject(hole, output() << "ThreadClass = " << getThreadClass());
     }
     if (!hole->ThreadFit.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "ThreadFit = " << getThreadFit());
+        Gui::cmdAppObject(hole, output() << "ThreadFit = " << getThreadFit());
     }
     if (!hole->ThreadDirection.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "ThreadDirection = " << getThreadDirection());
+        Gui::cmdAppObject(hole, output() << "ThreadDirection = " << getThreadDirection());
     }
     if (!hole->HoleCutType.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "HoleCutType = " << getHoleCutType());
+        Gui::cmdAppObject(hole, output() << "HoleCutType = " << getHoleCutType());
     }
     if (!hole->HoleCutCustomValues.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "HoleCutCustomValues = " << (getHoleCutCustomValues() ? 1 : 0));
+        Gui::cmdAppObject(hole, output() << "HoleCutCustomValues = "
+                                         << (getHoleCutCustomValues() ? 1 : 0));
     }
     if (!hole->DepthType.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "DepthType = " << getDepthType());
+        Gui::cmdAppObject(hole, output() << "DepthType = " << getDepthType());
     }
     if (!hole->DrillPoint.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "DrillPoint = " << getDrillPoint());
+        Gui::cmdAppObject(hole, output() << "DrillPoint = " << getDrillPoint());
     }
     if (!hole->DrillForDepth.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "DrillForDepth = " << (getDrillForDepth() ? 1 : 0));
+        Gui::cmdAppObject(hole, output() << "DrillForDepth = " << (getDrillForDepth() ? 1 : 0));
     }
     if (!hole->Tapered.isReadOnly()) {
-        FCMD_OBJ_CMD(hole, "Tapered = " << getTapered());
+        Gui::cmdAppObject(hole, output() << "Tapered = " << getTapered());
     }
 }
+// NOLINTEND(readability-*)
 
 void TaskHoleParameters::updateHoleCutLimits(PartDesign::Hole* hole)
 {

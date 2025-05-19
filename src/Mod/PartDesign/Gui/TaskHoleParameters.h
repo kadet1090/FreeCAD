@@ -48,6 +48,7 @@ namespace PartDesignGui {
 class TaskHoleParameters : public TaskSketchBasedParameters
 {
     Q_OBJECT
+    Q_DISABLE_COPY_MOVE(TaskHoleParameters)
 
 public:
     explicit TaskHoleParameters(ViewProviderHole *HoleView, QWidget *parent = nullptr);
@@ -158,12 +159,13 @@ private:
 class TaskDlgHoleParameters : public TaskDlgSketchBasedParameters
 {
     Q_OBJECT
+    Q_DISABLE_COPY_MOVE(TaskDlgHoleParameters)
 
 public:
     explicit TaskDlgHoleParameters(ViewProviderHole *HoleView);
     ~TaskDlgHoleParameters() override;
 
-protected:
+private:
     TaskHoleParameters  *parameter;
 };
 
