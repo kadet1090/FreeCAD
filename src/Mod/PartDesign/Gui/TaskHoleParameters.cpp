@@ -260,7 +260,8 @@ void TaskHoleParameters::setThreadValues(PartDesign::Hole* hole)
     bool isNone = std::string(hole->ThreadType.getValueAsString()) == "None";
 
     ui->ThreadGroupBox->setVisible(isThreaded);
-    ui->ClearanceWidget->setHidden(isNone || isThreaded);
+    ui->labelThreadClearance->setHidden(isNone || isThreaded);
+    ui->ThreadFit->setHidden(isNone || isThreaded);
     ui->ModelThread->setChecked(isModeled);
     ui->UseCustomThreadClearance->setChecked(hole->UseCustomThreadClearance.getValue());
     ui->CustomThreadClearance->setValue(hole->CustomThreadClearance.getValue());
@@ -361,8 +362,9 @@ void TaskHoleParameters::threadedChanged()
     pcHole->Threaded.setValue(isChecked);
 
     ui->ThreadGroupBox->setVisible(isChecked);
-    ui->ClearanceWidget->setHidden(isChecked);
-    // run modelThreadChanged 
+    ui->labelThreadClearance->setHidden(isChecked);
+    ui->ThreadFit->setHidden(isChecked);
+    // run modelThreadChanged
     // it will handle the visibility of the model options
     modelThreadChanged();
     recomputeFeature();
@@ -740,7 +742,8 @@ void TaskHoleParameters::threadTypeChanged(int index)
     ui->ThreadGroupBox->setHidden(isNone || !isThreaded);
     ui->ThreadSize->setHidden(isNone);
     ui->labelSize->setHidden(isNone);
-    ui->ClearanceWidget->setHidden(isNone || isThreaded);
+    ui->labelThreadClearance->setHidden(isNone || isThreaded);
+    ui->ThreadFit->setHidden(isNone || isThreaded);
 
     if (TypeClass == QByteArray("ISO")) {
         // the names of the clearance types are different in ISO and UTS

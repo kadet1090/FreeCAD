@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>366</width>
-    <height>844</height>
+    <height>744</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -33,11 +33,88 @@
     <number>6</number>
    </property>
    <item>
+
+
     <layout class="QGridLayout" name="headLayout" columnstretch="2,4">
      <property name="topMargin">
       <number>10</number>
      </property>
+     <item row="0" column="0">
+      <widget class="Gui::ElideLabel" name="labelThreadType">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Standard</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="ThreadType">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="Gui::ElideLabel" name="labelSize">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Size</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QComboBox" name="ThreadSize">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="0">
+      <widget class="Gui::ElideLabel" name="labelHeadType">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LayoutDirection::RightToLeft</enum>
+       </property>
+       <property name="text">
+        <string>Head Type</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="HoleCutType">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Cut type for screw heads</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
       <widget class="Gui::ElideLabel" name="labelDepthType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
@@ -53,7 +130,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="3" column="1">
       <widget class="QComboBox" name="DepthType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
@@ -76,24 +153,21 @@
        </item>
       </widget>
      </item>
-     <item row="0" column="0">
-      <widget class="Gui::ElideLabel" name="labelHeadType">
+     <item row="4" column="0">
+      <widget class="Gui::ElideLabel" name="labelThreadClass">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="layoutDirection">
-        <enum>Qt::LayoutDirection::RightToLeft</enum>
-       </property>
        <property name="text">
-        <string>Head Type</string>
+        <string>Class</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QComboBox" name="HoleCutType">
+     <item row="4" column="1">
+      <widget class="QComboBox" name="ThreadClass">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -101,8 +175,73 @@
         </sizepolicy>
        </property>
        <property name="toolTip">
-        <string>Cut type for screw heads</string>
+        <string>Tolerance class for threaded holes according to hole profile</string>
        </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="Threaded">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Whether the hole gets a thread</string>
+     </property>
+     <property name="text">
+      <string>Threaded</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="threadFitLayout" columnstretch="2,4">
+     <property name="topMargin">
+      <number>10</number>
+     </property>
+     <item row="0" column="0">
+      <widget class="Gui::ElideLabel" name="labelThreadClearance">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Clearance</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="ThreadFit">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Hole clearance
+Only available for holes without thread</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Standard</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Close</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Wide</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>
@@ -585,141 +724,6 @@ over 90: larger hole radius at the bottom</string>
     </layout>
    </item>
    <item>
-    <layout class="QGridLayout" name="profileLayout" rowstretch="0,0,0" columnstretch="2,5">
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <item row="2" column="1">
-      <widget class="QComboBox" name="ThreadSize">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="Gui::ElideLabel" name="labelSize">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Size</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QComboBox" name="ThreadType">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="Gui::ElideLabel" name="labelThreadType">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Standard</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="Threaded">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="toolTip">
-      <string>Whether the hole gets a thread</string>
-     </property>
-     <property name="text">
-      <string>Threaded</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QWidget" name="ClearanceWidget" native="true">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="2,5">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="Gui::ElideLabel" name="labelThreadClearance">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Clearance</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="ThreadFit">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="toolTip">
-         <string>Hole clearance
-Only available for holes without thread</string>
-        </property>
-        <item>
-         <property name="text">
-          <string>Standard</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Close</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Wide</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <widget class="QGroupBox" name="ThreadGroupBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
@@ -752,39 +756,6 @@ Only available for holes without thread</string>
       <property name="bottomMargin">
        <number>6</number>
       </property>
-      <item>
-       <layout class="QGridLayout" name="classLayout" columnstretch="2,5">
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="ThreadClass">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="toolTip">
-           <string>Tolerance class for threaded holes according to hole profile</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="Gui::ElideLabel" name="labelThreadClass">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Class</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
         <property name="topMargin">
