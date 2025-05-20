@@ -48,6 +48,7 @@ class PartDesignExport Hole : public ProfileBased
 public:
     Hole();
 
+    // NOLINTBEGIN
     App::PropertyBool           Threaded;
     App::PropertyBool           ModelThread;
     App::PropertyLength         ThreadPitch;
@@ -74,6 +75,8 @@ public:
     App::PropertyAngle          TaperedAngle;
     App::PropertyBool           UseCustomThreadClearance;
     App::PropertyLength         CustomThreadClearance;
+    App::PropertyEnumeration    BaseProfileType;
+    // NOLINTEND
 
     /** @name methods override feature */
     //@{
@@ -113,9 +116,9 @@ public:
 
 protected:
     void onChanged(const App::Property* prop) override;
-    static const App::PropertyAngle::Constraints floatAngle;
 
 private:
+    static const App::PropertyAngle::Constraints floatAngle;
     static const char* DepthTypeEnums[];
     static const char* ThreadDepthTypeEnums[];
     static const char* ThreadTypeEnums[];
@@ -125,6 +128,7 @@ private:
     static const char* ClearanceOtherEnums[];
     static const char* DrillPointEnums[];
     static const char* ThreadDirectionEnums[];
+    static const char* BaseProfileTypeEnums[];
 
     /* "None" thread profile */
     static const char* HoleCutType_None_Enums[];

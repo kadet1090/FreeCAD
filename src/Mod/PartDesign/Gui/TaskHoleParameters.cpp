@@ -279,6 +279,8 @@ void TaskHoleParameters::setThreadValues(PartDesign::Hole* hole)
     ui->ThreadDepthDimensionWidget->setVisible(
         std::string(hole->ThreadDepthType.getValueAsString()) == "Dimension"
     );
+
+    ui->BaseProfileType->setCurrentIndex(hole->BaseProfileType.getValue());
 }
 
 void TaskHoleParameters::bindProperties(PartDesign::Hole* hole)
@@ -351,6 +353,8 @@ void TaskHoleParameters::setupConnections()
             this, &TaskHoleParameters::threadDepthTypeChanged);
     connect(ui->ThreadDepth, qOverload<double>(&Gui::QuantitySpinBox::valueChanged),
             this, &TaskHoleParameters::threadDepthChanged);
+    connect(ui->BaseProfileType, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &TaskHoleParameters::baseProfileTypeChanged);
     // clang-format on
 }
 
@@ -500,6 +504,14 @@ void TaskHoleParameters::holeCutTypeChanged(int index)
         );
     }
     setCutDiagram();
+}
+
+void TaskHoleParameters::baseProfileTypeChanged(int index)
+{
+    if (auto hole = getObject<PartDesign::Hole>()) {
+        hole->BaseProfileType.setValue(index);
+        recomputeFeature();
+    }
 }
 
 void TaskHoleParameters::setCutDiagram()
@@ -1025,6 +1037,10 @@ void TaskHoleParameters::changedObject(const App::Document& doc, const App::Prop
         ui->ThreadDepth->setEnabled(true);
         updateSpinBox(ui->ThreadDepth, hole->ThreadDepth.getValue());
     }
+    else if (&Prop == &hole->BaseProfileType) {
+        ui->BaseProfileType->setEnabled(true);
+        updateComboBox(ui->BaseProfileType, static_cast<int>(hole->BaseProfileType.getValue()));
+    }
 }
 // NOLINTEND(readability-*)
 
@@ -1167,6 +1183,11 @@ double TaskHoleParameters::getThreadDepth() const
     return ui->ThreadDepth->value().getValue();
 }
 
+long TaskHoleParameters::getBaseProfileType() const
+{
+    return ui->BaseProfileType->currentIndex();
+}
+
 // NOLINTBEGIN(readability-*)
 void TaskHoleParameters::apply()
 {
@@ -1234,6 +1255,9 @@ void TaskHoleParameters::apply()
     }
     if (!hole->Tapered.isReadOnly()) {
         Gui::cmdAppObject(hole, output() << "Tapered = " << getTapered());
+    }
+    if (!hole->BaseProfileType.isReadOnly()) {
+        Gui::cmdAppObject(hole, output() << "BaseProfileType = " << getBaseProfileType());
     }
 }
 // NOLINTEND(readability-*)

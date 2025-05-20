@@ -33,13 +33,37 @@
     <number>6</number>
    </property>
    <item>
-
-
     <layout class="QGridLayout" name="headLayout" columnstretch="2,4">
      <property name="topMargin">
       <number>10</number>
      </property>
      <item row="0" column="0">
+      <widget class="Gui::ElideLabel" name="labelProfileType">
+       <property name="text">
+        <string>Base profile types</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="BaseProfileType">
+       <item>
+        <property name="text">
+         <string>Circles</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Points</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Circles or points</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="1" column="0">
       <widget class="Gui::ElideLabel" name="labelThreadType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
@@ -52,7 +76,7 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="1" column="1">
       <widget class="QComboBox" name="ThreadType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
@@ -62,7 +86,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
+     <item row="2" column="0">
       <widget class="Gui::ElideLabel" name="labelSize">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
@@ -75,7 +99,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
+     <item row="2" column="1">
       <widget class="QComboBox" name="ThreadSize">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
@@ -85,7 +109,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
+     <item row="3" column="0">
       <widget class="Gui::ElideLabel" name="labelHeadType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
@@ -101,7 +125,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="3" column="1">
       <widget class="QComboBox" name="HoleCutType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
@@ -114,7 +138,7 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
+     <item row="4" column="0">
       <widget class="Gui::ElideLabel" name="labelDepthType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
@@ -130,7 +154,7 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
+     <item row="4" column="1">
       <widget class="QComboBox" name="DepthType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
@@ -153,7 +177,7 @@
        </item>
       </widget>
      </item>
-     <item row="4" column="0">
+     <item row="5" column="0">
       <widget class="Gui::ElideLabel" name="labelThreadClass">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -166,7 +190,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="5" column="1">
       <widget class="QComboBox" name="ThreadClass">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
