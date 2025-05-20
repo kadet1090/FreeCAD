@@ -194,6 +194,7 @@ ViewProviderMeasureBase::ViewProviderMeasureBase()
     TextBackgroundColor.touch();
     FontSize.touch();
     LineColor.touch();
+    fieldFontSize.setValue(FontSize.getValue());
 }
 
 ViewProviderMeasureBase::~ViewProviderMeasureBase()
@@ -243,6 +244,7 @@ void ViewProviderMeasureBase::onChanged(const App::Property* prop)
     }
     else if (prop == &FontSize) {
         pLabel->size = FontSize.getValue();
+        fieldFontSize.setValue(FontSize.getValue());
     }
     ViewProviderDocumentObject::onChanged(prop);
 }
