@@ -635,6 +635,27 @@ QAction* WorkbenchGroup::getOrCreateAction(const QString& wbName)
     return actionByWorkbenchName[wbName];
 }
 
+QAction* WorkbenchGroup::createAction(const QString& wbName, int id)
+{
+    QString name = Application::Instance->workbenchMenuText(wbName);
+    QPixmap px = Application::Instance->workbenchIcon(wbName);
+    QString tip = Application::Instance->workbenchToolTip(wbName);
+
+    QAction* action = getOrCreateAction(wbName);
+
+    groupAction()->addAction(action);
+
+    action->setText(name);
+    action->setCheckable(true);
+    action->setData(QVariant(id)); // set the index
+    action->setObjectName(wbName);
+    action->setIcon(px);
+    action->setToolTip(tip);
+    action->setStatusTip(tr("Select the '%1' workbench").arg(name));
+
+    return action;
+}
+
 void WorkbenchGroup::addTo(QWidget *widget)
 {
     if (widget->inherits("QToolBar")) {
@@ -680,21 +701,7 @@ void WorkbenchGroup::refreshWorkbenchList()
     // Create action list of enabled wb
     int index = 0;
     for (const auto& wbName : enabledWbNames) {
-        QString name = Application::Instance->workbenchMenuText(wbName);
-        QPixmap px = Application::Instance->workbenchIcon(wbName);
-        QString tip = Application::Instance->workbenchToolTip(wbName);
-
-        QAction* action = getOrCreateAction(wbName);
-        
-        groupAction()->addAction(action);
-
-        action->setText(name);
-        action->setCheckable(true);
-        action->setData(QVariant(index)); // set the index
-        action->setObjectName(wbName);
-        action->setIcon(px);
-        action->setToolTip(tip);
-        action->setStatusTip(tr("Select the '%1' workbench").arg(name));
+        QAction* action = createAction(wbName, index);
         if (index < 9) {
             action->setShortcut(QKeySequence(QStringLiteral("W,%1").arg(index + 1)));
         }
@@ -708,21 +715,7 @@ void WorkbenchGroup::refreshWorkbenchList()
     // Also create action list of disabled wbs
     QStringList disabledWbNames = DlgSettingsWorkbenchesImp::getDisabledWorkbenches();
     for (const auto& wbName : disabledWbNames) {
-        QString name = Application::Instance->workbenchMenuText(wbName);
-        QPixmap px = Application::Instance->workbenchIcon(wbName);
-        QString tip = Application::Instance->workbenchToolTip(wbName);
-
-        QAction* action = getOrCreateAction(wbName);
-
-        groupAction()->addAction(action);
-
-        action->setText(name);
-        action->setCheckable(true);
-        action->setData(QVariant(index)); // set the index
-        action->setObjectName(wbName);
-        action->setIcon(px);
-        action->setToolTip(tip);
-        action->setStatusTip(tr("Select the '%1' workbench").arg(name));
+        QAction* action = createAction(wbName, index);
         if (wbName.toStdString() == activeWbName) {
             action->setChecked(true);
         }
