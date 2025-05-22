@@ -324,12 +324,34 @@ static bool inline checkSmallEdge(const Part::TopoShape &s) {
     return GCPnts_AbscissaPoint::Length(adapt, Precision::Confusion()) <= Precision::Confusion();
 }
 
-void SketchObject::buildShape() {
+void SketchObject::buildShape()
+{
     // We use the following instead to map element names
 
     std::vector<Part::TopoShape> shapes;
     std::vector<Part::TopoShape> vertices;
-    int geoId =0;
+    int geoId = 0;
+
+    auto addVertex = [this, &vertices](auto geo, auto indexedName) {
+        Part::TopoShape vertex(TopoDS::Vertex(geo->toShape()));
+        if (!vertex.hasElementMap()) {
+            vertex.resetElementMap(std::make_shared<Data::ElementMap>());
+        }
+
+        vertex.setElementName(Data::IndexedName::fromConst("Vertex", 1),
+                              Data::MappedName::fromRawData(
+                                  convertSubName(indexedName, false).c_str()),
+                              0L);
+        vertices.push_back(vertex);
+        vertices.back().copyElementMap(vertex, Part::OpCodes::Sketch);
+    };
+
+    auto addEdge = [this, &shapes](auto geo, auto indexedName) {
+        shapes.push_back(getEdge(geo, convertSubName(indexedName, false).c_str()));
+        if (checkSmallEdge(shapes.back())) {
+            FC_WARN("Edge too small: " << indexedName);
+        }
+    };
 
     // get the geometry after running the solver
     auto geometries = solvedSketch.extractGeometry();
@@ -339,21 +361,12 @@ void SketchObject::buildShape() {
             continue;
         }
         if (geo->isDerivedFrom<Part::GeomPoint>()) {
-            Part::TopoShape vertex(TopoDS::Vertex(geo->toShape()));
-            int idx = getVertexIndexGeoPos(geoId -1, Sketcher::PointPos::start);
-            std::string name = convertSubName(Data::IndexedName::fromConst("Vertex", idx+1), false);
-            if (!vertex.hasElementMap()) {
-                vertex.resetElementMap(std::make_shared<Data::ElementMap>());
-            }            vertex.setElementName(Data::IndexedName::fromConst("Vertex", 1),
-                                  Data::MappedName::fromRawData(name.c_str()),0L);
-            vertices.push_back(vertex);
-            vertices.back().copyElementMap(vertex, Part::OpCodes::Sketch);
+            int idx = getVertexIndexGeoPos(geoId - 1, Sketcher::PointPos::start);
+            auto indexedName = Data::IndexedName::fromConst("Vertex", idx+1);
+            addVertex(geo, indexedName);
         } else {
             auto indexedName = Data::IndexedName::fromConst("Edge", geoId);
-            shapes.push_back(getEdge(geo,convertSubName(indexedName, false).c_str()));
-            if (checkSmallEdge(shapes.back())) {
-                FC_WARN("Edge too small: " << indexedName);
-            }
+            addEdge(geo, indexedName);
         }
     }
 
@@ -370,19 +383,9 @@ void SketchObject::buildShape() {
         auto indexedName = Data::IndexedName::fromConst("ExternalEdge", i-1);
 
         if (geo->isDerivedFrom<Part::GeomPoint>()) {
-            Part::TopoShape vertex(TopoDS::Vertex(geo->toShape()));
-            if (!vertex.hasElementMap()) {
-                vertex.resetElementMap(std::make_shared<Data::ElementMap>());
-            }
-            vertex.setElementName(Data::IndexedName::fromConst("Vertex", 1),
-                                  Data::MappedName::fromRawData(convertSubName(indexedName, false).c_str()),0L);
-            vertices.push_back(vertex);
-            vertices.back().copyElementMap(vertex, Part::OpCodes::Sketch);
+            addVertex(geo, indexedName);
         } else {
-            shapes.push_back(getEdge(geo, convertSubName(indexedName, false).c_str()));
-            if (checkSmallEdge(shapes.back())) {
-                FC_WARN("Edge too small: " << indexedName);
-            }
+            addEdge(geo, indexedName);
         }
     }
 
