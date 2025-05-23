@@ -70,6 +70,7 @@ public:
     void newAssemblyFile() const;
     void newDraftFile() const;
     void newArchFile() const;
+    void recentFileAdded(const QString& filename);
 
     bool onHasMsg(const char* pMsg) const override;
 

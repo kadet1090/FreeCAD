@@ -1522,13 +1522,16 @@ void MainWindow::processMessages(const QList<QString> & msg)
         std::list<std::string> files;
         QString action = QStringLiteral("OpenFile:");
         for (const auto & it : msg) {
-            if (it.startsWith(action))
+            if (it.startsWith(action)) {
                 files.emplace_back(it.mid(action.size()).toStdString());
+            }
         }
         files = App::Application::processFiles(files);
         for (const auto & file : files) {
             QString filename = QString::fromUtf8(file.c_str(), file.size());
             FileDialog::setWorkingDirectory(filename);
+            QFileInfo fi(filename);
+            appendRecentFile(fi.absoluteFilePath());
         }
     }
     catch (const Base::SystemExitException&) {
@@ -1572,6 +1575,8 @@ void MainWindow::delayedStartup()
         for (const auto & file : files) {
             QString filename = QString::fromUtf8(file.c_str(), file.size());
             FileDialog::setWorkingDirectory(filename);
+            QFileInfo fi(filename);
+            appendRecentFile(fi.absoluteFilePath());
         }
     }
     catch (const Base::SystemExitException&) {
@@ -1621,6 +1626,7 @@ void MainWindow::appendRecentFile(const QString& filename)
         (QStringLiteral("recentFiles"));
     if (recent) {
         recent->appendFile(filename);
+        Q_EMIT recentFileAdded(filename);
     }
 }
 

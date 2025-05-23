@@ -555,6 +555,11 @@ void StartView::changeEvent(QEvent* event)
     Gui::MDIView::changeEvent(event);
 }
 
+void StartView::recentFileAdded(const QString& filename)
+{
+    _recentFilesModel.recentFileAdded(filename);
+}
+
 void StartView::retranslateUi()
 {
     QString title = QCoreApplication::translate("Workbench", "Start");

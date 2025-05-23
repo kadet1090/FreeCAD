@@ -357,6 +357,7 @@ Q_SIGNALS:
     void windowStateChanged(QWidget*);
     void workbenchActivated(const QString&);
     void mainWindowClosed();
+    void recentFileAdded(const QString& filename);
 
 private:
     /// some kind of singleton
