@@ -48,6 +48,7 @@ DemoMode::DemoMode(QWidget* /*parent*/, Qt::WindowFlags fl)
     , viewAxis(0, 0, -1)
     , ui(new Ui_DemoMode)
 {
+    // NOLINTBEGIN
     // create widgets
     ui->setupUi(this);
     setupConnections();
@@ -62,6 +63,7 @@ DemoMode::DemoMode(QWidget* /*parent*/, Qt::WindowFlags fl)
     showHideTimer = new QTimer(this);
     showHideTimer->setInterval(5000);
     connect(showHideTimer, &QTimer::timeout, this, &DemoMode::hide);
+    // NOLINTEND
 }
 
 /** Destroys the object and frees any allocated resources */
