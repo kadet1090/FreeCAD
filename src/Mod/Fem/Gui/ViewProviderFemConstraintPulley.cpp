@@ -30,6 +30,7 @@
 #include <Precision.hxx>
 #endif
 
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 #include "Gui/Control.h"
 #include "FemGuiTools.h"
@@ -67,6 +68,8 @@ bool ViewProviderFemConstraintPulley::setEdit(int ModNum)
 
 void ViewProviderFemConstraintPulley::updateData(const App::Property* prop)
 {
+    using Base::numbers::pi;
+
     // Gets called whenever a property of the attached object changes
     Fem::ConstraintPulley* pcConstraint = this->getObject<Fem::ConstraintPulley>();
 
@@ -107,9 +110,9 @@ void ViewProviderFemConstraintPulley::updateData(const App::Property* prop)
                                               0,
                                               dia / 2 * cos(forceAngle + beltAngle)),
                                       SbRotation(SbVec3f(0, 1, 0),
-                                                 SbVec3f(sin(forceAngle + beltAngle + M_PI_2),
+                                                 SbVec3f(sin(forceAngle + beltAngle + pi / 2),
                                                          0,
-                                                         cos(forceAngle + beltAngle + M_PI_2))));
+                                                         cos(forceAngle + beltAngle + pi / 2))));
             GuiTools::createPlacement(sep, SbVec3f(0, dia / 8 + dia / 2 * rat1, 0), SbRotation());
             sep->addChild(GuiTools::createArrow(dia / 8 + dia / 2 * rat1, dia / 8));
             pShapeSep->addChild(sep);  // child 3
@@ -119,9 +122,9 @@ void ViewProviderFemConstraintPulley::updateData(const App::Property* prop)
                                               0,
                                               -dia / 2 * cos(forceAngle - beltAngle)),
                                       SbRotation(SbVec3f(0, 1, 0),
-                                                 SbVec3f(-sin(forceAngle - beltAngle - M_PI_2),
+                                                 SbVec3f(-sin(forceAngle - beltAngle - pi / 2),
                                                          0,
-                                                         -cos(forceAngle - beltAngle - M_PI_2))));
+                                                         -cos(forceAngle - beltAngle - pi / 2))));
             GuiTools::createPlacement(sep, SbVec3f(0, dia / 8 + dia / 2 * rat2, 0), SbRotation());
             sep->addChild(GuiTools::createArrow(dia / 8 + dia / 2 * rat2, dia / 8));
             pShapeSep->addChild(sep);  // child 4
@@ -154,9 +157,9 @@ void ViewProviderFemConstraintPulley::updateData(const App::Property* prop)
                                               0,
                                               dia / 2 * cos(forceAngle + beltAngle)),
                                       SbRotation(SbVec3f(0, 1, 0),
-                                                 SbVec3f(sin(forceAngle + beltAngle + M_PI_2),
+                                                 SbVec3f(sin(forceAngle + beltAngle + pi / 2),
                                                          0,
-                                                         cos(forceAngle + beltAngle + M_PI_2))));
+                                                         cos(forceAngle + beltAngle + pi / 2))));
             GuiTools::updatePlacement(sep,
                                       2,
                                       SbVec3f(0, dia / 8 + dia / 2 * rat1, 0),
@@ -170,9 +173,9 @@ void ViewProviderFemConstraintPulley::updateData(const App::Property* prop)
                                               0,
                                               -dia / 2 * cos(forceAngle - beltAngle)),
                                       SbRotation(SbVec3f(0, 1, 0),
-                                                 SbVec3f(-sin(forceAngle - beltAngle - M_PI_2),
+                                                 SbVec3f(-sin(forceAngle - beltAngle - pi / 2),
                                                          0,
-                                                         -cos(forceAngle - beltAngle - M_PI_2))));
+                                                         -cos(forceAngle - beltAngle - pi / 2))));
             GuiTools::updatePlacement(sep,
                                       2,
                                       SbVec3f(0, dia / 8 + dia / 2 * rat2, 0),
@@ -198,9 +201,9 @@ void ViewProviderFemConstraintPulley::updateData(const App::Property* prop)
                                               0,
                                               dia / 2 * cos(forceAngle + beltAngle)),
                                       SbRotation(SbVec3f(0, 1, 0),
-                                                 SbVec3f(sin(forceAngle + beltAngle + M_PI_2),
+                                                 SbVec3f(sin(forceAngle + beltAngle + pi / 2),
                                                          0,
-                                                         cos(forceAngle + beltAngle + M_PI_2))));
+                                                         cos(forceAngle + beltAngle + pi / 2))));
             sep = static_cast<SoSeparator*>(pShapeSep->getChild(4));
             GuiTools::updatePlacement(sep,
                                       0,
@@ -208,9 +211,9 @@ void ViewProviderFemConstraintPulley::updateData(const App::Property* prop)
                                               0,
                                               -dia / 2 * cos(forceAngle - beltAngle)),
                                       SbRotation(SbVec3f(0, 1, 0),
-                                                 SbVec3f(-sin(forceAngle - beltAngle - M_PI_2),
+                                                 SbVec3f(-sin(forceAngle - beltAngle - pi / 2),
                                                          0,
-                                                         -cos(forceAngle - beltAngle - M_PI_2))));
+                                                         -cos(forceAngle - beltAngle - pi / 2))));
         }
     }
     else if ((prop == &pcConstraint->BeltForce1) || (prop == &pcConstraint->BeltForce2)) {
