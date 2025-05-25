@@ -26,6 +26,7 @@
 #include <math.h>
 #endif
 
+#include <Base/Numbers.h>
 #include <Base/Vector3D.h>
 #include <Base/Tools.h>
 
@@ -253,6 +254,8 @@ void Voronoi::colorTwins(Voronoi::color_type color)
 
 double Voronoi::diagram_type::angleOfSegment(int i, Voronoi::diagram_type::angle_map_t* angle) const
 {
+    using Base::numbers::pi;
+
     Voronoi::diagram_type::angle_map_t::const_iterator a =
         angle ? angle->find(i) : Voronoi::diagram_type::angle_map_t::const_iterator();
     if (!angle || a == angle->end()) {
@@ -261,10 +264,10 @@ double Voronoi::diagram_type::angleOfSegment(int i, Voronoi::diagram_type::angle
         double ang = 0;
         if (p0.x() == p1.x()) {
             if (p0.y() < p1.y()) {
-                ang = M_PI_2;
+                ang = pi/2;
             }
             else {
-                ang = -M_PI_2;
+                ang = -pi/2;
             }
         }
         else {
@@ -293,6 +296,8 @@ bool Voronoi::diagram_type::segmentsAreConnected(int i, int j) const
 
 void Voronoi::colorColinear(Voronoi::color_type color, double degree)
 {
+    using Base::numbers::pi;
+
     double rad = Base::toRadians(degree);
 
     Voronoi::diagram_type::angle_map_t angle;
@@ -307,11 +312,11 @@ void Voronoi::colorColinear(Voronoi::color_type color, double degree)
             double a0 = vd->angleOfSegment(i0, &angle);
             double a1 = vd->angleOfSegment(i1, &angle);
             double a = a0 - a1;
-            if (a > M_PI_2) {
-                a -= M_PI;
+            if (a > pi/2) {
+                a -= pi;
             }
-            else if (a < -M_PI_2) {
-                a += M_PI;
+            else if (a < -pi/2) {
+                a += pi;
             }
             if (fabs(a) < rad) {
                 it->color(color);

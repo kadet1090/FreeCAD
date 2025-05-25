@@ -24,6 +24,7 @@
 #include <vector>
 
 #include <App/Application.h>
+#include <Base/Numbers.h>
 #include <Base/Parameter.h>
 #include <Base/Tools.h>
 
@@ -31,14 +32,6 @@
 
 
 #define ARC_MIN_SEGMENTS 20.0  // minimum # segments to interpolate an arc
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846 /* pi */
-#endif
-
-#ifndef M_PI_2
-#define M_PI_2 1.57079632679489661923 /* pi/2 */
-#endif
 
 
 namespace Path
@@ -258,16 +251,16 @@ void PathSegmentWalker::walk(PathSegmentVisitor& cb, const Base::Vector3d& start
             Base::Vector3d anorm = (last0 - center0) % (next0 - center0);
             if (anorm.*pz < 0) {
                 if (name == "G3" || name == "G03") {
-                    angle = M_PI * 2 - angle;
+                    angle = Base::numbers::pi * 2 - angle;
                 }
             }
             else if (anorm.*pz > 0) {
                 if (name == "G2" || name == "G02") {
-                    angle = M_PI * 2 - angle;
+                    angle = Base::numbers::pi * 2 - angle;
                 }
             }
             else if (angle == 0) {
-                angle = M_PI * 2;
+                angle = Base::numbers::pi * 2;
             }
 
             double amax = std::max(fmod(fabs(a - A), 360),

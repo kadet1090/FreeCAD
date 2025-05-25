@@ -72,6 +72,7 @@
 #include <App/Application.h>
 #include <App/Document.h>
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 #include <Mod/Part/App/CrossSection.h>
 #include <Mod/Part/App/FaceMakerBullseye.h>
@@ -453,7 +454,7 @@ void Area::addWire(CArea& area,
                 if (reversed) {
                     type = -type;
                 }
-                if (fabs(first - last) > M_PI) {
+                if (fabs(first - last) > Base::numbers::pi) {
                     // Split arc(circle) larger than half circle. Because gcode
                     // can't handle full circle?
                     gp_Pnt mid = curve.Value((last - first) * 0.5 + first);
@@ -4156,7 +4157,7 @@ void Area::toPath(Toolpath& path,
                             }
                         }
 
-                        if (fabs(first - last) > M_PI) {
+                        if (fabs(first - last) > Base::numbers::pi) {
                             // Split arc(circle) larger than half circle.
                             gp_Pnt mid = curve.Value((last - first) * 0.5 + first);
                             addGArc(verbose,
