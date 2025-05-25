@@ -4,6 +4,7 @@
 #include <App/Document.h>
 #include <App/Expression.h>
 #include <App/ObjectIdentifier.h>
+#include <Base/Numbers.h>
 #include <Mod/Sketcher/App/GeoEnum.h>
 #include <Mod/Sketcher/App/SketchObject.h>
 #include <src/App/InitApplication.h>
@@ -55,9 +56,10 @@ void setupCircle(Part::GeomCircle& circle)
 
 void setupArcOfCircle(Part::GeomArcOfCircle& arcOfCircle)
 {
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(1.0, 2.0, 0.0);
     double radius = 3.0;
-    double startParam = M_PI / 3, endParam = M_PI * 1.5;
+    double startParam = pi / 3, endParam = pi * 1.5;
     arcOfCircle.setCenter(coordsCenter);
     arcOfCircle.setRadius(radius);
     arcOfCircle.setRange(startParam, endParam, true);
@@ -75,10 +77,11 @@ void setupEllipse(Part::GeomEllipse& ellipse)
 
 void setupArcOfHyperbola(Part::GeomArcOfHyperbola& arcOfHyperbola)
 {
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(1.0, 2.0, 0.0);
     double majorRadius = 4.0;
     double minorRadius = 3.0;
-    double startParam = M_PI / 3, endParam = M_PI * 1.5;
+    double startParam = pi / 3, endParam = pi * 1.5;
     arcOfHyperbola.setCenter(coordsCenter);
     arcOfHyperbola.setMajorRadius(majorRadius);
     arcOfHyperbola.setMinorRadius(minorRadius);
@@ -87,9 +90,10 @@ void setupArcOfHyperbola(Part::GeomArcOfHyperbola& arcOfHyperbola)
 
 void setupArcOfParabola(Part::GeomArcOfParabola& aop)
 {
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(1.0, 2.0, 0.0);
     double focal = 3.0;
-    double startParam = -M_PI * 1.5, endParam = M_PI * 1.5;
+    double startParam = -pi * 1.5, endParam = pi * 1.5;
     aop.setCenter(coordsCenter);
     aop.setFocal(focal);
     aop.setRange(startParam, endParam, true);

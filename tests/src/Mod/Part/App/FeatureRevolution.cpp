@@ -6,6 +6,7 @@
 #include <src/App/InitApplication.h>
 
 #include "Base/Interpreter.h"
+#include "Base/Numbers.h"
 
 #include "BRepBuilderAPI_MakeEdge.hxx"
 
@@ -46,7 +47,8 @@ protected:
 TEST_F(FeatureRevolutionTest, testExecute)
 {
     // Arrange
-    double puckVolume = len * len * M_PI * wid;  // Area is PIr2; apply height
+    using Base::numbers::pi;
+    double puckVolume = len * len * pi * wid;  // Area is PIr2; apply height
     // Act
     _revolution->execute();
     Part::TopoShape ts = _revolution->Shape.getValue();
@@ -60,10 +62,11 @@ TEST_F(FeatureRevolutionTest, testExecute)
 TEST_F(FeatureRevolutionTest, testExecuteBase)
 {
     // Arrange
+    using Base::numbers::pi;
     double rad = len + 1.0;
     double rad2 = 1.0;
-    double outerPuckVolume = rad * rad * M_PI * wid;    // Area is PIr2; apply height
-    double innerPuckVolume = rad2 * rad2 * M_PI * wid;  // Area is PIr2; apply height
+    double outerPuckVolume = rad * rad * pi * wid;    // Area is PIr2; apply height
+    double innerPuckVolume = rad2 * rad2 * pi * wid;  // Area is PIr2; apply height
     _revolution->Base.setValue(Base::Vector3d(len + 1, 0, 0));
     // Act
     _revolution->execute();
@@ -79,7 +82,8 @@ TEST_F(FeatureRevolutionTest, testExecuteBase)
 TEST_F(FeatureRevolutionTest, testAxis)
 {
     // Arrange
-    double puckVolume = wid * wid * M_PI * len;  // Area is PIr2 times height
+    using Base::numbers::pi;
+    double puckVolume = wid * wid * pi * len;  // Area is PIr2 times height
     _revolution->Axis.setValue(Base::Vector3d(1, 0, 0));
     // Act
     _revolution->execute();
@@ -98,7 +102,7 @@ TEST_F(FeatureRevolutionTest, testAxisLink)
     auto edge = _doc->addObject<Part::Feature>("Edge");
     edge->Shape.setValue(e1);
     _revolution->AxisLink.setValue(edge);
-    // double puckVolume = wid * wid * M_PI * len;  // Area is PIr2; apply height
+    // double puckVolume = wid * wid * pi * len;  // Area is PIr2; apply height
     // Act
     _revolution->execute();
     Part::TopoShape ts = _revolution->Shape.getValue();
@@ -115,7 +119,8 @@ TEST_F(FeatureRevolutionTest, testAxisLink)
 TEST_F(FeatureRevolutionTest, testSymmetric)
 {
     // Arrange
-    double puckVolume = len * len * M_PI * wid;  // Area is PIr2 times height
+    using Base::numbers::pi;
+    double puckVolume = len * len * pi * wid;  // Area is PIr2 times height
     _revolution->Symmetric.setValue(true);
     // Act
     _revolution->execute();
@@ -130,8 +135,9 @@ TEST_F(FeatureRevolutionTest, testSymmetric)
 TEST_F(FeatureRevolutionTest, testAngle)
 {
     // Arrange
-    double puckVolume = len * len * M_PI * wid;  // Area is PIr2 times height
-    _revolution->Angle.setValue(90);             // NOLINT magic number
+    using Base::numbers::pi;
+    double puckVolume = len * len * pi * wid;  // Area is PIr2 times height
+    _revolution->Angle.setValue(90);           // NOLINT magic number
     // Act
     _revolution->execute();
     Part::TopoShape ts = _revolution->Shape.getValue();

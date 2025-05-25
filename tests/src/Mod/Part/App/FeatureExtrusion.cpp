@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include <cmath>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 #include "Mod/Part/App/FeatureExtrusion.h"
 #include <src/App/InitApplication.h>
@@ -303,6 +304,7 @@ TEST_F(FeatureExtrusionTest, testExecuteFaceMaker)
 TEST_F(FeatureExtrusionTest, testFaceWithHoles)
 {
     // Arrange
+    using Base::numbers::pi;
     float radius = 0.75;
     auto [face1, wire1, wire2] = PartTestHelpers::CreateFaceWithRoundHole(len, wid, radius);
     // face1 is the sum of the outside (wire1) and the internal hole (wire2).
@@ -320,8 +322,8 @@ TEST_F(FeatureExtrusionTest, testFaceWithHoles)
     double volume = PartTestHelpers::getVolume(ts.getShape());
     Base::BoundBox3d bb = ts.getBoundBox();
     // Assert
-    EXPECT_FLOAT_EQ(volume, len * wid * ext1 - radius * radius * M_PI * ext1);
+    EXPECT_FLOAT_EQ(volume, len * wid * ext1 - radius * radius * pi * ext1);
     EXPECT_TRUE(PartTestHelpers::boxesMatch(bb, Base::BoundBox3d(0, 0, 0, len, wid, ext1)));
-    EXPECT_FLOAT_EQ(PartTestHelpers::getArea(face1), len * wid + radius * radius * M_PI);
-    EXPECT_FLOAT_EQ(PartTestHelpers::getArea(face2), len * wid - radius * radius * M_PI);
+    EXPECT_FLOAT_EQ(PartTestHelpers::getArea(face1), len * wid + radius * radius * pi);
+    EXPECT_FLOAT_EQ(PartTestHelpers::getArea(face2), len * wid - radius * radius * pi);
 }

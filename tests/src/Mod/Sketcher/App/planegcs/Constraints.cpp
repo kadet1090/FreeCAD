@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include <Base/Numbers.h>
 #include "Mod/Sketcher/App/planegcs/GCS.h"
 #include "Mod/Sketcher/App/planegcs/Geo.h"
 #include "Mod/Sketcher/App/planegcs/Constraints.h"
@@ -41,6 +42,8 @@ private:
 
 TEST_F(ConstraintsTest, tangentBSplineAndArc)  // NOLINT
 {
+    using Base::numbers::pi;
+
     // Arrange
     // TODO: Add arc, B-spline, and point
     double pointX = 3.5, arcStartX = 5.0, arcEndX = 0.0, arcCenterX = 0.0;
@@ -54,8 +57,8 @@ TEST_F(ConstraintsTest, tangentBSplineAndArc)  // NOLINT
     arcEnd.y = &arcEndY;
     arcCenter.x = &arcCenterX;
     arcCenter.y = &arcCenterY;
-    double arcRadius = 5.0, arcStartAngle = 0.0, arcEndAngle = M_PI / 2;
-    double desiredAngle = M_PI;
+    double arcRadius = 5.0, arcStartAngle = 0.0, arcEndAngle = pi / 2;
+    double desiredAngle = pi;
     double bSplineStartX = 0.0, bSplineEndX = 16.0;
     double bSplineStartY = 10.0, bSplineEndY = -10.0;
     GCS::Point bSplineStart, bSplineEnd;

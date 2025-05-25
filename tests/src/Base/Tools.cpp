@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 #include <bitset>
 
@@ -37,17 +38,19 @@ TEST(Tools, TestSignum)
 
 TEST(Tools, TestRadian)
 {
+    using Base::numbers::pi;
     EXPECT_EQ(Base::toRadians<int>(90), 1);
-    EXPECT_DOUBLE_EQ(Base::toRadians<double>(180), M_PI);
-    EXPECT_DOUBLE_EQ(Base::toRadians<double>(90.0), M_PI / 2.0);
+    EXPECT_DOUBLE_EQ(Base::toRadians<double>(180), pi);
+    EXPECT_DOUBLE_EQ(Base::toRadians<double>(90.0), pi / 2.0);
     EXPECT_DOUBLE_EQ(Base::toRadians<double>(0.0), 0.0);
 }
 
 TEST(Tools, TestDegree)
 {
+    using Base::numbers::pi;
     EXPECT_EQ(Base::toDegrees<int>(3), 171);
-    EXPECT_DOUBLE_EQ(Base::toDegrees<double>(M_PI), 180.0);
-    EXPECT_DOUBLE_EQ(Base::toDegrees<double>(M_PI / 2.0), 90.0);
+    EXPECT_DOUBLE_EQ(Base::toDegrees<double>(pi), 180.0);
+    EXPECT_DOUBLE_EQ(Base::toDegrees<double>(pi / 2.0), 90.0);
     EXPECT_DOUBLE_EQ(Base::toDegrees<double>(0.0), 0.0);
 }
 

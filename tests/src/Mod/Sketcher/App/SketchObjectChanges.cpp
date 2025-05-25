@@ -8,6 +8,7 @@
 #include <App/Document.h>
 #include <App/Expression.h>
 #include <App/ObjectIdentifier.h>
+#include <Base/Numbers.h>
 #include <Mod/Sketcher/App/GeoEnum.h>
 #include <Mod/Sketcher/App/SketchObject.h>
 #include "SketcherTestHelpers.h"
@@ -1000,8 +1001,9 @@ TEST_F(SketchObjectTest, testJoinCurves)
 {
     // Arrange
     // Make two curves
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(0.0, 0.0, 0.0);
-    double radius = 3.0, startParam = M_PI / 2, endParam = M_PI;
+    double radius = 3.0, startParam = pi / 2, endParam = pi;
     Part::GeomArcOfCircle arcOfCircle;
     arcOfCircle.setCenter(coordsCenter);
     arcOfCircle.setRadius(radius);
@@ -1031,8 +1033,9 @@ TEST_F(SketchObjectTest, testJoinCurvesWhenTangent)
 {
     // Arrange
     // Make two curves
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(0.0, 0.0, 0.0);
-    double radius = 3.0, startParam = M_PI / 2, endParam = M_PI;
+    double radius = 3.0, startParam = pi / 2, endParam = pi;
     Part::GeomArcOfCircle arcOfCircle;
     arcOfCircle.setCenter(coordsCenter);
     arcOfCircle.setRadius(radius);

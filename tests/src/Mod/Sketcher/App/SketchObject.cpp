@@ -6,6 +6,7 @@
 #include <App/Document.h>
 #include <App/Expression.h>
 #include <App/ObjectIdentifier.h>
+#include <Base/Numbers.h>
 #include <Mod/Sketcher/App/GeoEnum.h>
 #include <Mod/Sketcher/App/SketchObject.h>
 #include "SketcherTestHelpers.h"
@@ -236,8 +237,9 @@ TEST_F(SketchObjectTest, testGetPointFromGeomEllipse)
 TEST_F(SketchObjectTest, testGetPointFromGeomArcOfCircle)
 {
     // Arrange
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(1.0, 2.0, 0.0);
-    double radius = 3.0, startParam = M_PI / 3, endParam = M_PI * 1.5;
+    double radius = 3.0, startParam = pi / 3, endParam = pi * 1.5;
     Part::GeomArcOfCircle arcOfCircle;
     arcOfCircle.setCenter(coordsCenter);
     arcOfCircle.setRadius(radius);
@@ -264,10 +266,11 @@ TEST_F(SketchObjectTest, testGetPointFromGeomArcOfCircle)
 TEST_F(SketchObjectTest, testGetPointFromGeomArcOfEllipse)
 {
     // Arrange
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(1.0, 2.0, 0.0);
     double majorRadius = 4.0;
     double minorRadius = 3.0;
-    double startParam = M_PI / 3, endParam = M_PI * 1.5;
+    double startParam = pi / 3, endParam = pi * 1.5;
     Part::GeomArcOfEllipse arcOfEllipse;
     arcOfEllipse.setCenter(coordsCenter);
     arcOfEllipse.setMajorRadius(majorRadius);
@@ -295,10 +298,11 @@ TEST_F(SketchObjectTest, testGetPointFromGeomArcOfEllipse)
 TEST_F(SketchObjectTest, testGetPointFromGeomArcOfHyperbola)
 {
     // Arrange
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(1.0, 2.0, 0.0);
     double majorRadius = 4.0;
     double minorRadius = 3.0;
-    double startParam = M_PI / 3, endParam = M_PI * 1.5;
+    double startParam = pi / 3, endParam = pi * 1.5;
     Part::GeomArcOfHyperbola arcOfHyperbola;
     arcOfHyperbola.setCenter(coordsCenter);
     arcOfHyperbola.setMajorRadius(majorRadius);
@@ -328,9 +332,10 @@ TEST_F(SketchObjectTest, testGetPointFromGeomArcOfHyperbola)
 TEST_F(SketchObjectTest, testGetPointFromGeomArcOfParabola)
 {
     // Arrange
+    using Base::numbers::pi;
     Base::Vector3d coordsCenter(1.0, 2.0, 0.0);
     double focal = 3.0;
-    double startParam = M_PI / 3, endParam = M_PI * 1.5;
+    double startParam = pi / 3, endParam = pi * 1.5;
     Part::GeomArcOfParabola arcOfParabola;
     arcOfParabola.setCenter(coordsCenter);
     arcOfParabola.setFocal(focal);
