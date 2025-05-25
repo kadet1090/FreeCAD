@@ -484,6 +484,7 @@ void NaviCubeImplementation::createCubeFaceTextures() {
 
 void NaviCubeImplementation::addButtonFace(PickId pickId, const SbVec3f& direction)
 {
+    static const float pi = boost::math::constants::pi<float>();
     if (m_Faces[pickId].vertexArray.size())
         m_Faces[pickId].vertexArray.clear();
     float scale = 0.005F;
@@ -546,7 +547,7 @@ void NaviCubeImplementation::addButtonFace(PickId pickId, const SbVec3f& directi
         case PickId::DotBackside: {
             int steps = 16;
             for (int i = 0; i < steps; i++) {
-                float angle = 2.0f * M_PI * ((float)i+0.5) / (float)steps;
+                float angle = 2.0f * pi * ((float)i+0.5) / (float)steps;
                 pointData.emplace_back(10. * cos(angle) + 87.);
                 pointData.emplace_back(10. * sin(angle) - 87.);
             }
@@ -749,6 +750,7 @@ void NaviCubeImplementation::handleResize() {
 
 void NaviCubeImplementation::drawNaviCube(bool pickMode, float opacity)
 {
+    static const float pi = boost::math::constants::pi<float>();
     if (!m_Prepared) {
         if (!m_View3DInventorViewer->viewport())
             return;
@@ -810,7 +812,7 @@ void NaviCubeImplementation::drawNaviCube(bool pickMode, float opacity)
         glOrtho(-2.1, 2.1, -2.1, 2.1, NEARVAL, FARVAL);
     }
     else {
-        const float dim = NEARVAL * float(tan(M_PI / 8.0)) * 1.1;
+        const float dim = NEARVAL * float(tan(pi / 8.0)) * 1.1;
         glFrustum(-dim, dim, -dim, dim, NEARVAL, FARVAL);
     }
     glMatrixMode(GL_MODELVIEW);
@@ -1020,22 +1022,22 @@ SbRotation NaviCubeImplementation::getNearestOrientation(PickId pickId) {
     // Find the angle to rotate to the nearest orientation
     if (m_Faces[pickId].type == ShapeId::Corner) {
         // 6 possible orientations for the corners
-        if (angle <= (M_PI / 6 + f)) {
+        if (angle <= (pi / 6 + f)) {
             angle = 0;
         }
-        else if (angle <= (M_PI_2 + f)) {
+        else if (angle <= (pi/2 + f)) {
             angle = pi1_3;
         }
-        else if (angle < (5 * M_PI / 6 - f)) {
+        else if (angle < (5 * pi / 6 - f)) {
             angle = pi2_3;
         }
-        else if (angle <= (M_PI + M_PI / 6 + f)) {
+        else if (angle <= (pi + pi / 6 + f)) {
             angle = pi;
         }
-        else if (angle < (M_PI + M_PI_2 - f)) {
+        else if (angle < (pi + pi/2 - f)) {
             angle = pi + pi1_3;
         }
-        else if (angle < (M_PI + 5 * M_PI / 6 - f)) {
+        else if (angle < (pi + 5 * pi / 6 - f)) {
             angle = pi + pi2_3;
         }
         else {
@@ -1044,16 +1046,16 @@ SbRotation NaviCubeImplementation::getNearestOrientation(PickId pickId) {
     }
     else {
         // 4 possible orientations for the main and edge faces
-        if (angle <= (M_PI_4 + f)) {
+        if (angle <= (pi/4 + f)) {
             angle = 0;
         }
-        else if (angle <= (3 * M_PI_4 + f)) {
+        else if (angle <= (3 * pi/4 + f)) {
             angle = pi1_2;
         }
-        else if (angle < (M_PI + M_PI_4 - f)) {
+        else if (angle < (pi + pi/4 - f)) {
             angle = pi;
         }
-        else if (angle < (M_PI + 3 * M_PI_4 - f)) {
+        else if (angle < (pi + 3 * pi/4 - f)) {
             angle = pi + pi1_2;
         }
         else {
@@ -1079,7 +1081,7 @@ bool NaviCubeImplementation::mouseReleased(short x, short y)
     } else {
         PickId pickId = pickFace(x, y);
         long step = Base::clamp(long(m_NaviStepByTurn), 4L, 36L);
-        float rotStepAngle = (2 * M_PI) / step;
+        float rotStepAngle = (2 * pi) / step;
 
         if (m_Faces[pickId].type == ShapeId::Main || m_Faces[pickId].type == ShapeId::Edge || m_Faces[pickId].type == ShapeId::Corner) {
             // Handle the cube faces

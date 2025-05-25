@@ -27,6 +27,7 @@
 #include <QWidget>
 
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 
 #include "SoTouchEvents.h"
@@ -112,7 +113,8 @@ SbBool SoGesturePinchEvent::isSoGesturePinchEvent(const SoEvent *ev) const
  */
 double SoGesturePinchEvent::unbranchAngle(double ang)
 {
-    return ang - 2.0 * M_PI * floor((ang + M_PI) / (2.0 * M_PI));
+    using Base::numbers::pi;
+    return ang - 2.0 * pi * floor((ang + pi) / (2.0 * pi));
 }
 
 

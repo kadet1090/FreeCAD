@@ -92,6 +92,7 @@
 #include <App/GeoFeatureGroupExtension.h>
 #include <Base/Console.h>
 #include <Base/FileInfo.h>
+#include <Base/Numbers.h>
 #include <Base/Sequencer.h>
 #include <Base/Tools.h>
 #include <Base/UnitsApi.h>
@@ -3224,7 +3225,8 @@ void View3DInventorViewer::setCameraType(SoType type)
         // heightAngle. Setting it to 45 deg also causes an issue with a too
         // close camera but we don't have this other ugly effect.
 
-        static_cast<SoPerspectiveCamera*>(cam)->heightAngle = (float)(M_PI / 4.0);  // NOLINT
+        using Base::numbers::pi;
+        static_cast<SoPerspectiveCamera*>(cam)->heightAngle = (float)(pi / 4.0);  // NOLINT
     }
 
     lightRotation->rotation.connectFrom(&cam->orientation);
@@ -3383,7 +3385,8 @@ void View3DInventorViewer::viewAll()
     SoCamera* cam = this->getSoRenderManager()->getCamera();
 
     if (cam && cam->getTypeId().isDerivedFrom(SoPerspectiveCamera::getClassTypeId())) {
-        static_cast<SoPerspectiveCamera*>(cam)->heightAngle = (float)(M_PI / 4.0);  // NOLINT
+        using Base::numbers::pi;
+        static_cast<SoPerspectiveCamera*>(cam)->heightAngle = (float)(pi / 4.0);  // NOLINT
     }
 
     if (isAnimationEnabled()) {
@@ -3804,7 +3807,7 @@ void View3DInventorViewer::drawAxisCross()
 
     const float NEARVAL = 0.1F;
     const float FARVAL = 10.0F;
-    const float dim = NEARVAL * float(tan(M_PI / 8.0)); // FOV is 45 deg (45/360 = 1/8)
+    const float dim = NEARVAL * float(tan(Base::numbers::pi / 8.0)); // FOV is 45 deg (45/360 = 1/8)
     glFrustum(-dim, dim, -dim, dim, NEARVAL, FARVAL);
 
 

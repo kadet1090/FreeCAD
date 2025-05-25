@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
+#include <Base/Numbers.h>
 #include "NavigationAnimation.h"
 #include <Inventor/nodes/SoCamera.h>
 
@@ -69,8 +70,8 @@ void FixedTimeAnimation::initialize()
     SbVec3f rotationAxisPost;
     float angle;
     SbRotation(navigation->getCamera()->orientation.getValue().inverse() * targetOrientation).getValue(rotationAxisPost, angle);
-    if (angle > M_PI) {
-        angle -= float(2 * M_PI);
+    if (angle > Base::numbers::pi) {
+        angle -= float(2 * Base::numbers::pi);
     }
 
     // Convert post-multiplication axis to a pre-multiplication axis
@@ -130,9 +131,9 @@ SpinningAnimation::SpinningAnimation(NavigationStyle* navigation, const SbVec3f&
     : NavigationAnimation(navigation)
     , rotationAxis(axis)
 {
-    setDuration((2 * M_PI / velocity) * 1000.0);
+    setDuration((2 * Base::numbers::pi / velocity) * 1000.0);
     setStartValue(0.0);
-    setEndValue(2 * M_PI);
+    setEndValue(2 * Base::numbers::pi);
     setLoopCount(-1);
 }
 

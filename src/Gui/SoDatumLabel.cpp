@@ -47,6 +47,7 @@
 # include <Inventor/misc/SoState.h>
 #endif // _PreComp_
 
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 
 #include <Gui/BitmapFactory.h>
@@ -81,11 +82,18 @@ void glDrawLine(const SbVec3f& p1, const SbVec3f& p2){
     glEnd();
 }
 
-void glDrawArc(const SbVec3f& center, float radius, float startAngle=0., float endAngle=2.0*M_PI, int countSegments=0){
+void glDrawArc(const SbVec3f& center,
+               float radius,
+               float startAngle=0.,
+               float endAngle=2.0*Base::numbers::pi,
+               int countSegments=0)
+{
+    using Base::numbers::pi;
+
     float range = endAngle - startAngle;
 
     if (countSegments == 0){
-        countSegments = std::max(6, abs(int(25.0 * range / M_PI)));
+        countSegments = std::max(6, abs(int(25.0 * range / pi)));
     }
 
     float segment = range / (countSegments-1);
@@ -493,6 +501,8 @@ private:
 
     std::vector<SbVec3f> computeArcLengthBBox() const
     {
+        using Base::numbers::pi;
+
         SbVec2s imgsize;
         int nc {};
         int srcw = 1;
@@ -550,11 +560,11 @@ private:
         float startangle = atan2f(vc1[1], vc1[0]);
         float endangle = atan2f(vc2[1], vc2[0]);
         if (endangle < startangle) {
-            endangle += 2. * M_PI;
+            endangle += 2. * pi;
         }
 
         SbVec3f textCenter;
-        if (endangle - startangle <= M_PI) {
+        if (endangle - startangle <= pi) {
             textCenter = ctr + vm * (length + imgHeight);
         } else {
             textCenter = ctr - vm * (length + 2. * imgHeight);
@@ -683,6 +693,7 @@ SbVec3f SoDatumLabel::getLabelTextCenterAngle(const SbVec3f& p0)
 
 SbVec3f SoDatumLabel::getLabelTextCenterArcLength(const SbVec3f& ctr, const SbVec3f& p1, const SbVec3f& p2)
 {
+    using Base::numbers::pi;
     float length = this->param1.getValue();
 
     // Angles calculations
@@ -693,7 +704,7 @@ SbVec3f SoDatumLabel::getLabelTextCenterArcLength(const SbVec3f& ctr, const SbVe
     float endangle = atan2f(vc2[1], vc2[0]);
 
     if (endangle < startangle) {
-        endangle += 2. * M_PI;
+        endangle += 2. * pi;
     }
 
     // Text location
@@ -701,7 +712,7 @@ SbVec3f SoDatumLabel::getLabelTextCenterArcLength(const SbVec3f& ctr, const SbVe
     vm.normalize();
 
     SbVec3f textCenter;
-    if (endangle - startangle <= M_PI) {
+    if (endangle - startangle <= pi) {
         textCenter = ctr + vm * (length + this->imgHeight);
     } else {
         textCenter = ctr - vm * (length + 2. * this->imgHeight);
@@ -1165,6 +1176,8 @@ void SoDatumLabel::getDimension(float scale, int& srcw, int& srch)
 
 void SoDatumLabel::drawDistance(const SbVec3f* points, float scale, int srch, float& angle, SbVec3f& textOffset)
 {
+    using Base::numbers::pi;
+
     float length = this->param1.getValue();
     float length2 = this->param2.getValue();
 
@@ -1196,10 +1209,10 @@ void SoDatumLabel::drawDistance(const SbVec3f* points, float scale, int srch, fl
 
     // Get magnitude of angle between horizontal
     angle = atan2f(dir[1],dir[0]);
-    if (angle > M_PI_2+M_PI/12) {
-        angle -= (float)M_PI;
-    } else if (angle <= -M_PI_2+M_PI/12) {
-        angle += (float)M_PI;
+    if (angle > pi/2+pi/12) {
+        angle -= (float)pi;
+    } else if (angle <= -pi/2+pi/12) {
+        angle += (float)pi;
     }
 
     textOffset = midpos + normal * length + dir * length2;
@@ -1289,13 +1302,15 @@ void SoDatumLabel::drawDistance(const SbVec3f* points, float scale, int srch, fl
 
 void SoDatumLabel::drawDistance(const SbVec3f* points)
 {
+    using Base::numbers::pi;
+
     // Draw arc helpers if needed
     float range1 = this->param4.getValue();
     if (range1 != 0.0) {
         float startangle1 = this->param3.getValue();
         float radius1 = this->param5.getValue();
         SbVec3f center = points[2];
-        int countSegments = std::max(6, abs(int(50.0 * range1 / (2 * M_PI))));
+        int countSegments = std::max(6, abs(int(50.0 * range1 / (2 * pi))));
         double segment = range1 / (countSegments - 1);
 
         glBegin(GL_LINE_STRIP);
@@ -1311,7 +1326,7 @@ void SoDatumLabel::drawDistance(const SbVec3f* points)
         float startangle2 = this->param6.getValue();
         float radius2 = this->param8.getValue();
         SbVec3f center = points[3];
-        int countSegments = std::max(6, abs(int(50.0 * range2 / (2 * M_PI))));
+        int countSegments = std::max(6, abs(int(50.0 * range2 / (2 * pi))));
         double segment = range2 / (countSegments - 1);
 
         glBegin(GL_LINE_STRIP);
@@ -1326,6 +1341,8 @@ void SoDatumLabel::drawDistance(const SbVec3f* points)
 
 void SoDatumLabel::drawRadiusOrDiameter(const SbVec3f* points, float& angle, SbVec3f& textOffset)
 {
+    using Base::numbers::pi;
+
     // Get the Points
     SbVec3f p1 = points[0];
     SbVec3f p2 = points[1];
@@ -1346,10 +1363,10 @@ void SoDatumLabel::drawRadiusOrDiameter(const SbVec3f* points, float& angle, SbV
 
     // Get magnitude of angle between horizontal
     angle = atan2f(dir[1],dir[0]);
-    if (angle > M_PI_2+M_PI/12) {
-        angle -= (float)M_PI;
-    } else if (angle <= -M_PI_2+M_PI/12) {
-        angle += (float)M_PI;
+    if (angle > pi/2+pi/12) {
+        angle -= (float)pi;
+    } else if (angle <= -pi/2+pi/12) {
+        angle += (float)pi;
     }
 
     textOffset = pos;
@@ -1405,7 +1422,7 @@ void SoDatumLabel::drawRadiusOrDiameter(const SbVec3f* points, float& angle, SbV
     float startangle = this->param3.getValue();
     float range = this->param4.getValue();
     if (range != 0.0) {
-        int countSegments = std::max(6, abs(int(50.0 * range / (2 * M_PI))));
+        int countSegments = std::max(6, abs(int(50.0 * range / (2 * pi))));
         double segment = range / (countSegments - 1);
 
         glBegin(GL_LINE_STRIP);
@@ -1525,6 +1542,8 @@ void SoDatumLabel::drawSymmetric(const SbVec3f* points)
 
 void SoDatumLabel::drawArcLength(const SbVec3f* points, float& angle, SbVec3f& textOffset)
 {
+    using Base::numbers::pi;
+
     SbVec3f ctr = points[0];
     SbVec3f p1 = points[1];
     SbVec3f p2 = points[2];
@@ -1539,7 +1558,7 @@ void SoDatumLabel::drawArcLength(const SbVec3f* points, float& angle, SbVec3f& t
     float startangle = atan2f(vc1[1], vc1[0]);
     float endangle = atan2f(vc2[1], vc2[0]);
     if (endangle < startangle) {
-        endangle += 2.0F * (float)M_PI;
+        endangle += 2.0F * (float)pi;
     }
 
     float range = endangle - startangle;
@@ -1551,10 +1570,10 @@ void SoDatumLabel::drawArcLength(const SbVec3f* points, float& angle, SbVec3f& t
     dir.normalize();
     // Get magnitude of angle between horizontal
     angle = atan2f(dir[1],dir[0]);
-    if (angle > M_PI_2+M_PI/12) {
-        angle -= (float)M_PI;
-    } else if (angle <= -M_PI_2+M_PI/12) {
-        angle += (float)M_PI;
+    if (angle > pi/2+pi/12) {
+        angle -= (float)pi;
+    } else if (angle <= -pi/2+pi/12) {
+        angle += (float)pi;
     }
        // Text location
     textOffset = getLabelTextCenterArcLength(ctr, p1, p2);
@@ -1570,7 +1589,7 @@ void SoDatumLabel::drawArcLength(const SbVec3f* points, float& angle, SbVec3f& t
     SbVec3f pnt4 = p2 + (length-radius) * vm;
 
         // Draw arc
-    if (range <= M_PI) {
+    if (range <= pi) {
         glDrawArc(ctr + (length-radius)*vm, radius, startangle, endangle);
     }
     else {

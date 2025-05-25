@@ -46,6 +46,7 @@
 #include <App/PropertyUnits.h>
 #include <Base/Interpreter.h>
 #include <Base/MatrixPy.h>
+#include <Base/Numbers.h>
 #include <Base/PlacementPy.h>
 #include <Base/QuantityPy.h>
 #include <Base/RotationPy.h>
@@ -68,6 +69,7 @@ FC_LOG_LEVEL_INIT("Expression", true, true)
 #ifndef M_PI
 #define M_PI       3.14159265358979323846
 #endif
+
 #ifndef M_E
 #define M_E        2.71828182845904523536
 #endif
@@ -2147,6 +2149,8 @@ Base::Vector3d FunctionExpression::extractVectorArgument(
 
 Py::Object FunctionExpression::evaluate(const Expression *expr, int f, const std::vector<Expression*> &args)
 {
+    using Base::numbers::pi;
+
     if(!expr || !expr->getOwner())
         _EXPR_THROW("Invalid owner.", expr);
 
@@ -2431,7 +2435,7 @@ Py::Object FunctionExpression::evaluate(const Expression *expr, int f, const std
         if (!v1.isDimensionless())
             _EXPR_THROW("Unit must be empty.", expr);
         unit = Unit::Angle;
-        scaler = 180.0 / M_PI;
+        scaler = 180.0 / pi;
         break;
     case EXP:
     case LOG:
@@ -2463,7 +2467,7 @@ Py::Object FunctionExpression::evaluate(const Expression *expr, int f, const std
         if (v1.getUnit() != v2.getUnit())
             _EXPR_THROW("Units must be equal.",expr);
         unit = Unit::Angle;
-        scaler = 180.0 / M_PI;
+        scaler = 180.0 / pi;
         break;
     case MOD:
         if (e2.isNone())

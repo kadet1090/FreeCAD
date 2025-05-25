@@ -31,6 +31,7 @@
 #include <Base/Tools.h>
 
 #include "Exception.h"
+#include "Numbers.h"
 #include "Quantity.h"
 #include "UnitsApi.h"
 
@@ -443,8 +444,8 @@ const Quantity Quantity::AngSecond(1.0 / 3600.0, Unit(0, 0, 0, 0, 0, 0, 0, 1)); 
 const Quantity
     Quantity::Degree(1.0,
                      Unit(0, 0, 0, 0, 0, 0, 0, 1));  // degree         (internal standard angle)
-const Quantity Quantity::Radian(180 / M_PI, Unit(0, 0, 0, 0, 0, 0, 0, 1));  // radian
-const Quantity Quantity::Gon(360.0 / 400.0, Unit(0, 0, 0, 0, 0, 0, 0, 1));  // gon
+const Quantity Quantity::Radian(180 / Base::numbers::pi, Unit(0, 0, 0, 0, 0, 0, 0, 1));  // radian
+const Quantity Quantity::Gon(360.0 / 400.0, Unit(0, 0, 0, 0, 0, 0, 0, 1));               // gon
 
 
 // === Parser & Scanner stuff ===============================================

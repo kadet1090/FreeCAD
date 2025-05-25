@@ -46,6 +46,7 @@
 #include <Base/Exception.h>
 #include <Base/GeometryPyCXX.h>
 #include <Base/Interpreter.h>
+#include <Base/Numbers.h>
 #include <Base/PlacementPy.h>
 #include <Base/PyWrapParseTupleAndKeywords.h>
 #include <Base/RotationPy.h>
@@ -658,7 +659,7 @@ Py::Object View3DInventorPy::viewRotateLeft()
       SbRotation rot = cam->orientation.getValue();
       SbVec3f vdir(0, 0, -1);
       rot.multVec(vdir, vdir);
-      SbRotation nrot(vdir, (float)M_PI/2);
+      SbRotation nrot(vdir, Base::numbers::pi_v<float>/2);
       cam->orientation.setValue(rot*nrot);
     }
     catch (const Base::Exception& e) {
@@ -681,7 +682,7 @@ Py::Object View3DInventorPy::viewRotateRight()
       SbRotation rot = cam->orientation.getValue();
       SbVec3f vdir(0, 0, -1);
       rot.multVec(vdir, vdir);
-      SbRotation nrot(vdir, (float)-M_PI/2);
+      SbRotation nrot(vdir, -Base::numbers::pi_v<float>/2);
       cam->orientation.setValue(rot*nrot);
     }
     catch (const Base::Exception& e) {

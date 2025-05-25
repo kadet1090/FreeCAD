@@ -48,6 +48,7 @@
 #include <App/Document.h>
 #include <App/PropertyStandard.h>
 #include <Base/Parameter.h>
+#include <Base/Tools.h>
 
 #include "ViewProviderAnnotation.h"
 #include "Application.h"
@@ -155,7 +156,7 @@ void ViewProviderAnnotation::onChanged(const App::Property* prop)
         }
     }
     else if (prop == &Rotation) {
-        pRotationXYZ->angle = (Rotation.getValue()/360)*(2*M_PI);
+        pRotationXYZ->angle = static_cast<float>(Base::toRadians(Rotation.getValue()));
     }
     else {
         ViewProviderDocumentObject::onChanged(prop);
