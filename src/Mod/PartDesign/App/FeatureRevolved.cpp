@@ -30,6 +30,7 @@
 #endif
 
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 
 #include "FeatureRevolved.h"
@@ -346,7 +347,7 @@ void Revolved::generateRevolution(TopoShape& revol,
             angleOffset = angle2 * -1.0;
         }
         else if (method == RevolMethod::ThroughAll) {
-            angleTotal = 2 * M_PI;
+            angleTotal = 2 * Base::numbers::pi;
         }
         else if (midplane) {
             // Rotate the face by half the angle to get Revolution symmetric to sketch plane

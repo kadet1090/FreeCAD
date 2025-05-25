@@ -46,6 +46,7 @@
 # include <Standard_Version.hxx>
 # include <Base/Axis.h>
 # include <Base/Exception.h>
+# include <Base/Numbers.h>
 # include <Base/Placement.h>
 # include <Base/Tools.h>
 
@@ -443,13 +444,13 @@ TopoDS_Shape Helix::generateHelixPath(double breakAtTurn)
     // because of the radius factor we used above, we must reverse after the
     // startOffset movement (that brings the path back to the desired position)
     if (reversed) {
-        mov.SetRotation(gp_Ax1(origo, dir_axis2), M_PI);
+        mov.SetRotation(gp_Ax1(origo, dir_axis2), Base::numbers::pi);
         TopLoc_Location loc(mov);
         path.Move(loc);
     }
 
     if (turned) {  // turn the helix so that the starting point aligns with the profile
-        mov.SetRotation(gp_Ax1(origo, dir_axis1), M_PI);
+        mov.SetRotation(gp_Ax1(origo, dir_axis1), Base::numbers::pi);
         TopLoc_Location loc(mov);
         path.Move(loc);
     }

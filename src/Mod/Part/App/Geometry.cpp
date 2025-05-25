@@ -110,6 +110,7 @@
 
 #include <Base/Console.h>
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <BRep_Tool.hxx>
@@ -2640,8 +2641,10 @@ GeomCurve* GeomCircle::createArc(double first, double last) const
 
 GeomBSplineCurve* GeomCircle::toNurbs(double first, double last) const
 {
+    using Base::numbers::pi;
+
     // for an arc of circle use the generic method
-    if (first != 0 || last != 2*M_PI) {
+    if (first != 0 || last != 2*pi) {
         return GeomConic::toNurbs(first, last);
     }
 
@@ -2675,8 +2678,8 @@ GeomBSplineCurve* GeomCircle::toNurbs(double first, double last) const
 
     TColStd_Array1OfReal knots(1, 3);
     knots(1) = 0;
-    knots(2) = M_PI;
-    knots(3) = 2*M_PI;
+    knots(2) = pi;
+    knots(3) = 2*pi;
 
     Handle(Geom_BSplineCurve) spline = new Geom_BSplineCurve(poles, weights,knots, mults, 3,
         Standard_False, Standard_True);
@@ -2906,10 +2909,11 @@ void GeomArcOfCircle::getRange(double& u, double& v, bool emulateCCWXY) const
             v = angleXU - u1;
         }
 
+        using Base::numbers::pi;
         if (v < u)
-            v += 2*M_PI;
-        if (v-u > 2*M_PI)
-            v -= 2*M_PI;
+            v += 2*pi;
+        if (v-u > 2*pi)
+            v -= 2*pi;
     }
 }
 
@@ -3087,7 +3091,7 @@ GeomCurve* GeomEllipse::createArc(double first, double last) const
 GeomBSplineCurve* GeomEllipse::toNurbs(double first, double last) const
 {
     // for an arc of ellipse use the generic method
-    if (first != 0 || last != 2*M_PI) {
+    if (first != 0 || last != 2*Base::numbers::pi) {
         return GeomConic::toNurbs(first, last);
     }
 
@@ -3459,6 +3463,8 @@ void GeomArcOfEllipse::setMajorAxisDir(Base::Vector3d newdir)
  */
 void GeomArcOfEllipse::getRange(double& u, double& v, bool emulateCCWXY) const
 {
+    using Base::numbers::pi;
+
     u = myCurve->FirstParameter();
     v = myCurve->LastParameter();
     if (emulateCCWXY) {
@@ -3466,9 +3472,9 @@ void GeomArcOfEllipse::getRange(double& u, double& v, bool emulateCCWXY) const
             std::swap(u,v);
             u = -u; v = -v;
             if (v < u)
-                v += 2*M_PI;
-            if (v-u > 2*M_PI)
-                v -= 2*M_PI;
+                v += 2*pi;
+            if (v-u > 2*pi)
+                v -= 2*pi;
         }
     }
 }
@@ -5410,7 +5416,7 @@ gp_Vec GeomCone::getDN(double u, double v, int Nu, int Nv) const
     {
        gp_XYZ Xdir = Pos.XDirection().XYZ();
        gp_XYZ Ydir = Pos.YDirection().XYZ();
-       Standard_Real Um = U + Nu * M_PI_2;  // M_PI * 0.5
+       Standard_Real Um = U + Nu * Base::numbers::pi/2;  // pi * 0.5
        Xdir.Multiply(cos(Um));
        Ydir.Multiply(sin(Um));
        Xdir.Add(Ydir);
@@ -6229,11 +6235,11 @@ GeomArcOfCircle *createFilletGeometry(const GeomLineSegment *lineSeg1, const Geo
     if (endAngle < startAngle)
         std::swap(startAngle, endAngle);
 
-    if (endAngle > 2*M_PI )
-        endAngle -= 2*M_PI;
+    if (endAngle > 2*Base::numbers::pi )
+        endAngle -= 2*Base::numbers::pi;
 
     if (startAngle < 0 )
-        endAngle += 2*M_PI;
+        endAngle += 2*Base::numbers::pi;
 
     // Create Arc Segment
     GeomArcOfCircle *arc = new GeomArcOfCircle();

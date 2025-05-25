@@ -37,6 +37,7 @@
 #endif
 
 #include <App/Document.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 #include <Mod/Part/App/ExtrusionHelper.h>
 #include "Mod/Part/App/TopoShapeOpCode.h"
@@ -733,8 +734,8 @@ App::DocumentObjectExecReturn* FeatureExtrude::buildExtrusion(ExtrudeOptions opt
             }
             if (std::fabs(params.taperAngleFwd) >= Precision::Angular()
                 || std::fabs(params.taperAngleRev) >= Precision::Angular()) {
-                if (fabs(params.taperAngleFwd) > M_PI * 0.5 - Precision::Angular()
-                    || fabs(params.taperAngleRev) > M_PI * 0.5 - Precision::Angular()) {
+                if (fabs(params.taperAngleFwd) > Base::numbers::pi * 0.5 - Precision::Angular()
+                    || fabs(params.taperAngleRev) > Base::numbers::pi * 0.5 - Precision::Angular()) {
                     return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP(
                         "Exception",
                         "Magnitude of taper angle matches or exceeds 90 degrees"));

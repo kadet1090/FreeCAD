@@ -39,6 +39,7 @@
 
 #include <Base/Converter.h>
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 
 #include "FeatureExtrusion.h"
@@ -248,10 +249,10 @@ ExtrusionParameters Extrusion::computeFinalParameters()
     result.solid = this->Solid.getValue();
 
     result.taperAngleFwd = Base::toRadians(this->TaperAngle.getValue());
-    if (fabs(result.taperAngleFwd) > M_PI * 0.5 - Precision::Angular())
+    if (fabs(result.taperAngleFwd) > Base::numbers::pi * 0.5 - Precision::Angular())
         throw Base::ValueError("Magnitude of taper angle matches or exceeds 90 degrees. That is too much.");
     result.taperAngleRev = Base::toRadians(this->TaperAngleRev.getValue());
-    if (fabs(result.taperAngleRev) > M_PI * 0.5 - Precision::Angular())
+    if (fabs(result.taperAngleRev) > Base::numbers::pi * 0.5 - Precision::Angular())
         throw Base::ValueError("Magnitude of taper angle matches or exceeds 90 degrees. That is too much.");
 
     result.faceMakerClass = this->FaceMakerClass.getValue();

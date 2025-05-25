@@ -45,6 +45,7 @@
 #include <App/Datums.h>
 #include <Base/Console.h>
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 #include <Mod/Part/App/TopoShape.h>
 
@@ -248,7 +249,7 @@ App::DocumentObjectExecReturn *Draft::execute()
                     if (c.GetType() != GeomAbs_Line)
                         throw Base::TypeError("Neutral plane reference edge must be linear");
                     double a = c.Line().Angle(gp_Lin(c.Value(c.FirstParameter()), pullDirection));
-                    if (std::fabs(a - M_PI_2) > Precision::Confusion())
+                    if (std::fabs(a - Base::numbers::pi/2) > Precision::Confusion())
                         throw Base::ValueError("Neutral plane reference edge must be normal to pull direction");
                     neutralPlane = gp_Pln(c.Value(c.FirstParameter()), pullDirection);
                 } else {

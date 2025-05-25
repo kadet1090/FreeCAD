@@ -37,6 +37,7 @@
 #include <App/Link.h>
 #include <App/PropertyPythonObject.h>
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Base/Placement.h>
 #include <Base/Rotation.h>
 #include <Base/Tools.h>
@@ -1117,7 +1118,7 @@ std::shared_ptr<ASMTJoint> AssemblyObject::makeMbdJointOfType(App::DocumentObjec
 
         case JointType::Angle: {
             double angle = fabs(Base::toRadians(getJointDistance(joint)));
-            if (fmod(angle, 2 * M_PI) < Precision::Confusion()) {
+            if (fmod(angle, 2 * Base::numbers::pi) < Precision::Confusion()) {
                 return CREATE<ASMTParallelAxesJoint>::With();
             }
             auto mbdJoint = CREATE<ASMTAngleJoint>::With();

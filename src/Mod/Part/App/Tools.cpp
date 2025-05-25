@@ -68,6 +68,7 @@
 #endif
 
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Vector3D.h>
 
 #include "Tools.h"
@@ -789,10 +790,11 @@ bool Part::Tools::isConcave(const TopoDS_Face &face,
             surf->D1(mkSection.U(), mkSection.V(), iPnt, dU, dV);
 
             // check normals orientation
+            using Base::numbers::pi;
             gp_Dir dirdU(dU);
-            result = (dirdU.Angle(line.Direction()) - M_PI_2) <= Precision::Confusion();
+            result = (dirdU.Angle(line.Direction()) - pi/2) <= Precision::Confusion();
             gp_Dir dirdV(dV);
-            result = result || ((dirdV.Angle(line.Direction()) - M_PI_2) <= Precision::Confusion());
+            result = result || ((dirdV.Angle(line.Direction()) - pi/2) <= Precision::Confusion());
         }
 
         if (result) {
