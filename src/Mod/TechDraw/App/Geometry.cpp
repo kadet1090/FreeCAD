@@ -74,6 +74,7 @@
 
 #include <Base/Console.h>
 #include <Base/Converter.h>
+#include <Base/Numbers.h>
 #include <Base/Parameter.h>
 #include <Base/Reader.h>
 #include <Base/Tools.h>
@@ -646,6 +647,7 @@ Ellipse::Ellipse(const TopoDS_Edge &e)
 
 Ellipse::Ellipse(Base::Vector3d c, double mnr, double mjr)
 {
+    using Base::numbers::pi;
     geomType = GeomType::ELLIPSE;
     center = c;
     major = mjr;
@@ -658,7 +660,7 @@ Ellipse::Ellipse(Base::Vector3d c, double mnr, double mjr)
         Base::Console().Message("G:Ellipse - failed to make Ellipse\n");
     }
     const Handle(Geom_Ellipse) gEllipse = me.Value();
-    BRepBuilderAPI_MakeEdge mkEdge(gEllipse, 0.0, 2 * M_PI);
+    BRepBuilderAPI_MakeEdge mkEdge(gEllipse, 0.0, 2 * pi);
     if (mkEdge.IsDone()) {
         occEdge = mkEdge.Edge();
     }
@@ -666,6 +668,7 @@ Ellipse::Ellipse(Base::Vector3d c, double mnr, double mjr)
 
 AOE::AOE(const TopoDS_Edge &e) : Ellipse(e)
 {
+    using Base::numbers::pi;
     geomType = GeomType::ARCOFELLIPSE;
 
     BRepAdaptor_Curve c(e);
@@ -687,10 +690,10 @@ AOE::AOE(const TopoDS_Edge &e) : Ellipse(e)
                               e.GetMessageString());
     }
 
-    startAngle = fmod(f, 2.0*M_PI);
-    endAngle = fmod(l, 2.0*M_PI);
+    startAngle = fmod(f, 2.0*pi);
+    endAngle = fmod(l, 2.0*pi);
     cw = (a < 0) ? true: false;
-    largeArc = (l-f > M_PI) ? true : false;
+    largeArc = (l-f > pi) ? true : false;
 
     startPnt = Base::Vector3d(s.X(), s.Y(), s.Z());
     endPnt = Base::Vector3d(ePt.X(), ePt.Y(), ePt.Z());
@@ -780,6 +783,7 @@ void Circle::Restore(Base::XMLReader &reader)
 
 AOC::AOC(const TopoDS_Edge &e) : Circle(e)
 {
+    using Base::numbers::pi;
     geomType = GeomType::ARCOFCIRCLE;
     BRepAdaptor_Curve c(e);
 
@@ -795,12 +799,12 @@ AOC::AOC(const TopoDS_Edge &e) : Circle(e)
     // this is the wrong determination of cw/ccw.  needs to be determined by edge.
     double a = v3.DotCross(v1, v2);    //error if v1 = v2?
 
-    startAngle = fmod(f, 2.0*M_PI);
-    endAngle = fmod(l, 2.0*M_PI);
+    startAngle = fmod(f, 2.0*pi);
+    endAngle = fmod(l, 2.0*pi);
 
 
     cw = (a < 0) ? true: false;
-    largeArc = (fabs(l-f) > M_PI) ? true : false;
+    largeArc = (fabs(l-f) > pi) ? true : false;
 
     startPnt = Base::convertTo<Base::Vector3d>(s);
     endPnt = Base::convertTo<Base::Vector3d>(ePt);
@@ -812,6 +816,7 @@ AOC::AOC(const TopoDS_Edge &e) : Circle(e)
 
 AOC::AOC(Base::Vector3d c, double r, double sAng, double eAng) : Circle()
 {
+    using Base::numbers::pi;
     geomType = GeomType::ARCOFCIRCLE;
 
     radius = r;
@@ -845,10 +850,10 @@ AOC::AOC(Base::Vector3d c, double r, double sAng, double eAng) : Circle()
     // this cw flag is a problem.  we should just declare that arcs are always ccw and flip the start and end angles.
     double a = v3.DotCross(v1, v2);    //error if v1 = v2?
 
-    startAngle = fmod(f, 2.0*M_PI);
-    endAngle = fmod(l, 2.0*M_PI);
+    startAngle = fmod(f, 2.0*pi);
+    endAngle = fmod(l, 2.0*pi);
     cw = (a < 0) ? true: false;
-    largeArc = (fabs(l-f) > M_PI) ? true : false;
+    largeArc = (fabs(l-f) > pi) ? true : false;
 
     startPnt = Base::convertTo<Base::Vector3d>(s);
     endPnt = Base::convertTo<Base::Vector3d>(ePt);
@@ -861,13 +866,14 @@ AOC::AOC(Base::Vector3d c, double r, double sAng, double eAng) : Circle()
 
 AOC::AOC() : Circle()
 {
+    using Base::numbers::pi;
     geomType = GeomType::ARCOFCIRCLE;
 
     startPnt = Base::Vector3d(0.0, 0.0, 0.0);
     endPnt = Base::Vector3d(0.0, 0.0, 0.0);
     midPnt = Base::Vector3d(0.0, 0.0, 0.0);
     startAngle = 0.0;
-    endAngle = 2.0 * M_PI;
+    endAngle = 2.0 * pi;
     cw = false;
     largeArc = false;
 
@@ -1123,6 +1129,7 @@ Base::Vector3d Generic::apparentInter(GenericPtr g)
 
 BSpline::BSpline(const TopoDS_Edge &e)
 {
+    using Base::numbers::pi;
     geomType = GeomType::BSPLINE;
     BRepAdaptor_Curve c(e);
     isArc = !c.IsClosed();
@@ -1147,11 +1154,11 @@ BSpline::BSpline(const TopoDS_Edge &e)
 
     startAngle = atan2(startPnt.y, startPnt.x);
     if (startAngle < 0) {
-         startAngle += 2.0 * M_PI;
+         startAngle += 2.0 * pi;
     }
     endAngle = atan2(endPnt.y, endPnt.x);
     if (endAngle < 0) {
-         endAngle += 2.0 * M_PI;
+         endAngle += 2.0 * pi;
     }
 
     Standard_Real tol3D = 0.001;                                   //1/1000 of a mm? screen can't resolve this
@@ -1467,6 +1474,7 @@ TopoDS_Edge GeometryUtils::edgeFromGeneric(TechDraw::GenericPtr g)
 
 TopoDS_Edge GeometryUtils::edgeFromCircle(TechDraw::CirclePtr c)
 {
+    using Base::numbers::pi;
     gp_Pnt loc(c->center.x, c->center.y, c->center.z);
     gp_Dir dir(0, 0, 1);
     gp_Ax1 axis(loc, dir);
@@ -1474,7 +1482,7 @@ TopoDS_Edge GeometryUtils::edgeFromCircle(TechDraw::CirclePtr c)
     circle.SetAxis(axis);
     circle.SetRadius(c->radius);
     Handle(Geom_Circle) hCircle = new Geom_Circle (circle);
-    BRepBuilderAPI_MakeEdge aMakeEdge(hCircle, 0.0, 2.0 * M_PI);
+    BRepBuilderAPI_MakeEdge aMakeEdge(hCircle, 0.0, 2.0 * pi);
     return aMakeEdge.Edge();
 }
 

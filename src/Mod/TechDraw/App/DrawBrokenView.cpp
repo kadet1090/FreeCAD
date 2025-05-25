@@ -75,6 +75,7 @@
 #include <Base/Console.h>
 #include <Base/Converter.h>
 #include <Base/FileInfo.h>
+#include <Base/Numbers.h>
 #include <Base/Parameter.h>
 
 #include <Mod/Part/App/PartFeature.h>
@@ -1108,11 +1109,12 @@ Base::Vector3d DrawBrokenView::getCompressedCentroid() const
 //! construct a perpendicular direction in the projection CS
 Base::Vector3d  DrawBrokenView::makePerpendicular(Base::Vector3d inDir) const
 {
+    using Base::numbers::pi;
     auto gDir = Base::convertTo<gp_Dir>(inDir);
     gp_Pnt origin(0.0, 0.0, 0.0);
     auto dir = getProjectionCS().Direction();
     gp_Ax1 axis(origin, dir);
-    auto gRotated = gDir.Rotated(axis,  M_PI_2);
+    auto gRotated = gDir.Rotated(axis,  pi/2);
     return Base::convertTo<Base::Vector3d>(gRotated);
 }
 

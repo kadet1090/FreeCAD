@@ -38,6 +38,7 @@
 #include <App/Part.h>
 #include <Base/BoundBox.h>
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Base/Parameter.h>
 
 #include "DrawPage.h"
@@ -1144,11 +1145,12 @@ void DrawProjGroup::rotate(const RotationMotion& motion)
 // in DrawViewPart be moved to DrawView?
 void DrawProjGroup::spin(const SpinDirection& spindirection)
 {
-    double angle;
+    using Base::numbers::pi;
+    double angle {};
     if (spindirection == SpinDirection::CW)
-        angle = M_PI / 2.0;// Top -> Right -> Bottom -> Left -> Top
+        angle = pi / 2.0;// Top -> Right -> Bottom -> Left -> Top
     if (spindirection == SpinDirection::CCW)
-        angle = -M_PI / 2.0;// Top -> Left -> Bottom -> Right -> Top
+        angle = -pi / 2.0;// Top -> Left -> Bottom -> Right -> Top
 
     spin(angle);
 }

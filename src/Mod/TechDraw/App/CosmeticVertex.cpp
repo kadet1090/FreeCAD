@@ -26,6 +26,7 @@
 #include "PreCompiled.h"
 
 #include <App/Application.h>
+#include <Base/Numbers.h>
 #include <Base/Persistence.h>
 #include <Base/Vector3D.h>
 
@@ -161,12 +162,13 @@ Base::Vector3d CosmeticVertex::scaled(const double factor)
 //! returns a transformed version of our coordinates (permaPoint)
 Base::Vector3d CosmeticVertex::rotatedAndScaled(const double scale, const double rotDegrees)
 {
+    using Base::numbers::pi;
     Base::Vector3d scaledPoint = scaled(scale);
     if (rotDegrees != 0.0) {
         // invert the Y coordinate so the rotation math works out
         // the stored point is inverted
         scaledPoint = DU::invertY(scaledPoint);
-        scaledPoint.RotateZ(rotDegrees * M_PI / DegreesHalfCircle);
+        scaledPoint.RotateZ(rotDegrees * pi / DegreesHalfCircle);
         scaledPoint = DU::invertY(scaledPoint);
     }
     return scaledPoint;
@@ -177,12 +179,13 @@ Base::Vector3d CosmeticVertex::rotatedAndScaled(const double scale, const double
 //! inverted back on return.
 Base::Vector3d CosmeticVertex::makeCanonicalPoint(DrawViewPart* dvp, Base::Vector3d point, bool unscale)
 {
+    using Base::numbers::pi;
     double rotDeg = dvp->Rotation.getValue();
 
     Base::Vector3d result = point;
     if (rotDeg != 0.0) {
         // unrotate the point
-        double rotRad = rotDeg * M_PI / DegreesHalfCircle;
+        double rotRad = rotDeg * pi / DegreesHalfCircle;
         // we always rotate around the origin.
         result.RotateZ(-rotRad);
     }

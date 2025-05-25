@@ -33,6 +33,7 @@
 
 #include <App/Document.h>
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Mod/TechDraw/App/ArrowPropEnum.h>
 #include <Mod/TechDraw/App/DrawLeaderLine.h>
 #include <Mod/TechDraw/App/DrawUtil.h>
@@ -589,7 +590,8 @@ Base::Vector3d  QGILeaderLine::getAttachPoint()
     double yPos = Rez::guiX(featLeader->Y.getValue());
     Base::Vector3d vAttachPoint{xPos, yPos};
     vAttachPoint = vAttachPoint * baseScale;
-    double rotationRad = parent->Rotation.getValue() * M_PI / DegreesHalfCircle;
+    using Base::numbers::pi;
+    double rotationRad = parent->Rotation.getValue() * pi / DegreesHalfCircle;
     if (rotationRad != 0.0) {
         vAttachPoint.RotateZ(rotationRad);
     }

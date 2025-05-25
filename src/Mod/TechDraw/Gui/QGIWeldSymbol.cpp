@@ -29,6 +29,7 @@
 #endif
 
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Base/Tools.h>
 
 #include <Mod/TechDraw/App/DrawLeaderLine.h>
@@ -547,9 +548,10 @@ double QGIWeldSymbol::getLastSegAngle()
 
 std::pair<Base::Vector3d, Base::Vector3d> QGIWeldSymbol::getLocalAxes()
 {
+    using Base::numbers::pi;
     auto localX = getLeader()->lastSegmentDirection();
     auto localY = DU::invertY(localX);
-    localY.RotateZ(M_PI_2);
+    localY.RotateZ(pi/2);
     localY.Normalize();
     localY = DU::invertY(localY);
     return {localX, localY};

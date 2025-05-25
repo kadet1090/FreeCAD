@@ -29,6 +29,7 @@
 
 #include <App/Document.h>
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Base/Parameter.h>
 #include <Base/Tools.h>
 
@@ -375,7 +376,8 @@ std::vector<Base::Vector3d>  DrawLeaderLine::getScaledAndRotatedPoints(bool doSc
 
     double rotationRad{0.0};
     if (doRotate) {
-        rotationRad = dvp->Rotation.getValue() * M_PI / DegreesHalfCircle;
+        using Base::numbers::pi;
+        rotationRad = dvp->Rotation.getValue() * pi / DegreesHalfCircle;
     }
 
     std::vector<Base::Vector3d> pointsAll = WayPoints.getValues();
@@ -409,7 +411,8 @@ DrawLeaderLine::makeCanonicalPoints(const std::vector<Base::Vector3d>& inPoints,
 
     double rotationRad{0.0};
     if (doRotate) {
-        rotationRad = - dvp->Rotation.getValue() * M_PI / DegreesHalfCircle;
+        using Base::numbers::pi;
+        rotationRad = - dvp->Rotation.getValue() * pi / DegreesHalfCircle;
     }
 
     std::vector<Base::Vector3d> result;

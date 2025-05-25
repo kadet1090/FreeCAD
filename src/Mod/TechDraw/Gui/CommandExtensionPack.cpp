@@ -33,6 +33,7 @@
 #include <App/Document.h>
 #include <App/DocumentObject.h>
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Base/Type.h>
 #include <Gui/Action.h>
 #include <Gui/Application.h>
@@ -2101,9 +2102,11 @@ std::vector<Base::Vector3d> _getVertexPoints(const std::vector<std::string>& Sub
 //! result is [0, 360]
 double _getAngle(Base::Vector3d center, Base::Vector3d point)
 {
+    using Base::numbers::pi;
+
     constexpr double DegreesHalfCircle{180.0};
     Base::Vector3d vecCP = point - center;
-    double angle = DU::angleWithX(vecCP) * DegreesHalfCircle / M_PI;
+    double angle = DU::angleWithX(vecCP) * DegreesHalfCircle / Base::numbers::pi;
     return angle;
 }
 

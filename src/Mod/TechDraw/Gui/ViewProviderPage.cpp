@@ -235,7 +235,7 @@ void ViewProviderPage::setupContextMenu(QMenu* menu, QObject* receiver, const ch
     act2->setData(QVariant((int)ToggleUpdate));
 }
 
-bool ViewProviderPage::setEdit(int ModNum)
+bool ViewProviderPage::setEdit(const int ModNum)
 {
     if (ModNum == ShowDrawing) {
         showMDIViewPage();// show the drawing

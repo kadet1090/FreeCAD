@@ -36,6 +36,7 @@
 #endif
 
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Mod/TechDraw/App/DrawUtil.h>
 #include <Mod/TechDraw/App/Preferences.h>
 
@@ -112,7 +113,7 @@ void QGTracker::mousePressEvent(QGraphicsSceneMouseEvent *event)
         double someLimit = Rez::guiX(1.0);
         QPointF manhat = myScenePos - m_lastClick;
 
-        if (manhat.manhattanLength() >= someLimit) {         
+        if (manhat.manhattanLength() >= someLimit) {
             if (event->button() == Qt::LeftButton)  {
                 if (event->modifiers() & Qt::ControlModifier) {
                     myScenePos = snapToAngle(myScenePos);
@@ -179,12 +180,13 @@ void QGTracker::sleep(bool b)
 
 QPointF QGTracker::snapToAngle(QPointF dumbPt)
 {
+    using Base::numbers::pi;
     // If no point selected yet, snapping has no sense
     if (m_points.empty())
         return dumbPt;
 
     QPointF result(dumbPt);
-    double angleIncr = M_PI / 8.0;   //15*
+    double angleIncr = pi / 8.0;   //15*
     //mirror last clicked point and event point to get sensible coords
     QPointF last(m_points.back().x(), -m_points.back().y());
     QPointF pt(dumbPt.x(), -dumbPt.y());
@@ -193,7 +195,7 @@ QPointF QGTracker::snapToAngle(QPointF dumbPt)
     QPointF qVec = last - pt;    //vec from end of track to end of tail
     double actual = atan2(-qVec.y(), qVec.x());
     if (actual < 0.0) {
-        actual = (2 * M_PI) + actual;          //map to +ve angle
+        actual = (2 * pi) + actual;          //map to +ve angle
     }
 
     double intPart;
@@ -243,7 +245,7 @@ void QGTracker::onMousePress(QPointF pos)
         //just return pos to caller
         getPickedQGIV(pos);
         setCursor(Qt::CrossCursor);  //why cross??
-        
+
         if (mode == TrackerMode::Point) {
             setPoint(m_points);  //first point is mouse click scene pos
             terminateDrawing();

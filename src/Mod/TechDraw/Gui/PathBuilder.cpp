@@ -26,6 +26,7 @@
 #endif
 
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 
 #include "PathBuilder.h"
 #include "Rez.h"
@@ -327,11 +328,11 @@ void PathBuilder::pathArc(QPainterPath& path, double rx, double ry, double x_axi
 
     th_arc = th1 - th0;
     if (th_arc < 0 && sweep_flag)
-        th_arc += 2 * M_PI;
+        th_arc += 2 * Base::numbers::pi;
     else if (th_arc > 0 && !sweep_flag)
-        th_arc -= 2 * M_PI;
+        th_arc -= 2 * Base::numbers::pi;
 
-    n_segs = qCeil(qAbs(th_arc / (M_PI * 0.5 + 0.001)));
+    n_segs = qCeil(qAbs(th_arc / (Base::numbers::pi * 0.5 + 0.001)));
 
     path.moveTo(curx, cury);
 

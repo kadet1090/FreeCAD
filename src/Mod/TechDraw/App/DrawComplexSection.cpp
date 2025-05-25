@@ -101,7 +101,6 @@
 #include <gp_Pnt.hxx>
 #endif
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include <sstream>
@@ -115,6 +114,7 @@
 #include <Base/Exception.h>
 #include <Base/FileInfo.h>
 #include <Base/Interpreter.h>
+#include <Base/Numbers.h>
 #include <Base/Parameter.h>
 #include <Base/Tools.h>
 
@@ -808,15 +808,15 @@ gp_Ax2 DrawComplexSection::getCSFromBase(const std::string& sectionName) const
 // being slightly wrong.  see https://forum.freecad.org/viewtopic.php?t=79017&sid=612a62a60f5db955ee071a7aaa362dbb
 bool DrawComplexSection::validateOffsetProfile(TopoDS_Wire profile, Base::Vector3d direction, double angleThresholdDeg) const
 {
+    using Base::numbers::pi;
     constexpr double HalfCircleDegrees{180.0};
-    double angleThresholdRad = angleThresholdDeg * M_PI / HalfCircleDegrees;
+    double angleThresholdRad = angleThresholdDeg * pi / HalfCircleDegrees;
     TopExp_Explorer explEdges(profile, TopAbs_EDGE);
     for (; explEdges.More(); explEdges.Next()) {
         std::pair<Base::Vector3d, Base::Vector3d> segmentEnds = getSegmentEnds(TopoDS::Edge(explEdges.Current()));
         Base::Vector3d segmentDir = segmentEnds.second - segmentEnds.first;
         double angleRad = segmentDir.GetAngle(direction);
-        if (angleRad < angleThresholdRad &&
-            angleRad > 0.0) {
+        if (angleRad < angleThresholdRad && angleRad > 0.0) {
             // profile segment is slightly skewed. possible bad SectionNormal?
             Base::Console().Warning("%s profile is slightly skewed. Check SectionNormal low decimal places\n",
                                     getNameInDocument());

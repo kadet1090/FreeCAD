@@ -70,6 +70,7 @@
 #include <Base/Console.h>
 #include <Base/Converter.h>
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Parameter.h>
 #include <Base/Tools.h>
 
@@ -1307,11 +1308,12 @@ void DrawViewPart::rotate(const RotationMotion& motion)
 
 void DrawViewPart::spin(const SpinDirection& spindirection)
 {
-    double angle;
+    using Base::numbers::pi;
+    double angle {};
     if (spindirection == SpinDirection::CW)
-        angle = M_PI / 2.0;// Top -> Right -> Bottom -> Left -> Top
+        angle = pi / 2.0;// Top -> Right -> Bottom -> Left -> Top
     if (spindirection == SpinDirection::CCW)
-        angle = -M_PI / 2.0;// Top -> Left -> Bottom -> Right -> Top
+        angle = -pi / 2.0;// Top -> Left -> Bottom -> Right -> Top
 
     spin(angle);
 }
@@ -1345,7 +1347,7 @@ std::pair<Base::Vector3d, Base::Vector3d> DrawViewPart::getDirsFromFront(ProjDir
     gp_Dir gNewDir;
     gp_Dir gNewXDir;
 
-    double angle = M_PI / 2.0;//90*
+    double angle = Base::numbers::pi / 2.0;//90*
 
     if (viewType == ProjDirection::Right) {
         newCS = anchorCS.Rotated(gUpAxis, angle);

@@ -50,10 +50,6 @@
 #include <Mod/TechDraw/TechDrawGlobal.h>
 
 
-#ifndef M_2PI
-#define M_2PI ((M_PI)*2.0)
-#endif
-
 constexpr double DegreesHalfCircle{180.0};
 
 #define VERTEXTOLERANCE (2.0 * Precision::Confusion())
