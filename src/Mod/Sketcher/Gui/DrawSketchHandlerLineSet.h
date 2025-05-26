@@ -197,6 +197,8 @@ public:
 
     void mouseMove(Base::Vector2d onSketchPos) override
     {
+        using Base::numbers::pi;
+
         suppressTransition = false;
         if (Mode == STATUS_SEEK_First) {
             setPositionText(onSketchPos);
@@ -231,7 +233,7 @@ public:
                 if (showCursorCoords()) {
                     SbString text;
                     std::string lengthString = lengthToDisplayFormat(length, 1);
-                    std::string angleString = angleToDisplayFormat(angle * 180.0 / M_PI, 1);
+                    std::string angleString = angleToDisplayFormat(Base::toDegrees(angle), 1);
                     text.sprintf(" (%s, %s)", lengthString.c_str(), angleString.c_str());
                     setPositionText(EditCurve[1], text);
                 }
@@ -298,14 +300,14 @@ public:
                     arcAngle = 0.f;
                 }
                 if (arcRadius >= 0 && arcAngle > 0) {
-                    arcAngle -= 2 * M_PI;
+                    arcAngle -= 2 * pi;
                 }
                 if (arcRadius < 0 && arcAngle < 0) {
-                    arcAngle += 2 * M_PI;
+                    arcAngle += 2 * pi;
                 }
 
                 if (SnapMode == SNAP_MODE_45Degree) {
-                    arcAngle = round(arcAngle / (M_PI / 4)) * M_PI / 4;
+                    arcAngle = round(arcAngle / (pi / 4)) * pi / 4;
                 }
 
                 endAngle = startAngle + arcAngle;
@@ -325,7 +327,7 @@ public:
                 if (showCursorCoords()) {
                     SbString text;
                     std::string radiusString = lengthToDisplayFormat(std::abs(arcRadius), 1);
-                    std::string angleString = angleToDisplayFormat(arcAngle * 180.0 / M_PI, 1);
+                    std::string angleString = angleToDisplayFormat(Base::toDegrees(arcAngle), 1);
                     text.sprintf(" (R%s, %s)", radiusString.c_str(), angleString.c_str());
                     setPositionText(onSketchPos, text);
                 }
@@ -544,9 +546,9 @@ public:
                     //  a, N/A
 
                     // #3974: if in radians, the printf %f defaults to six decimals, which leads to
-                    // loss of precision
+                    // loss of precision (in degrees)
                     double arcAngle =
-                        abs(round((endAngle - startAngle) / (M_PI / 4)) * 45);  // in degrees
+                        abs(round((endAngle - startAngle) / (Base::numbers::pi / 4)) * 45);
 
                     Gui::cmdAppObjectArgs(sketchgui->getObject(),
                                           "addConstraint(Sketcher.Constraint('Angle',%i,App.Units."

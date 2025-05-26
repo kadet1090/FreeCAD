@@ -37,6 +37,7 @@
 
 #include <Base/Console.h>
 #include <Base/Exception.h>
+#include <Base/Numbers.h>
 #include <Base/Reader.h>
 #include <Base/TimeInfo.h>
 #include <Base/VectorPy.h>
@@ -3163,28 +3164,28 @@ int Sketch::addAngleAtPointConstraint(int geoId1,
         // the desired angle value (and we are to decide if 180* should be added to it)
         double angleDesire = 0.0;
         if (cTyp == Tangent) {
-            angleOffset = -M_PI / 2;
+            angleOffset = -Base::numbers::pi / 2;
             angleDesire = 0.0;
         }
         if (cTyp == Perpendicular) {
             angleOffset = 0;
-            angleDesire = M_PI / 2;
+            angleDesire = Base::numbers::pi / 2;
         }
 
         if (*value
             == 0.0) {  // autodetect tangency internal/external (and same for perpendicularity)
             double angleErr = GCSsys.calculateAngleViaPoint(*crv1, *crv2, p) - angleDesire;
             // bring angleErr to -pi..pi
-            if (angleErr > M_PI) {
-                angleErr -= M_PI * 2;
+            if (angleErr > Base::numbers::pi) {
+                angleErr -= Base::numbers::pi * 2;
             }
-            if (angleErr < -M_PI) {
-                angleErr += M_PI * 2;
+            if (angleErr < -Base::numbers::pi) {
+                angleErr += Base::numbers::pi * 2;
             }
 
             // the autodetector
-            if (fabs(angleErr) > M_PI / 2) {
-                angleDesire += M_PI;
+            if (fabs(angleErr) > Base::numbers::pi / 2) {
+                angleDesire += Base::numbers::pi;
             }
 
             *angle = angleDesire;
@@ -4572,8 +4573,7 @@ bool Sketch::updateNonDrivingConstraints()
                 (*it).constr->setValue(n2 / n1);
             }
             else if ((*it).constr->Type == Angle) {
-
-                (*it).constr->setValue(std::fmod(*((*it).value), 2.0 * M_PI));
+                (*it).constr->setValue(std::fmod(*((*it).value), 2.0 * Base::numbers::pi));
             }
             else if ((*it).constr->Type == Diameter && (*it).constr->First >= 0) {
 

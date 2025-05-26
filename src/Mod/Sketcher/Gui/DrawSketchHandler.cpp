@@ -558,11 +558,11 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint>& suggested
     constr.GeoId = GeoEnum::GeoUndef;
     constr.PosId = PointPos::none;
     double angle = std::abs(atan2(Dir.y, Dir.x));
-    if (angle < angleDevRad || (M_PI - angle) < angleDevRad) {
+    if (angle < angleDevRad || (Base::numbers::pi - angle) < angleDevRad) {
         // Suggest horizontal constraint
         constr.Type = Sketcher::Horizontal;
     }
-    else if (std::abs(angle - M_PI_2) < angleDevRad) {
+    else if (std::abs(angle - Base::numbers::pi / 2) < angleDevRad) {
         // Suggest vertical constraint
         constr.Type = Sketcher::Vertical;
     }
@@ -715,7 +715,7 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint>& suggested
                         aoe->getMinorRadius()
                             * ((tmpPos.x - center.x) * majdir.x + (tmpPos.y - center.y) * majdir.y))
                         - startAngle,
-                    2.f * M_PI);
+                    2.f * Base::numbers::pi);
 
                 while (angle < startAngle) {
                     angle += 2 * Base::numbers::pi;  // Bring it to range of arc

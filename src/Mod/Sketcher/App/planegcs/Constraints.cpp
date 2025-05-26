@@ -3536,10 +3536,10 @@ void ConstraintArcLength::errorgrad(double* err, double* grad, double* param)
     double startA = *arc.startAngle;
     // Assume positive angles and CCW arc
     while (startA < 0.) {
-        startA += 2. * M_PI;
+        startA += 2. * pi;
     }
     while (endA < startA) {
-        endA += 2. * M_PI;
+        endA += 2. * pi;
     }
     if (err) {
         *err = rad * (endA - startA) - *distance();

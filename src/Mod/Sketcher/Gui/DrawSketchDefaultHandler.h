@@ -28,6 +28,7 @@
 
 #include <Base/Exception.h>
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Gui/Command.h>
 
 #include <Mod/Sketcher/App/GeoEnum.h>

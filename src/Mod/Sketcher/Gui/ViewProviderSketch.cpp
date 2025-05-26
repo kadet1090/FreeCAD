@@ -41,6 +41,7 @@
 #endif
 
 #include <Base/Console.h>
+#include <Base/Numbers.h>
 #include <Base/Vector3D.h>
 #include <Gui/Application.h>
 #include <Gui/BitmapFactory.h>
@@ -2029,9 +2030,9 @@ void ViewProviderSketch::moveAngleConstraint(Sketcher::Constraint* constr, int c
             Base::Vector3d p = getSolvedSketch().getPoint(constr->Third, constr->ThirdPos);
             p0 = Base::Vector3d(p.x, p.y, 0);
             Base::Vector3d dir1 = getSolvedSketch().calculateNormalAtPoint(constr->First, p.x, p.y);
-            dir1.RotateZ(-M_PI / 2);// convert to vector of tangency by rotating
+            dir1.RotateZ(-Base::numbers::pi / 2);// convert to vector of tangency by rotating
             Base::Vector3d dir2 = getSolvedSketch().calculateNormalAtPoint(constr->Second, p.x, p.y);
-            dir2.RotateZ(-M_PI / 2);
+            dir2.RotateZ(-Base::numbers::pi / 2);
 
             Base::Vector3d vec = Base::Vector3d(toPos.x, toPos.y, 0) - p0;
             factor = factor * Base::sgn<double>((dir1 + dir2) * vec);

@@ -651,7 +651,7 @@ void DSHTranslateController::adaptParameters(Base::Vector2d onSketchPos)
             Base::Vector2d vec2d = Base::Vector2d(handler->firstTranslationVector.x,
                                                   handler->firstTranslationVector.y);
             double angle = vec2d.Angle();
-            double range = angle * 180 / M_PI;
+            double range = Base::toDegrees(angle);
 
             if (!onViewParameters[OnViewParameter::Fourth]->isSet) {
                 setOnViewParameterValue(OnViewParameter::Fourth, range, Base::Unit::Angle);
@@ -673,7 +673,7 @@ void DSHTranslateController::adaptParameters(Base::Vector2d onSketchPos)
             Base::Vector2d vec2d = Base::Vector2d(handler->secondTranslationVector.x,
                                                   handler->secondTranslationVector.y);
             double angle = vec2d.Angle();
-            double range = angle * 180 / M_PI;
+            double range = Base::toDegrees(angle);
 
             if (!onViewParameters[OnViewParameter::Sixth]->isSet) {
                 setOnViewParameterValue(OnViewParameter::Sixth, range, Base::Unit::Angle);

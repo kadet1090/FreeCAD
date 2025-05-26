@@ -30,6 +30,7 @@
 
 #include <App/Document.h>
 #include <Base/AxisPy.h>
+#include <Base/Numbers.h>
 #include <Base/QuantityPy.h>
 #include <Base/Tools.h>
 #include <Base/VectorPy.h>
@@ -1918,7 +1919,7 @@ PyObject* SketchObjectPy::insertBSplineKnot(PyObject* args)
 PyObject* SketchObjectPy::autoconstraint(PyObject* args)
 {
     double precision = Precision::Confusion() * 1000;
-    double angleprecision = M_PI / 8;
+    double angleprecision = Base::numbers::pi / 8;
     PyObject* includeconstruction = Py_True;
 
 
@@ -1960,7 +1961,7 @@ PyObject* SketchObjectPy::detectMissingPointOnPointConstraints(PyObject* args)
 
 PyObject* SketchObjectPy::detectMissingVerticalHorizontalConstraints(PyObject* args)
 {
-    double angleprecision = M_PI / 8;
+    double angleprecision = Base::numbers::pi / 8;
 
     if (!PyArg_ParseTuple(args, "|d", &angleprecision)) {
         return nullptr;
@@ -1984,7 +1985,7 @@ PyObject* SketchObjectPy::detectMissingEqualityConstraints(PyObject* args)
 
 PyObject* SketchObjectPy::analyseMissingPointOnPointCoincident(PyObject* args)
 {
-    double angleprecision = M_PI / 8;
+    double angleprecision = Base::numbers::pi / 8;
 
     if (!PyArg_ParseTuple(args, "|d", &angleprecision)) {
         return nullptr;

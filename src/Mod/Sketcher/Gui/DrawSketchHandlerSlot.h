@@ -248,14 +248,14 @@ private:
         }
 
         Part::GeomArcOfCircle* arc1 = addArcToShapeGeometry(toVector3d(startPoint),
-                                                            M_PI / 2 + angle,
-                                                            1.5 * M_PI + angle,
+                                                            Base::numbers::pi / 2 + angle,
+                                                            1.5 * Base::numbers::pi + angle,
                                                             radius,
                                                             isConstructionMode());
 
         Part::GeomArcOfCircle* arc2 = addArcToShapeGeometry(toVector3d(secondPoint),
-                                                            1.5 * M_PI + angle,
-                                                            M_PI / 2 + angle,
+                                                            1.5 * Base::numbers::pi + angle,
+                                                            Base::numbers::pi / 2 + angle,
                                                             radius,
                                                             isConstructionMode());
 
@@ -323,13 +323,15 @@ private:
 
     void checkHorizontalVertical()
     {
+        using Base::numbers::pi;
+
         isHorizontal = false;
         isVertical = false;
 
-        if (fmod(fabs(angle), M_PI) < Precision::Confusion()) {
+        if (fmod(fabs(angle), pi) < Precision::Confusion()) {
             isHorizontal = true;
         }
-        else if (fmod(fabs(angle + M_PI / 2), M_PI) < Precision::Confusion()) {
+        else if (fmod(fabs(angle + pi / 2), pi) < Precision::Confusion()) {
             isVertical = true;
         }
     }
