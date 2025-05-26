@@ -95,7 +95,7 @@ int main(int argc, char** argv)
         std::cout << "While initializing " << appName << " the following exception occurred: '"
                   << e.what() << "'\n\n";
         std::cout << "Python is searching for its runtime files in the following directories:\n"
-                  << Py_EncodeLocale(Py_GetPath(), nullptr) << "\n\n";
+                  << Base::InterpreterSingleton::getPythonPath() << "\n\n";
         std::cout << "Python version information:\n" << Py_GetVersion() << "\n";
         const char* pythonhome = getenv("PYTHONHOME");
         if (pythonhome) {
