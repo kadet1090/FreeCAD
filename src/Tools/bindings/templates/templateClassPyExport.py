@@ -461,6 +461,9 @@ PyTypeObject @self.export.Name@::Type = {
     ,nullptr                                          /*tp_vectorcall */
 #if PY_VERSION_HEX >= 0x030c0000
     ,0                                                /*tp_watched */
+#if PY_VERSION_HEX >= 0x030d0000
+    ,0                                                /*tp_versions_used */
+#endif
 #endif
 #elif PY_VERSION_HEX >= 0x03080000
     ,nullptr                                          /*tp_vectorcall */
