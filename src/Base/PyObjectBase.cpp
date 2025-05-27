@@ -269,11 +269,28 @@ PyObject* createWeakRef(PyObjectBase* ptr)
 PyObjectBase* getFromWeakRef(PyObject* ref)
 {
     if (ref) {
+#if PY_VERSION_HEX >= 0x030d0000
+        PyObject* proxy {};
+        int result = PyWeakref_GetRef(ref, &proxy);
+        if (result != 1) {
+            return nullptr;
+        }
+
+        PyObjectBase* base {};
+        if (PyObject_TypeCheck(proxy, &PyBaseProxyType)) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-*)
+            base = static_cast<PyObjectBase*>(reinterpret_cast<PyBaseProxy*>(proxy)->baseobject);
+        }
+
+        Py_DECREF(proxy);
+        return base;
+#else
         PyObject* proxy = PyWeakref_GetObject(ref);
         if (proxy && PyObject_TypeCheck(proxy, &PyBaseProxyType)) {
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-*)
             return static_cast<PyObjectBase*>(reinterpret_cast<PyBaseProxy*>(proxy)->baseobject);
         }
+#endif
     }
 
     return nullptr;
