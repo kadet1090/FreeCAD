@@ -1856,6 +1856,7 @@ int ParameterManager::LoadDocument(const XERCES_CPP_NAMESPACE::InputSource& inpu
     parser->setDoSchema(gDoSchema);
     parser->setValidationSchemaFullChecking(gSchemaFullChecking);
     parser->setCreateEntityReferenceNodes(gDoCreate);
+    parser->setDisableDefaultEntityResolution(true);
 
     auto errReporter = new DOMTreeErrorReporter();
     parser->setErrorHandler(errReporter);
