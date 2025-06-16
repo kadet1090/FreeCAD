@@ -239,12 +239,6 @@ App::DocumentObjectExecReturn* Loft::execute()
     }
 }
 
-void Part::Loft::setupObject()
-{
-    Feature::setupObject();
-//    Linearize.setValue(PartParams::getLinearizeExtrusionDraft()); // TODO: Resolve after PartParams
-}
-
 // ----------------------------------------------------------------------------
 
 const char* Part::Sweep::TransitionEnums[] = {"Transformed",
@@ -343,12 +337,6 @@ App::DocumentObjectExecReturn* Sweep::execute()
     catch (...) {
         return new App::DocumentObjectExecReturn("A fatal error occurred when making the sweep");
     }
-}
-
-void Part::Sweep::setupObject()
-{
-    Feature::setupObject();
-//    Linearize.setValue(PartParams::getLinearizeExtrusionDraft()); // TODO: Resolve after PartParams
 }
 
 // ----------------------------------------------------------------------------
