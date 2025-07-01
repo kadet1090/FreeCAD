@@ -859,8 +859,7 @@ void TreeWidget::selectAll()
         return;  // If nothing is selected, not even a document, do nothing
     }
 
-    const QTreeWidgetItem* targetParent = selectedItem->childCount() > 0 ? selectedItem
-                                                                         : selectedItem->parent();
+    const QTreeWidgetItem* targetParent = selectedItem->parent();
     if (!targetParent) {
         return;
     }
@@ -888,11 +887,6 @@ void TreeWidget::selectAll()
             continue;
         }
         selection.addSelection(obj->getDocument()->getName(), obj->getNameInDocument());
-    }
-
-    if (targetParent == selectedItem && !targetParent->isExpanded() && selection.size() > 0) {
-        // Expand the parent item if it is already expanded to show the selection
-        expandItem(targetParent);
     }
 }
 
