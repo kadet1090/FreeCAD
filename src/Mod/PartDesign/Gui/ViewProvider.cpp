@@ -346,6 +346,12 @@ Part::TopoShape ViewProvider::getPreviewShape() const
     return {};
 }
 
+void ViewProvider::setCanShowFinal(bool show)
+{
+    canShowFinal = show;
+    showPreviousFeature(!show);
+}
+
 void ViewProvider::showPreviousFeature(bool enable)
 {
     PartDesign::Feature* feature {getObject<PartDesign::Feature>()};
@@ -366,7 +372,7 @@ void ViewProvider::showPreviousFeature(bool enable)
         baseFeatureViewProvider = this;
     }
 
-    if (enable) {
+    if (enable || !canShowFinal) {
         baseFeatureViewProvider->show();
         hide();
     } else {

@@ -147,7 +147,7 @@ void TaskDressUpParameters::addAllEdges(QListWidget* widget)
     if (!base) {
         return;
     }
-    int count = Part::Feature::getTopoShape(base, Part::ShapeOption::ResolveLink 
+    int count = Part::Feature::getTopoShape(base, Part::ShapeOption::ResolveLink
                                                 | Part::ShapeOption::Transform).countSubShapes(TopAbs_EDGE);
     auto subValues = pcDressUp->Base.getSubValues(false);
     std::size_t len = subValues.size();
@@ -405,6 +405,7 @@ void TaskDressUpParameters::setSelectionMode(selectionModes mode)
 
         // remove any highlights and selections
         DressUpView->highlightReferences(false);
+        DressUpView->setCanShowFinal(true);
     }
     else {
         AllowSelectionFlags allow;
@@ -413,6 +414,7 @@ void TaskDressUpParameters::setSelectionMode(selectionModes mode)
         Gui::Selection().addSelectionGate(new ReferenceSelection(this->getBase(), allow));
 
         DressUpView->highlightReferences(true);
+        DressUpView->setCanShowFinal(false);
     }
 
     Gui::Selection().clearSelection();

@@ -89,6 +89,9 @@ public:
 
     QIcon mergeColorfulOverlayIcons (const QIcon & orig) const override;
 
+    // Allow showing final model preview (not transparent)
+    void setCanShowFinal(bool);
+
 protected:
     void setupContextMenu(QMenu* menu, QObject* receiver, const char* member) override;
     bool setEdit(int ModNum) override;
@@ -113,6 +116,7 @@ protected:
 
 private:
     Gui::CoinPtr<PartGui::SoPreviewShape> pcToolPreview;
+    bool canShowFinal { true };
 };
 
 using ViewProviderPython = Gui::ViewProviderFeaturePythonT<ViewProvider>;
