@@ -1,18 +1,18 @@
-<a href="https://freecad.org"><img src="/src/Gui/Icons/freecad.svg" height="100px" width="100px"></a>
+<a href="https://freecad.org"><img src="./src/Gui/Icons/freecad.svg" height="100px" width="100px"></a>
 
 ### Your own 3D parametric modeler
 
 [Website](https://www.freecad.org) •
 [Documentation](https://wiki.freecad.org) •
 [Forum](https://forum.freecad.org/) •
-[Bug tracker](https://github.com/FreeCAD/FreeCAD/issues) •
-[Git repository](https://github.com/FreeCAD/FreeCAD) •
+[Bug tracker](https://codeberg.org/xCAD/FreeCAD11/issues) •
+[Git repository](https://codeberg.org/xCAD/FreeCAD11) •
 [Blog](https://blog.freecad.org)
 
 
 [![Release](https://img.shields.io/github/release/freecad/freecad.svg)](https://github.com/freecad/freecad/releases/latest) [![Crowdin](https://d322cqt584bo4o.cloudfront.net/freecad/localized.svg)](https://crowdin.com/project/freecad) [![Liberapay](https://img.shields.io/liberapay/receives/FreeCAD.svg?logo=liberapay)](https://liberapay.com/FreeCAD)
 
-<img src="/.github/images/partdesign.png" width="800"/>
+<img src="./.github/images/partdesign.png" width="800"/>
 
 Overview
 --------
