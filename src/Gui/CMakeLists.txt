@@ -1286,6 +1286,8 @@ SET(Selection_SRCS
     Selection/SelectionFilter.l
     Selection/SelectionObserverPython.cpp
     Selection/SelectionObserverPython.h
+    Selection/SelectionCallbackHandler.cpp
+    Selection/SelectionCallbackHandler.h
 )
 SOURCE_GROUP("Selection" FILES ${Selection_SRCS})
 
