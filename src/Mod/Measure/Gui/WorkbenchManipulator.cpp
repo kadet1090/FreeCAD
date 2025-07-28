@@ -35,9 +35,12 @@ void WorkbenchManipulator::modifyMenuBar([[maybe_unused]] Gui::MenuItem* menuBar
     }
     auto itemMeasure = new Gui::MenuItem();
     itemMeasure->setCommand("Std_Measure");
+    auto itemDistMeasure = new Gui::MenuItem();
+    itemDistMeasure->setCommand("Std_MeasureDistance");
     auto quickMeasure = new Gui::MenuItem();
     quickMeasure->setCommand("Std_QuickMeasure");
     menuTools->appendItem(itemMeasure);
+    menuTools->appendItem(itemDistMeasure);
     menuTools->appendItem(quickMeasure);
 }
 

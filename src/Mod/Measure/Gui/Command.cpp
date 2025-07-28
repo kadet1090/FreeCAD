@@ -22,6 +22,7 @@
 #include "PreCompiled.h"
 #ifndef _PreComp_
 #include <QApplication>
+#include <Inventor/events/SoEvent.h>
 #endif
 
 #include <App/Application.h>
@@ -34,9 +35,11 @@
 #include <Gui/MDIView.h>
 #include <Gui/View3DInventor.h>
 #include <Gui/View3DInventorViewer.h>
+#include <Gui/Selection/SelectionCallbackHandler.h>
 
 #include "QuickMeasure.h"
 #include "TaskMeasure.h"
+#include "ViewProviderMeasureDistance.h"
 
 
 //===========================================================================
@@ -82,6 +85,61 @@ bool StdCmdMeasure::isActive()
     return false;
 }
 
+//===========================================================================
+// Std_MeasureDistance
+//===========================================================================
+
+DEF_STD_CMD_A(StdCmdMeasureDistance)
+
+StdCmdMeasureDistance::StdCmdMeasureDistance()
+    : Command("Std_MeasureDistance")
+{
+    sGroup        = "View";
+    sMenuText     = QT_TR_NOOP("Measure distance");
+    sToolTipText  = QT_TR_NOOP("Activate the distance measurement tool");
+    sWhatsThis    = "Std_MeasureDistance";
+    sStatusTip    = QT_TR_NOOP("Activate the distance measurement tool");
+    sPixmap       = "view-measurement";
+    eType         = Alter3DView;
+}
+
+void StdCmdMeasureDistance::activated(int iMsg)
+{
+    Q_UNUSED(iMsg);
+    Gui::Document* doc = Gui::Application::Instance->activeDocument();
+    auto view = static_cast<Gui::View3DInventor*>(doc->getActiveView());
+    if (view) {
+        Gui::View3DInventorViewer* viewer = view->getViewer();
+        viewer->setEditing(true);
+        // NOLINTBEGIN
+        QCursor cursor = Gui::SelectionCallbackHandler::makeCursor(viewer, QSize(32, 32),
+                                                              "view-measurement-cross", 6, 25);
+        viewer->setEditingCursor(cursor);
+        // NOLINTEND
+        // Derives from QObject and we have a parent object, so we don't
+        // require a delete.
+        auto marker = new MeasureGui::PointMarker(viewer);
+        viewer->addEventCallback(SoEvent::getClassTypeId(),
+                                 MeasureGui::ViewProviderMeasureDistance::measureDistanceCallback,
+                                 marker);
+    }
+}
+
+bool StdCmdMeasureDistance::isActive()
+{
+    App::Document* doc = App::GetApplication().getActiveDocument();
+    if (!doc || doc->countObjectsOfType<App::GeoFeature>() == 0) {
+        return false;
+    }
+
+    Gui::MDIView* view = Gui::getMainWindow()->activeWindow();
+    if (view && view->isDerivedFrom(Gui::View3DInventor::getClassTypeId())) {
+        Gui::View3DInventorViewer* viewer = static_cast<Gui::View3DInventor*>(view)->getViewer();
+        return !viewer->isEditing();
+    }
+
+    return false;
+}
 
 class StdCmdQuickMeasure: public Gui::Command
 {
@@ -148,5 +206,6 @@ void CreateMeasureCommands()
     auto cmd = new StdCmdMeasure();
     cmd->initAction();
     rcCmdMgr.addCommand(cmd);
+    rcCmdMgr.addCommand(new StdCmdMeasureDistance());
     rcCmdMgr.addCommand(new StdCmdQuickMeasure);
 }

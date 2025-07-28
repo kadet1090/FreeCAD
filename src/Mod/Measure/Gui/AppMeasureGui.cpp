@@ -100,6 +100,7 @@ PyMOD_INIT_FUNC(MeasureGui)
     MeasureGui::ViewProviderMeasure                    ::init();
     MeasureGui::ViewProviderMeasureAngle               ::init();
     MeasureGui::ViewProviderMeasureDistance            ::init();
+    MeasureGui::ViewProviderPointMarker                ::init();
 
     MeasureGui::ViewProviderMeasureArea                ::init();
     MeasureGui::ViewProviderMeasureLength              ::init();
