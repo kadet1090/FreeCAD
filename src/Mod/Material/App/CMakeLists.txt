@@ -6,28 +6,12 @@ endif(MSVC)
 
 add_definitions(-DYAML_CPP_STATIC_DEFINE)
 
-include_directories(
-    ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-include_directories(
-    SYSTEM
-    ${YAML_CPP_INCLUDE_DIR}
-)
 link_directories(${YAML_CPP_LIBRARY_DIR})
 
 set(Materials_LIBS
     FreeCADApp
 )
 
-include_directories(
-    SYSTEM
-    ${QtConcurrent_INCLUDE_DIRS}
-)
 list(APPEND Materials_LIBS
     ${QtConcurrent_LIBRARIES}
 )
@@ -118,6 +102,23 @@ if(FREECAD_USE_PCH)
 endif(FREECAD_USE_PCH)
 
 add_library(Materials SHARED ${Materials_SRCS})
+target_include_directories(
+    Materials
+    PRIVATE
+    ${CMAKE_BINARY_DIR}
+    ${CMAKE_BINARY_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_include_directories(
+    Materials
+    SYSTEM
+    PUBLIC
+    ${YAML_CPP_INCLUDE_DIR}
+    ${QtConcurrent_INCLUDE_DIRS}
+)
 target_link_libraries(Materials ${Materials_LIBS})
 if (FREECAD_WARN_ERROR)
     target_compile_warn_error(Materials)

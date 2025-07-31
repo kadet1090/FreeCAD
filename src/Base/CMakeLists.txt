@@ -11,7 +11,9 @@ if(FREECAD_RELEASE_SEH)
     add_definitions(-DHAVE_SEH)
 endif(FREECAD_RELEASE_SEH)
 
-include_directories(
+target_include_directories(
+    FreeCADBase
+    PRIVATE
     ${CMAKE_BINARY_DIR}/src
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -23,8 +25,8 @@ target_include_directories(
     SYSTEM
     PUBLIC
     ${Boost_INCLUDE_DIRS}
-    ${PYCXX_INCLUDE_DIR}
     ${Python3_INCLUDE_DIRS}
+    ${QtCore_INCLUDE_DIRS}
     ${XercesC_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIR}
     ${PYCXX_INCLUDE_DIR}
@@ -70,9 +72,6 @@ else(MSVC)
     )
 endif(MSVC)
 
-include_directories(
-    ${QtCore_INCLUDE_DIRS}
-)
 list(APPEND FreeCADBase_LIBS ${QtCore_LIBRARIES})
 
 list(APPEND FreeCADBase_LIBS fmt::fmt)

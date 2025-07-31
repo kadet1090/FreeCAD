@@ -54,26 +54,29 @@ fc_copy_file_if_different(
 
 # -----------------------------------------------------------------------------
 
-include_directories(
+target_include_directories(
+    FreeCADApp
+    PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/src
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+target_include_directories(
+    FreeCADApp
+    SYSTEM
+    PUBLIC
+    ${QtCore_INCLUDE_DIRS}
+    ${QtXml_INCLUDE_DIRS}
+)
+
 set(FreeCADApp_LIBS
     FreeCADBase
     ${Boost_LIBRARIES}
     fmt::fmt
-)
-
-include_directories(
-    ${QtCore_INCLUDE_DIRS}
-    ${QtXml_INCLUDE_DIRS}
-)
-list(APPEND FreeCADApp_LIBS
-        ${QtCore_LIBRARIES}
-        ${QtXml_LIBRARIES}
+    ${QtCore_LIBRARIES}
+    ${QtXml_LIBRARIES}
 )
 
 generate_from_xml(DocumentPy)
