@@ -6,8 +6,6 @@ endif(MSVC)
 
 add_definitions(-DYAML_CPP_STATIC_DEFINE)
 
-link_directories(${YAML_CPP_LIBRARY_DIR})
-
 set(Materials_LIBS
     FreeCADApp
 )
@@ -119,6 +117,8 @@ target_include_directories(
     ${YAML_CPP_INCLUDE_DIR}
     ${QtConcurrent_INCLUDE_DIRS}
 )
+
+target_link_directories(Materials PUBLIC ${YAML_CPP_LIBRARY_DIR})
 target_link_libraries(Materials ${Materials_LIBS})
 if (FREECAD_WARN_ERROR)
     target_compile_warn_error(Materials)
