@@ -1002,6 +1002,7 @@ ElementMap::geoID ElementMap::makeGeoID(const std::string ID) const {
     return ret;
 }
 
+
 // VVV test decompile VVV
 // g2;SKT;:H1215,E;FAC;:H1215:4,F;:G0;XTR;:H1215:8,F;:M3(g6;SKT;:H1213,E;:G;XTR;:H1213:7,F;K-1;:H1214:4,F);CUT;:H-1216:3a,E;:H1216,E
 std::vector<ElementMap::ElementSection> ElementMap::compileElementSections(const std::string &name) const {
@@ -1161,20 +1162,6 @@ std::vector<ElementMap::ElementSection> ElementMap::compileElementSections(const
         }
     }
 
-    // currentSection.stringData.push_back(name[i - 1]);
-    // char currentElementType = name.back();
-
-    // if (currentElementType == 'F' || currentElementType == 'E' || currentElementType == 'V') {
-    //     currentSection.elementType = currentElementType;
-    // } else {
-    //     currentSection.elementType = '-';
-    // }
-
-    // currentSection.postfix = currentPostfixBuffer;
-    // currentSection.postfixNumber = postfixNumberBuffer;
-    // currentSection.opcode = currentOpCode;
-    // sections.push_back(currentSection);
-
     return sections;
 }
 
@@ -1192,13 +1179,10 @@ ElementMap::ToponamingElement ElementMap::compileToponamingElement(MappedName na
     element.unfilteredSplitSections = compileElementSections(element.dehashedName);
     // element.splitSections = element.unfilteredSplitSections;
 
-    // only filter M tags with a postfix number of 0, since they add no value to the history of an element
-    // if there are other modifiers that describe the same operation, then they will have different numbers
-    // and therefore will be added. this will help preserve history
-    // also add any modifiers with postfix geo IDs, because they will eventually describe a split operation
-    // more accurately.
+    // filter out sections with the postfix of 'M'
+    // it must also have a number of 0 and a postfix id list size of 0
     for (const auto &data : element.unfilteredSplitSections) {
-        if (data.postfix != "M"  || (data.postfixNumber != 0 || !data.postFixIDs.empty())) {
+        if (data.postfix != "M" || (data.postfixNumber != 0 || !data.postFixIDs.empty())) {
             element.splitSections.push_back(data);
         }
     }
@@ -1275,15 +1259,16 @@ bool ElementMap::checkGeoIDsLists(std::vector<ElementMap::geoID> &list1, std::ve
     return (tagCheck && elementTypeCheck && mainIDCheck);
 }
 
-IndexedName ElementMap::complexFind(const MappedName& name) const {
+MappedElement ElementMap::complexFind(const MappedName& name) const {
     ToponamingElement originalElement = compileToponamingElement(name);
     ToponamingElement loopElement = ToponamingElement();
-    IndexedName foundName = IndexedName();
+    MappedElement foundName = MappedElement();
     const int idOccurenceMin = 2;
     const int tagOccurenceMin = -1; // -1 means only one tag can be missing
+    int foundUnfilteredSizeDifference = -1; // -1 is the start, 
+    //                                         it will never go below 0 during the check
 
     FC_WARN("start complex find");
-    FC_WARN("orig name: " << originalElement.dehashedName);
 
     if (originalElement.dehashedName.empty()) {
         return foundName;
@@ -1295,12 +1280,8 @@ IndexedName ElementMap::complexFind(const MappedName& name) const {
         if (loopElement.dehashedName.empty()) {
             continue;
         }
-        FC_WARN("loop name: " << loopElement.dehashedName);
 
         if (originalElement.splitSections.size() != loopElement.splitSections.size()) {
-            FC_WARN("orig: " << originalElement.splitSections.size());
-            FC_WARN("loop: " << loopElement.splitSections.size());
-            FC_WARN("size failed");
             continue;
         }
 
@@ -1337,14 +1318,13 @@ IndexedName ElementMap::complexFind(const MappedName& name) const {
         }
 
         if (!geoIDCheck) {
-            FC_WARN("geo id check failed");
+            // FC_WARN("geo id check failed");
             continue;
         }
 
         bool sectionCheck = true;
 
         if (!checkGeoIDsLists(originalElement.postFixIDs, loopElement.postFixIDs) || !checkGeoIDsLists(originalElement.opCodesIDs, loopElement.opCodesIDs)) {
-            FC_WARN("check postfixes and opcodes ids failed");
             continue;
         }
 
@@ -1388,36 +1368,41 @@ IndexedName ElementMap::complexFind(const MappedName& name) const {
             }
 
             if (tagOccurences < (shortTagList.size() + tagOccurenceMin)) {
-                FC_WARN("tag failed");
+                // FC_WARN("tag failed");
                 sectionCheck = false;
                 break;
             }
         }
 
         if (!sectionCheck) {
-            FC_WARN("section check failed");
             continue;
         }
 
         if (originalElement.unfilteredSplitSections.back().elementType != loopElement.unfilteredSplitSections.back().elementType) {
-            FC_WARN("element type failed");
             continue;
         }
 
     
-        // getting this far in the loop means that the two elements are the same.
-        foundName = loopName.second;
+        // do a "score" check to see if the number of filtered out tags is smaller in the name found here
+        // is smaller than that of the already found name. -1 is checked first, because that indicates that
+        // foundName had never been set.
+        int currentUnfilteredSizeDifference = abs(static_cast<int>(originalElement.unfilteredSplitSections.size() 
+                                                  - loopElement.unfilteredSplitSections.size()));
+
+        if (foundUnfilteredSizeDifference == -1 || foundUnfilteredSizeDifference > currentUnfilteredSizeDifference) {
+            foundName = MappedElement(loopName.first, loopName.second);
+            foundUnfilteredSizeDifference = currentUnfilteredSizeDifference;
+        }
     }
 
     return foundName;
 }
-
 IndexedName ElementMap::find(const MappedName& name, ElementIDRefs* sids) const
 {
     auto nameIter = mappedNames.find(name);
     if (nameIter == mappedNames.end()) {
         if (childElements.isEmpty()) {
-            return complexFind(name);
+            return complexFind(name).index;
         }
 
         int len = 0;
@@ -1466,6 +1451,67 @@ IndexedName ElementMap::find(const MappedName& name, ElementIDRefs* sids) const
         }
     }
     return nameIter->second;
+}
+
+MappedElement ElementMap::findMatching(const MappedName& name, ElementIDRefs* sids) const
+{
+    auto nameIter = mappedNames.find(name);
+    if (nameIter == mappedNames.end()) {
+        if (childElements.isEmpty()) {
+            return complexFind(name);
+        }
+
+        int len = 0;
+        if (name.findTagInElementName(nullptr, &len, nullptr, nullptr, false, false) < 0) {
+            return MappedElement();
+        }
+        QByteArray key = name.toRawBytes(len);
+        auto it = this->childElements.find(key);
+        if (it == this->childElements.end()) {
+            return MappedElement();
+        }
+
+        const auto& child = *it.value().childMap;
+        MappedElement res;
+
+        MappedName childName = MappedName::fromRawData(name, 0, len);
+        if (child.elementMap) {
+            res = child.elementMap->findMatching(childName, sids);
+        }
+        else {
+            res = MappedElement(childName, childName.toIndexedName());
+        }
+
+        if (res.index && boost::equals(res.index.getType(), child.indexedName.getType())
+            && child.indexedName.getIndex() <= res.index.getIndex()
+            && child.indexedName.getIndex() + child.count > res.index.getIndex()) {
+            res.index.setIndex(res.index.getIndex() + it.value().childMap->offset);
+
+            if (res.name.empty()) {
+                res.name = name;
+            }
+
+            return res;
+        }
+
+        return MappedElement();
+    }
+
+    if (sids) {
+        const MappedNameRef* ref = findMappedRef(nameIter->second);
+        for (; ref; ref = ref->next.get()) {
+            if (ref->name == name) {
+                if (sids->empty()) {
+                    *sids = ref->sids;
+                }
+                else {
+                    *sids += ref->sids;
+                }
+                break;
+            }
+        }
+    }
+    return MappedElement(nameIter->first, nameIter->second);
 }
 
 MappedName ElementMap::find(const IndexedName& idx, ElementIDRefs* sids) const
