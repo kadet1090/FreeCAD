@@ -2289,6 +2289,8 @@ public:
      * @param maker: optional type name of the face maker. If not given,
      *               default to "Part::FaceMakerBullseye"
      * @param plane: optional plane of the face.
+     * 
+     * @param faceElementSupportLimit: defines the amount of IDs that supports the face(s) created by this method.
      *
      * @return The function creates a planar face. The original content of this
      *         TopoShape is discarded and replaced with the new shape. The
@@ -2299,7 +2301,8 @@ public:
     TopoShape& makeElementFace(const std::vector<TopoShape>& shapes,
                                const char* op = nullptr,
                                const char* maker = nullptr,
-                               const gp_Pln* plane = nullptr);
+                               const gp_Pln* plane = nullptr,
+                               const int faceElementSupportLimit = 1);
     /** Make a planar face with the input wire or edge
      *
      * @param shape: input shape. Can be either edge, wire, or compound of
@@ -2309,6 +2312,8 @@ public:
      * @param maker: optional type name of the face maker. If not given,
      *               default to "Part::FaceMakerBullseye"
      * @param plane: optional plane of the face.
+     * 
+     * @param faceElementSupportLimit: defines the amount of IDs that supports the face(s) created by this method.
      *
      * @return The function creates a planar face. The original content of this
      *         TopoShape is discarded and replaced with the new shape. The
@@ -2319,7 +2324,8 @@ public:
     TopoShape& makeElementFace(const TopoShape& shape,
                                const char* op = nullptr,
                                const char* maker = nullptr,
-                               const gp_Pln* plane = nullptr);
+                               const gp_Pln* plane = nullptr,
+                               const int faceElementSupportLimit = 1);
     /** Make a planar face using this shape
      *
      * @param op: optional string to be encoded into topo naming for indicating
