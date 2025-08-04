@@ -117,6 +117,19 @@ int ExtensionContainerPy::PyInit(PyObject* /*args*/, PyObject* /*kwd*/)
 
 PyObject* ExtensionContainerPy::getCustomAttributes(const char* attr) const
 {
+    auto cont = this->getExtensionContainerPtr();
+    for (auto it = cont->extensionBegin(); it != cont->extensionEnd(); ++it) {
+        if (PyObject* obj = (*it).second->getExtensionPyObject()) {
+            PyObject* nameobj = PyUnicode_FromString(attr);
+            PyObject* value = PyObject_GetAttr(obj, nameobj);
+            Py_DECREF(nameobj);
+            Py_DECREF(obj);
+            if (value) {
+                return value;
+            }
+            PyErr_Clear();
+        }
+    }
     if (Base::streq(attr, "__dict__")) {
         PyObject* dict = PyDict_New();
         PyObject* props = PropertyContainerPy::getCustomAttributes("__dict__");
@@ -125,9 +138,7 @@ PyObject* ExtensionContainerPy::getCustomAttributes(const char* attr) const
             Py_DECREF(props);
         }
 
-        ExtensionContainer::ExtensionIterator it =
-            this->getExtensionContainerPtr()->extensionBegin();
-        for (; it != this->getExtensionContainerPtr()->extensionEnd(); ++it) {
+        for (auto it = cont->extensionBegin(); it != cont->extensionEnd(); ++it) {
             // The PyTypeObject is shared by all instances of this type and therefore
             // we have to add new methods only once.
             PyObject* obj = (*it).second->getExtensionPyObject();
@@ -147,8 +158,7 @@ PyObject* ExtensionContainerPy::getCustomAttributes(const char* attr) const
     // with the PyObject pointer of the extension to make sure the method will
     // be called for the correct instance.
     PyObject* func = nullptr;
-    ExtensionContainer::ExtensionIterator it = this->getExtensionContainerPtr()->extensionBegin();
-    for (; it != this->getExtensionContainerPtr()->extensionEnd(); ++it) {
+    for (auto it = cont->extensionBegin(); it != cont->extensionEnd(); ++it) {
         // The PyTypeObject is shared by all instances of this type and therefore
         // we have to add new methods only once.
         PyObject* obj = (*it).second->getExtensionPyObject();
@@ -173,8 +183,21 @@ PyObject* ExtensionContainerPy::getCustomAttributes(const char* attr) const
     return func;
 }
 
-int ExtensionContainerPy::setCustomAttributes(const char* /*attr*/, PyObject* /*obj*/)
+int ExtensionContainerPy::setCustomAttributes(const char* attr, PyObject* value)
 {
+    auto cont = this->getExtensionContainerPtr();
+    for (auto it = cont->extensionBegin(); it != cont->extensionEnd(); ++it) {
+        if (PyObject* obj = (*it).second->getExtensionPyObject()) {
+            PyObject* nameobj = PyUnicode_FromString(attr);
+            int success = PyObject_SetAttr(obj, nameobj, value);
+            Py_DECREF(nameobj);
+            Py_DECREF(obj);
+            if (success == 0) {
+                return 1;
+            }
+            PyErr_Clear();
+        }
+    }
     return 0;
 }
 
