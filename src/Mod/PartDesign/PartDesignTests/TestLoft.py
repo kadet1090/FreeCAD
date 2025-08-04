@@ -43,7 +43,7 @@ class TestLoft(unittest.TestCase):
         self.LoftSketch = self.Doc.addObject('Sketcher::SketchObject', 'LoftSketch')
         self.Body.addObject(self.LoftSketch)
         self.LoftSketch.MapMode = 'FlatFace'
-        self.LoftSketch.AttachmentSupport = (self.Doc.XZ_Plane, [''])
+        self.LoftSketch.Support = (self.Doc.XZ_Plane, [''])
         self.Doc.recompute()
         TestSketcherApp.CreateRectangleSketch(self.LoftSketch, (0, 1), (1, 1))
         self.Doc.recompute()
@@ -72,7 +72,7 @@ class TestLoft(unittest.TestCase):
         self.LoftSketch = self.Doc.addObject('Sketcher::SketchObject', 'LoftSketch')
         self.Body.addObject(self.LoftSketch)
         self.LoftSketch.MapMode = 'FlatFace'
-        self.LoftSketch.AttachmentSupport = (self.Doc.XZ_Plane, [''])
+        self.LoftSketch.Support = (self.Doc.XZ_Plane, [''])
         self.Doc.recompute()
         TestSketcherApp.CreateRectangleSketch(self.LoftSketch, (0, 1), (1, 1))
         self.Doc.recompute()
@@ -88,7 +88,7 @@ class TestLoft(unittest.TestCase):
         body = self.Doc.addObject('PartDesign::Body','Body')
 
         sketch1 = body.newObject('Sketcher::SketchObject','Sketch')
-        sketch1.AttachmentSupport = (self.Doc.XZ_Plane,[''])
+        sketch1.Support = (self.Doc.XZ_Plane,[''])
         sketch1.MapMode = 'FlatFace'
         sketch1.addGeometry(Part.Circle(Base.Vector(-40.0,0.0,0.0),Base.Vector(0,0,1),10.0), False)
         sketch1.addConstraint(Sketcher.Constraint('PointOnObject',0,3,-1))
@@ -98,7 +98,7 @@ class TestLoft(unittest.TestCase):
         sketch1.setDatum(2,Units.Quantity('40.000000 mm'))
 
         sketch2 = body.newObject('Sketcher::SketchObject','Sketch001')
-        sketch2.AttachmentSupport = (self.Doc.YZ_Plane,'')
+        sketch2.Support = (self.Doc.YZ_Plane,'')
         sketch2.MapMode = 'FlatFace'
         sketch2.addGeometry(Part.Circle(Base.Vector(-10.0,0.0,0.0),Base.Vector(0,0,1),10.0),False)
         sketch2.addConstraint(Sketcher.Constraint('PointOnObject',0,3,-1))
@@ -108,7 +108,7 @@ class TestLoft(unittest.TestCase):
         sketch2.setDatum(2,Units.Quantity('40.000000 mm'))
 
         sketch3 = body.newObject('Sketcher::SketchObject','Sketch002')
-        sketch3.AttachmentSupport = (self.Doc.getObject('YZ_Plane'),'')
+        sketch3.Support = (self.Doc.getObject('YZ_Plane'),'')
         sketch3.MapMode = 'FlatFace'
         sketch3.addGeometry(Part.Circle(Base.Vector(40.0,0.0,0.0),Base.Vector(0,0,1),10.0),False)
         sketch3.addConstraint(Sketcher.Constraint('PointOnObject',0,3,-1))
@@ -118,7 +118,7 @@ class TestLoft(unittest.TestCase):
         sketch3.setDatum(2,Units.Quantity('20.000000 mm'))
 
         sketch4 = body.newObject('Sketcher::SketchObject','Sketch003')
-        sketch4.AttachmentSupport = (self.Doc.XZ_Plane,'')
+        sketch4.Support = (self.Doc.XZ_Plane,'')
         sketch4.MapMode = 'FlatFace'
         sketch4.addGeometry(Part.Circle(Base.Vector(40.0,0.0,0.0),Base.Vector(0,0,1),10.0),False)
         sketch4.addConstraint(Sketcher.Constraint('PointOnObject',0,3,-1))
@@ -148,7 +148,7 @@ class TestLoft(unittest.TestCase):
         body = self.Doc.addObject('PartDesign::Body', 'Body')
         body.Label = 'Body'
         coneBottomSketch = body.newObject('Sketcher::SketchObject', 'ConeBottomSketch')
-        coneBottomSketch.AttachmentSupport = (self.Doc.getObject('XY_Plane'), [''])
+        coneBottomSketch.Support = (self.Doc.getObject('XY_Plane'), [''])
         coneBottomSketch.MapMode = 'FlatFace'
 
         geoList = []
@@ -174,7 +174,7 @@ class TestLoft(unittest.TestCase):
         coneBottomSketch.addConstraint(Sketcher.Constraint('Coincident', 1, 3, 0, 3))
 
         coneTopSketch = body.newObject('Sketcher::SketchObject', 'ConeTopSketch')
-        coneTopSketch.AttachmentSupport = (self.Doc.getObject('XY_Plane'), [''])
+        coneTopSketch.Support = (self.Doc.getObject('XY_Plane'), [''])
         coneTopSketch.MapMode = 'FlatFace'
 
         geoList = []

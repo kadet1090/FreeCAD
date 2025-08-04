@@ -38,7 +38,7 @@ class TestHelix(unittest.TestCase):
     def testHelicalTubeCase(self):
         body = self.Doc.addObject('PartDesign::Body','Body')
         sketch = body.newObject('Sketcher::SketchObject','Sketch')
-        sketch.AttachmentSupport = (self.Doc.getObject('XY_Plane'),[''])
+        sketch.Support = (self.Doc.getObject('XY_Plane'),[''])
         sketch.MapMode = 'FlatFace'
 
         geoList = []
@@ -107,7 +107,7 @@ class TestHelix(unittest.TestCase):
         self.Doc.recompute()
 
         # xz_plane = body.Origin.OriginFeatures[4]
-        # coneSketch.AttachmentSupport = xz_plane
+        # coneSketch.Support = xz_plane
         # coneSketch.MapMode = 'FlatFace'
         helix = self.Doc.addObject("PartDesign::AdditiveHelix","AdditiveHelix")
         body.addObject(helix)
@@ -145,7 +145,7 @@ class TestHelix(unittest.TestCase):
             body.addObject(gearSketch)
             TestSketcherApp.CreateRectangleSketch(gearSketch, (10*(10**exponent), 0), (1*(10**exponent), 1*(10**exponent)))
             xz_plane = body.Origin.OriginFeatures[4]
-            gearSketch.AttachmentSupport = xz_plane
+            gearSketch.Support = xz_plane
             gearSketch.MapMode = 'FlatFace'
             self.Doc.recompute()
 
@@ -187,7 +187,7 @@ class TestHelix(unittest.TestCase):
             body.addObject(gearSketch)
             TestSketcherApp.CreateRectangleSketch(gearSketch, (10*(10**exponent), 0), (1*(10**exponent), 1*(10**exponent)))
             xz_plane = body.Origin.OriginFeatures[4]
-            gearSketch.AttachmentSupport = xz_plane
+            gearSketch.Support = xz_plane
             gearSketch.MapMode = 'FlatFace'
             self.Doc.recompute()
 
@@ -237,7 +237,7 @@ class TestHelix(unittest.TestCase):
             body.addObject(gearSketch)
             TestSketcherApp.CreateRectangleSketch(gearSketch, (10*(10**exponent), 0), (1*(10**exponent), 1*(10**exponent)))
             xz_plane = body.Origin.OriginFeatures[4]
-            gearSketch.AttachmentSupport = xz_plane
+            gearSketch.Support = xz_plane
             gearSketch.MapMode = 'FlatFace'
             self.Doc.recompute()
 
@@ -300,7 +300,7 @@ class TestHelix(unittest.TestCase):
         coneSketch.addConstraint(conList)
 
         xz_plane = body.Origin.OriginFeatures[4]
-        coneSketch.AttachmentSupport = xz_plane
+        coneSketch.Support = xz_plane
         coneSketch.MapMode = 'FlatFace'
         helix = self.Doc.addObject("PartDesign::AdditiveHelix","AdditiveHelix")
         body.addObject(helix)
@@ -346,7 +346,7 @@ class TestHelix(unittest.TestCase):
         coneSketch.addConstraint(conList)
 
         xz_plane = body.Origin.OriginFeatures[4]
-        coneSketch.AttachmentSupport = xz_plane
+        coneSketch.Support = xz_plane
         coneSketch.MapMode = 'FlatFace'
         helix = self.Doc.addObject("PartDesign::AdditiveHelix", "AdditiveHelix")
         body.addObject(helix)

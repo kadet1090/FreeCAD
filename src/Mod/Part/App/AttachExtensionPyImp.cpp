@@ -90,13 +90,20 @@ Py::Object AttachExtensionPy::getAttacher() const
 
 }
 
-PyObject *AttachExtensionPy::getCustomAttributes(const char* /*attr*/) const
+PyObject *AttachExtensionPy::getCustomAttributes(const char* attr) const
 {
+    if (strcmp(attr, "AttachmentSupport") == 0) {
+        return getAttachExtensionPtr()->Support.getPyObject();
+    }
     return nullptr;
 }
 
-int AttachExtensionPy::setCustomAttributes(const char* /*attr*/, PyObject* /*obj*/)
+int AttachExtensionPy::setCustomAttributes(const char* attr, PyObject* obj)
 {
+    if (strcmp(attr, "AttachmentSupport") == 0) {
+        getAttachExtensionPtr()->Support.setPyObject(obj);
+        return 1;
+    }
     return 0;
 }
 

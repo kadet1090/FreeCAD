@@ -38,14 +38,19 @@ std::string Part2DObjectPy::representation() const
     return {"<Part::Part2DObject>"};
 }
 
-PyObject *Part2DObjectPy::getCustomAttributes(const char* /*attr*/) const
+PyObject *Part2DObjectPy::getCustomAttributes(const char* attr) const
 {
+    if (strcmp(attr, "AttachmentSupport") == 0) {
+        return getPart2DObjectPtr()->Support.getPyObject();
+    }
     return nullptr;
 }
 
-int Part2DObjectPy::setCustomAttributes(const char* /*attr*/, PyObject* /*obj*/)
+int Part2DObjectPy::setCustomAttributes(const char* attr, PyObject* obj)
 {
+    if (strcmp(attr, "AttachmentSupport") == 0) {
+        getPart2DObjectPtr()->Support.setPyObject(obj);
+        return 1;
+    }
     return 0;
 }
-
-

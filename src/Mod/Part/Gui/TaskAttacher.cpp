@@ -84,8 +84,8 @@ const QString makeRefString(const App::DocumentObject* obj, const std::string& s
 
 void TaskAttacher::makeRefStrings(std::vector<QString>& refstrings, std::vector<std::string>& refnames) {
     Part::AttachExtension* pcAttach = ViewProvider->getObject()->getExtensionByType<Part::AttachExtension>();
-    std::vector<App::DocumentObject*> refs = pcAttach->AttachmentSupport.getValues();
-    refnames = pcAttach->AttachmentSupport.getSubValues();
+    std::vector<App::DocumentObject*> refs = pcAttach->Support.getValues();
+    refnames = pcAttach->Support.getSubValues();
 
     for (size_t r = 0; r < 4; r++) {
         if ((r < refs.size()) && (refs[r])) {
@@ -170,7 +170,7 @@ TaskAttacher::TaskAttacher(Gui::ViewProviderDocumentObject* ViewProvider, QWidge
 
     // Get the feature data
     Part::AttachExtension* pcAttach = ViewProvider->getObject()->getExtensionByType<Part::AttachExtension>();
-    std::vector<std::string> refnames = pcAttach->AttachmentSupport.getSubValues();
+    std::vector<std::string> refnames = pcAttach->Support.getSubValues();
 
     ui->checkBoxFlip->setChecked(pcAttach->MapReversed.getValue());
     std::vector<QString> refstrings;
@@ -201,7 +201,7 @@ TaskAttacher::TaskAttacher(Gui::ViewProviderDocumentObject* ViewProvider, QWidge
         this->iActiveRef = 0;
     else
         this->iActiveRef = -1;
-    if (pcAttach->AttachmentSupport.getSize() == 0) {
+    if (pcAttach->Support.getSize() == 0) {
         autoNext = true;
     }
     else {
@@ -280,7 +280,7 @@ void TaskAttacher::updateReferencesUI()
 
     Part::AttachExtension* pcAttach = ViewProvider->getObject()->getExtensionByType<Part::AttachExtension>();
 
-    std::vector<App::DocumentObject*> refs = pcAttach->AttachmentSupport.getValues();
+    std::vector<App::DocumentObject*> refs = pcAttach->Support.getValues();
     completed = false;
 
     // Get hints for further required references...
@@ -469,7 +469,7 @@ void TaskAttacher::handleInitialSelection()
     // We handle initial selection only if it is not attached yet.
     App::DocumentObject* obj = ViewProvider->getObject();
     Part::AttachExtension* pcAttach = obj->getExtensionByType<Part::AttachExtension>();
-    std::vector<App::DocumentObject*> refs = pcAttach->AttachmentSupport.getValues();
+    std::vector<App::DocumentObject*> refs = pcAttach->Support.getValues();
 
     if (!refs.empty()) {
         return;
@@ -512,8 +512,8 @@ void TaskAttacher::addToReference(const std::vector<SubAndObjName>& pairs)
     Part::AttachExtension* pcAttach = obj->getExtensionByType<Part::AttachExtension>();
 
     for (auto& pair : pairs) {
-        std::vector<App::DocumentObject*> refs = pcAttach->AttachmentSupport.getValues();
-        std::vector<std::string> refnames = pcAttach->AttachmentSupport.getSubValues();
+        std::vector<App::DocumentObject*> refs = pcAttach->Support.getValues();
+        std::vector<std::string> refnames = pcAttach->Support.getSubValues();
 
         App::DocumentObject* selObj = obj->getDocument()->getObject(pair.objName.c_str());
         std::string subname = pair.subName;
@@ -553,7 +553,7 @@ void TaskAttacher::addToReference(const std::vector<SubAndObjName>& pairs)
             refnames.push_back(subname);
         }
 
-        pcAttach->AttachmentSupport.setValues(refs, refnames);
+        pcAttach->Support.setValues(refs, refnames);
 
         QLineEdit* line = getLine(iActiveRef);
         if (line) {
@@ -734,8 +734,8 @@ void TaskAttacher::onRefName(const QString& text, unsigned idx)
         // Reference was removed
         // Update the reference list
         Part::AttachExtension* pcAttach = ViewProvider->getObject()->getExtensionByType<Part::AttachExtension>();
-        std::vector<App::DocumentObject*> refs = pcAttach->AttachmentSupport.getValues();
-        std::vector<std::string> refnames = pcAttach->AttachmentSupport.getSubValues();
+        std::vector<App::DocumentObject*> refs = pcAttach->Support.getValues();
+        std::vector<std::string> refnames = pcAttach->Support.getSubValues();
         std::vector<App::DocumentObject*> newrefs;
         std::vector<std::string> newrefnames;
         for (size_t r = 0; r < refs.size(); r++) {
@@ -744,7 +744,7 @@ void TaskAttacher::onRefName(const QString& text, unsigned idx)
                 newrefnames.push_back(refnames[r]);
             }
         }
-        pcAttach->AttachmentSupport.setValues(newrefs, newrefnames);
+        pcAttach->Support.setValues(newrefs, newrefnames);
         updateListOfModes();
         pcAttach->MapMode.setValue(getActiveMapMode());
         selectMapMode(getActiveMapMode());
@@ -830,8 +830,8 @@ void TaskAttacher::onRefName(const QString& text, unsigned idx)
     }
 
     Part::AttachExtension* pcAttach = ViewProvider->getObject()->getExtensionByType<Part::AttachExtension>();
-    std::vector<App::DocumentObject*> refs = pcAttach->AttachmentSupport.getValues();
-    std::vector<std::string> refnames = pcAttach->AttachmentSupport.getSubValues();
+    std::vector<App::DocumentObject*> refs = pcAttach->Support.getValues();
+    std::vector<std::string> refnames = pcAttach->Support.getSubValues();
     if (idx < refs.size()) {
         refs[idx] = obj;
         refnames[idx] = subElement;
@@ -840,7 +840,7 @@ void TaskAttacher::onRefName(const QString& text, unsigned idx)
         refs.push_back(obj);
         refnames.emplace_back(subElement);
     }
-    pcAttach->AttachmentSupport.setValues(refs, refnames);
+    pcAttach->Support.setValues(refs, refnames);
     updateListOfModes();
     pcAttach->MapMode.setValue(getActiveMapMode());
     selectMapMode(getActiveMapMode());
@@ -863,7 +863,7 @@ void TaskAttacher::updateRefButton(int idx)
     }
 
     Part::AttachExtension* pcAttach = ViewProvider->getObject()->getExtensionByType<Part::AttachExtension>();
-    std::vector<App::DocumentObject*> refs = pcAttach->AttachmentSupport.getValues();
+    std::vector<App::DocumentObject*> refs = pcAttach->Support.getValues();
 
     int numrefs = refs.size();
     bool enable = true;
@@ -960,7 +960,7 @@ void TaskAttacher::updateListOfModes()
     this->lastSuggestResult.bestFitMode = mmDeactivated;
     size_t lastValidModeItemIndex = mmDummy_NumberOfModes;
 
-    if (pcAttach->AttachmentSupport.getSize() > 0) {
+    if (pcAttach->Support.getSize() > 0) {
         pcAttach->attacher().suggestMapModes(this->lastSuggestResult);
         modesInList = this->lastSuggestResult.allApplicableModes;
         modesInList.insert(modesInList.begin(), mmDeactivated); // always have the option to choose Deactivated mode
@@ -1147,8 +1147,8 @@ void TaskAttacher::visibilityAutomation(bool opening_not_closing)
                 "_tv_%4.hide(dep_features)\n"
                 "del(dep_features)\n"
                 "if not tvObj.isDerivedFrom('PartDesign::CoordinateSystem'):\n"
-                "\t\tif len(tvObj.AttachmentSupport) > 0:\n"
-                "\t\t\t_tv_%4.show([lnk[0] for lnk in tvObj.AttachmentSupport])\n"
+                "\t\tif len(tvObj.Support) > 0:\n"
+                "\t\t\t_tv_%4.show([lnk[0] for lnk in tvObj.Support])\n"
                 "del(tvObj)"
             ).arg(
                 QString::fromLatin1(Gui::Command::getObjectCmd(vp->getObject()).c_str()),
@@ -1284,7 +1284,7 @@ bool TaskDlgAttacher::accept()
 
         Gui::cmdAppObjectArgs(obj, "MapReversed = %s", pcAttach->MapReversed.getValue() ? "True" : "False");
 
-        Gui::cmdAppObjectArgs(obj, "AttachmentSupport = %s", pcAttach->AttachmentSupport.getPyReprString().c_str());
+        Gui::cmdAppObjectArgs(obj, "Support = %s", pcAttach->Support.getPyReprString().c_str());
 
         Gui::cmdAppObjectArgs(obj, "MapPathParameter = %f", pcAttach->MapPathParameter.getValue());
 

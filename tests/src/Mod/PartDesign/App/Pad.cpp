@@ -27,7 +27,7 @@ protected:
         _sketch = _doc->addObject<Sketcher::SketchObject>("Sketch");
         _body->addObject(_sketch);
 
-        _sketch->AttachmentSupport.setValue(_doc->getObject("XY_Plane"), "");
+        _sketch->Support.setValue(_doc->getObject("XY_Plane"), "");
         _sketch->MapMode.setValue("FlatFace");
         Part::GeomCircle circle;
         circle.setRadius(10.0);

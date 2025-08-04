@@ -44,7 +44,7 @@ Datum::~Datum() = default;
 void Datum::onDocumentRestored()
 {
     // This seems to be the only way to make the ViewProvider display the datum feature
-    AttachmentSupport.touch();
+    Support.touch();
     Part::Feature::onDocumentRestored();
 }
 

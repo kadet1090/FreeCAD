@@ -7404,7 +7404,7 @@ Part::Geometry* projectLine(const BRepAdaptor_Curve& curve, const Handle(Geom_Pl
 bool SketchObject::evaluateSupport()
 {
     // returns false if the shape is broken, null or non-planar
-    App::DocumentObject* link = AttachmentSupport.getValue();
+    App::DocumentObject* link = Support.getValue();
     if (!link || !link->isDerivedFrom<Part::Feature>())
         return false;
     return true;
@@ -9831,7 +9831,7 @@ void SketchObject::onChanged(const App::Property* prop)
 #if 0
     // For now do not delete anything (#0001791). When changing the support
     // face it might be better to check which external geometries can be kept.
-    else if (prop == &AttachmentSupport) {
+    else if (prop == &Support) {
         // make sure not to change anything while restoring this object
         if (!isRestoring()) {
             // if support face has changed then clear the external geometry

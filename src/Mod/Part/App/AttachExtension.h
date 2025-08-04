@@ -86,7 +86,7 @@ public:
 
     App::PropertyString AttacherType;
     App::PropertyEnumeration AttacherEngine;
-    App::PropertyLinkSubList AttachmentSupport;
+    App::PropertyLinkSubList Support;
     App::PropertyEnumeration MapMode;  // see AttachEngine::eMapMode
     App::PropertyBool MapReversed;     // inverts Z and X internal axes
     App::PropertyPlacement AttachmentOffset;
@@ -139,7 +139,6 @@ protected:
     virtual bool extensionHandleChangedPropertyName(Base::XMLReader& reader,
                                                     const char* TypeName,
                                                     const char* PropName) override;
-
     App::PropertyPlacement& getPlacement() const;
     void initBase(bool force);
 

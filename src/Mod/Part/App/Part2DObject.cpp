@@ -73,7 +73,7 @@ App::DocumentObjectExecReturn *Part2DObject::execute()
 
 void Part2DObject::transformPlacement(const Base::Placement &transform)
 {
-    if (!AttachmentSupport.getValues().empty()) {
+    if (!Support.getValues().empty()) {
         //part->transformPlacement(transform);
         positionBySupport();
     } else {

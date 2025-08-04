@@ -38,7 +38,7 @@ class TestHole(unittest.TestCase):
         self.Body.addObject(self.Box)
         self.Doc.recompute()
         self.HoleSketch = self.Doc.addObject('Sketcher::SketchObject', 'SketchHole')
-        self.HoleSketch.AttachmentSupport = (self.Doc.XY_Plane, [''])
+        self.HoleSketch.Support = (self.Doc.XY_Plane, [''])
         self.HoleSketch.MapMode = 'FlatFace'
         self.HoleSketch.MapReversed = True
         self.Body.addObject(self.HoleSketch)
@@ -128,7 +128,7 @@ class TestHole(unittest.TestCase):
             App.Rotation(0.0000000000, 0.0000000000, 0.0000000000),
         )
         self.Box2.MapReversed = False
-        self.Box2.AttachmentSupport = self.Doc.getObject('XY_Plane')
+        self.Box2.Support = self.Doc.getObject('XY_Plane')
         self.Box2.MapPathParameter = 0.000000
         self.Box2.MapMode = 'FlatFace'
 
@@ -167,7 +167,7 @@ class TestHole(unittest.TestCase):
             App.Rotation(0.0000000000, 0.0000000000, 0.0000000000),
         )
         self.Box2.MapReversed = False
-        self.Box2.AttachmentSupport = self.Doc.getObject('XY_Plane')
+        self.Box2.Support = self.Doc.getObject('XY_Plane')
         self.Box2.MapPathParameter = 0.000000
         self.Box2.MapMode = 'FlatFace'
 

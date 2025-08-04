@@ -101,7 +101,7 @@ class PartDesignGuiTestCases(unittest.TestCase):
         App.ActiveDocument.recompute()
 
         self.Sketch = self.Doc.addObject('Sketcher::SketchObject','Sketch')
-        self.Sketch.AttachmentSupport = (self.BoxObj, ('Face3',))
+        self.Sketch.Support = (self.BoxObj, ('Face3',))
         self.Sketch.MapMode = 'FlatFace'
         self.BodySource.addObject(self.Sketch)
 
@@ -155,7 +155,7 @@ class PartDesignGuiTestCases(unittest.TestCase):
 
         self.Sketch = self.Doc.addObject('Sketcher::SketchObject','Sketch')
         self.BodySource.addObject(self.Sketch)
-        self.Sketch.AttachmentSupport = (self.BodySource.Origin.OriginFeatures[3], [''])
+        self.Sketch.Support = (self.BodySource.Origin.OriginFeatures[3], [''])
         self.Sketch.MapMode = 'FlatFace'
 
 
@@ -199,8 +199,8 @@ class PartDesignGuiTestCases(unittest.TestCase):
         #assert dependencies of the Sketch
         self.Doc.recompute()
 
-        self.assertFalse(self.Sketch.AttachmentSupport[0][0] in self.BodySource.Origin.OriginFeatures)
-        self.assertTrue(self.Sketch.AttachmentSupport[0][0] in self.BodyTarget.Origin.OriginFeatures)
+        self.assertFalse(self.Sketch.Support[0][0] in self.BodySource.Origin.OriginFeatures)
+        self.assertTrue(self.Sketch.Support[0][0] in self.BodyTarget.Origin.OriginFeatures)
         self.assertEqual(len(self.BodySource.Group), 0, "Source body feature count is wrong")
         self.assertEqual(len(self.BodyTarget.Group), 2, "Target body feature count is wrong")
 
@@ -328,7 +328,7 @@ class TestDatumPlane(unittest.TestCase):
 
         self.Doc.recompute()
         datum = body.newObject('PartDesign::Plane','DatumPlane')
-        datum.AttachmentSupport = [(box, 'Face6')]
+        datum.Support = [(box, 'Face6')]
         datum.MapMode = 'FlatFace'
         self.Doc.recompute()
 

@@ -685,7 +685,7 @@ class TestSketcherSolver(unittest.TestCase):
         body.addObject(pad)
         self.Doc.recompute()
         sketch1 = self.Doc.addObject("Sketcher::SketchObject", "Sketch1")
-        sketch1.AttachmentSupport = (pad, ("Face6"))
+        sketch1.Support = (pad, ("Face6"))
         sketch1.MapMode = "FlatFace"
         self.Doc.recompute()
 
@@ -701,10 +701,10 @@ class TestSketcherSolver(unittest.TestCase):
         sketch.setConstruction(3, True)
         self.Doc.recompute()
         # Assert
-        # AttachmentSupport is a list of (object,(subobject list)) with 1 entry.  Get the
+        # Support is a list of (object,(subobject list)) with 1 entry.  Get the
         # first and only subobject name in second part of that first tuple and see that it moved
         # from the Face6 we set above.
-        self.assertEqual(sketch1.AttachmentSupport[0][1][0], "Face9")
+        self.assertEqual(sketch1.Support[0][1][0], "Face9")
         self.assertIn("Face6", pad.Shape.ElementReverseMap)  # different Face6 exists
 
     # TODO other tests:

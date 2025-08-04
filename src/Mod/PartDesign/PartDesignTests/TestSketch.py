@@ -45,13 +45,13 @@ class TestSketch(unittest.TestCase):
         self.doc.commitTransaction()
 
         sketch = body.newObject('Sketcher::SketchObject', 'Sketch')
-        sketch.AttachmentSupport = (plane, [''])
+        sketch.Support = (plane, [''])
         sketch.MapMode = 'FlatFace'
         self.doc.recompute()
 
         self.assertEqual(sketch.InList, [body])
         self.assertEqual(sketch.OutList, [plane])
-        sketch.AttachmentSupport == [(plane, ("",))]
+        sketch.Support == [(plane, ("",))]
 
         self.doc.undo() # undo renaming
         self.doc.undo() # undo body creation
@@ -65,7 +65,7 @@ class TestSketch(unittest.TestCase):
 
         self.assertEqual(sketch.InList, [])
         self.assertEqual(sketch.OutList, [])
-        self.assertEqual(sketch.AttachmentSupport, [])
+        self.assertEqual(sketch.Support, [])
 
     def testDependency(self):
         self.doc.openTransaction("Create box")
@@ -83,12 +83,12 @@ class TestSketch(unittest.TestCase):
         self.doc.commitTransaction()
 
         sketch = body.newObject('Sketcher::SketchObject', 'Sketch')
-        sketch.AttachmentSupport = (plane, [''])
+        sketch.Support = (plane, [''])
         sketch.MapMode = 'FlatFace'
         self.doc.recompute()
 
         sketch.OutList
-        sketch.AttachmentSupport
+        sketch.Support
 
         self.doc.undo() # undo renaming
         self.doc.undo() # undo body creation

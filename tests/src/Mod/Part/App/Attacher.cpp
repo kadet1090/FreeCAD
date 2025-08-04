@@ -31,7 +31,7 @@ protected:
     {
         createTestDoc();
         _boxes[1]->MapReversed.setValue(false);
-        _boxes[1]->AttachmentSupport.setValue(_boxes[0]);
+        _boxes[1]->Support.setValue(_boxes[0]);
         _boxes[1]->MapPathParameter.setValue(0.0);
         _boxes[1]->MapMode.setValue("ObjectXY");  // There are lots of attachment modes!
         _boxes[1]->recomputeFeature();

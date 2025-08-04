@@ -34,7 +34,7 @@ class TestSketchMoveConstraint(unittest.TestCase):
     def testIssue_19566(self):
         body = self.Doc.addObject("PartDesign::Body", "Body")
         sketch = body.newObject("Sketcher::SketchObject", "Sketch")
-        sketch.AttachmentSupport = (self.Doc.getObject("XY_Plane"), [""])
+        sketch.Support = (self.Doc.getObject("XY_Plane"), [""])
         sketch.MapMode = "FlatFace"
         self.Doc.recompute()
 

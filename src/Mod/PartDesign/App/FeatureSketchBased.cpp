@@ -103,7 +103,7 @@ void ProfileBased::positionByPrevious()
     else {
         //no base. Use either Sketch support's placement, or sketch's placement itself.
         Part::Part2DObject* sketch = getVerifiedSketch();
-        App::DocumentObject* support = sketch->AttachmentSupport.getValue();
+        App::DocumentObject* support = sketch->Support.getValue();
         if (support && support->isDerivedFrom<App::GeoFeature>()) {
             this->Placement.setValue(static_cast<App::GeoFeature*>(support)->Placement.getValue());
         }
@@ -502,13 +502,13 @@ const TopoDS_Face ProfileBased::getSupportFace() const
 TopoDS_Face ProfileBased::getSupportFace(const Part::Part2DObject* sketch) const
 {
     if (sketch && sketch->MapMode.getValue() == Attacher::mmFlatFace
-        && sketch->AttachmentSupport.getValue()) {
-        const auto& AttachmentSupport = sketch->AttachmentSupport;
-        App::DocumentObject* ref = AttachmentSupport.getValue();
+        && sketch->Support.getValue()) {
+        const auto& Support = sketch->Support;
+        App::DocumentObject* ref = Support.getValue();
 
         Part::Feature* part = dynamic_cast<Part::Feature*>(ref);
         if (part) {
-            const std::vector<std::string>& sub = AttachmentSupport.getSubValues();
+            const std::vector<std::string>& sub = Support.getSubValues();
             assert(sub.size() == 1);
 
             if (sub.at(0).empty()) {
@@ -563,8 +563,8 @@ TopoShape ProfileBased::getTopoShapeSupportFace() const
         shape = getTopoShapeVerifiedFace();
     }
     else if (sketch->MapMode.getValue() == Attacher::mmFlatFace
-             && sketch->AttachmentSupport.getValue()) {
-        const auto& Support = sketch->AttachmentSupport;
+             && sketch->Support.getValue()) {
+        const auto& Support = sketch->Support;
         App::DocumentObject* ref = Support.getValue();
         shape = Part::Feature::getTopoShape(
             ref,
@@ -619,7 +619,7 @@ Part::Feature* ProfileBased::getBaseObject(bool silent) const
     //due to former test we know we have a 2d object
     Part::Part2DObject* sketch = getVerifiedSketch(silent);
     const char* err = nullptr;
-    App::DocumentObject* spt = sketch->AttachmentSupport.getValue();
+    App::DocumentObject* spt = sketch->Support.getValue();
     if (spt) {
         if (spt->isDerivedFrom<Part::Feature>()) {
             rv = static_cast<Part::Feature*>(spt);

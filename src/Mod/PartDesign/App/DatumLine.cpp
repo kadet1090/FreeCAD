@@ -62,7 +62,7 @@ Line::Line()
     myShape.Infinite(Standard_True);
     Shape.setValue(myShape);
 
-    AttachmentSupport.touch();
+    Support.touch();
 }
 
 Line::~Line() = default;

@@ -139,7 +139,7 @@ class TestSketchValidateCoincidents(unittest.TestCase):
         doc.Body.Label = "Body"
         doc.recompute()
         doc.Body.newObject("Sketcher::SketchObject", "Sketch")
-        doc.Sketch.AttachmentSupport = (doc.XY_Plane, [""])
+        doc.Sketch.Support = (doc.XY_Plane, [""])
         doc.Sketch.MapMode = "FlatFace"
         doc.recompute()
         geoList = []
@@ -181,7 +181,7 @@ class TestSketchValidateCoincidents(unittest.TestCase):
         constraintList = []
         doc.recompute()
         doc.Body.newObject("Sketcher::SketchObject", "Sketch001")
-        doc.Sketch001.AttachmentSupport = (doc.XY_Plane, [""])
+        doc.Sketch001.Support = (doc.XY_Plane, [""])
         doc.Sketch001.MapMode = "FlatFace"
         doc.recompute()
         doc.Sketch001.addExternal("Sketch", "Edge3")

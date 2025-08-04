@@ -429,7 +429,7 @@ TaskFeaturePick::makeCopy(App::DocumentObject* obj, std::string sub, bool indepe
             // TODO Recheck this. This looks strange in case of independent copy (2015-10-31,
             // Fat-Zer)
             if (!independent) {
-                datumCopy->AttachmentSupport.setValue(obj, entity.c_str());
+                datumCopy->Support.setValue(obj, entity.c_str());
                 datumCopy->MapMode.setValue(mode);
             }
             else if (!entity.empty()) {

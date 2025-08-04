@@ -82,7 +82,7 @@ void ViewProviderAttachExtension::extensionUpdateData(const App::Property* prop)
         auto* attach = obj->getExtensionByType<Part::AttachExtension>();
 
         if(attach) {
-            if( prop == &(attach->AttachmentSupport) ||
+            if( prop == &(attach->Support) ||
                 prop == &(attach->MapMode) ||
                 prop == &(attach->MapPathParameter) ||
                 prop == &(attach->MapReversed) ||

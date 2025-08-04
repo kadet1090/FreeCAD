@@ -116,7 +116,7 @@ bool TaskDlgDatumParameters::accept() {
     //check the prerequisites for the selected objects
     //the user has to decide which option we should take if external references are used
     bool extReference = false;
-    for (App::DocumentObject* obj : pcDatum->AttachmentSupport.getValues()) {
+    for (App::DocumentObject* obj : pcDatum->Support.getValues()) {
         if (pcActiveBody && !pcActiveBody->hasObject(obj) && !pcActiveBody->getOrigin()->hasObject(obj))
             extReference = true;
     }
@@ -133,9 +133,9 @@ bool TaskDlgDatumParameters::accept() {
         else if (!dlg.radioXRef->isChecked()) {
             std::vector<App::DocumentObject*> copyObjects;
             std::vector<std::string> copySubValues;
-            std::vector<std::string> subs = pcDatum->AttachmentSupport.getSubValues();
+            std::vector<std::string> subs = pcDatum->Support.getSubValues();
             int index = 0;
-            for (App::DocumentObject* obj : pcDatum->AttachmentSupport.getValues()) {
+            for (App::DocumentObject* obj : pcDatum->Support.getValues()) {
                 if (pcActiveBody && !pcActiveBody->hasObject(obj) && !pcActiveBody->getOrigin()->hasObject(obj)) {
                     auto* copy = PartDesignGui::TaskFeaturePick::makeCopy(obj, subs[index], dlg.radioIndependent->isChecked());
                     if (copy) {
@@ -152,7 +152,7 @@ bool TaskDlgDatumParameters::accept() {
                 index++;
             }
 
-            pcDatum->AttachmentSupport.setValues(copyObjects, copySubValues);
+            pcDatum->Support.setValues(copyObjects, copySubValues);
         }
     }
 

@@ -47,7 +47,7 @@ TEST_F(AttachExtensionTest, testPlanePlane)
     getDocument()->recompute();
 
     plane2->MapReversed.setValue(false);
-    plane2->AttachmentSupport.setValue(plane1);
+    plane2->Support.setValue(plane1);
     plane2->MapPathParameter.setValue(0.0);
     plane2->MapMode.setValue("FlatFace");
 
