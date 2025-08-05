@@ -477,6 +477,8 @@ bool AttachExtension::extensionHandleChangedPropertyName(Base::XMLReader& reader
     if (strcmp(PropName, "AttachmentSupport") == 0) {
         if (App::PropertyLinkSubList::getClassTypeId() == type) {
             Support.Restore(reader);
+            Base::Console().Message(std::string("AttachExtension"),
+                                    "Convert property 'AttachmentSupport' to 'Support'\n");
             return true;
         }
     }
