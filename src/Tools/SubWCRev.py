@@ -266,18 +266,18 @@ class GitControl(VersionControl):
                 remote, branch = ref.split("/", 1)
                 if remote in self.remotes:
                     url = self.remotes[remote]
-                    # rewrite github to public url
-                    match = re.match(r"git@github\.com:(\S+?)/(\S+\.git)", url) or re.match(
-                        r"https://github\.com/(\S+)/(\S+\.git)", url
+                    # rewrite codeberg to public url
+                    match = re.match(r"git@codeberg\.org:(\S+?)/(\S+\.git)", url) or re.match(
+                        r"https://codeberg\.org/(\S+)/(\S+\.git)", url
                     )
                     if match is not None:
-                        url = "git://github.com/%s/%s" % match.groups()
+                        url = "git://codeberg.org/%s/%s" % match.groups()
                     match = re.match(r"ssh://\S+?@(\S+)", url)
                     if match is not None:
                         url = "git://%s" % match.group(1)
                     entryscore = (
-                        url == "git://github.com/FreeCAD/FreeCAD.git",
-                        "github.com" in url,
+                        url == "git://codeberg.org/xCAD/FreeCAD11.git",
+                        "codeberg.org" in url,
                         branch == self.branch,
                         branch == self.activeBranch(),
                         "@" not in url,
@@ -378,8 +378,8 @@ class GitControl(VersionControl):
         self.geturl()
         origin = None  # remote for the blessed main
         for fetchurl in (
-            "git@github.com:FreeCAD/FreeCAD.git",
-            "https://github.com/FreeCAD/FreeCAD.git",
+            "git@codeberg.org/xCAD/FreeCAD11.git",
+            "https://codeberg.org/xCAD/FreeCAD11.git",
         ):
             for key, url in self.remotes.items():
                 if fetchurl in url:
