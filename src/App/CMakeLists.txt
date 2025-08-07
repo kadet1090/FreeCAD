@@ -194,6 +194,7 @@ SET(Document_HPP_SRCS
     DocumentObject.h
     Extension.h
     ExtensionContainer.h
+    ExtensionPython.h
     GroupExtension.h
     DocumentObjectExtension.h
     DocumentObjectFileIncluded.h
