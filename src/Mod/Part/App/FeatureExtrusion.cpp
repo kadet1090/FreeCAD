@@ -271,16 +271,21 @@ Base::Vector3d Extrusion::calculateShapeNormal(const App::PropertyLink& shapeLin
 
     const bool onlyPlane = true;
     if (docobj->isDerivedFrom<Part::Part2DObject>()) {
+        Base::Vector3d OZ(0.0, 0.0, 1.0);
+        Base::Vector3d result;
+        Base::Rotation(mat).multVec(OZ, result);
+
+        // In case a plane is found on the shape use its normal instead
         BRepLib_FindSurface planeFinder(sh, -1.0, onlyPlane);
         if (planeFinder.Found()) {
             GeomAdaptor_Surface surf(planeFinder.Surface());
             gp_Dir normal = surf.Plane().Axis().Direction();
-            return Base::convertTo<Base::Vector3d>(normal);
+            Base::Vector3d planeNormal = Base::convertTo<Base::Vector3d>(normal);
+            // Consider possible different orientation
+            double dotProduct = planeNormal * result;
+            result = dotProduct > 0.0 ? planeNormal : -planeNormal;
         }
 
-        Base::Vector3d OZ(0.0, 0.0, 1.0);
-        Base::Vector3d result;
-        Base::Rotation(mat).multVec(OZ, result);
         return result;
     }
 
