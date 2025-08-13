@@ -661,6 +661,8 @@ View3DInventorViewer::~View3DInventorViewer()
     this->fillLight = nullptr;
     this->environment->unref();
     this->environment = nullptr;
+    this->lightRotation->unref();
+    this->lightRotation = nullptr;
 
     inventorSelection.reset(nullptr);
 
