@@ -35,6 +35,7 @@
 #endif
 
 #include "InputSource.h"
+#include "Persistence.h"
 #include "XMLTools.h"
 
 using namespace Base;
@@ -45,9 +46,9 @@ using namespace std;
 //  StdInputStream: Constructors and Destructor
 // ---------------------------------------------------------------------------
 
-#if QT_VERSION < 0x060000
 struct StdInputStream::TextCodec
 {
+#if QT_VERSION < 0x060000
     QTextCodec::ConverterState state;
     TextCodec()
     {
@@ -79,10 +80,7 @@ struct StdInputStream::TextCodec
             }
         }
     }
-};
 #else
-struct StdInputStream::TextCodec
-{
     void validateBytes(XMLByte* const toFill, std::streamsize len)
     {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -105,8 +103,29 @@ struct StdInputStream::TextCodec
             }
         }
     }
-};
 #endif
+    void validateXML(XMLByte* const toFill, std::streamsize len)
+    {
+        try {
+            tryValidateXML(toFill, len);
+        }
+        catch (const std::exception&) {
+        }
+    }
+
+    void tryValidateXML(XMLByte* const toFill, std::streamsize len)
+    {
+        std::string str(reinterpret_cast<char*>(toFill), len);
+        std::string out = Persistence::validateXMLString(str);
+        if (out.size() == str.size() && out != str) {
+            for (std::size_t i = 0; i < out.size(); i++) {
+                if (str[i] != out[i]) {
+                    toFill[i] = out[i];
+                }
+            }
+        }
+    }
+};
 
 StdInputStream::StdInputStream(std::istream& Stream,
                                XERCES_CPP_NAMESPACE::MemoryManager* const manager)
@@ -139,6 +158,7 @@ XMLSize_t StdInputStream::readBytes(XMLByte* const toFill, const XMLSize_t maxTo
     std::streamsize len = stream.gcount();
 
     codec->validateBytes(toFill, len);
+    codec->validateXML(toFill, len);
 
     return static_cast<XMLSize_t>(len);
 }
