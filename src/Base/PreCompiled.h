@@ -32,6 +32,8 @@
 #include <Python.h>
 
 // standard
+#include <algorithm>
+#include <array>
 #include <fcntl.h>
 #include <cstdio>
 #include <cassert>
@@ -44,6 +46,7 @@
 #include <cmath>
 #include <climits>
 #include <codecvt>
+#include <locale>
 
 #ifdef FC_OS_WIN32
 #include <direct.h>
