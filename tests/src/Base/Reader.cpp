@@ -7,6 +7,7 @@
 #endif
 
 #include "Base/Exception.h"
+#include "Base/Persistence.h"
 #include "Base/Reader.h"
 #include <array>
 #include <filesystem>
@@ -386,4 +387,14 @@ TEST_F(ReaderTest, invalidDefaults)
     EXPECT_THROW(
         { xml.Reader()->getAttributeAsInteger("missing", "Not a Float"); },
         std::invalid_argument);
+}
+
+TEST_F(ReaderTest, validateXmlString)
+{
+    std::string input = "abcde";
+    std::string output = input;
+    input.push_back(char(15));
+    output.push_back('_');
+    std::string result = Base::Persistence::validateXMLString(input);
+    EXPECT_EQ(output, result);
 }
