@@ -4199,8 +4199,8 @@ TopoShape::makeElementXor(const std::vector<TopoShape>& shapes, const char* op, 
         tempUnion.makeElementBoolean(Part::OpCodes::Fuse, {result, inputs[i]}, nullptr, tol);
 
         // Step 2: Common(A, B) - intermediate result, no op code.
-        TopoShape temp_common(0, Hasher);
-        temp_common.makeElementBoolean(Part::OpCodes::Common, {result, inputs[i]}, nullptr, tol);
+        TopoShape tempCommon(0, Hasher);
+        tempCommon.makeElementBoolean(Part::OpCodes::Common, {result, inputs[i]}, nullptr, tol);
 
         // Step 3: Compute the final result for this iteration
         if (temp_common.isNull() || temp_common.getShape().IsNull()) {
