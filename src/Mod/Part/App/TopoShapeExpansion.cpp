@@ -4211,8 +4211,8 @@ TopoShape::makeElementXor(const std::vector<TopoShape>& shapes, const char* op, 
         else {
             // Final result is Cut(Union, Common).
             result.makeElementBoolean(Part::OpCodes::Cut,
-                                      {temp_union, temp_common},
-                                      current_op,
+                                      {tempUnion, tempCommon},
+                                      currentOp,
                                       tol);
         }
     }
