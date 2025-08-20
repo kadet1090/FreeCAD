@@ -4206,7 +4206,7 @@ TopoShape::makeElementXor(const std::vector<TopoShape>& shapes, const char* op, 
         if (tempCommon.isNull() || tempCommon.getShape().IsNull()) {
             // No intersection, XOR is the same as Union.
             // We still call the boolean op to get the correct history.
-            result.makeElementBoolean(Part::OpCodes::Fuse, {result, inputs[i]}, current_op, tol);
+            result.makeElementBoolean(Part::OpCodes::Fuse, {result, inputs[i]}, currentOp, tol);
         }
         else {
             // Final result is Cut(Union, Common).
