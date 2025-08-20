@@ -1327,8 +1327,8 @@ void TaskExtrudeParameters::translateModeList(QComboBox*, int)
 void TaskExtrudeParameters::translateSidesList(int index)
 {
     ui->sidesMode->clear();
-    ui->sidesMode->addItem(tr("1 side"));
-    ui->sidesMode->addItem(tr("2 sides"));
+    ui->sidesMode->addItem(tr("One sided"));
+    ui->sidesMode->addItem(tr("Two sided"));
     ui->sidesMode->addItem(tr("Symmetric"));
     ui->sidesMode->setCurrentIndex(index);
 }
