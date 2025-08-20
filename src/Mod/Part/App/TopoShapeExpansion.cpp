@@ -4192,7 +4192,7 @@ TopoShape::makeElementXor(const std::vector<TopoShape>& shapes, const char* op, 
     TopoShape result = inputs[0];
     for (size_t i = 1; i < inputs.size(); ++i) {
         // The final op is only applied on the very last iteration.
-        const char* current_op = (i == inputs.size() - 1) ? op : nullptr;
+        const char* currentOp = (i == inputs.size() - 1) ? op : nullptr;
 
         // Step 1: Union(A, B) - intermediate result, no op code.
         TopoShape temp_union(0, Hasher);
