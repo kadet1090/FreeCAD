@@ -4195,8 +4195,8 @@ TopoShape::makeElementXor(const std::vector<TopoShape>& shapes, const char* op, 
         const char* currentOp = (i == inputs.size() - 1) ? op : nullptr;
 
         // Step 1: Union(A, B) - intermediate result, no op code.
-        TopoShape temp_union(0, Hasher);
-        temp_union.makeElementBoolean(Part::OpCodes::Fuse, {result, inputs[i]}, nullptr, tol);
+        TopoShape tempUnion(0, Hasher);
+        tempUnion.makeElementBoolean(Part::OpCodes::Fuse, {result, inputs[i]}, nullptr, tol);
 
         // Step 2: Common(A, B) - intermediate result, no op code.
         TopoShape temp_common(0, Hasher);
