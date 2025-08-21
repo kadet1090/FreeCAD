@@ -29,7 +29,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 
     Part::Offset* _offset = nullptr;  // NOLINT Can't be private in a test framework
 };

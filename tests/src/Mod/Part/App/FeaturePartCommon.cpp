@@ -23,7 +23,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 
     Part::Common* _common = nullptr;  // NOLINT Can't be private in a test framework
 };

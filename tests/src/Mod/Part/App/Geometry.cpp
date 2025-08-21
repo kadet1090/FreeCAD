@@ -26,7 +26,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 };
 
 TEST_F(GeometryTest, testTrimBSpline)

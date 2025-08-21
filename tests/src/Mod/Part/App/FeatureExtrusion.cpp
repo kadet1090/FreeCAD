@@ -29,7 +29,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
     Part::Extrusion* _extrusion = nullptr;

@@ -159,7 +159,7 @@ TEST_F(WireJoinerTest, setOutline)
     auto docNoOutline {App::GetApplication().getActiveDocument()};
 
     auto _docNameOutline {App::GetApplication().getUniqueDocumentName("docOutline")};
-    App::GetApplication().newDocument(_docNameOutline.c_str(), "docOutlineUser");
+    auto outdoc = App::GetApplication().newDocument(_docNameOutline.c_str(), "docOutlineUser");
     // A document where there will WireJoiner.Build() will be called having setOutline() set to true
     auto docOutline {App::GetApplication().getActiveDocument()};
 
@@ -236,6 +236,8 @@ TEST_F(WireJoinerTest, setOutline)
     // In a document where WireJoiner::Build() is executed with setOutline() set to true there
     // should be at least a DocumentObject with "removed" in its label
     EXPECT_TRUE(foundRemovedOutline);
+
+    App::GetApplication().closeDocument(outdoc);
 }
 
 TEST_F(WireJoinerTest, setTightBound)

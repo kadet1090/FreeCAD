@@ -28,7 +28,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 
     Part::Mirroring* _mirror = nullptr;  // NOLINT Can't be private in a test framework
 };

@@ -30,7 +30,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 
     std::string getDocumentXml() const
     {

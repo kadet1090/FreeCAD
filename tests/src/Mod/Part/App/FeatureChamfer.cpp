@@ -36,7 +36,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
     const double length = 4.0;

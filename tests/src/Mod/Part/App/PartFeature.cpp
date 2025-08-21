@@ -28,7 +28,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 
     Common* _common = nullptr;  // NOLINT Can't be private in a test framework
 };
@@ -124,6 +126,8 @@ TEST_F(FeaturePartTest, create)
     // The last call to Feature::create acts on otherDoc, which is empty, and therefore that
     // document will have only 1 feature
     EXPECT_EQ(otherDoc->getObjects().size(), 1);
+
+    App::GetApplication().closeDocument(otherDoc);
 }
 
 TEST_F(FeaturePartTest, getElementHistory)

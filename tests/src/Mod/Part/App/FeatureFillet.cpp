@@ -36,7 +36,9 @@ protected:
     }
 
     void TearDown() override
-    {}
+    {
+        App::GetApplication().closeDocument(_doc);
+    }
 
     Part::Fuse* _fused = nullptr;     // NOLINT Can't be private in a test framework
     Part::Fillet* _fillet = nullptr;  // NOLINT Can't be private in a test framework
