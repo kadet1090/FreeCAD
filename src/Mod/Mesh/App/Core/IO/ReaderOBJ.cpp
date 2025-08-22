@@ -32,6 +32,8 @@
 #include "Core/MeshIO.h"
 #include "Core/MeshKernel.h"
 #include <Base/Color.h>
+#include <Base/FileInfo.h>
+#include <Base/Stream.h>
 #include <Base/Tools.h>
 
 #include "ReaderOBJ.h"
@@ -113,7 +115,8 @@ public:
             // the calling instance but the color list is pre-filled with a default value
             if (_material) {
                 _material->binding = MeshIO::PER_FACE;
-                _material->diffuseColor.resize(meshFacets.size(), Base::Color(0.8F, 0.8F, 0.8F));
+                const float rgb = 0.8F;
+                _material->diffuseColor.resize(meshFacets.size(), Base::Color(rgb, rgb, rgb));
             }
         }
     }
@@ -137,15 +140,15 @@ private:
 
     void LoadVertex(const string_list& tokens)
     {
-        auto fX = float(std::atof(tokens[1].c_str()));
-        auto fY = float(std::atof(tokens[2].c_str()));
-        auto fZ = float(std::atof(tokens[3].c_str()));
-        meshPoints.push_back(MeshPoint(Base::Vector3f(fX, fY, fZ)));
+        float x = std::stof(tokens[1]);
+        float y = std::stof(tokens[2]);
+        float z = std::stof(tokens[3]);
+        meshPoints.push_back(MeshPoint(Base::Vector3f(x, y, z)));
     }
 
     bool MatchVertexWithColor(const string_list& tokens) const
     {
-        return tokens[0] == "v" && tokens.size() == 7;
+        return tokens[0] == "v" && tokens.size() == 7;  // NOLINT
     }
 
     void LoadVertexWithColor(const string_list& tokens)
@@ -153,9 +156,9 @@ private:
         LoadVertex(tokens);
 
         // NOLINTBEGIN
-        float r = std::atof(tokens[4].c_str());
-        float g = std::atof(tokens[5].c_str());
-        float b = std::atof(tokens[6].c_str());
+        float r = std::stof(tokens[4]);
+        float g = std::stof(tokens[5]);
+        float b = std::stof(tokens[6]);
         if (r > 1.0F || g > 1.0F || b > 1.0F) {
             r /= 255.0F;
             g /= 255.0F;
@@ -212,14 +215,17 @@ private:
 
     bool MatchFace(const string_list& tokens) const
     {
+        // NOLINTBEGIN
         const auto num = tokens.size();
         return tokens[0] == "f" && (num == 4 || num == 7 || num == 10);
+        // NOLINTEND
     }
 
     void LoadFace(const string_list& tokens)
     {
         StartNewSegment();
 
+        // NOLINTBEGIN
         int index1 = 1;
         int index2 = 2;
         int index3 = 3;
@@ -231,13 +237,14 @@ private:
             index2 = 4;
             index3 = 7;
         }
+        // NOLINTEND
 
         // 3-vertex face
-        int i1 = std::atoi(tokens[index1].c_str());
+        int i1 = std::stoi(tokens[index1]);
         i1 = i1 > 0 ? i1 - 1 : i1 + static_cast<int>(meshPoints.size());
-        int i2 = std::atoi(tokens[index2].c_str());
+        int i2 = std::stoi(tokens[index2]);
         i2 = i2 > 0 ? i2 - 1 : i2 + static_cast<int>(meshPoints.size());
-        int i3 = std::atoi(tokens[index3].c_str());
+        int i3 = std::stoi(tokens[index3]);
         i3 = i3 > 0 ? i3 - 1 : i3 + static_cast<int>(meshPoints.size());
 
         AddFace(i1, i2, i3);
@@ -245,14 +252,17 @@ private:
 
     bool MatchQuad(const string_list& tokens) const
     {
+        // NOLINTBEGIN
         const auto num = tokens.size();
         return tokens[0] == "f" && (num == 5 || num == 9 || num == 13);
+        // NOLINTEND
     }
 
     void LoadQuad(const string_list& tokens)
     {
         StartNewSegment();
 
+        // NOLINTBEGIN
         int index1 = 1;
         int index2 = 2;
         int index3 = 3;
@@ -267,15 +277,16 @@ private:
             index3 = 7;
             index4 = 10;
         }
+        // NOLINTEND
 
         // 4-vertex face
-        int i1 = std::atoi(tokens[index1].c_str());
+        int i1 = std::stoi(tokens[index1]);
         i1 = i1 > 0 ? i1 - 1 : i1 + static_cast<int>(meshPoints.size());
-        int i2 = std::atoi(tokens[index2].c_str());
+        int i2 = std::stoi(tokens[index2]);
         i2 = i2 > 0 ? i2 - 1 : i2 + static_cast<int>(meshPoints.size());
-        int i3 = std::atoi(tokens[index3].c_str());
+        int i3 = std::stoi(tokens[index3]);
         i3 = i3 > 0 ? i3 - 1 : i3 + static_cast<int>(meshPoints.size());
-        int i4 = std::atoi(tokens[index4].c_str());
+        int i4 = std::stoi(tokens[index4]);
         i4 = i4 > 0 ? i4 - 1 : i4 + static_cast<int>(meshPoints.size());
 
         AddFace(i1, i2, i3);
@@ -337,6 +348,13 @@ ReaderOBJ::ReaderOBJ(MeshKernel& kernel, Material* material)
     , _material(material)
 {}
 
+bool ReaderOBJ::Load(const std::string& file)
+{
+    Base::FileInfo fi(file);
+    Base::ifstream str(fi, std::ios::in);
+    return Load(str);
+}
+
 bool ReaderOBJ::Load(std::istream& str)
 {
     if (!str || str.bad()) {
@@ -371,6 +389,7 @@ bool ReaderOBJ::Load(std::istream& str)
     return true;
 }
 
+// NOLINTNEXTLINE
 bool ReaderOBJ::LoadMaterial(std::istream& str)
 {
     std::string line;
@@ -401,13 +420,13 @@ bool ReaderOBJ::LoadMaterial(std::istream& str)
     auto readColor = [](const std::vector<std::string>& tokens) -> Base::Color {
         if (tokens.size() == 2) {
             // If only R is given then G and B will be equal
-            float r = boost::lexical_cast<float>(tokens[1]);
+            float r = std::stof(tokens[1]);
             return Base::Color(r, r, r);
         }
         if (tokens.size() == 4) {
-            float r = boost::lexical_cast<float>(tokens[1]);
-            float g = boost::lexical_cast<float>(tokens[2]);
-            float b = boost::lexical_cast<float>(tokens[3]);
+            float r = std::stof(tokens[1]);
+            float g = std::stof(tokens[2]);
+            float b = std::stof(tokens[3]);
             return Base::Color(r, g, b);
         }
 
@@ -426,7 +445,7 @@ bool ReaderOBJ::LoadMaterial(std::istream& str)
                     materialName = Base::Tools::escapedUnicodeToUtf8(token_results[1]);
                 }
                 else if (token_results[0] == "d") {
-                    float a = boost::lexical_cast<float>(token_results[1]);
+                    float a = std::stof(token_results[1]);
                     materialTransparency[materialName] = 1.0F - a;
                 }
                 // If only R is given then G and B will be equal
@@ -440,8 +459,6 @@ bool ReaderOBJ::LoadMaterial(std::istream& str)
                     materialSpecularColor[materialName] = readColor(token_results);
                 }
             }
-        }
-        catch (const boost::bad_lexical_cast&) {
         }
         catch (const std::exception&) {
         }
