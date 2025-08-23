@@ -107,6 +107,8 @@ SET(Core_SRCS
     Core/SphereFit.h
     Core/IO/Reader3MF.cpp
     Core/IO/Reader3MF.h
+    Core/IO/ReaderNAS.cpp
+    Core/IO/ReaderNAS.h
     Core/IO/ReaderOBJ.cpp
     Core/IO/ReaderOBJ.h
     Core/IO/ReaderPLY.cpp
