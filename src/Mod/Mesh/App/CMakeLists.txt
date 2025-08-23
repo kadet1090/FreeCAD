@@ -117,6 +117,8 @@ SET(Core_SRCS
     Core/IO/WriterInventor.h
     Core/IO/WriterOBJ.cpp
     Core/IO/WriterOBJ.h
+    Core/IO/WriterVRML.cpp
+    Core/IO/WriterVRML.h
 )
 SOURCE_GROUP("Core" FILES ${Core_SRCS})
 
