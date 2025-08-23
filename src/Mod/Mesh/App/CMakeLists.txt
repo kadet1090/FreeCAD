@@ -125,6 +125,8 @@ SET(Core_SRCS
     Core/IO/WriterInventor.h
     Core/IO/WriterOBJ.cpp
     Core/IO/WriterOBJ.h
+    Core/IO/WriterSTL.cpp
+    Core/IO/WriterSTL.h
     Core/IO/WriterVRML.cpp
     Core/IO/WriterVRML.h
 )

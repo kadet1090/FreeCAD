@@ -46,6 +46,7 @@
 #include "IO/Writer3MF.h"
 #include "IO/WriterInventor.h"
 #include "IO/WriterOBJ.h"
+#include "IO/WriterSTL.h"
 #include "IO/WriterVRML.h"
 #include <Base/Builder3D.h>
 #include <Base/Console.h>
@@ -872,100 +873,19 @@ bool MeshOutput::SaveBMS(std::ostream& output) const
 /** Saves the mesh object into an ASCII file. */
 bool MeshOutput::SaveAsciiSTL(std::ostream& output) const
 {
-    MeshFacetIterator clIter(_rclMesh), clEnd(_rclMesh);
-    clIter.Transform(this->_transform);
-    const MeshGeomFacet* pclFacet {};
-
-    if (!output || output.bad() || _rclMesh.CountFacets() == 0) {
-        return false;
-    }
-
-    output.precision(6);
-    output.setf(std::ios::fixed | std::ios::showpoint);
-    Base::SequencerLauncher seq("saving...", _rclMesh.CountFacets() + 1);
-
-    if (this->objectName.empty()) {
-        output << "solid Mesh\n";
-    }
-    else {
-        output << "solid " << this->objectName << '\n';
-    }
-
-    clIter.Begin();
-    clEnd.End();
-    while (clIter < clEnd) {
-        pclFacet = &(*clIter);
-
-        // normal
-        output << "  facet normal " << pclFacet->GetNormal().x << " " << pclFacet->GetNormal().y
-               << " " << pclFacet->GetNormal().z << '\n';
-        output << "    outer loop\n";
-
-        // vertices
-        for (const auto& pnt : pclFacet->_aclPoints) {
-            output << "      vertex " << pnt.x << " " << pnt.y << " " << pnt.z << '\n';
-        }
-
-        output << "    endloop\n";
-        output << "  endfacet\n";
-
-        ++clIter;
-        seq.next(true);  // allow to cancel
-    }
-
-    output << "endsolid Mesh\n";
-
-    return true;
+    WriterSTL writer(this->_rclMesh);
+    writer.SetTransform(this->_transform);
+    writer.SetObjectName(this->objectName);
+    return writer.SaveAscii(output);
 }
 
 /** Saves the mesh object into a binary file. */
 bool MeshOutput::SaveBinarySTL(std::ostream& output) const
 {
-    MeshFacetIterator clIter(_rclMesh), clEnd(_rclMesh);
-    clIter.Transform(this->_transform);
-    const MeshGeomFacet* pclFacet {};
-    uint16_t usAtt {};
-    char szInfo[81];
-
-    if (!output || output.bad() /*|| _rclMesh.CountFacets() == 0*/) {
-        return false;
-    }
-
-    Base::SequencerLauncher seq("saving...", _rclMesh.CountFacets() + 1);
-
-    // stl_header has a length of 80
-    strcpy(szInfo, stl_header.c_str());
-    output.write(szInfo, std::strlen(szInfo));
-
-    uint32_t uCtFts = (uint32_t)_rclMesh.CountFacets();
-    output.write((const char*)&uCtFts, sizeof(uCtFts));
-
-    usAtt = 0;
-    clIter.Begin();
-    clEnd.End();
-    while (clIter < clEnd) {
-        pclFacet = &(*clIter);
-        // normal
-        Base::Vector3f normal = pclFacet->GetNormal();
-        output.write((const char*)&(normal.x), sizeof(float));
-        output.write((const char*)&(normal.y), sizeof(float));
-        output.write((const char*)&(normal.z), sizeof(float));
-
-        // vertices
-        for (uint32_t i = 0; i < 3; i++) {
-            output.write((const char*)&(pclFacet->_aclPoints[i].x), sizeof(float));
-            output.write((const char*)&(pclFacet->_aclPoints[i].y), sizeof(float));
-            output.write((const char*)&(pclFacet->_aclPoints[i].z), sizeof(float));
-        }
-
-        // attribute
-        output.write((const char*)&usAtt, sizeof(usAtt));
-
-        ++clIter;
-        seq.next(true);  // allow one to cancel
-    }
-
-    return true;
+    WriterSTL writer(this->_rclMesh);
+    writer.SetTransform(this->_transform);
+    writer.SetHeaderData(stl_header);
+    return writer.SaveBinary(output);
 }
 
 /** Saves an OBJ file. */
