@@ -534,6 +534,35 @@ bool MeshInput::LoadNastran(std::istream& input)
 
 // --------------------------------------------------------------
 
+// clang-format off
+static constexpr auto numOutput {22};
+using OutputItem = std::pair<std::string, MeshIO::Format>;
+static std::array<OutputItem, numOutput> outputFormats {{
+    {"bms", MeshIO::Format::BMS},
+    {"ply", MeshIO::Format::PLY},
+    {"stl", MeshIO::Format::BSTL},
+    {"ast", MeshIO::Format::ASTL},
+    {"obj", MeshIO::Format::OBJ},
+    {"nas", MeshIO::Format::NAS},
+    {"bdf", MeshIO::Format::NAS},
+    {"off", MeshIO::Format::OFF},
+    {"smf", MeshIO::Format::SMF},
+    {"3mf", MeshIO::Format::ThreeMF},
+    {"x3d", MeshIO::Format::X3D},
+    {"x3dz", MeshIO::Format::X3DZ},
+    {"xhtml", MeshIO::Format::X3DOM},
+    {"vrml", MeshIO::Format::VRML},
+    {"wrl", MeshIO::Format::VRML},
+    {"wrz", MeshIO::Format::WRZ},
+    {"amf", MeshIO::Format::AMF},
+    {"asy", MeshIO::Format::ASY},
+    {"idtf", MeshIO::Format::IDTF},
+    {"mgl", MeshIO::Format::MGL},
+    {"iv", MeshIO::Format::IV},
+    {"py", MeshIO::Format::PY},
+}};
+// clang-format on
+
 std::string MeshOutput::stl_header = "MESH-MESH-MESH-MESH-MESH-MESH-MESH-MESH-"
                                      "MESH-MESH-MESH-MESH-MESH-MESH-MESH-MESH\n";
 
@@ -571,85 +600,24 @@ void MeshOutput::Transform(const Base::Matrix4D& mat)
 std::vector<std::string> MeshOutput::supportedMeshFormats()
 {
     std::vector<std::string> fmt;
-    fmt.emplace_back("bms");
-    fmt.emplace_back("ply");
-    fmt.emplace_back("stl");
-    fmt.emplace_back("obj");
-    fmt.emplace_back("off");
-    fmt.emplace_back("smf");
-    fmt.emplace_back("x3d");
-    fmt.emplace_back("x3dz");
-    fmt.emplace_back("xhtml");
-    fmt.emplace_back("wrl");
-    fmt.emplace_back("wrz");
-    fmt.emplace_back("amf");
-    fmt.emplace_back("asy");
-    fmt.emplace_back("3mf");
+    fmt.reserve(outputFormats.size());
+    std::transform(outputFormats.cbegin(), outputFormats.cend(),
+                   std::back_inserter(fmt), [](const OutputItem& item) {
+        return item.first;
+    });
     return fmt;
 }
 
 MeshIO::Format MeshOutput::GetFormat(const char* FileName)
 {
-    Base::FileInfo file(FileName);
-    if (file.hasExtension("bms")) {
-        return MeshIO::BMS;
-    }
-    if (file.hasExtension("stl")) {
-        return MeshIO::BSTL;
-    }
-    if (file.hasExtension("ast")) {
-        return MeshIO::ASTL;
-    }
-    if (file.hasExtension("obj")) {
-        return MeshIO::OBJ;
-    }
-    if (file.hasExtension("off")) {
-        return MeshIO::OFF;
-    }
-    if (file.hasExtension("ply")) {
-        return MeshIO::PLY;
-    }
-    if (file.hasExtension("idtf")) {
-        return MeshIO::IDTF;
-    }
-    if (file.hasExtension("mgl")) {
-        return MeshIO::MGL;
-    }
-    if (file.hasExtension("iv")) {
-        return MeshIO::IV;
-    }
-    if (file.hasExtension("x3d")) {
-        return MeshIO::X3D;
-    }
-    if (file.hasExtension("x3dz")) {
-        return MeshIO::X3DZ;
-    }
-    if (file.hasExtension("xhtml")) {
-        return MeshIO::X3DOM;
-    }
-    if (file.hasExtension("py")) {
-        return MeshIO::PY;
-    }
-    if (file.hasExtension({"wrl", "vrml"})) {
-        return MeshIO::VRML;
-    }
-    if (file.hasExtension("wrz")) {
-        return MeshIO::WRZ;
-    }
-    if (file.hasExtension({"nas", "bdf"})) {
-        return MeshIO::NAS;
-    }
-    if (file.hasExtension("amf")) {
-        return MeshIO::AMF;
-    }
-    if (file.hasExtension("3mf")) {
-        return MeshIO::ThreeMF;
-    }
-    if (file.hasExtension("smf")) {
-        return MeshIO::SMF;
-    }
-    if (file.hasExtension("asy")) {
-        return MeshIO::ASY;
+    Base::FileInfo fi(FileName);
+    auto it = std::find_if(outputFormats.begin(), outputFormats.end(),
+                           [&fi](const OutputItem& item) {
+        return fi.hasExtension(item.first.c_str());
+    });
+
+    if (it != outputFormats.end()) {
+        return it->second;
     }
 
     return MeshIO::Undefined;
@@ -818,50 +786,47 @@ bool MeshOutput::SaveAny(const char* FileName, MeshIO::Format format) const
 
 bool MeshOutput::SaveFormat(std::ostream& str, MeshIO::Format fmt) const
 {
-    switch (fmt) {
-        case MeshIO::BMS:
-            _rclMesh.Write(str);
-            return true;
-        case MeshIO::ASTL:
-            return SaveAsciiSTL(str);
-        case MeshIO::BSTL:
-            return SaveBinarySTL(str);
-        case MeshIO::OBJ:
+    // clang-format off
+    // NOLINTBEGIN
+    static constexpr auto numOutput {19};
+    using InputFunc = std::pair<MeshIO::Format, std::function<bool(std::ostream&)>>;
+    std::array<InputFunc, numOutput> outputFuncs {{
+        {MeshIO::BMS,  std::bind(&MeshOutput::SaveBMS,       this, sp::_1)},
+        {MeshIO::ASTL, std::bind(&MeshOutput::SaveAsciiSTL,  this, sp::_1)},
+        {MeshIO::BSTL, std::bind(&MeshOutput::SaveBinarySTL, this, sp::_1)},
+        {MeshIO::SMF,  std::bind(&MeshOutput::SaveSMF,       this, sp::_1)},
+        {MeshIO::OFF,  std::bind(&MeshOutput::SaveOFF,       this, sp::_1)},
+        {MeshIO::IDTF, std::bind(&MeshOutput::SaveIDTF,      this, sp::_1)},
+        {MeshIO::MGL,  std::bind(&MeshOutput::SaveMGL,       this, sp::_1)},
+        {MeshIO::IV ,  std::bind(&MeshOutput::SaveInventor,  this, sp::_1)},
+        {MeshIO::X3D,  std::bind(&MeshOutput::SaveX3D,       this, sp::_1)},
+        {MeshIO::X3DOM, std::bind(&MeshOutput::SaveX3DOM,    this, sp::_1)},
+        {MeshIO::VRML, std::bind(&MeshOutput::SaveVRML,      this, sp::_1)},
+        // it's up to the client to create the needed stream
+        {MeshIO::WRZ,  std::bind(&MeshOutput::SaveVRML,      this, sp::_1)},
+        {MeshIO::ThreeMF, std::bind(&MeshOutput::Save3MF,    this, sp::_1)},
+        {MeshIO::NAS,  std::bind(&MeshOutput::SaveNastran,   this, sp::_1)},
+        {MeshIO::PLY,  std::bind(&MeshOutput::SaveBinaryPLY, this, sp::_1)},
+        {MeshIO::APLY, std::bind(&MeshOutput::SaveAsciiPLY,  this, sp::_1)},
+        {MeshIO::PY,   std::bind(&MeshOutput::SavePython,    this, sp::_1)},
+        {MeshIO::ASY,  std::bind(&MeshOutput::SaveAsymptote, this, sp::_1)},
+        {MeshIO::OBJ, [this](std::ostream& str) {
             return SaveOBJ(str);
-        case MeshIO::SMF:
-            return SaveSMF(str);
-        case MeshIO::OFF:
-            return SaveOFF(str);
-        case MeshIO::IDTF:
-            return SaveIDTF(str);
-        case MeshIO::MGL:
-            return SaveMGL(str);
-        case MeshIO::IV:
-            return SaveInventor(str);
-        case MeshIO::X3D:
-            return SaveX3D(str);
-        case MeshIO::X3DOM:
-            return SaveX3DOM(str);
-        case MeshIO::VRML:
-            return SaveVRML(str);
-        case MeshIO::WRZ:
-            // it's up to the client to create the needed stream
-            return SaveVRML(str);
-        case MeshIO::ThreeMF:
-            return Save3MF(str);
-        case MeshIO::NAS:
-            return SaveNastran(str);
-        case MeshIO::PLY:
-            return SaveBinaryPLY(str);
-        case MeshIO::APLY:
-            return SaveAsciiPLY(str);
-        case MeshIO::PY:
-            return SavePython(str);
-        case MeshIO::ASY:
-            return SaveAsymptote(str);
-        default:
-            throw Base::FileException("Unsupported file format");
+        }},
+    }};
+    // NOLINTEND
+    // clang-format on
+
+    auto it = std::find_if(outputFuncs.begin(), outputFuncs.end(),
+                           [fmt](const InputFunc& item) {
+        return (item.first == fmt);
+    });
+
+    if (it != outputFuncs.end()) {
+        return it->second(str);
     }
+
+    throw Base::FileException("Unsupported file format");
 }
 
 /** Saves a BMS file. */
