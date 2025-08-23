@@ -8,6 +8,7 @@ target_sources(Tests_run PRIVATE
         CoordinateSystem.cpp
         DualNumber.cpp
         DualQuaternion.cpp
+        FileInfo.cpp
         Handle.cpp
         Matrix.cpp
         Parameter.cpp
