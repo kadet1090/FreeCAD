@@ -35,7 +35,15 @@ Base::UniqueNameManager::decomposeName(const std::string& name) const
 {
     auto suffixStart = getNameSuffixStartPosition(name);
     auto digitsStart = std::find_if_not(suffixStart, name.crend(), [](char c) {
-        return std::isdigit(c);
+#if defined (__MINGW32__)
+        // For MinGW 'isdigit' returns true for superscript digits
+        return c >= '0' && c <= '9';
+#else
+        // According to https://en.cppreference.com/w/cpp/string/byte/isdigit.html
+        // char must be cast to unsigned char to be safely used as otherwise this
+        // later on causes a memory corruption in debug mode with MSVC
+        return std::isdigit(static_cast<unsigned char>(c));
+#endif
     });
     unsigned int digitCount = digitsStart - suffixStart;
     return std::tuple<std::string, std::string, unsigned int, UnlimitedUnsigned> {
