@@ -25,14 +25,13 @@
 #ifndef _PreComp_
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <iomanip>
 #include <sstream>
 #include <string_view>
 #endif
 
 #include <boost/algorithm/string.hpp>
-#include <boost/convert.hpp>
-#include <boost/convert/spirit.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 
@@ -70,6 +69,7 @@
 #include "MeshKernel.h"
 
 
+namespace sp = std::placeholders;
 using namespace MeshCore;
 
 namespace MeshCore
@@ -84,10 +84,10 @@ namespace MeshCore
 class ZipFixer
 {
 public:
-    ZipFixer(const char* filename)
+    explicit ZipFixer(const char* filename)
         : tmp {Base::FileInfo::getTempFileName()}
     {
-        Base::ZipTools::rewrite(filename, tmp.filePath().c_str());
+        Base::ZipTools::rewrite(filename, tmp.filePath());
         str.open(tmp, std::ios::in | std::ios::binary);
     }
 
@@ -143,44 +143,45 @@ bool Material::operator!=(const Material& mat) const
 
 // --------------------------------------------------------------
 
+// clang-format off
+static constexpr auto numInput {11};
+using InputItem = std::pair<std::string, MeshIO::Format>;
+static std::array<InputItem, numInput> inputFormats {{
+    {"bms", MeshIO::Format::BMS},
+    {"ply", MeshIO::Format::PLY},
+    {"stl", MeshIO::Format::STL},
+    {"ast", MeshIO::Format::ASTL},
+    {"obj", MeshIO::Format::OBJ},
+    {"nas", MeshIO::Format::NAS},
+    {"bdf", MeshIO::Format::NAS},
+    {"off", MeshIO::Format::OFF},
+    {"smf", MeshIO::Format::SMF},
+    {"3mf", MeshIO::Format::ThreeMF},
+    {"iv", MeshIO::Format::IV},
+}};
+// clang-format on
+
 std::vector<std::string> MeshInput::supportedMeshFormats()
 {
     std::vector<std::string> fmt;
-    fmt.emplace_back("bms");
-    fmt.emplace_back("ply");
-    fmt.emplace_back("stl");
-    fmt.emplace_back("ast");
-    fmt.emplace_back("obj");
-    fmt.emplace_back("nas");
-    fmt.emplace_back("bdf");
-    fmt.emplace_back("off");
-    fmt.emplace_back("smf");
+    fmt.reserve(inputFormats.size());
+    std::transform(inputFormats.cbegin(), inputFormats.cend(),
+                   std::back_inserter(fmt), [](const InputItem& item) {
+        return item.first;
+    });
     return fmt;
 }
 
 MeshIO::Format MeshInput::getFormat(const char* FileName)
 {
     Base::FileInfo fi(FileName);
-    if (fi.hasExtension("bms")) {
-        return MeshIO::Format::BMS;
-    }
-    if (fi.hasExtension("ply")) {
-        return MeshIO::Format::PLY;
-    }
-    if (fi.hasExtension("stl")) {
-        return MeshIO::Format::STL;
-    }
-    if (fi.hasExtension("ast")) {
-        return MeshIO::Format::ASTL;
-    }
-    if (fi.hasExtension("obj")) {
-        return MeshIO::Format::OBJ;
-    }
-    if (fi.hasExtension("off")) {
-        return MeshIO::Format::OFF;
-    }
-    if (fi.hasExtension("smf")) {
-        return MeshIO::Format::SMF;
+    auto it = std::find_if(inputFormats.begin(), inputFormats.end(),
+                           [&fi](const InputItem& item) {
+        return fi.hasExtension(item.first.c_str());
+    });
+
+    if (it != inputFormats.end()) {
+        return it->second;
     }
 
     throw Base::FileException("File extension not supported", FileName);
@@ -188,6 +189,35 @@ MeshIO::Format MeshInput::getFormat(const char* FileName)
 
 bool MeshInput::LoadAny(const char* FileName)
 {
+    // clang-format off
+    // NOLINTBEGIN
+    using InputFunc = std::pair<std::string, std::function<bool(std::istream&)>>;
+    std::array<InputFunc, numInput> inputFuncs {{
+        {"bms", std::bind(&MeshInput::LoadBMS,      this, sp::_1)},
+        {"ply", std::bind(&MeshInput::LoadPLY,      this, sp::_1)},
+        {"stl", std::bind(&MeshInput::LoadSTL,      this, sp::_1)},
+        {"ast", std::bind(&MeshInput::LoadSTL,      this, sp::_1)},
+        {"nas", std::bind(&MeshInput::LoadNastran,  this, sp::_1)},
+        {"bdf", std::bind(&MeshInput::LoadNastran,  this, sp::_1)},
+        {"off", std::bind(&MeshInput::LoadOFF,      this, sp::_1)},
+        {"smf", std::bind(&MeshInput::LoadSMF,      this, sp::_1)},
+        {"iv",  std::bind(&MeshInput::LoadInventor, this, sp::_1)},
+        {"3mf", [this, FileName](std::istream& input) {
+            try {
+                return Load3MF(input);
+            }
+            catch (const zipios::FCollException&) {
+                ZipFixer zip(FileName);
+                return Load3MF(zip.getStream());
+            }
+        }},
+        {"obj", [this, FileName](std::istream& input) {
+            return LoadOBJ(input, FileName);
+        }},
+    }};
+    // NOLINTEND
+    // clang-format on
+
     // ask for read permission
     Base::FileInfo fi(FileName);
     if (!fi.exists() || !fi.isFile()) {
@@ -197,84 +227,54 @@ bool MeshInput::LoadAny(const char* FileName)
         throw Base::FileException("No permission on the file", FileName);
     }
 
-    Base::ifstream str(fi, std::ios::in | std::ios::binary);
+    auto it = std::find_if(inputFuncs.begin(), inputFuncs.end(),
+                           [&fi](const InputFunc& item) {
+        return fi.hasExtension(item.first.c_str());
+    });
 
-    if (fi.hasExtension("bms")) {
-        _rclMesh.Read(str);
-        return true;
-    }
-
-    // read file
-    bool ok = false;
-    if (fi.hasExtension({"stl", "ast"})) {
-        ok = LoadSTL(str);
-    }
-    else if (fi.hasExtension("iv")) {
-        ok = LoadInventor(str);
-        if (ok && _rclMesh.CountFacets() == 0) {
-            Base::Console().Warning("No usable mesh found in file '%s'", FileName);
-        }
-    }
-    else if (fi.hasExtension({"nas", "bdf"})) {
-        ok = LoadNastran(str);
-    }
-    else if (fi.hasExtension("obj")) {
-        ok = LoadOBJ(str, FileName);
-    }
-    else if (fi.hasExtension("smf")) {
-        ok = LoadSMF(str);
-    }
-    else if (fi.hasExtension("3mf")) {
-        try {
-            ok = Load3MF(str);
-        }
-        catch (const zipios::FCollException&) {
-            ZipFixer zip(FileName);
-            ok = Load3MF(zip.getStream());
-        }
-    }
-    else if (fi.hasExtension("off")) {
-        ok = LoadOFF(str);
-    }
-    else if (fi.hasExtension("ply")) {
-        ok = LoadPLY(str);
-    }
-    else {
-        throw Base::FileException("File extension not supported", FileName);
+    if (it != inputFuncs.end()) {
+        Base::ifstream str(fi, std::ios::in | std::ios::binary);
+        return it->second(str);
     }
 
-    return ok;
+    throw Base::FileException("File extension not supported", FileName);
 }
 
 bool MeshInput::LoadFormat(std::istream& input, MeshIO::Format fmt)
 {
-    switch (fmt) {
-        case MeshIO::BMS:
-            return LoadBMS(input);
-        case MeshIO::APLY:
-        case MeshIO::PLY:
-            return LoadPLY(input);
-        case MeshIO::ASTL:
-            return LoadAsciiSTL(input);
-        case MeshIO::BSTL:
-            return LoadBinarySTL(input);
-        case MeshIO::STL:
-            return LoadSTL(input);
-        case MeshIO::OBJ:
+    // clang-format off
+    // NOLINTBEGIN
+    static constexpr auto numInput {12};
+    using InputFunc = std::pair<MeshIO::Format, std::function<bool(std::istream&)>>;
+    std::array<InputFunc, numInput> inputFuncs {{
+        {MeshIO::BMS,  std::bind(&MeshInput::LoadBMS,       this, sp::_1)},
+        {MeshIO::PLY,  std::bind(&MeshInput::LoadPLY,       this, sp::_1)},
+        {MeshIO::APLY, std::bind(&MeshInput::LoadPLY,       this, sp::_1)},
+        {MeshIO::STL,  std::bind(&MeshInput::LoadSTL,       this, sp::_1)},
+        {MeshIO::ASTL, std::bind(&MeshInput::LoadAsciiSTL,  this, sp::_1)},
+        {MeshIO::BSTL, std::bind(&MeshInput::LoadBinarySTL, this, sp::_1)},
+        {MeshIO::NAS,  std::bind(&MeshInput::LoadNastran,   this, sp::_1)},
+        {MeshIO::OFF,  std::bind(&MeshInput::LoadOFF,       this, sp::_1)},
+        {MeshIO::SMF,  std::bind(&MeshInput::LoadSMF,       this, sp::_1)},
+        {MeshIO::ThreeMF, std::bind(&MeshInput::Load3MF,    this, sp::_1)},
+        {MeshIO::IV ,  std::bind(&MeshInput::LoadInventor,  this, sp::_1)},
+        {MeshIO::OBJ, [this](std::istream& input) {
             return LoadOBJ(input);
-        case MeshIO::SMF:
-            return LoadSMF(input);
-        case MeshIO::ThreeMF:
-            return Load3MF(input);
-        case MeshIO::OFF:
-            return LoadOFF(input);
-        case MeshIO::IV:
-            return LoadInventor(input);
-        case MeshIO::NAS:
-            return LoadNastran(input);
-        default:
-            throw Base::FileException("Unsupported file format");
+        }},
+    }};
+    // NOLINTEND
+    // clang-format on
+
+    auto it = std::find_if(inputFuncs.begin(), inputFuncs.end(),
+                           [fmt](const InputFunc& item) {
+        return (item.first == fmt);
+    });
+
+    if (it != inputFuncs.end()) {
+        return it->second(input);
     }
+
+    throw Base::FileException("Unsupported file format");
 }
 
 bool MeshInput::LoadBMS(std::istream& input)
