@@ -60,6 +60,7 @@
 #include <cstdlib>
 #include <iterator>
 #include <limits>
+#include <random>
 #endif
 
 #include <Base/Console.h>
@@ -214,15 +215,21 @@ void CylinderFit::ProjectToCylinder()
             cPnt = proj + diff * _dRadius;
         }
         else {
+            static const int maxValue = INT_MAX;
+            static std::random_device rd;
+            static std::mt19937 seed(rd());
+            static std::uniform_int_distribution<> distribution(0, maxValue);
+
             // Point is on the cylinder axis, so it can be moved in
             // any direction perpendicular to the cylinder axis
             Base::Vector3f cMov(cPnt);
             do {
-                float x = (float(rand()) / float(RAND_MAX));
-                float y = (float(rand()) / float(RAND_MAX));
-                float z = (float(rand()) / float(RAND_MAX));
+                float x = static_cast<float>(distribution(seed)) / static_cast<float>(maxValue);
+                float y = static_cast<float>(distribution(seed)) / static_cast<float>(maxValue);
+                float z = static_cast<float>(distribution(seed)) / static_cast<float>(maxValue);
                 cMov.Move(x, y, z);
-            } while (cMov.DistanceToLine(cBase, cAxis) == 0);
+            }
+            while (cMov.DistanceToLine(cBase, cAxis) == 0);
 
             Base::Vector3f proj;
             cMov.ProjectToPlane(cPnt, cAxis, proj);
