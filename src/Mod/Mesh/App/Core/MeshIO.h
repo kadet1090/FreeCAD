@@ -123,6 +123,8 @@ public:
     bool LoadAny(const char* FileName);
     /// Loads from a stream and the given format
     bool LoadFormat(std::istream& input, MeshIO::Format fmt);
+    /** Loads a BMS file. */
+    bool LoadBMS(std::istream& input);
     /** Loads an STL file either in binary or ASCII format.
      * Therefore the file header gets checked to decide if the file is binary or not.
      */
@@ -151,8 +153,6 @@ public:
     bool LoadInventor(std::istream& input);
     /** Loads a Nastran file. */
     bool LoadNastran(std::istream& input);
-    /** Loads a Cadmould FE file. */
-    bool LoadCadmouldFE(std::ifstream& input);
 
     static std::vector<std::string> supportedMeshFormats();
     static MeshIO::Format getFormat(const char* FileName);
@@ -207,6 +207,8 @@ public:
     /// Saves to a stream and the given format
     bool SaveFormat(std::ostream& str, MeshIO::Format fmt) const;
 
+    /** Saves a BMS file. */
+    bool SaveBMS(std::ostream& output) const;
     /** Saves the mesh object into an ASCII STL file. */
     bool SaveAsciiSTL(std::ostream& output) const;
     /** Saves the mesh object into a binary STL file. */
@@ -245,8 +247,6 @@ public:
     bool SaveVRML(std::ostream& output) const;
     /** Writes a Nastran file. */
     bool SaveNastran(std::ostream& output) const;
-    /** Writes a Cadmould FE file. */
-    bool SaveCadmouldFE(std::ostream& output) const;
     /** Writes a python module which creates a mesh */
     bool SavePython(std::ostream& str) const;
 

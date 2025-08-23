@@ -284,8 +284,7 @@ bool MeshInput::LoadFormat(std::istream& input, MeshIO::Format fmt)
 {
     switch (fmt) {
         case MeshIO::BMS:
-            _rclMesh.Read(input);
-            return true;
+            return LoadBMS(input);
         case MeshIO::APLY:
         case MeshIO::PLY:
             return LoadPLY(input);
@@ -310,6 +309,12 @@ bool MeshInput::LoadFormat(std::istream& input, MeshIO::Format fmt)
         default:
             throw Base::FileException("Unsupported file format");
     }
+}
+
+bool MeshInput::LoadBMS(std::istream& input)
+{
+    _rclMesh.Read(input);
+    return true;
 }
 
 /** Loads an STL file either in binary or ASCII format.
@@ -1233,16 +1238,6 @@ bool MeshInput::LoadNastran(std::istream& input)
     return true;
 }
 
-/** Loads a Cadmould FE file. */
-bool MeshInput::LoadCadmouldFE(std::ifstream& input)
-{
-    if (!input || input.bad()) {
-        return false;
-    }
-    assert(0);
-    return false;
-}
-
 // --------------------------------------------------------------
 
 std::string MeshOutput::stl_header = "MESH-MESH-MESH-MESH-MESH-MESH-MESH-MESH-"
@@ -1384,7 +1379,7 @@ bool MeshOutput::SaveAny(const char* FileName, MeshIO::Format format) const
     Base::ofstream str(file, std::ios::out | std::ios::binary);
 
     if (fileformat == MeshIO::BMS) {
-        _rclMesh.Write(str);
+        SaveBMS(str);
     }
     else if (fileformat == MeshIO::BSTL) {
         MeshOutput aWriter(_rclMesh);
@@ -1573,6 +1568,13 @@ bool MeshOutput::SaveFormat(std::ostream& str, MeshIO::Format fmt) const
         default:
             throw Base::FileException("Unsupported file format");
     }
+}
+
+/** Saves a BMS file. */
+bool MeshOutput::SaveBMS(std::ostream& output) const
+{
+    _rclMesh.Write(output);
+    return true;
 }
 
 /** Saves the mesh object into an ASCII file. */
@@ -2606,12 +2608,6 @@ bool MeshOutput::SaveNastran(std::ostream& output) const
     output << "ENDDATA";
 
     return true;
-}
-
-/** Writes a Cadmould FE file. */
-bool MeshOutput::SaveCadmouldFE(std::ostream& /*output*/) const
-{
-    return false;
 }
 
 /** Writes a Python module */
