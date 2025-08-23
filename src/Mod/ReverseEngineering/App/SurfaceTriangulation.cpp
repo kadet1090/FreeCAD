@@ -117,7 +117,7 @@ void SurfaceTriangulation::perform(int ksearch)
     gp3.setMaximumNearestNeighbors(100);
     gp3.setMaximumSurfaceAngle(Base::numbers::pi / 4);  // 45 degrees
     gp3.setMinimumAngle(Base::numbers::pi / 18);        // 10 degrees
-    gp3.setMaximumAngle(Base::numbers::2 * pi / 3);     // 120 degrees
+    gp3.setMaximumAngle(Base::numbers::pi * 2 / 3);     // 120 degrees
     gp3.setNormalConsistency(false);
     gp3.setConsistentVertexOrdering(true);
 
