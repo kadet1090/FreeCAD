@@ -139,6 +139,7 @@ void Metadata::loadFromInputSource(const InputSource& source)
     _parser = std::make_shared<XercesDOMParser>();
     _parser->setValidationScheme(XercesDOMParser::Val_Never);
     _parser->setDoNamespaces(true);
+    _parser->setDisableDefaultEntityResolution(true);
 
     auto errHandler = std::make_unique<MetadataInternal::XMLErrorHandler>();
     _parser->setErrorHandler(errHandler.get());
