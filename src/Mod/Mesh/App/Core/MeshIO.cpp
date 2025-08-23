@@ -46,6 +46,7 @@
 #include "IO/Writer3MF.h"
 #include "IO/WriterInventor.h"
 #include "IO/WriterOBJ.h"
+#include "IO/WriterPLY.h"
 #include "IO/WriterSTL.h"
 #include "IO/WriterVRML.h"
 #include <Base/Builder3D.h>
@@ -1160,137 +1161,16 @@ bool MeshOutput::SaveOFF(std::ostream& out) const
 
 bool MeshOutput::SaveBinaryPLY(std::ostream& out) const
 {
-    const MeshPointArray& rPoints = _rclMesh.GetPoints();
-    const MeshFacetArray& rFacets = _rclMesh.GetFacets();
-    std::size_t v_count = rPoints.size();
-    std::size_t f_count = rFacets.size();
-    if (!out || out.bad()) {
-        return false;
-    }
-    bool saveVertexColor = (_material && _material->binding == MeshIO::PER_VERTEX
-                            && _material->diffuseColor.size() == rPoints.size());
-    out << "ply\n"
-        << "format binary_little_endian 1.0\n"
-        << "comment Created by FreeCAD <https://www.freecad.org>\n"
-        << "element vertex " << v_count << '\n'
-        << "property float32 x\n"
-        << "property float32 y\n"
-        << "property float32 z\n";
-    if (saveVertexColor) {
-        out << "property uchar red\n"
-            << "property uchar green\n"
-            << "property uchar blue\n";
-    }
-    out << "element face " << f_count << '\n'
-        << "property list uchar int vertex_index\n"
-        << "end_header\n";
-
-    Base::OutputStream os(out);
-    os.setByteOrder(Base::Stream::LittleEndian);
-
-    for (std::size_t i = 0; i < v_count; i++) {
-        const MeshPoint& p = rPoints[i];
-        if (this->apply_transform) {
-            Base::Vector3f pt = this->_transform * p;
-            os << pt.x << pt.y << pt.z;
-        }
-        else {
-            os << p.x << p.y << p.z;
-        }
-        if (saveVertexColor) {
-            const Base::Color& c = _material->diffuseColor[i];
-            uint8_t r = uint8_t(255.0F * c.r);
-            uint8_t g = uint8_t(255.0F * c.g);
-            uint8_t b = uint8_t(255.0F * c.b);
-            os << r << g << b;
-        }
-    }
-    unsigned char n = 3;
-    int f1 {}, f2 {}, f3 {};
-    for (std::size_t i = 0; i < f_count; i++) {
-        const MeshFacet& f = rFacets[i];
-        f1 = (int)f._aulPoints[0];
-        f2 = (int)f._aulPoints[1];
-        f3 = (int)f._aulPoints[2];
-        os << n;
-        os << f1 << f2 << f3;
-    }
-
-    return true;
+    WriterPLY writer(this->_rclMesh, this->_material);
+    writer.SetTransform(this->_transform);
+    return writer.SaveBinary(out);
 }
 
 bool MeshOutput::SaveAsciiPLY(std::ostream& out) const
 {
-    const MeshPointArray& rPoints = _rclMesh.GetPoints();
-    const MeshFacetArray& rFacets = _rclMesh.GetFacets();
-    std::size_t v_count = rPoints.size();
-    std::size_t f_count = rFacets.size();
-    if (!out || out.bad()) {
-        return false;
-    }
-
-    bool saveVertexColor = (_material && _material->binding == MeshIO::PER_VERTEX
-                            && _material->diffuseColor.size() == rPoints.size());
-    out << "ply\n"
-        << "format ascii 1.0\n"
-        << "comment Created by FreeCAD <https://www.freecad.org>\n"
-        << "element vertex " << v_count << '\n'
-        << "property float32 x\n"
-        << "property float32 y\n"
-        << "property float32 z\n";
-    if (saveVertexColor) {
-        out << "property uchar red\n"
-            << "property uchar green\n"
-            << "property uchar blue\n";
-    }
-    out << "element face " << f_count << '\n'
-        << "property list uchar int vertex_index\n"
-        << "end_header\n";
-
-    out.precision(6);
-    out.setf(std::ios::fixed | std::ios::showpoint);
-    if (saveVertexColor) {
-        for (std::size_t i = 0; i < v_count; i++) {
-            const MeshPoint& p = rPoints[i];
-            if (this->apply_transform) {
-                Base::Vector3f pt = this->_transform * p;
-                out << pt.x << " " << pt.y << " " << pt.z;
-            }
-            else {
-                out << p.x << " " << p.y << " " << p.z;
-            }
-
-            const Base::Color& c = _material->diffuseColor[i];
-            int r = (int)(255.0F * c.r);
-            int g = (int)(255.0F * c.g);
-            int b = (int)(255.0F * c.b);
-            out << " " << r << " " << g << " " << b << '\n';
-        }
-    }
-    else {
-        for (std::size_t i = 0; i < v_count; i++) {
-            const MeshPoint& p = rPoints[i];
-            if (this->apply_transform) {
-                Base::Vector3f pt = this->_transform * p;
-                out << pt.x << " " << pt.y << " " << pt.z << '\n';
-            }
-            else {
-                out << p.x << " " << p.y << " " << p.z << '\n';
-            }
-        }
-    }
-
-    unsigned int n = 3;
-    int f1 {}, f2 {}, f3 {};
-    for (std::size_t i = 0; i < f_count; i++) {
-        const MeshFacet& f = rFacets[i];
-        f1 = (int)f._aulPoints[0];
-        f2 = (int)f._aulPoints[1];
-        f3 = (int)f._aulPoints[2];
-        out << n << " " << f1 << " " << f2 << " " << f3 << '\n';
-    }
-
-    return true;
+    WriterPLY writer(this->_rclMesh, this->_material);
+    writer.SetTransform(this->_transform);
+    return writer.SaveAscii(out);
 }
 
 bool MeshOutput::SaveMeshNode(std::ostream& output)
