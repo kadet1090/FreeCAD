@@ -61,8 +61,26 @@ public:
     bool SaveMaterial(std::ostream&);
 
 private:
-    struct Color_Less;
+    enum Binding {
+        OVERALL,
+        PER_VERTEX,
+        PER_FACE
+    };
+    Binding GetBinding() const;
+    void SaveHeader(Binding binding, std::ostream&) const;
+    void SaveGroups(std::ostream&) const;
+    void SaveGroupsWithMaterial(std::ostream&) const;
+    void SaveVertexes(Binding binding, std::ostream&) const;
+    void SaveNormals(std::ostream&) const;
+    void SaveFaces(std::ostream&) const;
+    void SaveFacesWithMaterial(std::ostream&) const;
+    void SaveFaces(Binding binding, std::ostream&) const;
+    std::ostream& SaveColor(int, int, int, std::ostream&) const;
+    std::ostream& SaveVertex(const Base::Vector3f& pt, std::ostream&) const;
+    std::ostream& SaveNormal(const Base::Vector3f& pt, std::ostream&) const;
+    void SaveFace(std::size_t faceIdx, const MeshFacet& face, std::ostream&) const;
 
+private:
     const MeshKernel& _kernel;
     const Material* _material;
     Base::Matrix4D _transform;

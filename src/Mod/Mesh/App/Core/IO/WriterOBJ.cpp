@@ -24,7 +24,6 @@
 
 #include "Core/Iterator.h"
 #include <Base/Console.h>
-#include <Base/Sequencer.h>
 #include <Base/Tools.h>
 
 #include "WriterOBJ.h"
@@ -32,7 +31,9 @@
 
 using namespace MeshCore;
 
-struct WriterOBJ::Color_Less
+namespace {
+
+struct Color_Less
 {
     bool operator()(const Base::Color& x, const Base::Color& y) const
     {
@@ -48,6 +49,17 @@ struct WriterOBJ::Color_Less
         return false;  // equal colors
     }
 };
+
+std::vector<Base::Color> getUniqueColors(const Material* material)
+{
+    // make sure to use the 'usemtl' statement as less often as possible
+    std::vector<Base::Color> colors = material->diffuseColor;
+    std::sort(colors.begin(), colors.end(), Color_Less());
+    colors.erase(std::unique(colors.begin(), colors.end()), colors.end());
+    return colors;
+}
+
+}
 
 WriterOBJ::WriterOBJ(const MeshKernel& kernel, const Material* material)
     : _kernel(kernel)
@@ -69,25 +81,37 @@ void WriterOBJ::SetTransform(const Base::Matrix4D& mat)
 
 bool WriterOBJ::Save(std::ostream& out)
 {
-    const MeshPointArray& rPoints = _kernel.GetPoints();
-    const MeshFacetArray& rFacets = _kernel.GetFacets();
-
     if (!out || out.bad()) {
         return false;
     }
 
-    Base::SequencerLauncher seq("saving...", _kernel.CountPoints() + _kernel.CountFacets());
-    bool exportColorPerVertex = false;
-    bool exportColorPerFace = false;
+    Binding binding = GetBinding();
+    SaveHeader(binding, out);
 
+    out.precision(6);
+    out.setf(std::ios::fixed | std::ios::showpoint);
+
+    SaveVertexes(binding, out);
+    SaveNormals(out);
+    SaveFaces(binding, out);
+
+    return true;
+}
+
+WriterOBJ::Binding WriterOBJ::GetBinding() const
+{
+    Binding binding = Binding::OVERALL;
     if (_material) {
+        const MeshPointArray& rPoints = _kernel.GetPoints();
+        const MeshFacetArray& rFacets = _kernel.GetFacets();
+
         if (_material->binding == MeshIO::PER_FACE) {
             if (_material->diffuseColor.size() != rFacets.size()) {
                 Base::Console().Warning("Cannot export color information because there is a "
                                         "different number of faces and colors");
             }
             else {
-                exportColorPerFace = true;
+                binding = Binding::PER_FACE;
             }
         }
         else if (_material->binding == MeshIO::PER_VERTEX) {
@@ -96,7 +120,7 @@ bool WriterOBJ::Save(std::ostream& out)
                                         "different number of points and colors");
             }
             else {
-                exportColorPerVertex = true;
+                binding = Binding::PER_VERTEX;
             }
         }
         else if (_material->binding == MeshIO::OVERALL) {
@@ -105,32 +129,39 @@ bool WriterOBJ::Save(std::ostream& out)
                     "Cannot export color information because there is no color defined");
             }
             else {
-                exportColorPerVertex = true;
+                binding = Binding::PER_VERTEX;
             }
         }
     }
 
+    return binding;
+}
+
+void WriterOBJ::SaveHeader(Binding binding, std::ostream& out) const
+{
     // Header
     out << "# Created by FreeCAD <https://www.freecad.org>\n";
-    if (exportColorPerFace) {
+    if (binding == Binding::PER_FACE) {
         out << "mtllib " << _material->library << '\n';
     }
+}
 
-    out.precision(6);
-    out.setf(std::ios::fixed | std::ios::showpoint);
+void WriterOBJ::SaveVertexes(Binding binding, std::ostream& out) const
+{
+    const MeshPointArray& rPoints = _kernel.GetPoints();
 
     // vertices
     Base::Vector3f pt;
     std::size_t index = 0;
-    for (auto it = rPoints.begin(); it != rPoints.end(); ++it, ++index) {
+    for (const auto& it : rPoints) {
         if (this->apply_transform) {
-            pt = this->_transform * *it;
+            pt = this->_transform * it;
         }
         else {
-            pt.Set(it->x, it->y, it->z);
+            pt.Set(it.x, it.y, it.z);
         }
 
-        if (exportColorPerVertex) {
+        if (binding == Binding::PER_VERTEX) {
             Base::Color c;
             if (_material->binding == MeshIO::PER_VERTEX) {
                 c = _material->diffuseColor[index];
@@ -143,115 +174,156 @@ bool WriterOBJ::Save(std::ostream& out)
             int g = static_cast<int>(c.g * 255.0F);
             int b = static_cast<int>(c.b * 255.0F);
 
-            out << "v " << pt.x << " " << pt.y << " " << pt.z << " " << r << " " << g << " " << b
-                << '\n';
+            SaveVertex(pt, out) << " ";
+            SaveColor(r, g, b, out) << '\n';
         }
         else {
-            out << "v " << pt.x << " " << pt.y << " " << pt.z << '\n';
+            SaveVertex(pt, out) << '\n';
         }
-        seq.next(true);  // allow one to cancel
+
+        ++index;
     }
-    // Export normals
-    MeshFacetIterator clIter(_kernel), clEnd(_kernel);
-    const MeshGeomFacet* pclFacet {};
+}
 
-    clIter.Begin();
-    clEnd.End();
+void WriterOBJ::SaveNormals(std::ostream& out) const
+{
+    MeshFacetIterator it(_kernel);
+    MeshFacetIterator end(_kernel);
+    const MeshGeomFacet* facet {};
 
-    while (clIter < clEnd) {
-        pclFacet = &(*clIter);
-        out << "vn " << pclFacet->GetNormal().x << " " << pclFacet->GetNormal().y << " "
-            << pclFacet->GetNormal().z << '\n';
-        ++clIter;
-        seq.next(true);  // allow one to cancel
+    it.Begin();
+    end.End();
+
+    while (it < end) {
+        facet = &(*it);
+        SaveNormal(facet->GetNormal(), out) << '\n';
+        ++it;
     }
+}
 
+std::ostream& WriterOBJ::SaveColor(int r, int g, int b, std::ostream& out) const
+{
+    out << r << " " << g << " " << b;
+    return out;
+}
+
+std::ostream& WriterOBJ::SaveVertex(const Base::Vector3f& pt, std::ostream& out) const
+{
+    out << "v " << pt.x << " " << pt.y << " " << pt.z;
+    return out;
+}
+
+std::ostream& WriterOBJ::SaveNormal(const Base::Vector3f& pt, std::ostream& out) const
+{
+    out << "vn " << pt.x << " " << pt.y << " " << pt.z;
+    return out;
+}
+
+void WriterOBJ::SaveFace(std::size_t faceIdx, const MeshFacet& face, std::ostream& out) const
+{
+    // clang-format off
+    out << "f " << face._aulPoints[0] + 1 << "//" << faceIdx << " "
+                << face._aulPoints[1] + 1 << "//" << faceIdx << " "
+                << face._aulPoints[2] + 1 << "//" << faceIdx << '\n';
+    // clang-format on
+}
+
+void WriterOBJ::SaveFaces(Binding binding, std::ostream& out) const
+{
     if (_groups.empty()) {
-        if (exportColorPerFace) {
-            // facet indices (no texture and normal indices)
-
-            // make sure to use the 'usemtl' statement as less often as possible
-            std::vector<Base::Color> colors = _material->diffuseColor;
-            std::sort(colors.begin(), colors.end(), Color_Less());
-            colors.erase(std::unique(colors.begin(), colors.end()), colors.end());
-
-            std::size_t index = 0;
-            Base::Color prev;
-            int faceIdx = 1;
-            const std::vector<Base::Color>& Kd = _material->diffuseColor;
-            for (auto it = rFacets.begin(); it != rFacets.end(); ++it, index++) {
-                if (index == 0 || prev != Kd[index]) {
-                    prev = Kd[index];
-                    auto c_it = std::find(colors.begin(), colors.end(), prev);
-                    if (c_it != colors.end()) {
-                        out << "usemtl material_" << (c_it - colors.begin()) << '\n';
-                    }
-                }
-                out << "f " << it->_aulPoints[0] + 1 << "//" << faceIdx << " "
-                    << it->_aulPoints[1] + 1 << "//" << faceIdx << " " << it->_aulPoints[2] + 1
-                    << "//" << faceIdx << '\n';
-                seq.next(true);  // allow one to cancel
-                faceIdx++;
-            }
+        if (binding == Binding::PER_FACE) {
+            SaveFacesWithMaterial(out);
         }
         else {
-            // facet indices (no texture and normal indices)
-            std::size_t faceIdx = 1;
-            for (const auto& it : rFacets) {
-                out << "f " << it._aulPoints[0] + 1 << "//" << faceIdx << " "
-                    << it._aulPoints[1] + 1 << "//" << faceIdx << " " << it._aulPoints[2] + 1
-                    << "//" << faceIdx << '\n';
-                seq.next(true);  // allow one to cancel
-                faceIdx++;
-            }
+            SaveFaces(out);
         }
     }
     else {
-        if (exportColorPerFace) {
-            // make sure to use the 'usemtl' statement as less often as possible
-            std::vector<Base::Color> colors = _material->diffuseColor;
-            std::sort(colors.begin(), colors.end(), Color_Less());
-            colors.erase(std::unique(colors.begin(), colors.end()), colors.end());
-
-            bool first = true;
-            Base::Color prev;
-            const std::vector<Base::Color>& Kd = _material->diffuseColor;
-
-            for (const auto& gt : _groups) {
-                out << "g " << Base::Tools::escapedUnicodeFromUtf8(gt.name.c_str()) << '\n';
-                for (FacetIndex it : gt.indices) {
-                    const MeshFacet& f = rFacets[it];
-                    if (first || prev != Kd[it]) {
-                        first = false;
-                        prev = Kd[it];
-                        auto c_it = std::find(colors.begin(), colors.end(), prev);
-                        if (c_it != colors.end()) {
-                            out << "usemtl material_" << (c_it - colors.begin()) << '\n';
-                        }
-                    }
-
-                    out << "f " << f._aulPoints[0] + 1 << "//" << it + 1 << " "
-                        << f._aulPoints[1] + 1 << "//" << it + 1 << " " << f._aulPoints[2] + 1
-                        << "//" << it + 1 << '\n';
-                    seq.next(true);  // allow one to cancel
-                }
-            }
+        if (binding == Binding::PER_FACE) {
+            SaveGroupsWithMaterial(out);
         }
         else {
-            for (const auto& gt : _groups) {
-                out << "g " << Base::Tools::escapedUnicodeFromUtf8(gt.name.c_str()) << '\n';
-                for (FacetIndex it : gt.indices) {
-                    const MeshFacet& f = rFacets[it];
-                    out << "f " << f._aulPoints[0] + 1 << "//" << it + 1 << " "
-                        << f._aulPoints[1] + 1 << "//" << it + 1 << " " << f._aulPoints[2] + 1
-                        << "//" << it + 1 << '\n';
-                    seq.next(true);  // allow one to cancel
-                }
-            }
+            SaveGroups(out);
         }
     }
+}
 
-    return true;
+void WriterOBJ::SaveFaces(std::ostream& out) const
+{
+    const MeshFacetArray& rFacets = _kernel.GetFacets();
+    // facet indices (no texture and normal indices)
+    std::size_t faceIdx = 1;
+    for (const auto& it : rFacets) {
+        SaveFace(faceIdx, it, out);
+        faceIdx++;
+    }
+}
+
+void WriterOBJ::SaveFacesWithMaterial(std::ostream& out) const
+{
+    const MeshFacetArray& rFacets = _kernel.GetFacets();
+    // facet indices (no texture and normal indices)
+
+    // make sure to use the 'usemtl' statement as less often as possible
+    std::vector<Base::Color> colors = getUniqueColors(_material);
+
+    std::size_t index = 0;
+    Base::Color prev;
+    int faceIdx = 1;
+    const std::vector<Base::Color>& Kd = _material->diffuseColor;
+    for (auto it = rFacets.begin(); it != rFacets.end(); ++it, index++) {
+        if (index == 0 || prev != Kd[index]) {
+            prev = Kd[index];
+            auto c_it = std::find(colors.begin(), colors.end(), prev);
+            if (c_it != colors.end()) {
+                out << "usemtl material_" << (c_it - colors.begin()) << '\n';
+            }
+        }
+
+        SaveFace(faceIdx, *it, out);
+        faceIdx++;
+    }
+}
+
+void WriterOBJ::SaveGroups(std::ostream& out) const
+{
+    const MeshFacetArray& rFacets = _kernel.GetFacets();
+    for (const auto& gt : _groups) {
+        out << "g " << Base::Tools::escapedUnicodeFromUtf8(gt.name.c_str()) << '\n';
+        for (FacetIndex it : gt.indices) {
+            const MeshFacet& f = rFacets[it];
+            SaveFace(it + 1, f, out);
+        }
+    }
+}
+
+void WriterOBJ::SaveGroupsWithMaterial(std::ostream& out) const
+{
+    const MeshFacetArray& rFacets = _kernel.GetFacets();
+
+    // make sure to use the 'usemtl' statement as less often as possible
+    std::vector<Base::Color> colors = getUniqueColors(_material);
+
+    bool first = true;
+    Base::Color prev;
+    const std::vector<Base::Color>& Kd = _material->diffuseColor;
+
+    for (const auto& gt : _groups) {
+        out << "g " << Base::Tools::escapedUnicodeFromUtf8(gt.name.c_str()) << '\n';
+        for (FacetIndex it : gt.indices) {
+            const MeshFacet& f = rFacets[it];
+            if (first || prev != Kd[it]) {
+                first = false;
+                prev = Kd[it];
+                auto c_it = std::find(colors.begin(), colors.end(), prev);
+                if (c_it != colors.end()) {
+                    out << "usemtl material_" << (c_it - colors.begin()) << '\n';
+                }
+            }
+
+            SaveFace(it + 1, f, out);
+        }
+    }
 }
 
 bool WriterOBJ::SaveMaterial(std::ostream& out)
