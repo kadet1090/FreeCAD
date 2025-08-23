@@ -111,6 +111,8 @@ SET(Core_SRCS
     Core/IO/ReaderNAS.h
     Core/IO/ReaderOBJ.cpp
     Core/IO/ReaderOBJ.h
+    Core/IO/ReaderOFF.cpp
+    Core/IO/ReaderOFF.h
     Core/IO/ReaderPLY.cpp
     Core/IO/ReaderPLY.h
     Core/IO/Writer3MF.cpp
