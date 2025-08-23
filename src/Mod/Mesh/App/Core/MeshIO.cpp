@@ -41,6 +41,7 @@
 #include "IO/ReaderOBJ.h"
 #include "IO/ReaderOFF.h"
 #include "IO/ReaderPLY.h"
+#include "IO/ReaderSMF.h"
 #include "IO/Writer3MF.h"
 #include "IO/WriterInventor.h"
 #include "IO/WriterOBJ.h"
@@ -382,62 +383,8 @@ bool MeshInput::LoadOBJ(std::istream& input, const char* filename)
 /** Loads an SMF file. */
 bool MeshInput::LoadSMF(std::istream& input)
 {
-    boost::regex rx_p("^v\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
-                      "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
-                      "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)\\s*$");
-    boost::regex rx_f3("^f\\s+([-+]?[0-9]+)"
-                       "\\s+([-+]?[0-9]+)"
-                       "\\s+([-+]?[0-9]+)\\s*$");
-    boost::cmatch what;
-
-    unsigned long segment = 0;
-    MeshPointArray meshPoints;
-    MeshFacetArray meshFacets;
-
-    std::string line;
-    float fX {}, fY {}, fZ {};
-    int i1 = 1, i2 = 1, i3 = 1;
-    MeshFacet item;
-
-    if (!input || input.bad()) {
-        return false;
-    }
-
-    std::streambuf* buf = input.rdbuf();
-    if (!buf) {
-        return false;
-    }
-
-    while (std::getline(input, line)) {
-        if (boost::regex_match(line.c_str(), what, rx_p)) {
-            fX = (float)std::atof(what[1].first);
-            fY = (float)std::atof(what[4].first);
-            fZ = (float)std::atof(what[7].first);
-            meshPoints.push_back(MeshPoint(Base::Vector3f(fX, fY, fZ)));
-        }
-        else if (boost::regex_match(line.c_str(), what, rx_f3)) {
-            // 3-vertex face
-            i1 = std::atoi(what[1].first);
-            i1 = i1 > 0 ? i1 - 1 : i1 + static_cast<int>(meshPoints.size());
-            i2 = std::atoi(what[2].first);
-            i2 = i2 > 0 ? i2 - 1 : i2 + static_cast<int>(meshPoints.size());
-            i3 = std::atoi(what[3].first);
-            i3 = i3 > 0 ? i3 - 1 : i3 + static_cast<int>(meshPoints.size());
-            item.SetVertices(i1, i2, i3);
-            item.SetProperty(segment);
-            meshFacets.push_back(item);
-        }
-    }
-
-    this->_rclMesh.Clear();  // remove all data before
-
-    MeshCleanup meshCleanup(meshPoints, meshFacets);
-    meshCleanup.RemoveInvalids();
-    MeshPointFacetAdjacency meshAdj(meshPoints.size(), meshFacets);
-    meshAdj.SetFacetNeighbourhood();
-    this->_rclMesh.Adopt(meshPoints, meshFacets);
-
-    return true;
+    ReaderSMF reader(_rclMesh);
+    return reader.Load(input);
 }
 
 /** Loads an OFF file. */

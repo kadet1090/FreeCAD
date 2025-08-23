@@ -115,6 +115,8 @@ SET(Core_SRCS
     Core/IO/ReaderOFF.h
     Core/IO/ReaderPLY.cpp
     Core/IO/ReaderPLY.h
+    Core/IO/ReaderSMF.cpp
+    Core/IO/ReaderSMF.h
     Core/IO/Writer3MF.cpp
     Core/IO/Writer3MF.h
     Core/IO/WriterInventor.cpp
