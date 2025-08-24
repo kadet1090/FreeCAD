@@ -502,9 +502,14 @@ bool FileInfo::deleteDirectoryRecursive() const
 std::vector<Base::FileInfo> FileInfo::getDirectoryContent() const
 {
     std::vector<Base::FileInfo> List;
-    fs::path path = stringToPath(FileName);
-    for (const fs::directory_entry& f : fs::directory_iterator{path}) {
-        List.emplace_back(pathToString(f.path()));
+    try {
+        fs::path path = stringToPath(FileName);
+        for (const fs::directory_entry& f : fs::directory_iterator{ path }) {
+            List.emplace_back(pathToString(f.path()));
+        }
+    }
+    catch (const fs::filesystem_error& e) {
+        std::clog << e.what() << '\n';
     }
 
     return List;
