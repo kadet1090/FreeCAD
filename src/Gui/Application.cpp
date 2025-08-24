@@ -2463,27 +2463,6 @@ QString Application::replaceVariablesInQss(QString qssText)
     return qssText;
 }
 
-void Application::checkForDeprecatedSettings()
-{
-    // From 0.21, `FCBak` will be the intended default backup format
-    bool makeBackups = App::GetApplication()
-                           .GetParameterGroupByPath("User parameter:BaseApp/Preferences/Document")
-                           ->GetBool("CreateBackupFiles", true);
-    if (makeBackups) {
-        bool useFCBakExtension =
-            App::GetApplication()
-                .GetParameterGroupByPath("User parameter:BaseApp/Preferences/Document")
-                ->GetBool("UseFCBakExtension", true);
-        if (!useFCBakExtension) {
-            // TODO: This should be translated
-            Base::Console().Warning("The `.FCStd#` backup format is deprecated and may "
-                                    "be removed in future versions.\n"
-                                    "To update, check the 'Preferences->General->Document->Use "
-                                    "date and FCBak extension' option.\n");
-        }
-    }
-}
-
 void Application::checkForPreviousCrashes()
 {
     try {
