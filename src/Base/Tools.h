@@ -30,6 +30,7 @@
 #include <cmath>
 #include <ostream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <boost/signals2/shared_connection_block.hpp>
@@ -134,12 +135,14 @@ inline T sgn(T t)
 template<class T>
 inline T toRadians(T d)
 {
+    static_assert(std::is_floating_point<T>::value, "Floating point number expected");
     return static_cast<T>((d * M_PI) / 180.0);
 }
 
 template<class T>
 inline T toDegrees(T r)
 {
+    static_assert(std::is_floating_point<T>::value, "Floating point number expected");
     return static_cast<T>((r / M_PI) * 180.0);
 }
 
