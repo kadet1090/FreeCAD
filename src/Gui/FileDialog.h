@@ -86,6 +86,8 @@ private Q_SLOTS:
     void onSelectedFilter(const QString&);
 
 private:
+    QLineEdit* lineEdit() const;
+    void adjustFileName(const QString& nameFilter);
     bool hasSuffix(const QString&) const;
     static QList<QUrl> fetchSidebarUrls();
     static QString workingDirectory;

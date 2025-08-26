@@ -85,12 +85,27 @@ FileDialog::~FileDialog() = default;
 
 void FileDialog::onSelectedFilter(const QString& /*filter*/)
 {
-    QRegularExpression rx(QLatin1String(R"(\(\*.(\w+))"));
-    QString suf = selectedNameFilter();
+    static const QRegularExpression rx(QLatin1String(R"(\(\*.([\w.]+))"));
+    const QString suf = selectedNameFilter();
     auto match = rx.match(suf);
     if (match.hasMatch()) {
-        suf = match.captured(1);
-        setDefaultSuffix(suf);
+        const QString newNameFilterExtension = match.captured(1);
+        setDefaultSuffix(newNameFilterExtension);
+        adjustFileName(newNameFilterExtension);
+    }
+}
+
+void FileDialog::adjustFileName(const QString& nameFilter)
+{
+    if (auto fileNameEdit = lineEdit()) {
+        QString fileName = fileNameEdit->text();
+        const QString fileNameExtension = QFileInfo(fileName).completeSuffix();
+        if (!fileNameExtension.isEmpty() && !nameFilter.isEmpty()) {
+            const int fileNameExtensionLength = fileNameExtension.count();
+            fileName.replace(fileName.count() - fileNameExtensionLength,
+                             fileNameExtensionLength, nameFilter);
+            fileNameEdit->setText(fileName);
+        }
     }
 }
 
@@ -118,7 +133,7 @@ QList<QUrl> FileDialog::fetchSidebarUrls()
 
 bool FileDialog::hasSuffix(const QString& ext) const
 {
-    QRegularExpression rx(QStringLiteral("\\*.(%1)\\W").arg(ext), QRegularExpression::CaseInsensitiveOption);
+    static const QRegularExpression rx(QStringLiteral("\\*.(%1)\\W").arg(ext), QRegularExpression::CaseInsensitiveOption);
     QStringList filters = nameFilters();
     for (const auto & str : filters) {
         if (rx.match(str).hasMatch()) {
@@ -127,6 +142,11 @@ bool FileDialog::hasSuffix(const QString& ext) const
     }
 
     return false;
+}
+
+QLineEdit* FileDialog::lineEdit() const
+{
+    return findChild<QLineEdit*>(QStringLiteral("fileNameEdit"));
 }
 
 void FileDialog::accept()
@@ -138,15 +158,15 @@ void FileDialog::accept()
         if (!files.isEmpty()) {
             QString ext = this->defaultSuffix();
             QString file = files.front();
-            QString suffix = QFileInfo(file).suffix();
+            QString suffix = QFileInfo(file).completeSuffix();
             // #0001928: do not add a suffix if a file with suffix is entered
             // #0002209: make sure that the entered suffix is part of one of the filters
             if (!ext.isEmpty() && (suffix.isEmpty() || !hasSuffix(suffix))) {
                 file = QStringLiteral("%1.%2").arg(file, ext);
                 // That's the built-in line edit
-                auto fileNameEdit = this->findChild<QLineEdit*>(QStringLiteral("fileNameEdit"));
-                if (fileNameEdit)
+                if (auto fileNameEdit = lineEdit()) {
                     fileNameEdit->setText(file);
+                }
             }
         }
     }
@@ -155,11 +175,10 @@ void FileDialog::accept()
 
 void FileDialog::getSuffixesDescription(QStringList& suffixes, const QString* suffixDescriptions)
 {
-    QRegularExpression rx;
     // start the raw string with a (
     // match a *, a . and at least one word character (a-z, A-Z, 0-9, _) with \*\.\w+
     // end the raw string with a )
-    rx.setPattern(QLatin1String(R"(\*\.\w+)"));
+    static const QRegularExpression rx(QLatin1String(R"(\*\.[\w.]+)"));
 
     QRegularExpressionMatchIterator i = rx.globalMatch(*suffixDescriptions);
     while (i.hasNext()) {
@@ -192,7 +211,7 @@ QString FileDialog::getSaveFileName (QWidget * parent, const QString & caption, 
 
         // get the suffix for the filter: use the selected filter if there is one,
         // otherwise find the first valid suffix in the complete list of filters
-        const QString *filterToSearch;
+        const QString *filterToSearch = nullptr;
         if (selectedFilter && !selectedFilter->isEmpty()) {
             filterToSearch = selectedFilter;
         }
@@ -202,7 +221,7 @@ QString FileDialog::getSaveFileName (QWidget * parent, const QString & caption, 
 
         QStringList filterSuffixes;
         getSuffixesDescription(filterSuffixes, filterToSearch);
-        const QString fiSuffix = fi.suffix();
+        const QString fiSuffix = fi.completeSuffix();
         const QString dotSuffix = QLatin1String("*.") + fiSuffix;  // To match with filterSuffixes
         if (fiSuffix.isEmpty() || !filterSuffixes.contains(dotSuffix)) {
             // there is no suffix or not a suffix that matches the filter, so
@@ -214,8 +233,9 @@ QString FileDialog::getSaveFileName (QWidget * parent, const QString & caption, 
     }
 
     QString windowTitle = caption;
-    if (windowTitle.isEmpty())
+    if (windowTitle.isEmpty()) {
         windowTitle = FileDialog::tr("Save as");
+    }
 
     // NOTE: We must not change the specified file name afterwards as we may return the name of an already
     // existing file. Hence we must extract the first matching suffix from the filter list and append it
@@ -235,17 +255,20 @@ QString FileDialog::getSaveFileName (QWidget * parent, const QString & caption, 
         dlg.setFileMode(QFileDialog::AnyFile);
         dlg.setAcceptMode(QFileDialog::AcceptSave);
         dlg.setDirectory(dirName);
-        if (hasFilename)
+        if (hasFilename) {
             dlg.selectFile(dirName);
+        }
         dlg.setNameFilters(filter.split(QLatin1String(";;")));
-        if (selectedFilter && !selectedFilter->isEmpty())
+        if (selectedFilter && !selectedFilter->isEmpty()) {
             dlg.selectNameFilter(*selectedFilter);
+        }
         dlg.onSelectedFilter(dlg.selectedNameFilter());
         dlg.setOption(QFileDialog::HideNameFilterDetails, false);
         dlg.setOption(QFileDialog::DontConfirmOverwrite, false);
         if (dlg.exec() == QDialog::Accepted) {
-            if (selectedFilter)
+            if (selectedFilter) {
                 *selectedFilter = dlg.selectedNameFilter();
+            }
             file = dlg.selectedFiles().constFirst();
         }
     }
