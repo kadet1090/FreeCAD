@@ -84,11 +84,11 @@ FreeCAD.addExportType(
     "feminout.importYamlJsonMesh",
 )
 
-FreeCAD.addImportType("FEM mesh Z88 (*i1.txt *I1.TXT)", "feminout.importZ88Mesh")
-FreeCAD.addExportType("FEM mesh Z88 (*i1.txt)", "feminout.importZ88Mesh")
+FreeCAD.addImportType("FEM mesh Z88 (*.i1.txt *.I1.TXT)", "feminout.importZ88Mesh")
+FreeCAD.addExportType("FEM mesh Z88 (*.i1.txt)", "feminout.importZ88Mesh")
 
 FreeCAD.addImportType(
-    "FEM result Z88 displacements (*o2.txt *O2.TXT)", "feminout.importZ88O2Results"
+    "FEM result Z88 displacements (*.o2.txt *.O2.TXT)", "feminout.importZ88O2Results"
 )
 
 if "BUILD_FEM_VTK" in FreeCAD.__cmake__:
