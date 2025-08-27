@@ -173,6 +173,9 @@ protected:
         }
 
         if (iMsg == 0) {
+            if (quickMeasure) {
+                quickMeasure->print(QString());
+            }
             quickMeasure.reset();
         }
         else {
