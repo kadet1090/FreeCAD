@@ -4368,12 +4368,12 @@ void DocumentItem::slotResetEdit(const Gui::ViewProviderDocumentObject& v)
     FOREACH_ITEM_ALL(item)
     if (tree->editingItem) {
         if (item == tree->editingItem) {
-            item->setData(0, Qt::BackgroundRole, QVariant());
+            item->restoreBackground();  // Restore debug pink or previous background
             break;
         }
     }
     else if (item->object() == &v) {
-        item->setData(0, Qt::BackgroundRole, QVariant());
+        item->restoreBackground();  // Restore debug pink or previous background
     }
     END_FOREACH_ITEM
     tree->editingItem = nullptr;
@@ -5955,6 +5955,14 @@ DocumentObjectItem::DocumentObjectItem(DocumentItem* ownerDocItem, DocumentObjec
     setFlags(flags() | Qt::ItemIsEditable | Qt::ItemIsUserCheckable);
     setCheckState(false);
 
+    // Use the tree widget's background color for default
+    QColor defaultBg = Qt::white;
+    if (ownerDocItem && ownerDocItem->treeWidget()) {
+        defaultBg = ownerDocItem->treeWidget()->palette().color(QPalette::Base);
+    }
+    this->setBackground(0, defaultBg);
+    this->bgBrush = this->background(0);
+
     myData->insertItem(this);
     ++countItems;
     TREE_LOG("Create item: " << countItems << ", " << object()->getObject()->getFullName());
@@ -5981,18 +5989,36 @@ DocumentObjectItem::~DocumentObjectItem()
 
 void DocumentObjectItem::restoreBackground()
 {
-    this->setBackground(0, this->bgBrush);
+    // Always restore to the current tree widget background color
+    QColor defaultBg = Qt::white;
+    if (treeWidget()) {
+        defaultBg = treeWidget()->palette().color(QPalette::Base);
+    }
+    this->setBackground(0, defaultBg);
+    this->bgBrush = this->background(0);
 }
 
 void DocumentObjectItem::setHighlight(bool set, Gui::HighlightMode high)
 {
     QFont f = this->font(0);
-    auto highlight = [this, set](const QColor& col) {
+
+    // Use the tree widget's background color for default
+    QColor defaultBg = Qt::white;
+    if (treeWidget()) {
+        defaultBg = treeWidget()->palette().color(QPalette::Base);
+    }
+
+    auto highlight = [this, set, defaultBg](const QColor& col, const QColor& offCol = QColor()) {
         if (set) {
             this->setBackground(0, col);
         }
         else {
-            this->setBackground(0, QBrush());
+            if (offCol.isValid()) {
+                this->setBackground(0, offCol);
+            }
+            else {
+                this->setBackground(0, defaultBg);
+            }
         }
         this->bgBrush = this->background(0);
     };
@@ -6036,14 +6062,15 @@ void DocumentObjectItem::setHighlight(bool set, Gui::HighlightMode high)
 
                 unsigned long col = hGrp->GetUnsigned("TreeActiveColor", 1538528255);
                 color = Base::Color::fromPackedRGB<QColor>(col);
+                highlight(color);
             }
             else {
                 f.setBold(false);
                 f.setItalic(false);
                 f.setUnderline(false);
                 f.setOverline(false);
+                highlight(color, defaultBg);
             }
-            highlight(color);
         } break;
         default:
             break;
