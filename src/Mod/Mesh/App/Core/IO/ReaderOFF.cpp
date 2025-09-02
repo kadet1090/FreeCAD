@@ -26,6 +26,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include <istream>
+#include <sstream>
 #endif
 
 #include "Core/MeshKernel.h"
