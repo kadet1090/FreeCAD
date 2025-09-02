@@ -2716,7 +2716,9 @@ public:
     void printHistoryInit(const Handle(BRepTools_History)& newHistory,
                           const std::vector<TopoShape>& inputEdges)
     {
+#if OCC_VERSION_HEX < 0x070800
         const int max_int = std::numeric_limits<int>::max();
+#endif
         FC_MSG("init:");
         for (const auto& shape : sourceEdges) {
 #if OCC_VERSION_HEX < 0x070800
@@ -2734,7 +2736,9 @@ public:
     // complexity
     void printHistoryFinal()
     {
+#if OCC_VERSION_HEX < 0x070800
         const int max_int = std::numeric_limits<int>::max();
+#endif
         printHistory(aHistory, sourceEdges);
         FC_MSG("final:");
         for (int i = 1; i <= wireData->NbEdges(); ++i) {
@@ -2801,7 +2805,9 @@ public:
     template<class T>
     void printHistoryOfShape(const Handle(BRepTools_History)& hist, const T& shape)
     {
+#if OCC_VERSION_HEX < 0x070800
         const int max_int = std::numeric_limits<int>::max();
+#endif
         for (TopTools_ListIteratorOfListOfShape it(hist->Modified(shape.getShape())); it.More();
              it.Next()) {
 #if OCC_VERSION_HEX < 0x070800

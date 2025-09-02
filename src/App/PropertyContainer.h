@@ -348,7 +348,7 @@ public: \
       constexpr auto vNamespace = vClass.substr(0, pos); \
       constexpr std::string_view filePath = __FILE__; \
       constexpr auto posAfterSrcMod =  filePath.find("/src/Mod/"); \
-      if constexpr (constexpr bool hasSrcModInPath = posAfterSrcMod != std::string_view::npos) { \
+      if constexpr (posAfterSrcMod != std::string_view::npos) { \
         constexpr auto pathAfterSrcMod = filePath.substr(posAfterSrcMod + 9); \
         /* some workarounds are needed, if CI is ok in the future, remove these: \
           - isSubClassOfDocObj shouldn't be needed, but it is for some compilers \
