@@ -42,6 +42,7 @@
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#pragma clang diagnostic ignored "-Wc++20-extensions"
 #endif
 
 FC_LOG_LEVEL_INIT("App::Link", true, true)
