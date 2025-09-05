@@ -101,8 +101,8 @@ void FileDialog::adjustFileName(const QString& nameFilter)
         QString fileName = fileNameEdit->text();
         const QString fileNameExtension = QFileInfo(fileName).completeSuffix();
         if (!fileNameExtension.isEmpty() && !nameFilter.isEmpty()) {
-            const int fileNameExtensionLength = fileNameExtension.count();
-            fileName.replace(fileName.count() - fileNameExtensionLength,
+            const int fileNameExtensionLength = fileNameExtension.size();
+            fileName.replace(fileName.size() - fileNameExtensionLength,
                              fileNameExtensionLength, nameFilter);
             fileNameEdit->setText(fileName);
         }

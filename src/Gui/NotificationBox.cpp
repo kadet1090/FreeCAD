@@ -395,7 +395,10 @@ QString NotificationBox::text()
     return {};
 }
 
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_CLANG("-Wc++20-extensions")
 Q_GLOBAL_STATIC(QPalette, notificationbox_palette)
+QT_WARNING_POP
 
 QPalette NotificationBox::palette()
 {
