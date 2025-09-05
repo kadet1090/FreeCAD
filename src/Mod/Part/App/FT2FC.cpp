@@ -59,6 +59,7 @@
 
 #include <Base/Console.h>
 #include <Base/FileInfo.h>
+#include <Base/Stream.h>
 
 #include "TopoShapeWirePy.h"
 
@@ -103,18 +104,14 @@ PyObject* FT2FC(const Py_UCS4 *PyUString,
                 const double stringheight,                 // fc coords
                 const double tracking)                     // fc coords
 {
-    FT_Library  FTLib;
-    FT_Face     FTFace;
-    FT_Error    error;
+    FT_Library  FTLib {};
+    FT_Face     FTFace {};
+    FT_Error    error {};
     FT_Long     FaceIndex = 0;                   // some fonts have multiple faces
-    FT_Vector   kern;
+    FT_Vector   kern {};
     FT_UInt     FTLoadFlags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
 
     std::stringstream ErrorMsg;
-    double PenPos = 0, scalefactor;
-    FT_ULong prevchar = 0, currchar = 0;
-    int  cadv;
-    size_t i;
     Py::List CharList;
 
     error = FT_Init_FreeType(&FTLib);
@@ -124,24 +121,22 @@ PyObject* FT2FC(const Py_UCS4 *PyUString,
     }
 
 
-    std::ifstream fontfile;
-#ifdef FC_OS_WIN32
-    Base::FileInfo winFI(FontSpec);
-    fontfile.open(winFI.toStdWString().c_str(), std::ios::binary | std::ios::in);
-#else
-    fontfile.open(FontSpec, std::ios::binary | std::ios::in);
-#endif
+    Base::ifstream fontfile;
+    Base::FileInfo fi(FontSpec);
+    fontfile.open(fi, std::ios::binary | std::ios::in);
     if (!fontfile.is_open()) {
         //get indignant
         ErrorMsg << "Can not open font file: " << FontSpec;
         throw std::runtime_error(ErrorMsg.str());
     }
-    fontfile.seekg (0, fontfile.end);
+
+    fontfile.seekg (0, std::ifstream::end);
     int bytesNeeded = fontfile.tellg();
     fontfile.clear();
-    fontfile.seekg (0, fontfile.beg);
-    std::unique_ptr <char[]> buffer (new char[bytesNeeded]);
-    fontfile.read(buffer.get(), bytesNeeded);
+    fontfile.seekg (0, std::ifstream::beg);
+    std::vector<char> buffer;
+    buffer.resize(bytesNeeded);
+    fontfile.read(buffer.data(), bytesNeeded);
     if (!fontfile) {
         //get indignant
         ErrorMsg << "Can not read font file: " << FontSpec;
@@ -149,7 +144,7 @@ PyObject* FT2FC(const Py_UCS4 *PyUString,
     }
     fontfile.close();
 
-    const FT_Byte* ftBuffer = reinterpret_cast<FT_Byte*>(buffer.get());
+    const FT_Byte* ftBuffer = reinterpret_cast<FT_Byte*>(buffer.data());
     error = FT_New_Memory_Face(FTLib, ftBuffer, bytesNeeded, FaceIndex, &FTFace);
     if (error) {
         ErrorMsg << "FT_New_Face failed: " << error;
@@ -170,9 +165,11 @@ PyObject* FT2FC(const Py_UCS4 *PyUString,
         throw std::runtime_error(ErrorMsg.str());
     }
 
-    scalefactor = (stringheight/float(FTFace->height))/10;  // divide scale by 10 to offset the 10X increased scale in FT_Set_Char_Size above
-    for (i=0; i<length; i++) {
-        currchar = PyUString[i];
+    double PenPos = 0;
+    double scalefactor = (stringheight/float(FTFace->height))/10;  // divide scale by 10 to offset the 10X increased scale in FT_Set_Char_Size above
+    FT_ULong prevchar = 0;
+    for (size_t i=0; i<length; i++) {
+        FT_ULong currchar = PyUString[i];
         error = FT_Load_Char(FTFace,
                              currchar,
                              FTLoadFlags);
@@ -181,8 +178,8 @@ PyObject* FT2FC(const Py_UCS4 *PyUString,
             throw std::runtime_error(ErrorMsg.str());
         }
 
-        cadv = FTFace->glyph->advance.x;
-        kern = getKerning(FTFace,prevchar,currchar);
+        int cadv = FTFace->glyph->advance.x;
+        kern = getKerning(FTFace, prevchar, currchar);
         PenPos += kern.x;
         try {
             Py::List WireList(getGlyphContours(FTFace, currchar, PenPos, scalefactor, i, tracking), true);
