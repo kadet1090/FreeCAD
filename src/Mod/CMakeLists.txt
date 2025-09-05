@@ -128,6 +128,10 @@ endif(BUILD_TECHDRAW)
 
 #add_subdirectory(TemplatePyMod)
 
+if(BUILD_TABBAR)
+  add_subdirectory(TabBar)
+endif(BUILD_TABBAR)
+
 if(BUILD_TEST)
   add_subdirectory(Test)
 endif(BUILD_TEST)
