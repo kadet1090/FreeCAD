@@ -47,6 +47,75 @@
         }
       },
       {
+        "name": "address-sanitizer",
+        "displayName": "Address sanitizer",
+        "description": "Default address-sanitizer profile",
+        "inherits": [
+          "debug"
+        ],
+        "binaryDir": "${sourceDir}/build/asan",
+        "cacheVariables": {
+          "CMAKE_CXX_FLAGS_DEBUG": {
+            "type": "STRING",
+            "value": "-g -fsanitize=address"
+          },
+          "CMAKE_C_FLAGS_DEBUG": {
+            "type": "STRING",
+            "value": "-g -fsanitize=address"
+          }
+        }
+      },
+      {
+        "name": "clang",
+        "displayName": "clang compiler",
+        "description": "clang compiler",
+        "inherits": [
+          "common"
+        ],
+        "cacheVariables": {
+          "CMAKE_C_COMPILER": {
+            "type": "STRING",
+            "value": "clang"
+          },
+          "CMAKE_CXX_COMPILER": {
+            "type": "STRING",
+            "value": "clang++"
+          }
+        }
+      },
+      {
+        "name": "gcc",
+        "displayName": "gcc compiler",
+        "description": "gcc compiler",
+        "inherits": [
+          "common"
+        ],
+        "cacheVariables": {
+          "CMAKE_C_COMPILER": {
+            "type": "STRING",
+            "value": "gcc"
+          },
+          "CMAKE_CXX_COMPILER": {
+            "type": "STRING",
+            "value": "g++"
+          }
+        }
+      },
+      {
+        "name": "shared-no-link-python",
+        "displayName": "shared no link python",
+        "description": "shared no link python",
+        "inherits": [
+          "common"
+        ],
+        "cacheVariables": {
+          "BUILD_DYNAMIC_LINK_PYTHON": {
+            "type": "BOOL",
+            "value": "OFF"
+          }
+        }
+      },
+      {
         "name": "conda",
         "hidden": true,
         "generator": "Ninja",
@@ -104,6 +173,16 @@
             "value": "$env{CONDA_PREFIX}"
           }
         }
+      },
+      {
+        "name": "linux",
+        "hidden": true,
+        "condition": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Linux"
+        },
+        "generator": "Unix Makefiles"
       },
       {
         "name": "conda-linux",
@@ -282,6 +361,27 @@
             "value": "OFF"
           }
         }
+      },
+      {
+        "name": "linux-debug-asan-clang",
+        "displayName": "Linux Debug Address Sanitizer (clang)",
+        "description": "Linux debug address sanitizer clang profile",
+        "inherits": [
+          "address-sanitizer",
+          "shared-no-link-python",
+          "clang",
+          "linux"
+        ]
+      },
+      {
+        "name": "linux-debug-asan-gcc",
+        "displayName": "Linux Debug Address Sanitizer (gcc)",
+        "description": "Linux debug address sanitizer gcc profile",
+        "inherits": [
+          "address-sanitizer",
+          "gcc",
+          "linux"
+        ]
       }
     ]
 }
