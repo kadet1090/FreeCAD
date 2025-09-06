@@ -6,7 +6,7 @@ body:
     id: existing_issue
     attributes:
       label: Is there an existing issue for this?
-      description: Please [search](https://github.com/FreeCAD/FreeCAD/issues) to see if a similar issue already exists for the problem you encountered.
+      description: Please [search](https://codeberg.org/xCAD/FreeCAD11/issues) to see if a similar issue already exists for the problem you encountered.
       options:
       - label: I have searched the existing issues
         required: true
@@ -60,14 +60,14 @@ body:
         If there is a discussion about the problem on the forum, provide link(s) here.
         You can upload or copy your macro here to speed up the diagnosis and debugging.
 
-        Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in. To attach a FCStd file, ZIP it first (GitHub won't recognize the extension otherwise).
+        Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.
     validations:
       required: false
   - type: checkboxes
     id: terms
     attributes:
       label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/FreeCAD/FreeCAD/blob/main/CODE_OF_CONDUCT.md)
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://codeberg.org/xCAD/FreeCAD11/src/branch/main-dev/CODE_OF_CONDUCT.md)
       options:
         - label: I agree to follow this project's Code of Conduct
           required: true
