@@ -69,7 +69,7 @@ void SMDS_MeshNode::init(int id, int meshId, int shapeId, double x, double y, do
   SMDS_UnstructuredGrid * grid = mesh->getGrid();
   vtkPoints *points = grid->GetPoints();
   points->InsertPoint(myVtkID, x, y, z);
-#if VTK_VERSION_NUMBER_QUICK >= 90300000000
+#if VTK_VERSION_NUMBER >= 90300000000
   SMDS_CellLinks *cellLinks = dynamic_cast<SMDS_CellLinks*>(grid->GetLinks());
 #else
   SMDS_CellLinks *cellLinks = dynamic_cast<SMDS_CellLinks*>(grid->GetCellLinks());
@@ -195,7 +195,7 @@ public:
 SMDS_ElemIteratorPtr SMDS_MeshNode::
 GetInverseElementIterator(SMDSAbs_ElementType type) const
 {
-#if VTK_VERSION_NUMBER_QUICK >= 90300000000
+#if VTK_VERSION_NUMBER >= 90300000000
   vtkCellLinks::Link l = static_cast<vtkCellLinks*>(SMDS_Mesh::_meshList[myMeshId]->getGrid()->GetLinks())->GetLink(myVtkID);
 #else
   vtkCellLinks::Link l = static_cast<vtkCellLinks*>(SMDS_Mesh::_meshList[myMeshId]->getGrid()->GetCellLinks())->GetLink(myVtkID);
@@ -259,7 +259,7 @@ elementsIterator(SMDSAbs_ElementType type) const
     return SMDS_MeshElement::elementsIterator(SMDSAbs_Node);
   else
   {
-#if VTK_VERSION_NUMBER_QUICK >= 90300000000
+#if VTK_VERSION_NUMBER >= 90300000000
     vtkCellLinks::Link l = static_cast<vtkCellLinks*>(SMDS_Mesh::_meshList[myMeshId]->getGrid()->GetLinks())->GetLink(myVtkID);
 #else
     vtkCellLinks::Link l = static_cast<vtkCellLinks*>(SMDS_Mesh::_meshList[myMeshId]->getGrid()->GetCellLinks())->GetLink(myVtkID);
@@ -362,7 +362,7 @@ void SMDS_MeshNode::AddInverseElement(const SMDS_MeshElement* ME)
   const SMDS_MeshCell *cell = dynamic_cast<const SMDS_MeshCell*> (ME);
   assert(cell);
   SMDS_UnstructuredGrid* grid = SMDS_Mesh::_meshList[myMeshId]->getGrid();
-#if VTK_VERSION_NUMBER_QUICK >= 90300000000
+#if VTK_VERSION_NUMBER >= 90300000000
   vtkCellLinks *Links = static_cast<vtkCellLinks*>(grid->GetLinks());
 #else
   vtkCellLinks *Links = static_cast<vtkCellLinks*>(grid->GetCellLinks());
@@ -382,7 +382,7 @@ void SMDS_MeshNode::ClearInverseElements()
 
 bool SMDS_MeshNode::emptyInverseElements()
 {
-#if VTK_VERSION_NUMBER_QUICK >= 90300000000
+#if VTK_VERSION_NUMBER >= 90300000000
   vtkCellLinks::Link l = static_cast<vtkCellLinks*>(SMDS_Mesh::_meshList[myMeshId]->getGrid()->GetLinks())->GetLink(myVtkID);
 #else
   vtkCellLinks::Link l = static_cast<vtkCellLinks*>(SMDS_Mesh::_meshList[myMeshId]->getGrid()->GetCellLinks())->GetLink(myVtkID);
@@ -398,7 +398,7 @@ bool SMDS_MeshNode::emptyInverseElements()
 
 int SMDS_MeshNode::NbInverseElements(SMDSAbs_ElementType type) const
 {
-#if VTK_VERSION_NUMBER_QUICK >= 90300000000
+#if VTK_VERSION_NUMBER >= 90300000000
   vtkCellLinks::Link l = static_cast<vtkCellLinks*>(SMDS_Mesh::_meshList[myMeshId]->getGrid()->GetLinks())->GetLink(myVtkID);
 #else
   vtkCellLinks::Link l = static_cast<vtkCellLinks*>(SMDS_Mesh::_meshList[myMeshId]->getGrid()->GetCellLinks())->GetLink(myVtkID);

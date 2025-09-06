@@ -542,7 +542,7 @@ bool NETGENPlugin_NETGEN_3D::compute(SMESH_Mesh&                     aMesh,
       str << ": " << ex.GetMessageString();
     error(str);
   }
-  catch (netgen::NgException exc)
+  catch (netgen::NgException& exc)
   {
     SMESH_Comment str("NgException");
     if ( strlen( netgen::multithread.task ) > 0 )
