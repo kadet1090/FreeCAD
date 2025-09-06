@@ -869,12 +869,11 @@ void ManualAlignment::continueAlignment()
 
 void ManualAlignment::closeViewer()
 {
-    if (!myViewer)
-        return;
-    // Close the viewer
-    if (myViewer->parentWidget())
-        myViewer->parentWidget()->deleteLater();
-    myViewer = nullptr;
+    if (myViewer) {
+        // Close the viewer
+        getMainWindow()->removeWindow(myViewer);
+        myViewer = nullptr;
+    }
 }
 
 /**
