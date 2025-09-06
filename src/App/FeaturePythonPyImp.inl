@@ -79,9 +79,18 @@ PyTypeObject FeaturePythonPyT<FeaturePyT>::Type = {
     nullptr,                                          /*tp_del */
     0,                                                /*tp_version_tag */
     nullptr                                           /*tp_finalize */
-    ,0                                                /*tp_vectorcall */
+#if PY_VERSION_HEX >= 0x03090000
+    ,nullptr                                          /*tp_vectorcall */
 #if PY_VERSION_HEX >= 0x030c0000
     ,0                                                /*tp_watched */
+#if PY_VERSION_HEX >= 0x030d0000
+    ,0                                                /*tp_versions_used */
+#endif
+#endif
+#elif PY_VERSION_HEX >= 0x03080000
+    ,nullptr                                          /*tp_vectorcall */
+    /* bpo-37250: kept for backwards compatibility in CPython 3.8 only */
+    ,nullptr                                          /*tp_print */
 #endif
 };
 

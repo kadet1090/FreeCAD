@@ -28,14 +28,6 @@
 #include <Base/Interpreter.h>
 #include <Base/PyObjectBase.h>
 
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wmissing-field-initializers"
-#elif defined(__GNUC__) || defined(__GNUG__)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#endif
-
 #define PYTHON_TYPE_DEF(_class_, _subclass_) \
     class _class_ : public _subclass_ \
     { \
@@ -46,7 +38,9 @@
         virtual ~_class_(); \
     };
 
-#if PY_VERSION_HEX >= 0x030c0000
+#if PY_VERSION_HEX >= 0x030d0000
+#define PYTHON_TYPE_SLOTS 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+#elif PY_VERSION_HEX >= 0x030c0000
 #define PYTHON_TYPE_SLOTS 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 #else
 #define PYTHON_TYPE_SLOTS 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -106,12 +100,6 @@ private:
 } //namespace App
 
 #include "FeaturePythonPyImp.inl"
-
-#if defined(__clang__)
-# pragma clang diagnostic pop
-#elif defined(__GNUC__) || defined(__GNUG__)
-# pragma GCC diagnostic pop
-#endif
 
 #endif // APP_FEATUREPYTHONPYIMP_H
 // clang-format on
