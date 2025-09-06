@@ -556,24 +556,23 @@ public:
     void syncCameraCB(void * data, SoSensor * s)
     {
         auto self = static_cast<ManualAlignment*>(data);
-        if (!self->myViewer)
+        if (!self->myViewer) {
             return; // already destroyed
+        }
+
         SoCamera* cam1 = self->myViewer->getViewer(0)->getSoRenderManager()->getCamera();
         SoCamera* cam2 = self->myViewer->getViewer(1)->getSoRenderManager()->getCamera();
-        if (!cam1 || !cam2)
+        if (!cam1 || !cam2) {
             return; // missing camera
+        }
+
         auto sensor = static_cast<SoNodeSensor*>(s);
         SoNode* node = sensor->getAttachedNode();
         if (node && node->getTypeId().isDerivedFrom(SoCamera::getClassTypeId())) {
             if (node == cam1) {
                 Private::copyCameraSettings(cam1, self->d->rot_cam1, self->d->pos_cam1,
-                                   cam2, self->d->rot_cam2, self->d->pos_cam2);
+                                            cam2, self->d->rot_cam2, self->d->pos_cam2);
                 self->myViewer->getViewer(1)->redraw();
-            }
-            else if (node == cam2) {
-                Private::copyCameraSettings(cam2, self->d->rot_cam2, self->d->pos_cam2,
-                                   cam1, self->d->rot_cam1, self->d->pos_cam1);
-                self->myViewer->getViewer(0)->redraw();
             }
         }
     }
