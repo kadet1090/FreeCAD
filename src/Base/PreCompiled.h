@@ -144,6 +144,7 @@
 #include <QReadLocker>
 #include <QReadWriteLock>
 #include <QTime>
+#include <QTimeZone>
 #include <QUuid>
 
 
