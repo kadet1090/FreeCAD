@@ -5955,13 +5955,9 @@ DocumentObjectItem::DocumentObjectItem(DocumentItem* ownerDocItem, DocumentObjec
     setFlags(flags() | Qt::ItemIsEditable | Qt::ItemIsUserCheckable);
     setCheckState(false);
 
-    // Use the tree widget's background color for default
-    QColor defaultBg = Qt::white;
-    if (ownerDocItem && ownerDocItem->treeWidget()) {
-        defaultBg = ownerDocItem->treeWidget()->palette().color(QPalette::Base);
-    }
-    this->setBackground(0, defaultBg);
-    this->bgBrush = this->background(0);
+    // Initialize background using the same logic as restoreBackground()
+    // so initial items match later restores/preferences.
+    restoreBackground();
 
     myData->insertItem(this);
     ++countItems;
@@ -5989,10 +5985,16 @@ DocumentObjectItem::~DocumentObjectItem()
 
 void DocumentObjectItem::restoreBackground()
 {
-    // Always restore to the current tree widget background color
+    // Restore to the user 3D view background color if available,
+    // otherwise fall back to the current tree widget background color.
     QColor defaultBg = Qt::white;
-    if (treeWidget()) {
-        defaultBg = treeWidget()->palette().color(QPalette::Base);
+    // read the 3D view background from user preferences (always present)
+    {
+        ParameterGrp::handle hView = App::GetApplication().GetParameterGroupByPath(
+            "User parameter:BaseApp/Preferences/View"
+        );
+        unsigned long col = hView->GetUnsigned("BackgroundColor", 0);
+        defaultBg = Base::Color::fromPackedRGB<QColor>(col);
     }
     this->setBackground(0, defaultBg);
     this->bgBrush = this->background(0);
@@ -6002,10 +6004,14 @@ void DocumentObjectItem::setHighlight(bool set, Gui::HighlightMode high)
 {
     QFont f = this->font(0);
 
-    // Use the tree widget's background color for default
+    // Use the user 3D view background color for default (always present)
     QColor defaultBg = Qt::white;
-    if (treeWidget()) {
-        defaultBg = treeWidget()->palette().color(QPalette::Base);
+    {
+        ParameterGrp::handle hView = App::GetApplication().GetParameterGroupByPath(
+            "User parameter:BaseApp/Preferences/View"
+        );
+        unsigned long col = hView->GetUnsigned("BackgroundColor", 0);
+        defaultBg = Base::Color::fromPackedRGB<QColor>(col);
     }
 
     auto highlight = [this, set, defaultBg](const QColor& col, const QColor& offCol = QColor()) {
