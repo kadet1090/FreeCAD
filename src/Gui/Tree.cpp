@@ -581,10 +581,12 @@ void TreeWidgetItemDelegate::paint(
 
             bool hasFocus = opt.state.testFlag(QStyle::State_HasFocus);
             bool isSelected = opt.state.testFlag(QStyle::State_Selected);
+            bool hovered = opt.state.testFlag(QStyle::State_MouseOver);
 
-            if (!isSelected && !hasFocus) {
-                // When only the name column is shown, respect the trimmed
-                // rect; otherwise paint the full calculated rect.
+            // Don't paint the overlay fill when the item is hovered; prefer
+            // the hover style/QSS to paint hover visuals. Also avoid
+            // painting over selected or focused items.
+            if (!isSelected && !hasFocus && !hovered) {
                 painter->fillRect(rect, _TreeItemBackground);
             }
         }
@@ -622,6 +624,18 @@ void TreeWidgetItemDelegate::initStyleOption(QStyleOptionViewItem* option, const
         }
         return false;
     };
+
+    // Compute hover state early so we can prefer hover visuals over
+    // item/background overrides. We need to set/clear the MouseOver state
+    // before deciding which background brush to use.
+    auto mousePos = option->widget->mapFromGlobal(QCursor::pos());
+    bool isHovered = option->rect.contains(mousePos);
+    if (!isHovered) {
+        option->state &= ~QStyle::State_MouseOver;
+    }
+    else {
+        option->state |= QStyle::State_MouseOver;
+    }
 
     bool overlayActive = isAncestorOverlay(tree);
     // Preserve selection/highlight: only clear the backgroundBrush when the
@@ -662,11 +676,6 @@ void TreeWidgetItemDelegate::initStyleOption(QStyleOptionViewItem* option, const
     }
 
     option->textElideMode = Qt::ElideMiddle;
-    auto mousePos = option->widget->mapFromGlobal(QCursor::pos());
-    auto isHovered = option->rect.contains(mousePos);
-    if (!isHovered) {
-        option->state &= ~QStyle::State_MouseOver;
-    }
 
     QSize size = option->icon.actualSize(QSize(0xffff, 0xffff));
 
@@ -3707,6 +3716,11 @@ void TreeWidget::onItemEntered(QTreeWidgetItem* item)
     else if (TreeParams::getPreSelection()) {
         Selection().rmvPreselect();
     }
+
+    // Ensure hover visuals update immediately when entering/leaving items.
+    if (viewport()) {
+        viewport()->update();
+    }
 }
 
 void TreeWidget::leaveEvent(QEvent* event)
@@ -3715,6 +3729,10 @@ void TreeWidget::leaveEvent(QEvent* event)
     if (!updateBlocked && TreeParams::getPreSelection()) {
         preselectTimer->stop();
         Selection().rmvPreselect();
+    }
+    // Clear hover visuals when the mouse leaves the widget.
+    if (viewport()) {
+        viewport()->update();
     }
 }
 
