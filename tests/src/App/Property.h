@@ -88,7 +88,8 @@ protected:
         varSetDoc2 = freecad_cast<App::VarSet*>(doc2->addObject("App::VarSet", "VarSet"));
 
         prop = freecad_cast<App::PropertyInteger*>(
-            varSet1Doc1->addDynamicProperty("App::PropertyInteger", "Variable", "Variables"));
+            varSet1Doc1->addDynamicProperty("App::PropertyInteger", "Variable", "Variables")
+        );
         prop->setValue(value);
     }
 
@@ -106,26 +107,34 @@ protected:
 
     void testMoveProperty(App::DocumentObject* target);
 
-    void testMovePropertyExpressionWithAct(App::DocumentObject* sourceProp2,
-                                           App::DocumentObject* target,
-                                           const char* exprString,
-                                           const std::function<App::Property*()>& act);
+    void testMovePropertyExpressionWithAct(
+        App::DocumentObject* sourceProp2,
+        App::DocumentObject* target,
+        const char* exprString,
+        const std::function<App::Property*()>& act
+    );
 
-    void testMovePropertyExpression(App::DocumentObject* source,
-                                    App::DocumentObject* target,
-                                    const char* exprString);
+    void testMovePropertyExpression(
+        App::DocumentObject* source,
+        App::DocumentObject* target,
+        const char* exprString
+    );
 
     void testUndoProperty(App::DocumentObject* target);
 
-    void testUndoMovePropertyExpression(App::DocumentObject* sourceProp2,
-                                        App::DocumentObject* target,
-                                        const char* exprString,
-                                        const char* exprStringAfterUndo);
+    void testUndoMovePropertyExpression(
+        App::DocumentObject* sourceProp2,
+        App::DocumentObject* target,
+        const char* exprString,
+        const char* exprStringAfterUndo
+    );
 
-    void testRedoMovePropertyExpression(App::DocumentObject* sourceProp2,
-                                        App::DocumentObject* target,
-                                        const char* exprString,
-                                        const char* exprStringAfterUndo);
+    void testRedoMovePropertyExpression(
+        App::DocumentObject* sourceProp2,
+        App::DocumentObject* target,
+        const char* exprString,
+        const char* exprStringAfterUndo
+    );
 
     static void TearDownTestSuite()
     {}
