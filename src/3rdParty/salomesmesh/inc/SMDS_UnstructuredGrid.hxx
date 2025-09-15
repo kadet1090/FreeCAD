@@ -28,6 +28,7 @@
 
 #include <vtkUnstructuredGrid.h>
 #include <vtkCellLinks.h>
+#include <vtkVersionMacros.h>
 
 #include <vector>
 #include <set>
@@ -96,7 +97,7 @@ public:
   vtkCellLinks* GetLinks()
   {
 #ifdef VTK_CELL_ARRAY_V2
-  #if VTK_VERSION_NUMBER >= 90300000000
+  #if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9,3,0)
     return static_cast<vtkCellLinks*>(vtkUnstructuredGrid::GetLinks());
   #else
     return static_cast<vtkCellLinks*>(GetCellLinks());

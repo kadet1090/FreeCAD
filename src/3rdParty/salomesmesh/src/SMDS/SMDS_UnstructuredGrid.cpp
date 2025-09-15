@@ -32,7 +32,6 @@
 #include <vtkDoubleArray.h>
 #include <vtkIdTypeArray.h>
 #include <vtkUnsignedCharArray.h>
-#include <vtkVersionMacros.h>
 
 #include <list>
 #include <climits>
