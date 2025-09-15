@@ -1645,6 +1645,7 @@ void NETGENPlugin_Mesher::AddIntVerticesInSolids(const netgen::OCCGeometry&     
       // loop on all 2d elements to find the one closest to vertex and to count
       // average segment length
       double closeDist2 = numeric_limits<double>::max(), avgDist2;
+      (void)avgDist2;
       for (i = 1; i <= ngMesh.GetNSE(); ++i)
       {
         const netgen::Element2d& elem = ngMesh.SurfaceElement(i);

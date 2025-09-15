@@ -1526,6 +1526,7 @@ bool StdMeshers_Penta_3D::LoadIJNodes(StdMeshers_IJNodeMap & theIJNodes,
   StdMeshers_IJNodeMap::iterator par_nVec_2 = par_nVec_1;
   // loop on columns
   int col = 0;
+  (void)col;
   for ( par_nVec_2++; par_nVec_2 != theIJNodes.end(); par_nVec_1++, par_nVec_2++ ) {
     col++;
     row = 0;

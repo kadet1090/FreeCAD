@@ -3874,7 +3874,6 @@ void centroidalSmooth(const SMDS_MeshNode*                 theNode,
   gp_XYZ aNewXYZ(0.,0.,0.);
   SMESH::Controls::Area anAreaFunc;
   double totalArea = 0.;
-  int nbElems = 0;
 
   // compute new XYZ
 
@@ -3882,7 +3881,6 @@ void centroidalSmooth(const SMDS_MeshNode*                 theNode,
   while ( elemIt->more() )
   {
     const SMDS_MeshElement* elem = elemIt->next();
-    nbElems++;
 
     gp_XYZ elemCenter(0.,0.,0.);
     SMESH::Controls::TSequenceOfXYZ aNodePoints;
@@ -6561,11 +6559,9 @@ SMESH_MeshEditor::MakeExtrElements(TIDSortedElemSet                  theElemSets
       newNodesItVec.reserve( elem->NbNodes() );
 
       // loop on elem nodes
-      int nodeIndex = -1;
       SMDS_ElemIteratorPtr itN = elem->nodesIterator();
       while ( itN->more() )
       {
-        ++nodeIndex;
         // check if a node has been already processed
         const SMDS_MeshNode* node = cast2Node( itN->next() );
         TNodeOfNodeListMap::iterator nIt = mapNewNodes.insert( make_pair( node, emptyList )).first;
@@ -10966,6 +10962,7 @@ bool SMESH_MeshEditor::AffectedElemGroupsInRegion( const TIDSortedElemSet& theEl
 
     TIDSortedElemSet::const_iterator elemItr = theElems.begin();
     int ielem;
+    (void)ielem;
     for ( ielem=1;  elemItr != theElems.end(); ++elemItr )
     {
       SMDS_MeshElement* anElem = (SMDS_MeshElement*)*elemItr;
@@ -11069,6 +11066,7 @@ bool SMESH_MeshEditor::AffectedElemGroupsInRegion( const TIDSortedElemSet& theEl
     // iterates on indicated elements and get elements by back references from their nodes
     TIDSortedElemSet::const_iterator elemItr = theElems.begin();
     int ielem;
+    (void)ielem;
     for ( ielem = 1;  elemItr != theElems.end(); ++elemItr )
     {
       MESSAGE("element " << ielem++);
@@ -12103,6 +12101,7 @@ void SMESH_MeshEditor::CreateHoleSkin(double radius,
       MESSAGE("list of nodes coordinates provided");
       int i = 0;
       int k = 0;
+      (void)k;
       while (i < nodesCoords.size()-2)
         {
           double x = nodesCoords[i++];
@@ -12135,6 +12134,7 @@ void SMESH_MeshEditor::CreateHoleSkin(double radius,
   if (gpnts.size() > 0)
     {
       int nodeId = 0;
+      (void)nodeId;
       const SMDS_MeshNode* startNode = theNodeSearcher->FindClosestTo(gpnts[0]);
       if (startNode)
         nodeId = startNode->GetID();

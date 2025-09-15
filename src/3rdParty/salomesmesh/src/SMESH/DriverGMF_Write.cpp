@@ -48,6 +48,7 @@ extern "C"
   GmfSetKwd(meshID, GmfKwd, myMesh->GetMeshInfo().NbElements( SMDSEntity )); \
   for ( int gmfID = 1; elemIt->more(); ++gmfID )                        \
   {                                                                     \
+  (void)gmfID;                                                          \
   const SMDS_MeshElement* elem = elemIt->next();                        \
   GmfSetLin(meshID, GmfKwd,
 

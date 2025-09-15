@@ -2939,6 +2939,7 @@ bool StdMeshers_Prism_3D::initPrism(Prism_3D::TPrismTopo& thePrism,
   int nbFaces = 0;
   //
   SMESH_subMesh* anyFaceSM = 0;
+  (void)anyFaceSM;
   SMESH_subMeshIteratorPtr smIt = mainSubMesh->getDependsOnIterator(false,true);
   while ( smIt->more() )
   {

@@ -5126,7 +5126,7 @@ void SMESH_MesherHelper::FixQuadraticElements(SMESH_ComputeErrorPtr& compError,
   // -------------
 
   TIDSortedElemSet biQuadQuas, biQuadTris, triQuadHexa;
-  const SMDS_MeshElement *biQuadQua, *triQuadHex;
+//const SMDS_MeshElement *biQuadQua, *triQuadHex;
   const bool toFixCentralNodes = ( myMesh->NbBiQuadQuadrangles() +
                                    myMesh->NbBiQuadTriangles() +
                                    myMesh->NbTriQuadraticHexas() );
@@ -5157,7 +5157,7 @@ void SMESH_MesherHelper::FixQuadraticElements(SMESH_ComputeErrorPtr& compError,
       // collect bi-quadratic elements
       if ( toFixCentralNodes )
       {
-        biQuadQua = triQuadHex = 0;
+      //biQuadQua = triQuadHex = 0;
         SMDS_ElemIteratorPtr eIt = pLink->_mediumNode->GetInverseElementIterator();
         while ( eIt->more() )
         {

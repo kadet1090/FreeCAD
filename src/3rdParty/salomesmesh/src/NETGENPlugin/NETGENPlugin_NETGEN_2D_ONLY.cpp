@@ -652,6 +652,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Compute(SMESH_Mesh&         aMesh,
             face = helper.AddFace(nodes[0],nodes[1],nodes[2]);
           else
             face = helper.AddFace(nodes[0],nodes[1],nodes[2],nodes[3]);
+          (void)face;
         }
       }
 
@@ -715,6 +716,7 @@ bool NETGENPlugin_NETGEN_2D_ONLY::Evaluate(SMESH_Mesh& aMesh,
 
   // collect info from edges
   int nb0d = 0, nb1d = 0;
+  (void)nb0d;
   bool IsQuadratic = false;
   bool IsFirst = true;
   double fullLen = 0.0;

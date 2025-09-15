@@ -1122,6 +1122,8 @@ bool SMESH_Block::findUVByHalfDivision( const gp_Pnt&             thePoint,
 #ifdef _DEBUG_REFINE_
   cout << "SMESH_Block::refineParametersOnFace(): dividing Ends at dist " << distance()<< endl;
   cout << " nbGetUV = " << nbGetUV << endl;
+#else
+  (void)nbGetUV;
 #endif
 
   return false;

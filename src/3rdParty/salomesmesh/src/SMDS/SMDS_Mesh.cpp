@@ -2563,6 +2563,8 @@ void SMDS_Mesh::DebugStats() const
 
   MESSAGE("total size of node elements = " << sizeofnodes);;
   MESSAGE("total size of face elements = " << sizeoffaces);;
+  (void)sizeofnodes;
+  (void)sizeoffaces;
 
   //#endif
 }

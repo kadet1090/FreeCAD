@@ -1378,6 +1378,7 @@ bool _ViscousBuilder2D::inflate()
 
   double curThick = 0, stepSize = minSize;
   int nbSteps = 0;
+  (void)nbSteps;
   if ( maxSize > _maxThickness )
     maxSize = _maxThickness;
   while ( curThick < maxSize )

@@ -778,6 +778,7 @@ bool NETGENPlugin_NETGEN_3D::Evaluate(SMESH_Mesh& aMesh,
 
   // collect info from edges
   int nb0d_e = 0, nb1d_e = 0;
+  (void)nb0d_e;
   bool IsQuadratic = false;
   bool IsFirst = true;
   TopTools_MapOfShape tmpMap;

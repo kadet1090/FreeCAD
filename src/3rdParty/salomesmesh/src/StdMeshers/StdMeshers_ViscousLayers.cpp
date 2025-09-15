@@ -3964,7 +3964,9 @@ bool _ViscousBuilder::smoothAndCheck(_SolidData& data,
   double dist;
   const SMDS_MeshElement* intFace = 0;
   const SMDS_MeshElement* closestFace = 0;
+  (void)closestFace;
   _LayerEdge* le = 0;
+  (void)le;
   for ( int iS = 0; iS < data._edgesOnShape.size(); ++iS )
   {
     _EdgesOnShape& eos = data._edgesOnShape[ iS ];
@@ -6654,8 +6656,10 @@ bool _ViscousBuilder::shrink()
     SMDS_ElemIteratorPtr fIt = smDS->GetElements();
     while ( fIt->more() )
     {
-      if ( const SMDS_MeshElement* f = fIt->next() )
+      if ( const SMDS_MeshElement* f = fIt->next() ) {
         dumpChangeNodes( f );
+        (void)f;
+      }
     }
     dumpFunctionEnd();
 
