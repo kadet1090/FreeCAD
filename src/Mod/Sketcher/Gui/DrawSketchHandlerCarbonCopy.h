@@ -102,19 +102,21 @@ public:
                 case Sketcher::SketchObject::rlNonParallel:
                     this->notAllowedReason = QT_TR_NOOP(
                         "The selected sketch is not parallel to this sketch. Hold "
-                        "Ctrl+Alt to allow non-parallel sketches."
+                        "Ctrl+Alt (Cmd+Option on macOS) to allow non-parallel sketches."
                     );
                     break;
                 case Sketcher::SketchObject::rlAxesMisaligned:
                     this->notAllowedReason = QT_TR_NOOP(
                         "The XY axes of the selected sketch do not have the same "
-                        "direction as this sketch. Hold Ctrl+Alt to disregard it."
+                        "direction as this sketch. Hold Ctrl+Alt (Cmd+Option on macOS) "
+                        "to disregard it."
                     );
                     break;
                 case Sketcher::SketchObject::rlOriginsMisaligned:
                     this->notAllowedReason = QT_TR_NOOP(
                         "The origin of the selected sketch is not aligned with the "
-                        "origin of this sketch. Hold Ctrl+Alt to disregard it."
+                        "origin of this sketch. Hold Ctrl+Alt (Cmd+Option on macOS) to "
+                        "disregard it."
                     );
                     break;
                 default:
