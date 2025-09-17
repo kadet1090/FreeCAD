@@ -73,7 +73,14 @@ std::string Base::Tools::getIdentifier(const std::string& name)
     // Convert the given name into a PEP-3131 conforming Python identifier.
     // See: https://peps.python.org/pep-3131/#specification-of-language-changes
 
-    auto CleanName = QString::fromStdString(name).toUcs4();
+    auto ucsStr = QString::fromStdString(name).toUcs4();
+    QVector<char32_t> CleanName;
+    std::transform(ucsStr.begin(),
+                   ucsStr.end(),
+                   std::back_inserter(CleanName),
+                   [](auto ucs) {
+                       return static_cast<char32_t>(ucs);
+                   });
 
     // We'll replace all non Xid-Continue characeter as _. Special handling for
     // the first character. If it is non Xid-Start but a valid Xid-Continue,
