@@ -675,7 +675,9 @@ Part::Box* SectionCut::createXBox(const Base::Vector3f& pos, const Base::Vector3
     else if (CutPosX <= ui->cutX->minimum()) {
         CutPosX = ui->cutX->minimum() + 0.1; // short above the minimum
     }
+
     // set the cut value
+    QSignalBlocker block(ui->cutX);
     ui->cutX->setValue(CutPosX);
 
     // we don't set the value to ui->cutX because this would refresh the cut
@@ -724,6 +726,7 @@ Part::Box* SectionCut::createYBox(const Base::Vector3f& pos, const Base::Vector3
     }
 
     // set the cut value
+    QSignalBlocker block(ui->cutY);
     ui->cutY->setValue(CutPosY);
 
     // set the box position
@@ -768,6 +771,7 @@ Part::Box* SectionCut::createZBox(const Base::Vector3f& pos, const Base::Vector3
     }
 
     // set the cut value
+    QSignalBlocker block(ui->cutZ);
     ui->cutZ->setValue(CutPosZ);
 
     // set the box position
