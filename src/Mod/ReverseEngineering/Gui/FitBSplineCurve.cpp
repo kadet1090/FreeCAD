@@ -88,7 +88,7 @@ bool FitBSplineCurveWidget::accept()
     }
     catch (const Base::Exception& e) {
         Gui::Command::abortCommand();
-        QMessageBox::warning(this, tr("Input error"), QString::fromLatin1(e.what()));
+        QMessageBox::warning(this, tr("Input error"), QString::fromUtf8(e.what()));
         return false;
     }
 

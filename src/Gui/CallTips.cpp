@@ -498,7 +498,7 @@ void CallTipsList::extractTipsFromObject(const Py::Object& obj,
                 continue;
             }
 
-            QString str = QString::fromLatin1(name.c_str());
+            QString str = QString::fromUtf8(name.c_str());
             CallTip tip = extractTipsFromAttribute(attr, str);
 
             // Do not override existing items
@@ -561,7 +561,7 @@ void CallTipsList::extractTipsFromProperties(Py::Object& obj, QMap<QString, Call
 
     for (const auto& It : Map) {
         CallTip tip;
-        QString str = QString::fromLatin1(It.first.c_str());
+        QString str = QString::fromUtf8(It.first.c_str());
         tip.name = str;
         tip.type = CallTip::Property;
         QString longdoc = QString::fromUtf8(container->getPropertyDocumentation(It.second));

@@ -206,7 +206,7 @@ void SweepWidget::findShapes()
             shape.ShapeType() == TopAbs_EDGE ||
             shape.ShapeType() == TopAbs_VERTEX)) {
             QString label = QString::fromUtf8(obj->Label.getValue());
-            QString name = QString::fromLatin1(obj->getNameInDocument());
+            QString name = QString::fromUtf8(obj->getNameInDocument());
 
             QTreeWidgetItem* child = new QTreeWidgetItem();
             child->setText(0, label);
@@ -361,7 +361,7 @@ bool SweepWidget::accept()
                  QLatin1String(selection.c_str()),
                  solid,
                  frenet,
-                 QString::fromLatin1(d->document.c_str()));
+                 QString::fromStdString(d->document));
 
         Gui::Document* doc = Gui::Application::Instance->getDocument(d->document.c_str());
         if (!doc)

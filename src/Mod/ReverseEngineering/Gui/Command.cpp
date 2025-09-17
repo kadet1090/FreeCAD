@@ -667,7 +667,7 @@ void CmdViewTriangulation::activated(int)
         abortCommand();
         QMessageBox::warning(Gui::getMainWindow(),
                              qApp->translate("Reen_ViewTriangulation", "View triangulation failed"),
-                             QString::fromLatin1(e.what()));
+                             QString::fromUtf8(e.what()));
     }
 }
 

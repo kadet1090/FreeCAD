@@ -2240,7 +2240,7 @@ std::set<int> EditModeConstraintCoinManager::detectPreselectionConstr(const SoPi
 
                 if (constrIds) {
                     QString constrIdsStr =
-                        QString::fromLatin1(constrIds->string.getValue().getString());
+                        QString::fromUtf8(constrIds->string.getValue().getString());
                     if (combinedConstrBoxes.count(constrIdsStr) && dynamic_cast<SoImage*>(tail)) {
                         // If it's a combined constraint icon
 

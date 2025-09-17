@@ -1192,9 +1192,9 @@ void CmdPartReverseShape::activated(int iMsg)
                 "__o__.Label=\"%3 (Rev)\"\n"
                 "del __o__"
                 )
-                .arg(QString::fromLatin1(name.c_str()),
-                     QString::fromLatin1(it->getNameInDocument()),
-                     QString::fromLatin1(it->Label.getValue()));
+                .arg(QString::fromUtf8(name.c_str()),
+                     QString::fromUtf8(it->getNameInDocument()),
+                     QString::fromUtf8(it->Label.getValue()));
 
             try {
                 runCommand(Doc, str.toLatin1());
@@ -2221,7 +2221,7 @@ namespace {
         }
 
         if (activeObj) {
-            QString activeName = QString::fromLatin1(activeObj->getNameInDocument());
+            QString activeName = QString::fromUtf8(activeObj->getNameInDocument());
             return QStringLiteral("App.ActiveDocument.getObject('%1\').addObject(obj)\n").arg(activeName);
         }
 

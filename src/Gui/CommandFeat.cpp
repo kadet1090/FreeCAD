@@ -234,8 +234,8 @@ void StdCmdSendToPythonConsole::activated(int iMsg)
     const App::DocumentObject *obj = sels[0].getObject();
     if (!obj)
         return;
-    QString docname = QString::fromLatin1(obj->getDocument()->getName());
-    QString objname = QString::fromLatin1(obj->getNameInDocument());
+    QString docname = QString::fromUtf8(obj->getDocument()->getName());
+    QString objname = QString::fromUtf8(obj->getNameInDocument());
     try {
         // clear variables from previous run, if any
         QString cmd = QLatin1String("try:\n    del(doc,lnk,obj,shp,sub,subs)\nexcept Exception:\n    pass\n");
@@ -262,7 +262,7 @@ void StdCmdSendToPythonConsole::activated(int iMsg)
                 Gui::Command::runCommand(Gui::Command::Gui, cmd.toLatin1());
                 if (sels[0].hasSubNames()) {
                     std::vector<std::string> subnames = sels[0].getSubNames();
-                    QString subname = QString::fromLatin1(subnames[0].c_str());
+                    QString subname = QString::fromUtf8(subnames[0].c_str());
                     cmd = QStringLiteral("sub = obj.getSubObject(\"%1\")").arg(subname);
                     Gui::Command::runCommand(Gui::Command::Gui,cmd.toLatin1());
                     if (subnames.size() > 1) {

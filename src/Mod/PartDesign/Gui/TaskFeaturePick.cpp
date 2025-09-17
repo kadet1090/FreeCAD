@@ -124,7 +124,7 @@ TaskFeaturePick::TaskFeaturePick(std::vector<App::DocumentObject*>& objects,
         QListWidgetItem* item = new QListWidgetItem(
                 QStringLiteral("%1 (%2)").arg(QString::fromUtf8((*objIt)->Label.getValue()),
                 getFeatureStatusString(*statusIt)));
-        item->setData(Qt::UserRole, QString::fromLatin1((*objIt)->getNameInDocument()));
+        item->setData(Qt::UserRole, QString::fromUtf8((*objIt)->getNameInDocument()));
         ui->listWidget->addItem(item);
 
         App::Document* pDoc = (*objIt)->getDocument();
@@ -502,7 +502,7 @@ void TaskFeaturePick::onSelectionChanged(const Gui::SelectionChanges& msg)
         for (int row = 0; row < ui->listWidget->count(); row++) {
             QListWidgetItem* item = ui->listWidget->item(row);
             QString t = item->data(Qt::UserRole).toString();
-            if (t.compare(QString::fromLatin1(obj.FeatName)) == 0) {
+            if (t.compare(QString::fromUtf8(obj.FeatName)) == 0) {
                 item->setSelected(true);
 
                 if (msg.Type == Gui::SelectionChanges::AddSelection) {

@@ -248,14 +248,14 @@ void Mirroring::findShapes()
     if (!activeGui)
         return;
 
-    this->document = QString::fromLatin1(activeDoc->getName());
+    this->document = QString::fromUtf8(activeDoc->getName());
     std::vector<App::DocumentObject*> objs = activeDoc->getObjectsOfType<App::DocumentObject>();
 
     for (auto obj : objs) {
         Part::TopoShape shape = Part::Feature::getTopoShape(obj);
         if (!shape.isNull()) {
             QString label = QString::fromUtf8(obj->Label.getValue());
-            QString name = QString::fromLatin1(obj->getNameInDocument());
+            QString name = QString::fromUtf8(obj->getNameInDocument());
 
             QTreeWidgetItem* child = new QTreeWidgetItem();
             child->setText(0, label);

@@ -109,7 +109,7 @@ DlgBindSheet::DlgBindSheet(Sheet* sheet, const std::vector<Range>& ranges, QWidg
         }
         QString label;
         if (obj->Label.getStrValue() != obj->getNameInDocument()) {
-            label = QStringLiteral("%1 (%2)").arg(QString::fromLatin1(obj->getNameInDocument()),
+            label = QStringLiteral("%1 (%2)").arg(QString::fromUtf8(obj->getNameInDocument()),
                                                   QString::fromUtf8(obj->Label.getValue()));
         }
         else {
@@ -131,7 +131,7 @@ DlgBindSheet::DlgBindSheet(Sheet* sheet, const std::vector<Range>& ranges, QWidg
             std::string fullname = obj->getFullName();
             QString label;
             if (obj->Label.getStrValue() != obj->getNameInDocument()) {
-                label = QStringLiteral("%1 (%2)").arg(QString::fromLatin1(fullname.c_str()),
+                label = QStringLiteral("%1 (%2)").arg(QString::fromStdString(fullname),
                                                       QString::fromUtf8(obj->Label.getValue()));
             }
             else {

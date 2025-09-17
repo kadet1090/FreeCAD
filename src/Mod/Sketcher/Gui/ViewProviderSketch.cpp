@@ -2198,7 +2198,7 @@ void ViewProviderSketch::onSelectionChanged(const Gui::SelectionChanges& msg)
             //        temp += ".";
             //        temp += it->SubName;
             //    }
-            //    new QListWidgetItem(QString::fromLatin1(temp.c_str()), selectionView);
+            //    new QListWidgetItem(QString::fromStdString(temp), selectionView);
             //}
         }
         else if (msg.Type == Gui::SelectionChanges::SetPreselect) {
@@ -3070,10 +3070,10 @@ bool ViewProviderSketch::setEdit(int ModNum)
                     "tv.hide(ActiveSketch)\n"
                     "del(tv)\n"
                     "del(ActiveSketch)\n")
-                    .arg(QString::fromLatin1(getDocument()->getDocument()->getName()),
-                         QString::fromLatin1(getSketchObject()->getNameInDocument()),
-                         QString::fromLatin1(Gui::Command::getObjectCmd(editObj).c_str()),
-                         QString::fromLatin1(editSubName.c_str()));
+                    .arg(QString::fromUtf8(getDocument()->getDocument()->getName()),
+                         QString::fromUtf8(getSketchObject()->getNameInDocument()),
+                         QString::fromStdString(Gui::Command::getObjectCmd(editObj)),
+                         QString::fromStdString(editSubName));
             QByteArray cmdstr_bytearray = cmdstr.toLatin1();
             Gui::Command::runCommand(Gui::Command::Gui, cmdstr_bytearray);
         }
@@ -3339,8 +3339,8 @@ void ViewProviderSketch::unsetEdit(int ModNum)
                                 "ActiveSketch.ViewObject.TempoVis = None\n"
                                 "del(tv)\n"
                                 "del(ActiveSketch)\n")
-                .arg(QString::fromLatin1(getDocument()->getDocument()->getName()),
-                     QString::fromLatin1(getSketchObject()->getNameInDocument()));
+                .arg(QString::fromUtf8(getDocument()->getDocument()->getName()),
+                     QString::fromUtf8(getSketchObject()->getNameInDocument()));
         QByteArray cmdstr_bytearray = cmdstr.toLatin1();
         Gui::Command::runCommand(Gui::Command::Gui, cmdstr_bytearray);
     }
@@ -3367,8 +3367,8 @@ void ViewProviderSketch::setEditViewer(Gui::View3DInventorViewer* viewer, int Mo
                     "  if ActiveSketch.ViewObject.ForceOrtho:\n"
                     "    "
                     "ActiveSketch.ViewObject.Document.ActiveView.setCameraType('Orthographic')\n")
-                    .arg(QString::fromLatin1(getDocument()->getDocument()->getName()),
-                         QString::fromLatin1(getSketchObject()->getNameInDocument()));
+                    .arg(QString::fromUtf8(getDocument()->getDocument()->getName()),
+                         QString::fromUtf8(getSketchObject()->getNameInDocument()));
             QByteArray cmdstr_bytearray = cmdstr.toLatin1();
             Gui::Command::runCommand(Gui::Command::Gui, cmdstr_bytearray);
         }

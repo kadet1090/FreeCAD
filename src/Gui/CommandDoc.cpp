@@ -1439,7 +1439,7 @@ void StdCmdDelete::activated(int iMsg)
         }
     } catch (const Base::Exception& e) {
         QMessageBox::critical(getMainWindow(), QObject::tr("Delete failed"),
-                QString::fromLatin1(e.what()));
+                QString::fromUtf8(e.what()));
         e.ReportException();
     } catch (...) {
         QMessageBox::critical(getMainWindow(), QObject::tr("Delete failed"),
@@ -1952,7 +1952,7 @@ protected:
         } catch (const Base::Exception& e) {
             abortCommand();
             QMessageBox::critical(getMainWindow(), QObject::tr("Failed to paste expressions"),
-                QString::fromLatin1(e.what()));
+                QString::fromUtf8(e.what()));
             e.ReportException();
         }
     }

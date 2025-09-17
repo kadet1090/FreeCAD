@@ -381,7 +381,7 @@ void CrossSections::apply()
         }
     }
     catch (const Base::Exception& e) {
-        QMessageBox::critical(this, tr("Failure"), QString::fromLatin1(e.what()));
+        QMessageBox::critical(this, tr("Failure"), QString::fromUtf8(e.what()));
     }
 #endif
 }

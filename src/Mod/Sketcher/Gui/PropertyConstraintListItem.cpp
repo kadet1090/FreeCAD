@@ -318,7 +318,7 @@ bool PropertyConstraintListItem::event(QEvent* ev)
             QDynamicPropertyChangeEvent* ce = static_cast<QDynamicPropertyChangeEvent*>(ev);
             // Get property via internal name of a PropertyUnit
             QVariant prop = property(ce->propertyName());
-            QString propName = QString::fromLatin1(ce->propertyName());
+            QString propName = QString::fromUtf8(ce->propertyName());
             Base::Quantity quant = prop.value<Base::Quantity>();
 
             Sketcher::PropertyConstraintList* item;

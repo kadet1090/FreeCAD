@@ -1075,7 +1075,7 @@ Action * GroupCommand::createAction() {
     pcAction->setExclusive(isExclusive());
     pcAction->setCheckable(isCheckable());
     pcAction->setRememberLast(doesRememberLast());
-    pcAction->setWhatsThis(QString::fromLatin1(sWhatsThis));
+    pcAction->setWhatsThis(QString::fromUtf8(sWhatsThis));
 
     for(auto &v : cmds) {
         if(!v.first)

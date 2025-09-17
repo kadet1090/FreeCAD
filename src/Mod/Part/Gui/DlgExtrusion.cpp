@@ -221,7 +221,7 @@ void DlgExtrusion::onSelectEdgeClicked()
                 if (!obj)
                     continue;
                 features_to_hide.append(QStringLiteral("App.ActiveDocument."));
-                features_to_hide.append(QString::fromLatin1(obj->getNameInDocument()));
+                features_to_hide.append(QString::fromUtf8(obj->getNameInDocument()));
                 features_to_hide.append(QStringLiteral(", \n"));
             }
             QByteArray code_2 = code.arg(features_to_hide).toLatin1();
@@ -397,7 +397,7 @@ void DlgExtrusion::findShapes()
         if (canExtrude(shape)) {
             QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
             item->setText(0, QString::fromUtf8(obj->Label.getValue()));
-            item->setData(0, Qt::UserRole, QString::fromLatin1(obj->getNameInDocument()));
+            item->setData(0, Qt::UserRole, QString::fromUtf8(obj->getNameInDocument()));
             Gui::ViewProvider* vp = activeGui->getViewProvider(obj);
             if (vp)
                 item->setIcon(0, vp->getIcon());
@@ -605,9 +605,9 @@ void DlgExtrusion::setAxisLink(const App::PropertyLinkSub& lnk)
 void DlgExtrusion::setAxisLink(const char* objname, const char* subname)
 {
     if(objname && strlen(objname) > 0){
-        QString txt = QString::fromLatin1(objname);
+        QString txt = QString::fromUtf8(objname);
         if (subname && strlen(subname) > 0){
-            txt = txt + QStringLiteral(":") + QString::fromLatin1(subname);
+            txt = txt + QStringLiteral(":") + QString::fromUtf8(subname);
         }
         ui->txtLink->setText(txt);
     } else {
