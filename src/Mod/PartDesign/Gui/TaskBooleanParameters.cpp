@@ -299,7 +299,7 @@ void TaskBooleanParameters::onBodyDeleted()
     App::DocumentObject* body = bodies[index];
     QString internalName = ui->listWidgetBodies->item(index)->data(Qt::UserRole).toString();
     for (auto it = bodies.begin(); it != bodies.end(); ++it) {
-        if (internalName == QLatin1String((*it)->getNameInDocument())) {
+        if (internalName == QString::fromUtf8((*it)->getNameInDocument())) {
             body = *it;
             bodies.erase(it);
             break;

@@ -171,19 +171,19 @@ DlgPropertyLink::formatObject(App::Document* ownerDoc, App::DocumentObject* obj,
 
     if (!sub || !sub[0]) {
         if (obj->Label.getStrValue() == obj->getNameInDocument()) {
-            return QLatin1String(objName);
+            return QString::fromUtf8(objName);
         }
-        return QStringLiteral("%1 (%2)").arg(QLatin1String(objName),
+        return QStringLiteral("%1 (%2)").arg(QString::fromUtf8(objName),
                                                   QString::fromUtf8(obj->Label.getValue()));
     }
 
     auto sobj = obj->getSubObject(sub);
     if (!sobj || sobj->Label.getStrValue() == sobj->getNameInDocument()) {
-        return QStringLiteral("%1.%2").arg(QLatin1String(objName), QString::fromUtf8(sub));
+        return QStringLiteral("%1.%2").arg(QString::fromUtf8(objName), QString::fromUtf8(sub));
     }
 
     return QStringLiteral("%1.%2 (%3)")
-        .arg(QLatin1String(objName),
+        .arg(QString::fromUtf8(objName),
              QString::fromUtf8(sub),
              QString::fromUtf8(sobj->Label.getValue()));
 }
@@ -810,7 +810,7 @@ QList<App::SubObjectT> DlgPropertyLink::getLinkFromItem(QTreeWidgetItem* item,
         res.append(App::SubObjectT());
         res.last() = App::SubObjectT(sobj.getDocumentName().c_str(),
                                      sobj.getObjectName().c_str(),
-                                     (sobj.getSubName() + element.toLatin1().constData()).c_str());
+                                     (sobj.getSubName() + element.toStdString()).c_str());
     }
     return res;
 }

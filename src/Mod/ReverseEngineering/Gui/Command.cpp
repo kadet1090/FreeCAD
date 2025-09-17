@@ -657,7 +657,7 @@ void CmdViewTriangulation::activated(int)
                                              "Width=%2.Width,"
                                              "Height=%2.Height)")
                                   .arg(document, object);
-            runCommand(Doc, command.toLatin1());
+            runCommand(Doc, command.toUtf8());
         }
 
         commitCommand();

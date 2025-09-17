@@ -159,14 +159,14 @@ void TaskAppearance::onChangeModeActivated(const QString& s)
         App::Property* prop = It->getPropertyByName("DisplayMode");
         if (prop && prop->is<App::PropertyEnumeration>()) {
             auto Display = static_cast<App::PropertyEnumeration*>(prop);
-            Display->setValue((const char*)s.toLatin1());
+            Display->setValue((const char*)s.toUtf8());
         }
     }
 }
 
 void TaskAppearance::onChangePlotActivated(const QString& s)
 {
-    Base::Console().Log("Plot = %s\n", (const char*)s.toLatin1());
+    Base::Console().Log("Plot = %s\n", (const char*)s.toUtf8());
 }
 
 /**

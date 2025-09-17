@@ -390,7 +390,7 @@ void DlgEvaluateMeshImp::onMeshNameButtonActivated(int i)
     std::vector<App::DocumentObject*> objs =
         getDocument()->getObjectsOfType(Mesh::Feature::getClassTypeId());
     for (auto obj : objs) {
-        if (item == QLatin1String(obj->getNameInDocument())) {
+        if (item == QString::fromUtf8(obj->getNameInDocument())) {
             d->meshFeature = static_cast<Mesh::Feature*>(obj);
             break;
         }

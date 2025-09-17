@@ -124,7 +124,7 @@ void Picker::createPrimitive(QWidget* widget, const QString& descr, Gui::Documen
 
         // Execute the Python block
         doc->openCommand(descr.toUtf8());
-        Gui::Command::runCommand(Gui::Command::Doc, cmd.toLatin1());
+        Gui::Command::runCommand(Gui::Command::Doc, cmd.toUtf8());
         doc->commitCommand();
         Gui::Command::runCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");
         Gui::Command::runCommand(Gui::Command::Gui, "Gui.SendMsgToActiveView(\"ViewFit\")");

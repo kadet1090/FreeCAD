@@ -414,14 +414,14 @@ void DlgDisplayPropertiesImp::onChangeModeActivated(const QString& s)
     for (auto it : Provider) {
         if (auto* prop =
                 dynamic_cast<App::PropertyEnumeration*>(it->getPropertyByName("DisplayMode"))) {
-            prop->setValue(static_cast<const char*>(s.toLatin1()));
+            prop->setValue(static_cast<const char*>(s.toUtf8()));
         }
     }
 }
 
 void DlgDisplayPropertiesImp::onChangePlotActivated(const QString& s)
 {
-    Base::Console().Log("Plot = %s\n", (const char*)s.toLatin1());
+    Base::Console().Log("Plot = %s\n", (const char*)s.toUtf8());
 }
 
 /**

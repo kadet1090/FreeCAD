@@ -224,7 +224,7 @@ void DlgExtrusion::onSelectEdgeClicked()
                 features_to_hide.append(QString::fromUtf8(obj->getNameInDocument()));
                 features_to_hide.append(QStringLiteral(", \n"));
             }
-            QByteArray code_2 = code.arg(features_to_hide).toLatin1();
+            QByteArray code_2 = code.arg(features_to_hide).toUtf8();
             Base::Interpreter().runString(code_2.constData());
         } catch (Base::PyException &e){
             e.ReportException();
@@ -573,7 +573,7 @@ void DlgExtrusion::getAxisLink(App::PropertyLinkSub& lnk) const
         lnk.setValue(nullptr);
     } else {
         QStringList parts = text.split(QChar::fromLatin1(':'));
-        App::DocumentObject* obj = App::GetApplication().getActiveDocument()->getObject(parts[0].toLatin1());
+        App::DocumentObject* obj = App::GetApplication().getActiveDocument()->getObject(parts[0].toUtf8());
         if(!obj){
             throw Base::ValueError(tr("Object not found: %1").arg(parts[0]).toUtf8().constData());
         }
@@ -624,7 +624,7 @@ std::vector<App::DocumentObject*> DlgExtrusion::getShapesToExtrude() const
 
     std::vector<App::DocumentObject*> objects;
     for (auto item : items) {
-        App::DocumentObject* obj = doc->getObject(item->data(0, Qt::UserRole).toString().toLatin1());
+        App::DocumentObject* obj = doc->getObject(item->data(0, Qt::UserRole).toString().toUtf8());
         if (!obj)
             throw Base::RuntimeError("Object not found");
         objects.push_back(obj);

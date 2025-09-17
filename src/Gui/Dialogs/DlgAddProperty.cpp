@@ -131,7 +131,7 @@ void DlgAddProperty::accept()
         }
     }
 
-    std::string type = ui->comboType->currentText().toLatin1().constData();
+    std::string type = ui->comboType->currentText().toStdString();
 
     for(auto it=containers.begin();it!=containers.end();++it) {
         try {

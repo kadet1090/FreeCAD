@@ -333,7 +333,7 @@ void PlacementHandler::applyPlacement(const App::DocumentObject* obj, const QStr
             cmd = getSimplePlacement(obj, data);
         }
 
-        Gui::Command::runCommand(Gui::Command::App, cmd.toLatin1());
+        Gui::Command::runCommand(Gui::Command::App, cmd.toUtf8());
     }
 }
 

@@ -81,7 +81,7 @@ bool PoissonWidget::accept()
         Gui::WaitCursor wc;
         Gui::Command::addModule(Gui::Command::App, "ReverseEngineering");
         Gui::Command::openCommand(QT_TRANSLATE_NOOP("Command", "Poisson reconstruction"));
-        Gui::Command::runCommand(Gui::Command::Doc, command.toLatin1());
+        Gui::Command::runCommand(Gui::Command::Doc, command.toUtf8());
         Gui::Command::commitCommand();
         Gui::Command::updateActive();
     }

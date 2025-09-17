@@ -233,7 +233,7 @@ void Mirroring::onSelectionChanged(const Gui::SelectionChanges &msg)
             std::string subName(msg.pSubName);
             std::stringstream refStr;
             refStr << objName << " : [" << subName << "]";
-            ui->referenceLineEdit->setText(QLatin1String(refStr.str().c_str()));
+            ui->referenceLineEdit->setText(QString::fromStdString(refStr.str()));
             ui->comboBox->setCurrentIndex(3);
         }
     }
@@ -282,7 +282,7 @@ bool Mirroring::accept()
         return false;
     }
 
-    App::Document* activeDoc = App::GetApplication().getDocument((const char*)this->document.toLatin1());
+    App::Document* activeDoc = App::GetApplication().getDocument((const char*)this->document.toUtf8());
     if (!activeDoc) {
         QMessageBox::critical(this, windowTitle(),
             tr("No such document '%1'.").arg(this->document));
@@ -341,8 +341,8 @@ bool Mirroring::accept()
             .arg(normx).arg(normy).arg(normz)
             .arg(basex).arg(basey).arg(basez)
             .arg(selectionString);
-        Gui::Command::runCommand(Gui::Command::App, code.toLatin1());
-        QByteArray from = shape.toLatin1();
+        Gui::Command::runCommand(Gui::Command::App, code.toUtf8());
+        QByteArray from = shape.toUtf8();
         Gui::Command::copyVisual("ActiveObject", "ShapeAppearance", from);
         Gui::Command::copyVisual("ActiveObject", "LineColor", from);
         Gui::Command::copyVisual("ActiveObject", "PointColor", from);

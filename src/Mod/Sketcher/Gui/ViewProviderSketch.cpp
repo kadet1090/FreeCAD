@@ -3074,7 +3074,7 @@ bool ViewProviderSketch::setEdit(int ModNum)
                          QString::fromUtf8(getSketchObject()->getNameInDocument()),
                          QString::fromStdString(Gui::Command::getObjectCmd(editObj)),
                          QString::fromStdString(editSubName));
-            QByteArray cmdstr_bytearray = cmdstr.toLatin1();
+            QByteArray cmdstr_bytearray = cmdstr.toUtf8();
             Gui::Command::runCommand(Gui::Command::Gui, cmdstr_bytearray);
         }
         catch (Base::PyException& e) {
@@ -3341,7 +3341,7 @@ void ViewProviderSketch::unsetEdit(int ModNum)
                                 "del(ActiveSketch)\n")
                 .arg(QString::fromUtf8(getDocument()->getDocument()->getName()),
                      QString::fromUtf8(getSketchObject()->getNameInDocument()));
-        QByteArray cmdstr_bytearray = cmdstr.toLatin1();
+        QByteArray cmdstr_bytearray = cmdstr.toUtf8();
         Gui::Command::runCommand(Gui::Command::Gui, cmdstr_bytearray);
     }
     catch (Base::PyException& e) {
@@ -3369,7 +3369,7 @@ void ViewProviderSketch::setEditViewer(Gui::View3DInventorViewer* viewer, int Mo
                     "ActiveSketch.ViewObject.Document.ActiveView.setCameraType('Orthographic')\n")
                     .arg(QString::fromUtf8(getDocument()->getDocument()->getName()),
                          QString::fromUtf8(getSketchObject()->getNameInDocument()));
-            QByteArray cmdstr_bytearray = cmdstr.toLatin1();
+            QByteArray cmdstr_bytearray = cmdstr.toUtf8();
             Gui::Command::runCommand(Gui::Command::Gui, cmdstr_bytearray);
         }
         catch (Base::PyException& e) {
@@ -3508,7 +3508,7 @@ void ViewProviderSketch::onCameraChanged(SoCamera* cam)
         QString cmdStr = QStringLiteral("ActiveSketch.ViewObject.TempoVis.sketchClipPlane("
                                         "ActiveSketch, ActiveSketch.ViewObject.SectionView, %1)\n")
                              .arg(tmpFactor < 0 ? QLatin1String("True") : QLatin1String("False"));
-        Base::Interpreter().runStringObject(cmdStr.toLatin1());
+        Base::Interpreter().runStringObject(cmdStr.toUtf8());
     }
 
     // Stretch the axes to cover the whole viewport.

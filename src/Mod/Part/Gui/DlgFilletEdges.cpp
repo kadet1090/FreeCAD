@@ -475,7 +475,7 @@ void DlgFilletEdges::onSelectEdgesOfFace(const QString& subelement, int type)
                 Gui::SelectionChanges::MsgType msgType = Gui::SelectionChanges::MsgType(type);
                 if (msgType == Gui::SelectionChanges::AddSelection) {
                     Gui::Selection().addSelection(d->object->getDocument()->getName(),
-                        d->object->getNameInDocument(), (const char*)name.toLatin1());
+                        d->object->getNameInDocument(), (const char*)name.toUtf8());
                 }
             }
         }
@@ -545,13 +545,13 @@ void DlgFilletEdges::toggleCheckState(const QModelIndex& index)
         App::Document* doc = d->object->getDocument();
         Gui::Selection().addSelection(doc->getName(),
             d->object->getNameInDocument(),
-            (const char*)name.toLatin1());
+            (const char*)name.toUtf8());
     }
     else {
         App::Document* doc = d->object->getDocument();
         Gui::Selection().rmvSelection(doc->getName(),
             d->object->getNameInDocument(),
-            (const char*)name.toLatin1());
+            (const char*)name.toUtf8());
     }
 
     this->blockSelection(block);
@@ -1026,7 +1026,7 @@ bool DlgFilletEdges::accept()
         "del __fillets__\n"
         "FreeCADGui.ActiveDocument.%2.Visibility = False\n")
         .arg(name, shape);
-    Gui::Command::runCommand(Gui::Command::App, code.toLatin1());
+    Gui::Command::runCommand(Gui::Command::App, code.toUtf8());
     activeDoc->commitTransaction();
     activeDoc->recompute();
     if (d->fillet) {
@@ -1035,8 +1035,8 @@ bool DlgFilletEdges::accept()
         if (vp) vp->show();
     }
 
-    QByteArray to = name.toLatin1();
-    QByteArray from = shape.toLatin1();
+    QByteArray to = name.toUtf8();
+    QByteArray from = shape.toUtf8();
     Gui::Command::copyVisual(to, "LineColor", from);
     Gui::Command::copyVisual(to, "PointColor", from);
     return true;

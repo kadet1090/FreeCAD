@@ -103,7 +103,7 @@ void TaskAttacher::makeRefStrings(std::vector<QString>& refstrings, std::vector<
 
 TaskAttacher::TaskAttacher(Gui::ViewProviderDocumentObject* ViewProvider, QWidget* parent,
     QString picture, QString text, TaskAttacher::VisibilityFunction visFunc)
-    : TaskBox(Gui::BitmapFactory().pixmap(picture.toLatin1()), text, true, parent)
+    : TaskBox(Gui::BitmapFactory().pixmap(picture.toUtf8()), text, true, parent)
     , SelectionObserver(ViewProvider, true, Gui::ResolveMode::NoResolve)
     , ViewProvider(ViewProvider)
     , ui(new Ui_TaskAttacher)
@@ -770,7 +770,7 @@ void TaskAttacher::onRefName(const QString& text, unsigned idx)
     if (parts.length() < 2)
         parts.push_back(QStringLiteral(""));
     // Check whether this is the name of an App::Plane or Part::Datum feature
-    App::DocumentObject* obj = ViewProvider->getObject()->getDocument()->getObject(parts[0].toLatin1());
+    App::DocumentObject* obj = ViewProvider->getObject()->getDocument()->getObject(parts[0].toUtf8());
     if (!obj)
         return;
 
@@ -819,7 +819,7 @@ void TaskAttacher::onRefName(const QString& text, unsigned idx)
 
             //none of Edge/Vertex/Face. May be empty string.
             //Feed in whatever user supplied, even if invalid.
-            ss << part.toLatin1().constData();
+            ss << part.toUtf8().constData();
             return ss.str();
         };
 
@@ -1162,7 +1162,7 @@ void TaskAttacher::visibilityAutomation(bool opening_not_closing)
                 "_tv_%1.restore()\n"
                 "del(_tv_%1)"
             ).arg(QString::fromStdString(postfix));
-            Gui::Command::runCommand(Gui::Command::Gui, code.toLatin1().constData());
+            Gui::Command::runCommand(Gui::Command::Gui, code.toUtf8().constData());
         }
     };
 

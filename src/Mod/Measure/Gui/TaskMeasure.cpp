@@ -593,7 +593,7 @@ void TaskMeasure::setModeSilent(App::MeasureType* mode)
 App::MeasureType* TaskMeasure::getMeasureType()
 {
     for (App::MeasureType* mType : App::MeasureManager::getMeasureTypes()) {
-        if (mType->label.c_str() == modeSwitch->currentText().toLatin1()) {
+        if (mType->label == modeSwitch->currentText().toStdString()) {
             return mType;
         }
     }

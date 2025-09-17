@@ -1063,8 +1063,8 @@ void CmdPartImportCurveNet::activated(int iMsg)
     if (!fn.isEmpty()) {
         QFileInfo fi; fi.setFile(fn);
         openCommand(QT_TRANSLATE_NOOP("Command", "Part Import Curve Net"));
-        doCommand(Doc,"f = App.activeDocument().addObject(\"Part::CurveNet\",\"%s\")", (const char*)fi.baseName().toLatin1());
-        doCommand(Doc,"f.FileName = \"%s\"",(const char*)fn.toLatin1());
+        doCommand(Doc,"f = App.activeDocument().addObject(\"Part::CurveNet\",\"%s\")", (const char*)fi.baseName().toUtf8());
+        doCommand(Doc,"f.FileName = \"%s\"",(const char*)fn.toUtf8());
         commitCommand();
         updateActive();
     }
@@ -1119,8 +1119,8 @@ void CmdPartMakeSolid::activated(int iMsg)
                     "__o__.Shape=__s__\n"
                     "del __s__, __o__"
                     )
-                    .arg(QLatin1String(it->getNameInDocument()),
-                         QLatin1String(it->Label.getValue()));
+                    .arg(QString::fromUtf8(it->getNameInDocument()),
+                         QString::fromUtf8(it->Label.getValue()));
             }
             else if (type == TopAbs_SHELL) {
                 str = QStringLiteral(
@@ -1131,8 +1131,8 @@ void CmdPartMakeSolid::activated(int iMsg)
                     "__o__.Shape=__s__\n"
                     "del __s__, __o__"
                     )
-                    .arg(QLatin1String(it->getNameInDocument()),
-                         QLatin1String(it->Label.getValue()));
+                    .arg(QString::fromUtf8(it->getNameInDocument()),
+                         QString::fromUtf8(it->Label.getValue()));
             }
             else {
                 Base::Console().Message("%s is ignored because it is neither a shell nor a compound.\n",
@@ -1141,7 +1141,7 @@ void CmdPartMakeSolid::activated(int iMsg)
 
             try {
                 if (!str.isEmpty())
-                    runCommand(Doc, str.toLatin1());
+                    runCommand(Doc, str.toUtf8());
             }
             catch (const Base::Exception& e) {
                 Base::Console().Error("Cannot convert %s because %s.\n",
@@ -1197,7 +1197,7 @@ void CmdPartReverseShape::activated(int iMsg)
                      QString::fromUtf8(it->Label.getValue()));
 
             try {
-                runCommand(Doc, str.toLatin1());
+                runCommand(Doc, str.toUtf8());
                 copyVisual(name.c_str(), "ShapeAppearance", it->getNameInDocument());
                 copyVisual(name.c_str(), "LineColor" , it->getNameInDocument());
                 copyVisual(name.c_str(), "PointColor", it->getNameInDocument());

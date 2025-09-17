@@ -485,7 +485,7 @@ void Command::_invoke(int id, bool disablelog)
     catch (Base::Exception &e) {
         e.ReportException();
         // Pop-up a dialog for FreeCAD-specific exceptions
-        QMessageBox::critical(Gui::getMainWindow(), QObject::tr("Exception"), QLatin1String(e.what()));
+        QMessageBox::critical(Gui::getMainWindow(), QObject::tr("Exception"), QString::fromUtf8(e.what()));
     }
     catch (std::exception &e) {
         Base::Console().Error("C++ exception thrown (%s)\n", e.what());
