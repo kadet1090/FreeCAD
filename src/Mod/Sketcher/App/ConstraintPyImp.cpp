@@ -736,13 +736,14 @@ int ConstraintPy::PyInit(PyObject* args, PyObject* /*kwd*/)
         }
     }
 
+    PyErr_Clear();
     std::stringstream str;
     str << "Invalid parameters: ";
     Py::Tuple tuple(args);
-    str << tuple.as_string() << std::endl;
-    str << "Constraint constructor accepts:" << std::endl
-        << "-- empty parameter list" << std::endl
-        << "-- Constraint type and index" << std::endl;
+    str << tuple.as_string() << '\n';
+    str << "Constraint constructor accepts:\n"
+        << "-- empty parameter list\n"
+        << "-- Constraint type and index\n";
 
     PyErr_SetString(PyExc_TypeError, str.str().c_str());
     return -1;
