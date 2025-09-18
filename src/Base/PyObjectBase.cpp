@@ -324,6 +324,38 @@ PyMethodDef PyObjectBase::Methods[] = {
     {nullptr, nullptr, 0, nullptr}        /* Sentinel */
 };
 
+int PyObjectBase::__PyInit(PyObject* self, PyObject* args, PyObject* kwd)
+{
+    try {
+        return static_cast<PyObjectBase*>(self)->PyInit(args, kwd);
+    }
+    catch (const Py::Exception&) {
+        PyException e;
+        std::stringstream str;
+        str << "Unexpected Python exception in __PyInit: " << e.what() << '\n';
+        PyErr_SetString(PyExc_RuntimeError, str.str().c_str());
+        return -1;
+    }
+    catch (const Base::Exception& e) {
+        std::stringstream str;
+        str << "Unexpected FC Exception in __PyInit: " << e.what() << '\n';
+        PyErr_SetString(PyExc_RuntimeError, str.str().c_str());
+        return -1;
+    }
+    catch (const std::exception& e) {
+        std::stringstream str;
+        str << "Unexpected C++ Exception in __PyInit: " << e.what() << '\n';
+        PyErr_SetString(PyExc_RuntimeError, str.str().c_str());
+        return -1;
+    }
+    catch (...) {
+        std::stringstream str;
+        str << "Unexpected unknown exception in __PyInit\n";
+        PyErr_SetString(PyExc_RuntimeError, str.str().c_str());
+        return -1;
+    }
+}
+
 PyObject* PyObjectBase::__getattro(PyObject * obj, PyObject *attro)
 {
     const char *attr{};

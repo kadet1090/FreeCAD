@@ -283,10 +283,7 @@ public:
         return 0;
     }
     /// python wrapper for the _repr() function
-    static  int __PyInit(PyObject* self, PyObject* args, PyObject* kwd)
-    {
-        return ((PyObjectBase*) self)->PyInit(args, kwd);
-    }
+    static  int __PyInit(PyObject* self, PyObject* args, PyObject* kwd);
 
     void setInvalid() {
         // first bit is not set, i.e. invalid
