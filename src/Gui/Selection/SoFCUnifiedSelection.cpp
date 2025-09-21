@@ -95,7 +95,8 @@ FC_LOG_LEVEL_INIT("SoFCUnifiedSelection",false,true,true)
 using namespace Gui;
 
 namespace Gui {
-void printPreselectionInfo(const char* documentName,
+void printPreselectionInfo(const char* objectLabel,
+                           const char* documentName,
                            const char* objectName,
                            const char* subElementName,
                            float x, float y, float z,
@@ -507,15 +508,17 @@ bool SoFCUnifiedSelection::setPreselect(SoFullPath *path, const SoDetail *det,
     if(path && path->getLength() &&
        vpd && vpd->getObject() && vpd->getObject()->isAttachedToDocument())
     {
+        const char *oblabel = vpd->getObject()->Label.getValue();
         const char *docname = vpd->getObject()->getDocument()->getName();
         const char *objname = vpd->getObject()->getNameInDocument();
 
         this->preSelection = 1;
 
-        printPreselectionInfo(docname, objname, element, x, y, z, 1e-7);
+        constexpr float precision = 1e-7F;
+        printPreselectionInfo(oblabel, docname, objname, element, x, y, z, precision);
 
 
-        int ret = Gui::Selection().setPreselect(docname,objname,element,x,y,z);
+        int ret = Gui::Selection().setPreselect(docname, objname, element, x, y, z);
         if(ret<0 && currentHighlightPath)
             return true;
 
