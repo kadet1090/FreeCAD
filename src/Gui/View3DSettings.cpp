@@ -249,7 +249,7 @@ void View3DSettings::OnChange(ParameterGrp::SubjectType& rCaller, ParameterGrp::
         }
     }
     else if (strcmp(Reason, "FillLightIntensity") == 0) {
-        long value = rGrp.GetInt("FillLightIntensity", 40);
+        long value = rGrp.GetInt("FillLightIntensity", 30);
         for (auto _viewer : _viewers) {
             _viewer->getFillLight()->intensity.setValue(Base::fromPercent(value));
         }
