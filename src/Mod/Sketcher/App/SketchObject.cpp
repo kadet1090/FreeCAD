@@ -9659,7 +9659,7 @@ void SketchObject::onChanged(const App::Property* prop)
                         if (!invalidinput) {
                             acceptGeometry();
                         }
-                        else {
+                        else if (!isRestoring()) {
                             Base::Console().Error(
                                 this->getFullLabel() + " SketchObject::onChanged ",
                                 QT_TRANSLATE_NOOP("Notifications", "Unmanaged change of Geometry Property "
@@ -9690,7 +9690,7 @@ void SketchObject::onChanged(const App::Property* prop)
                                 acceptGeometry();
                             }
                         }
-                        else {
+                        else if (!isRestoring()) {
                             Base::Console().Error(
                                 this->getFullLabel() + " SketchObject::onChanged ",
                                 QT_TRANSLATE_NOOP("Notifications", "Unmanaged change of Constraint "

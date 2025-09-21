@@ -154,6 +154,13 @@ public:
     void restoreFromStream(std::istream& stream);
 
 private:
+    /** This method is used at the beginning of restoreFromStream()
+     * before reading data.
+     * A subclass can set up some internals. The default
+     * implementation does nothing.
+     */
+    virtual void restoreStarted()
+    {}
     /** This method is used at the end of restoreFromStream()
      * after all data files have been read in.
      * A subclass can set up some internals. The default

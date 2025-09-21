@@ -1215,6 +1215,11 @@ void DocumentObject::onDocumentRestored()
     }
 }
 
+void DocumentObject::restoreStarted()
+{
+    setStatus(ObjectStatus::Restore, true);
+}
+
 void DocumentObject::restoreFinished()
 {
     // some link type property cannot restore link information until other
@@ -1227,6 +1232,8 @@ void DocumentObject::restoreFinished()
     for (auto prop : props) {
         prop->afterRestore();
     }
+
+    setStatus(ObjectStatus::Restore, false);
 }
 
 void DocumentObject::onUndoRedoFinished()

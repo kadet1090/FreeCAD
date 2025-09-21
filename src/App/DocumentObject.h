@@ -749,6 +749,8 @@ protected:
     void onEarlyChange(const Property* prop) override;
     /// get called after a document has been fully restored
     virtual void onDocumentRestored();
+    /// get called when an object starts restoreContent.
+    void restoreStarted() override;
     /// get called after an object finishes restoreContent.
     void restoreFinished() override;
     /// get called after an undo/redo transaction is finished
