@@ -33,6 +33,7 @@
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/Interpreter.h>
+#include <Base/Tools.h>
 
 #include "Macro.h"
 #include "MainWindow.h"
@@ -329,8 +330,13 @@ void MacroManager::addToOutput(LineType type, const char* line)
 
 void MacroManager::setModule(const char* sModule)
 {
-    if (macroFile.isOpen() && sModule && *sModule != '\0')  {
-        macroFile.append(QStringLiteral("import %1").arg(QString::fromLatin1(sModule)));
+    if (macroFile.isOpen() && !Base::Tools::isNullOrEmpty(sModule)) {
+        Base::PyGILStateLocker lock;
+        Py::Dict modules(PySys_GetObject("modules"));
+        // Look up for the passed module name if it's already loaded
+        if (modules.hasKey(std::string(sModule))) {
+            macroFile.append(QStringLiteral("import %1").arg(QString::fromUtf8(sModule)));
+        }
     }
 }
 

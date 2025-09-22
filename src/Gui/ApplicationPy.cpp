@@ -1279,49 +1279,24 @@ PyObject* ApplicationPy::sAddCommand(PyObject * /*self*/, PyObject *args)
 
     // get the call stack to find the Python module name
     //
-    std::string module;
+    std::string appmodule;
     std::string group;
+    std::string pymodule;
     try {
         Base::PyGILStateLocker lock;
-        Py::Module mod(PyImport_ImportModule("inspect"), true);
-        if (mod.isNull()) {
-            PyErr_SetString(PyExc_ImportError, "Cannot load inspect module");
+        Py::Module modcmd(PyImport_ImportModule("freecad.module_cmd"), true);
+        if (modcmd.isNull()) {
+            PyErr_SetString(PyExc_ImportError, "Cannot load freecad.module_cmd module");
             return nullptr;
         }
-        Py::Callable inspect(mod.getAttr("stack"));
-        Py::List list(inspect.apply());
 
-        std::string file;
-        // usually this is the file name of the calling script
-        Py::Object info = list.getItem(0);
-        PyObject *pyfile = PyStructSequence_GET_ITEM(*info,1);
-        if(!pyfile) {
-            throw Py::Exception();
-        }
-
-        file = Py::Object(pyfile).as_string();
-        Base::FileInfo fi(file);
-        // convert backslashes to slashes
-        file = fi.filePath();
-        module = fi.fileNamePure();
-
-        // for the group name get the directory name after 'Mod'
-        boost::regex rx("/Mod/(\\w+)/");
-        boost::smatch what;
-        if (boost::regex_search(file, what, rx)) {
-            group = what[1];
-        }
-        else {
-            boost::regex rx("/Ext/freecad/(\\w+)/");
-            if (boost::regex_search(file, what, rx)) {
-                group = what[1];
-            } else {
-                group = module;
-            }
-        }
+        Py::Tuple result = modcmd.callMemberFunction("get_group_module_name");
+        group = Py::String(result.getItem(0));
+        appmodule = Py::String(result.getItem(1));
+        pymodule = Py::String(result.getItem(2));
     }
-    catch (Py::Exception& e) {
-        e.clear();
+    catch (const Py::Exception&) {
+        return nullptr;
     }
     try {
         Base::PyGILStateLocker lock;
@@ -1329,21 +1304,27 @@ PyObject* ApplicationPy::sAddCommand(PyObject * /*self*/, PyObject *args)
         Py::Object cmd(pcCmdObj);
         if (cmd.hasAttr("GetCommands")) {
             Command* cmd = new PythonGroupCommand(pName, pcCmdObj);
-            if (!module.empty()) {
-                cmd->setAppModuleName(module.c_str());
+            if (!appmodule.empty()) {
+                cmd->setAppModuleName(appmodule.c_str());
             }
             if (!group.empty()) {
                 cmd->setGroupName(group.c_str());
+            }
+            if (!pymodule.empty()) {
+                cmd->setPythonModuleName(group.c_str());
             }
             Application::Instance->commandManager().addCommand(cmd);
         }
         else {
             Command* cmd = new PythonCommand(pName, pcCmdObj, pSource);
-            if (!module.empty()) {
-                cmd->setAppModuleName(module.c_str());
+            if (!appmodule.empty()) {
+                cmd->setAppModuleName(appmodule.c_str());
             }
             if (!group.empty()) {
                 cmd->setGroupName(group.c_str());
+            }
+            if (!pymodule.empty()) {
+                cmd->setPythonModuleName(pymodule.c_str());
             }
             Application::Instance->commandManager().addCommand(cmd);
         }
