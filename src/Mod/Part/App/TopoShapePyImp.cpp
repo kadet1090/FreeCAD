@@ -2382,7 +2382,7 @@ PyObject* TopoShapePy::findSubShape(PyObject* args) const
 PyObject* TopoShapePy::findSubShapesWithSharedVertex(PyObject* args, PyObject* keywds) const
 {
     static const std::array<const char*, 7> kwlist {"shape", "needName", "checkGeometry", "tol", "atol", "singleResult", nullptr};
-    PyObject* pyobj;
+    PyObject* pyobj = nullptr;
     PyObject* needName = Py_False;
     PyObject* checkGeometry = Py_True;
     PyObject* singleResult = Py_False;
@@ -2390,14 +2390,17 @@ PyObject* TopoShapePy::findSubShapesWithSharedVertex(PyObject* args, PyObject* k
     double atol = 1e-12;
     if (!Base::Wrapped_ParseTupleAndKeywords(args,
                                              keywds,
-                                             "O!|OOdd",
+                                             "O!|O!O!ddO!",
                                              kwlist,
                                              &Type,
                                              &pyobj,
+                                             &PyBool_Type,
                                              &needName,
+                                             &PyBool_Type,
                                              &checkGeometry,
                                              &tol,
                                              &atol,
+                                             &PyBool_Type,
                                              &singleResult)) {
         return nullptr;
     }
