@@ -598,8 +598,9 @@ void ParameterGroup::onCreateSubgroup()
                 QMessageBox::critical(
                     this,
                     tr("Existing Sub-Group"),
-                    tr("The sub-group '%1' already exists.").arg(name)
+                    tr("The sub-group '%1' already exists").arg(name)
                 );
+
                 return;
             }
 
@@ -658,11 +659,7 @@ void ParameterGroup::onImportFromFile()
                 para->setExpanded(para->childCount());
             }
             catch (const Base::Exception&) {
-                QMessageBox::critical(
-                    this,
-                    tr("Import Error"),
-                    tr("Reading from '%1' failed.").arg(file)
-                );
+                QMessageBox::critical(this, tr("Import Error"), tr("Reading from '%1' failed").arg(file));
             }
         }
     }
@@ -864,7 +861,8 @@ void ParameterValue::onCreateIntItem()
     QString name = QInputDialog::getText(
         this,
         QObject::tr("New Integer Item"),
-        QObject::tr("Enter the name:"),
+        QObject::tr("Enter the name"),
+
         QLineEdit::Normal,
         QString(),
         &ok,
@@ -881,8 +879,9 @@ void ParameterValue::onCreateIntItem()
             QMessageBox::critical(
                 this,
                 tr("Existing Item"),
-                tr("The item '%1' already exists.").arg(name)
+                tr("The item '%1' already exists").arg(name)
             );
+
             return;
         }
     }
@@ -890,7 +889,8 @@ void ParameterValue::onCreateIntItem()
     int val = QInputDialog::getInt(
         this,
         QObject::tr("New Integer Item"),
-        QObject::tr("Enter number:"),
+        QObject::tr("Enter number"),
+
         0,
         -2147483647,
         2147483647,
@@ -912,7 +912,8 @@ void ParameterValue::onCreateUIntItem()
     QString name = QInputDialog::getText(
         this,
         QObject::tr("New Unsigned Item"),
-        QObject::tr("Enter the name:"),
+        QObject::tr("Enter the name"),
+
         QLineEdit::Normal,
         QString(),
         &ok,
@@ -929,8 +930,9 @@ void ParameterValue::onCreateUIntItem()
             QMessageBox::critical(
                 this,
                 tr("Existing Item"),
-                tr("The item '%1' already exists.").arg(name)
+                tr("The item '%1' already exists").arg(name)
             );
+
             return;
         }
     }
@@ -957,7 +959,8 @@ void ParameterValue::onCreateFloatItem()
     QString name = QInputDialog::getText(
         this,
         QObject::tr("New Float Item"),
-        QObject::tr("Enter the name:"),
+        QObject::tr("Enter the name"),
+
         QLineEdit::Normal,
         QString(),
         &ok,
@@ -974,8 +977,9 @@ void ParameterValue::onCreateFloatItem()
             QMessageBox::critical(
                 this,
                 tr("Existing Item"),
-                tr("The item '%1' already exists.").arg(name)
+                tr("The item '%1' already exists").arg(name)
             );
+
             return;
         }
     }
@@ -983,7 +987,8 @@ void ParameterValue::onCreateFloatItem()
     double val = QInputDialog::getDouble(
         this,
         QObject::tr("New Float Item"),
-        QObject::tr("Enter number:"),
+        QObject::tr("Enter number"),
+
         0,
         -2147483647,
         2147483647,
@@ -1004,7 +1009,8 @@ void ParameterValue::onCreateBoolItem()
     QString name = QInputDialog::getText(
         this,
         QObject::tr("New Boolean Item"),
-        QObject::tr("Enter the name:"),
+        QObject::tr("Enter the name"),
+
         QLineEdit::Normal,
         QString(),
         &ok,
@@ -1021,8 +1027,9 @@ void ParameterValue::onCreateBoolItem()
             QMessageBox::critical(
                 this,
                 tr("Existing Item"),
-                tr("The item '%1' already exists.").arg(name)
+                tr("The item '%1' already exists").arg(name)
             );
+
             return;
         }
     }
@@ -1032,7 +1039,8 @@ void ParameterValue::onCreateBoolItem()
     QString val = QInputDialog::getItem(
         this,
         QObject::tr("New Boolean Item"),
-        QObject::tr("Choose an item:"),
+        QObject::tr("Choose an item"),
+
         list,
         0,
         false,
