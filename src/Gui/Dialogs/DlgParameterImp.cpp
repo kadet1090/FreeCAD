@@ -580,7 +580,8 @@ void ParameterGroup::onCreateSubgroup()
     QString name = QInputDialog::getText(
         this,
         QObject::tr("New Sub-Group"),
-        QObject::tr("Enter the name:"),
+        QObject::tr("Enter the name"),
+
         QLineEdit::Normal,
         QString(),
         &ok,
