@@ -816,7 +816,8 @@ void ParameterValue::onCreateTextItem()
     QString name = QInputDialog::getText(
         this,
         QObject::tr("New Text Item"),
-        QObject::tr("Enter the name:"),
+        QObject::tr("Enter the name"),
+
         QLineEdit::Normal,
         QString(),
         &ok,
