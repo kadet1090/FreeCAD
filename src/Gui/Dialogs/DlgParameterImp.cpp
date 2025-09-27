@@ -843,7 +843,8 @@ void ParameterValue::onCreateTextItem()
     QString val = QInputDialog::getText(
         this,
         QObject::tr("New Text Item"),
-        QObject::tr("Enter text:"),
+        QObject::tr("Enter text"),
+
         QLineEdit::Normal,
         QString(),
         &ok,
