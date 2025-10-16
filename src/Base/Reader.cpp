@@ -74,6 +74,7 @@ Base::XMLReader::XMLReader(const char* FileName, std::istream& str)
     parser->setContentHandler(this);
     parser->setLexicalHandler(this);
     parser->setErrorHandler(this);
+    parser->setFeature(XMLUni::fgXercesDisableDefaultEntityResolution, true);
 
     try {
         StdInputSource file(str, _File.filePath().c_str());
