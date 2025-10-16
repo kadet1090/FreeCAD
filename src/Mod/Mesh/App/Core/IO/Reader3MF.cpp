@@ -120,6 +120,7 @@ std::unique_ptr<XercesDOMParser> Reader3MF::makeDomParser()
     parser->setDoSchema(false);
     parser->setValidationSchemaFullChecking(false);
     parser->setCreateEntityReferenceNodes(false);
+    parser->setDisableDefaultEntityResolution(true);
     return parser;
 }
 

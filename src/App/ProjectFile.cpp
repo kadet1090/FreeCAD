@@ -240,6 +240,7 @@ bool ProjectFile::loadDocument()
         parser->setDoSchema(false);
         parser->setValidationSchemaFullChecking(false);
         parser->setCreateEntityReferenceNodes(false);
+        parser->setDisableDefaultEntityResolution(true);
 
         try {
             Base::StdInputSource inputSource(*str, stdFile.c_str());
