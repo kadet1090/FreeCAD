@@ -27,10 +27,79 @@
 #include "GuiApplicationNativeEventAware.h"
 #include <Base/Console.h>
 #include <QMainWindow>
-
+#include <QLibrary>
 #include <QSocketNotifier>
 
-#include <spnav.h>
+// Definitions from spnav.h
+
+// NOLINTBEGIN
+enum {
+    SPNAV_EVENT_ANY,        /* used by spnav_remove_events() */
+    SPNAV_EVENT_MOTION,
+    SPNAV_EVENT_BUTTON,     /* includes both press and release */
+
+    SPNAV_EVENT_DEV,        /* add/remove device event */
+    SPNAV_EVENT_CFG,        /* configuration change event */
+
+    SPNAV_EVENT_RAWAXIS,
+    SPNAV_EVENT_RAWBUTTON
+};
+
+enum { SPNAV_DEV_ADD, SPNAV_DEV_RM };
+
+struct spnav_event_motion {
+    int type;               /* SPNAV_EVENT_MOTION */
+    int x, y, z;
+    int rx, ry, rz;
+    unsigned int period;
+    int *data;
+};
+
+struct spnav_event_button {
+    int type;               /* SPNAV_EVENT_BUTTON or SPNAV_EVENT_RAWBUTTON */
+    int press;
+    int bnum;
+};
+
+struct spnav_event_dev {
+    int type;               /* SPNAV_EVENT_DEV */
+    int op;                 /* SPNAV_DEV_ADD / SPNAV_DEV_RM */
+    int id;
+    int devtype;            /* see spnav_dev_type() */
+    int usbid[2];           /* USB id if it's a USB device, 0:0 if it's a serial device */
+};
+
+struct spnav_event_cfg {
+    int type;               /* SPNAV_EVENT_CFG */
+    int cfg;                /* same as protocol REQ_GCFG* enum */
+    int data[6];            /* same as protocol response data 0-5 */
+};
+
+struct spnav_event_axis {
+    int type;               /* SPNAV_EVENT_RAWAXIS */
+    int idx;                /* axis number */
+    int value;              /* value */
+};
+
+typedef union spnav_event {
+    int type;
+    struct spnav_event_motion motion;
+    struct spnav_event_button button;
+    struct spnav_event_dev dev;
+    struct spnav_event_cfg cfg;
+    struct spnav_event_axis axis;
+} spnav_event;
+// NOLINTEND
+
+
+// NOLINTBEGIN
+typedef int(*dl_spnav_open)();
+typedef int(*dl_spnav_close)();
+typedef int(*dl_spnav_fd)();
+typedef int(*dl_spnav_poll_event)(spnav_event *);
+static QString spnavLib(QLatin1String("spnav"));
+constexpr int versionNumber = 0;
+// NOLINTEND
 
 Gui::GuiNativeEvent::GuiNativeEvent(Gui::GUIApplicationNativeEventAware *app)
 : GuiAbstractNativeEvent(app)
@@ -39,27 +108,46 @@ Gui::GuiNativeEvent::GuiNativeEvent(Gui::GUIApplicationNativeEventAware *app)
 
 Gui::GuiNativeEvent::~GuiNativeEvent()
 {
-    if (spnav_close())
+    dl_spnav_close spnav_close = (dl_spnav_close)QLibrary::resolve(spnavLib, versionNumber, "spnav_close");
+    if (!spnav_close || connectDaemon == -1) {
+        return;
+    }
+    if (spnav_close()) {
         Base::Console().Log("Couldn't disconnect from spacenav daemon\n");
-    else
+    }
+    else {
         Base::Console().Log("Disconnected from spacenav daemon\n");
+    }
 }
 
 void Gui::GuiNativeEvent::initSpaceball(QMainWindow *window)
 {
     Q_UNUSED(window)
-    if (spnav_open() == -1) {
+    dl_spnav_open spnav_open = (dl_spnav_open)QLibrary::resolve(spnavLib, versionNumber, "spnav_open");
+    dl_spnav_fd spnav_fd = (dl_spnav_fd)QLibrary::resolve(spnavLib, versionNumber, "spnav_fd");
+    if (!spnav_open || !spnav_fd) {
+        return;
+    }
+
+    connectDaemon = spnav_open();
+    if (connectDaemon == -1) {
         Base::Console().Log("Couldn't connect to spacenav daemon. Please ignore if you don't have a spacemouse.\n");
-    } else {
+    }
+    else {
         Base::Console().Log("Connected to spacenav daemon\n");
-        QSocketNotifier* SpacenavNotifier = new QSocketNotifier(spnav_fd(), QSocketNotifier::Read, this);
-        connect(SpacenavNotifier, SIGNAL(activated(int)), this, SLOT(pollSpacenav()));
+        QSocketNotifier* spacenavNotifier = new QSocketNotifier(spnav_fd(), QSocketNotifier::Read, this);
+        connect(spacenavNotifier, SIGNAL(activated(int)), this, SLOT(pollSpacenav()));
         mainApp->setSpaceballPresent(true);
     }
 }
 
 void Gui::GuiNativeEvent::pollSpacenav()
 {
+    dl_spnav_poll_event spnav_poll_event = (dl_spnav_poll_event)QLibrary::resolve(spnavLib, versionNumber, "spnav_poll_event");
+    if (!spnav_poll_event) {
+        return;
+    }
+
     spnav_event ev;
     while(spnav_poll_event(&ev))
     {

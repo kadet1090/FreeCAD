@@ -44,6 +44,8 @@ namespace Gui
         GuiNativeEvent& operator=(const GuiNativeEvent&);
     private Q_SLOTS:
         void pollSpacenav();
+    private:
+        int connectDaemon = -1;
     };
 }
 

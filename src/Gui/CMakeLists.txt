@@ -157,43 +157,14 @@ if(${Qt5WinExtras_FOUND})
 endif()
 
 IF(SPNAV_FOUND)
-    if(SPNAV_USE_X11)
-        add_definitions(-DSPNAV_USE_X11)
-        if (FREECAD_QT_MAJOR_VERSION EQUAL 5 AND UNIX AND NOT APPLE)
-            find_package(Qt5X11Extras REQUIRED)
-            target_include_directories(
-                FreeCADGui
-                SYSTEM
-                PUBLIC
-                ${Qt5X11Extras_INCLUDE_DIRS}
-            )
-            list(APPEND FreeCADGui_LIBS ${Qt5X11Extras_LIBRARIES})
-            # Note that Qt6 has removed the QtX11Extras files
-        endif()
-        find_package(X11 QUIET)
-        if (X11_FOUND)
-            list(APPEND FreeCADGui_LIBS
-                ${X11_X11_LIB}
-            )
-        endif(X11_FOUND)
-        SET(FreeCADGui_SDK_SRCS
-            3Dconnexion/GuiAbstractNativeEvent.cpp
-            3Dconnexion/GuiNativeEventLinuxX11.cpp
-        )
-        SET(FreeCADGui_SDK_MOC_HDRS
-            3Dconnexion/GuiAbstractNativeEvent.h
-            3Dconnexion/GuiNativeEventLinuxX11.h
-        )
-    else(SPNAV_USE_X11)
-        SET(FreeCADGui_SDK_SRCS
-            3Dconnexion/GuiAbstractNativeEvent.cpp
-            3Dconnexion/GuiNativeEventLinux.cpp
-        )
-        SET(FreeCADGui_SDK_MOC_HDRS
-            3Dconnexion/GuiAbstractNativeEvent.h
-            3Dconnexion/GuiNativeEventLinux.h
-        )
-    endif(SPNAV_USE_X11)
+    SET(FreeCADGui_SDK_SRCS
+        3Dconnexion/GuiAbstractNativeEvent.cpp
+        3Dconnexion/GuiNativeEventLinux.cpp
+    )
+    SET(FreeCADGui_SDK_MOC_HDRS
+        3Dconnexion/GuiAbstractNativeEvent.h
+        3Dconnexion/GuiNativeEventLinux.h
+    )
     SOURCE_GROUP("3D connexion SDK" FILES ${FreeCADGui_SDK_SRCS})
     list(APPEND FreeCADGui_connexion_SRCS
         ${FreeCADGui_SDK_SRCS}
@@ -203,15 +174,6 @@ IF(SPNAV_FOUND)
     )
 
     add_definitions(-DSPNAV_FOUND)
-    target_include_directories(
-        FreeCADGui
-        SYSTEM
-        PUBLIC
-        ${SPNAV_INCLUDE_DIR}
-    )
-    list(APPEND FreeCADGui_LIBS
-        ${SPNAV_LIBRARIES}
-    )
 ENDIF(SPNAV_FOUND)
 
 IF(OCULUS_FOUND)
