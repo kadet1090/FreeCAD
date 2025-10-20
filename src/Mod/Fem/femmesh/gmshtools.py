@@ -195,24 +195,26 @@ class GmshTools:
         self.group_elements = {}
 
         # mesh regions
-        self.ele_length_list = []       # [ (element length, {element names}) ]
-        self.region_element_set = set() # set to remove duplicated element edge or faces
+        self.ele_length_list = []  # [ (element length, {element names}) ]
+        self.region_element_set = set()  # set to remove duplicated element edge or faces
 
         # mesh boundary layer
         self.bl_setting_list = []  # list of dict, each item map to MeshBoundaryLayer object
         self.bl_boundary_list = []  # to remove duplicated boundary edge or faces
 
         # mesh distance
-        self.dist_setting_list = []     # list of dict, each item map to MeshBoundaryLayer object
-        self.dist_element_set = set()   # set to remove duplicated element edge or faces
+        self.dist_setting_list = []  # list of dict, each item map to MeshBoundaryLayer object
+        self.dist_element_set = set()  # set to remove duplicated element edge or faces
 
         # transfinite meshes
-        self.transfinite_curve_settings = []       # list of dict, one entry per curve definition
-        self.transfinite_curve_elements = set()    # set to remove duplicated element edge or faces
-        self.transfinite_surface_settings = []     # list of dict, one entry per surface definition
-        self.transfinite_surface_elements = set()  # set to remove duplicated element vertex or faces
-        self.transfinite_volume_settings = []      # list of dict, one entry per volume definition
-        self.transfinite_volume_elements = set()   # set to remove duplicated volumes
+        self.transfinite_curve_settings = []  # list of dict, one entry per curve definition
+        self.transfinite_curve_elements = set()  # set to remove duplicated element edge or faces
+        self.transfinite_surface_settings = []  # list of dict, one entry per surface definition
+        self.transfinite_surface_elements = (
+            set()
+        )  # set to remove duplicated element vertex or faces
+        self.transfinite_volume_settings = []  # list of dict, one entry per volume definition
+        self.transfinite_volume_elements = set()  # set to remove duplicated volumes
 
         # other initializations
         self.temp_file_geometry = ""
@@ -488,7 +490,7 @@ class GmshTools:
 
         return result
 
-    def _get_reference_elements(self, mr_obj, duplicates_set = None):
+    def _get_reference_elements(self, mr_obj, duplicates_set=None):
 
         elements = set()
         for sub in mr_obj.References:
@@ -513,17 +515,13 @@ class GmshTools:
                     # the method getElement(element)
                     # does not return Solid elements
                     ele_shape = geomtools.get_element(sub[0], element)
-                    found_element = geomtools.find_element_in_shape(
-                        self.part_obj.Shape, ele_shape
-                    )
+                    found_element = geomtools.find_element_in_shape(self.part_obj.Shape, ele_shape)
                     if found_element:
                         element = found_element
                     else:
                         Console.PrintError(
                             "One element of the mesh refinement {} could not be found "
-                            "in the Part to mesh. It will be ignored.\n".format(
-                                mr_obj.Name
-                            )
+                            "in the Part to mesh. It will be ignored.\n".format(mr_obj.Name)
                         )
                 elements.add(element)
 
@@ -531,17 +529,14 @@ class GmshTools:
             duplicates = duplicates_set.intersection(elements)
             if duplicates:
                 Console.PrintError(
-                                "The elements {} of the mesh distance {} have been added "
-                                "to another mesh distance already.\n".format(
-                                    duplicates, mr_obj.Name
-                                )
-                            )
+                    "The elements {} of the mesh distance {} have been added "
+                    "to another mesh distance already.\n".format(duplicates, mr_obj.Name)
+                )
                 elements = elements - duplicates
 
             duplicates_set.update(elements)
 
         return elements
-
 
     def _element_list_to_shape_idx_dict(self, element_list):
         # takes element list and builds a dict from it mapping from
@@ -555,7 +550,6 @@ class GmshTools:
                 result[m.group("shape")].append(m.group("index"))
 
         return result
-
 
     def get_region_data(self):
         # mesh regions
@@ -589,8 +583,12 @@ class GmshTools:
 
                         elements = self._get_reference_elements(mr_obj, self.region_element_set)
                         if not elements:
-                            Console.PrintError( ("The mesh distance {} is not used because no unique"
-                                                "elements are selected.\n").format(mr_obj.Name))
+                            Console.PrintError(
+                                (
+                                    "The mesh distance {} is not used because no unique"
+                                    "elements are selected.\n"
+                                ).format(mr_obj.Name)
+                            )
                             continue
 
                         value = Units.Quantity(mr_obj.CharacteristicLength).Value
@@ -731,7 +729,6 @@ class GmshTools:
                     )
             Console.PrintMessage(f"  {self.bl_setting_list}\n")
 
-
     def get_distance_data(self):
         # mesh distance
         mesh_distance_list = self._get_definitions_of_type("Fem::MeshDistance")
@@ -761,20 +758,24 @@ class GmshTools:
                 # print(mr_obj.Name)
                 # print(mr_obj.CharacteristicLength)
                 # print(Units.Quantity(mr_obj.CharacteristicLength).Value)
-                #if mr_obj.CharacteristicLength:
+                # if mr_obj.CharacteristicLength:
                 if mr_obj.References:
 
                     # collect all elements!
                     elements = self._get_reference_elements(mr_obj, self.dist_element_set)
                     if not elements:
-                        Console.PrintError( ("The mesh distance {} is not used because no unique"
-                                             "elements are selected.\n").format(mr_obj.Name))
+                        Console.PrintError(
+                            (
+                                "The mesh distance {} is not used because no unique"
+                                "elements are selected.\n"
+                            ).format(mr_obj.Name)
+                        )
                         continue
 
                     idx_dict = self._element_list_to_shape_idx_dict(elements)
 
                     # get the settings!
-                    settings = {"Distance":{}, "Threshold":{}}
+                    settings = {"Distance": {}, "Threshold": {}}
                     settings["Threshold"]["DistMin"] = Units.Quantity(mr_obj.DistanceMinimum).Value
                     settings["Threshold"]["DistMax"] = Units.Quantity(mr_obj.DistanceMaximum).Value
                     settings["Threshold"]["SizeMin"] = Units.Quantity(mr_obj.SizeMinimum).Value
@@ -800,7 +801,6 @@ class GmshTools:
                         "The mesh refinement: {} is not used to create the mesh "
                         "because the reference list is empty.\n".format(mr_obj.Name)
                     )
-
 
     def get_transfinite_data(self):
 
@@ -830,8 +830,12 @@ class GmshTools:
                     # collect all elements!
                     elements = self._get_reference_elements(mr_obj, self.transfinite_curve_elements)
                     if not elements:
-                        Console.PrintError( ("The transfinite curve {} is not used because no unique"
-                                             "elements are selected.\n").format(mr_obj.Name))
+                        Console.PrintError(
+                            (
+                                "The transfinite curve {} is not used because no unique"
+                                "elements are selected.\n"
+                            ).format(mr_obj.Name)
+                        )
                         continue
 
                     idx_dict = self._element_list_to_shape_idx_dict(elements)
@@ -844,9 +848,9 @@ class GmshTools:
                             if mr_obj.Distribution == "Progression":
                                 prefix = "-"
                             else:
-                                coef = 1.0/coef
+                                coef = 1.0 / coef
 
-                        settings["tag"] = ",".join(str(prefix+i) for i in idx_dict["Edge"])
+                        settings["tag"] = ",".join(str(prefix + i) for i in idx_dict["Edge"])
                         settings["numNodes"] = mr_obj.Nodes
                         if mr_obj.Distribution != "Constant":
                             settings["meshType"] = mr_obj.Distribution
@@ -859,7 +863,6 @@ class GmshTools:
                         "The transfinite curve {} is not used to create the mesh "
                         "because the reference list is empty.\n".format(mr_obj.Name)
                     )
-
 
         # transfinite surfaces
         transfinite_surface_list = self._get_definitions_of_type("Fem::MeshTransfiniteSurface")
@@ -885,10 +888,16 @@ class GmshTools:
                 if mr_obj.References:
 
                     # collect all elements!
-                    elements = self._get_reference_elements(mr_obj, self.transfinite_surface_elements)
+                    elements = self._get_reference_elements(
+                        mr_obj, self.transfinite_surface_elements
+                    )
                     if not elements:
-                        Console.PrintError( ("The transfinite surface {} is not used because no unique"
-                                             "elements are selected.\n").format(mr_obj.Name))
+                        Console.PrintError(
+                            (
+                                "The transfinite surface {} is not used because no unique"
+                                "elements are selected.\n"
+                            ).format(mr_obj.Name)
+                        )
                         continue
 
                     idx_dict = self._element_list_to_shape_idx_dict(elements)
@@ -934,10 +943,16 @@ class GmshTools:
                 if mr_obj.References:
 
                     # collect all elements!
-                    elements = self._get_reference_elements(mr_obj, self.transfinite_volume_elements)
+                    elements = self._get_reference_elements(
+                        mr_obj, self.transfinite_volume_elements
+                    )
                     if not elements:
-                        Console.PrintError( ("The transfinite volume {} is not used because no unique"
-                                             "elements are selected.\n").format(mr_obj.Name))
+                        Console.PrintError(
+                            (
+                                "The transfinite volume {} is not used because no unique"
+                                "elements are selected.\n"
+                            ).format(mr_obj.Name)
+                        )
                         continue
 
                     idx_dict = self._element_list_to_shape_idx_dict(elements)
@@ -956,8 +971,6 @@ class GmshTools:
                         "The transfinite volume {} is not used to create the mesh "
                         "because the reference list is empty.\n".format(mr_obj.Name)
                     )
-
-
 
     def write_groups(self, geo):
         # find shape type and index from group elements and isolate them from possible prefix
@@ -1093,7 +1106,6 @@ class GmshTools:
             # print("  no boundary layer setup is found for this mesh")
             geo.write("// no distance settings for this mesh\n")
 
-
     def write_transfinite(self, geo):
 
         geo.write("\n")
@@ -1114,7 +1126,7 @@ class GmshTools:
         for setting in self.transfinite_surface_settings:
             geo.write(f"Transfinite Surface {{ {setting["surfaces"]} }}")
             if "nodes" in setting:
-                geo.write( f" = {{ {setting["nodes"]} }}" )
+                geo.write(f" = {{ {setting["nodes"]} }}")
             if "orientation" in setting:
                 geo.write(f" {setting["orientation"]}")
             if "recombine" in setting:
@@ -1135,7 +1147,6 @@ class GmshTools:
 
         geo.write("// Transfinite elements finished\n")
         geo.write("\n")
-
 
     def write_part_file(self):
         global_pla = self.part_obj.getGlobalPlacement()
@@ -1192,7 +1203,6 @@ class GmshTools:
             geo.write("Mesh.MeshSizeExtendFromBoundary = 0;\n")
             geo.write("\n")
 
-
         # mesh parameter
         geo.write("// min, max Characteristic Length\n")
         geo.write("Mesh.MeshSizeMax = " + str(self.clmax) + ";\n")
@@ -1211,7 +1221,6 @@ class GmshTools:
             )
         geo.write("Mesh.MeshSizeFromPoints = 0;\n")
         geo.write("\n")
-
 
         if hasattr(self.mesh_obj, "RecombineAll") and self.mesh_obj.RecombineAll is True:
             geo.write("// recombination for surfaces\n")
@@ -1287,7 +1296,6 @@ class GmshTools:
         geo.write("// subdivision algorithm\n")
         geo.write("Mesh.SubdivisionAlgorithm = " + self.SubdivisionAlgorithm + ";\n")
         geo.write("\n")
-
 
         geo.write("// meshing\n")
         # remove duplicate vertices
