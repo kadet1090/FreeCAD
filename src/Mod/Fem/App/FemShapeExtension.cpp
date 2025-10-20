@@ -52,7 +52,7 @@ BoxExtension::BoxExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Center,
         (Base::Vector3d(0.0, 0.0, 0.0)),
-        "Base",
+        "Box",
         (App::PropertyType)(App::Prop_None),
         "the center point of the box"
     );
@@ -60,7 +60,7 @@ BoxExtension::BoxExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Length,
         (10),
-        "Base",
+        "Box",
         (App::PropertyType)(App::Prop_None),
         "The length of the box (along X axis)"
     );
@@ -68,7 +68,7 @@ BoxExtension::BoxExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Width,
         (10),
-        "Base",
+        "Box",
         (App::PropertyType)(App::Prop_None),
         "The width of the box (along Y axis)"
     );
@@ -76,7 +76,7 @@ BoxExtension::BoxExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Height,
         (10),
-        "Base",
+        "Box",
         (App::PropertyType)(App::Prop_None),
         "The height of the box (along Z axis)"
     );
@@ -92,7 +92,7 @@ CylinderExtension::CylinderExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Center,
         (Base::Vector3d(0.0, 0.0, 0.0)),
-        "Base",
+        "Cylinder",
         (App::PropertyType)(App::Prop_None),
         "The center point of the cylinder"
     );
@@ -100,7 +100,7 @@ CylinderExtension::CylinderExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Axis,
         (Base::Vector3d(0.0, 0.0, 1.0)),
-        "Base",
+        "Cylinder",
         (App::PropertyType)(App::Prop_None),
         "The axis along wich the cylinder is defined"
     );
@@ -108,7 +108,7 @@ CylinderExtension::CylinderExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Radius,
         (5),
-        "Base",
+        "Cylinder",
         (App::PropertyType)(App::Prop_None),
         "The cylinders radius"
     );
@@ -124,7 +124,7 @@ SphereExtension::SphereExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Center,
         (Base::Vector3d(0.0, 0.0, 0.0)),
-        "Base",
+        "Sphere",
         (App::PropertyType)(App::Prop_None),
         "The center point of the sphere"
     );
@@ -132,7 +132,7 @@ SphereExtension::SphereExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Radius,
         (5),
-        "Base",
+        "Sphere",
         (App::PropertyType)(App::Prop_None),
         "The sphere radius"
     );
@@ -148,7 +148,7 @@ PlaneExtension::PlaneExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Origin,
         (Base::Vector3d(0.0, 0.0, 0.0)),
-        "Base",
+        "Plane",
         (App::PropertyType)(App::Prop_None),
         "The origin of the plane"
     );
@@ -156,7 +156,7 @@ PlaneExtension::PlaneExtension()
     EXTENSION_ADD_PROPERTY_TYPE(
         Normal,
         (Base::Vector3d(0.0, 0.0, 1.0)),
-        "Base",
+        "Plane",
         (App::PropertyType)(App::Prop_None),
         "The normal direction of the plane"
     );
