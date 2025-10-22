@@ -9,7 +9,7 @@
 [Git repository](https://codeberg.org/xCAD/FreeCAD11) •
 
 
-<img src="./.github/images/F16_MKG.png" width="800"/>
+<img src="./.github/images/F16_MLG_window.png" width="800"/>
 
 Overview
 --------
