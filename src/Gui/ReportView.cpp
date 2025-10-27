@@ -998,7 +998,12 @@ void ReportOutput::OnChange(Base::Subject<const char*>& rCaller, const char* sRe
 void ReportOutput::keyPressEvent(QKeyEvent* event)
 {
     if (event->matches(QKeySequence::Find)) {
-        showSearchBar();
+        if (searchBar && searchBar->isVisible()) {
+            hideSearchBar();
+        }
+        else {
+            showSearchBar();
+        }
         event->accept();
         return;
     }
