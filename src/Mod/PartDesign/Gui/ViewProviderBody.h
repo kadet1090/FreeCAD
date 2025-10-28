@@ -100,7 +100,7 @@ public:
         return true;
     };
 
-    void setVisible(bool visible);
+    void show();
 
 protected:
     /// Copy over all visual properties to the child features
