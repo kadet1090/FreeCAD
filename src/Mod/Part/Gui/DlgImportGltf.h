@@ -37,6 +37,7 @@ namespace PartGui
 
 struct GltfImportSettings
 {
+    bool tessellationOnly = true;
     bool refinement = false;
     bool skipEmptyNodes = true;
     bool doublePrecision = false;
