@@ -395,7 +395,6 @@ private:
                 }
 
                 ocaf.setAllowEmptyShape(reader.loadTessellationOnly());
-                reader.read(hDoc, Message_ProgressIndicator::Start(pi));
             }
             else {
                 throw Py::Exception(PyExc_IOError, "no supported file format");
