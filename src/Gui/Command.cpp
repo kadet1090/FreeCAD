@@ -219,14 +219,15 @@ void CommandBase::setAccel(const char* s)
 
 Command::Command(const char* name)
     : CommandBase(nullptr)
-    , sName(name)
-    , sHelpUrl(nullptr)
+    , sAppModule{"FreeCAD"}
+    , sGroup{"Standard"}
+    , sPyModule{""}
+    , sName{name}
+    , sHelpUrl{nullptr}
+    , eType{AlterDoc | Alter3DView | AlterSelection}
+    , bCanLog{true}
+    , bEnabled{true}
 {
-    sAppModule  = "FreeCAD";
-    sGroup      = "Standard";
-    eType       = AlterDoc | Alter3DView | AlterSelection;
-    bEnabled    = true;
-    bCanLog     = true;
 }
 
 Command::~Command() = default;
@@ -415,8 +416,8 @@ void Command::_invoke(int id, bool disablelog)
         //
         App::AutoTransaction committer(nullptr, true);
 
-        // set the application module type for the macro
-        getGuiApplication()->macroManager()->setModule(sAppModule);
+        // set the Python/application module name for the macro
+        getGuiApplication()->macroManager()->setModule(getModuleName());
 
         std::unique_ptr<LogDisabler> logdisabler;
         if (disablelog) {
@@ -595,9 +596,19 @@ std::string Command::getObjectCmd(const App::DocumentObject *obj,
     return getObjectCmd(obj->getNameInDocument(), obj->getDocument(), prefix, postfix,gui);
 }
 
+const char* Command::getModuleName() const
+{
+    return Base::Tools::isNullOrEmpty(sPyModule) ? sAppModule : sPyModule;
+}
+
 void Command::setAppModuleName(const char* s)
 {
     this->sAppModule = StringCache::New(s);
+}
+
+void Command::setPythonModuleName(const char* s)
+{
+    this->sPyModule = StringCache::New(s);
 }
 
 void Command::setGroupName(const char* s)

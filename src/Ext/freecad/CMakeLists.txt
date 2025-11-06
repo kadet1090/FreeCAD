@@ -19,6 +19,7 @@ configure_file(__init__.py.template ${NAMESPACE_INIT})
 
 set(EXT_FILES
     freecad_doc.py
+    module_cmd.py
     module_io.py
     part.py
     partdesign.py

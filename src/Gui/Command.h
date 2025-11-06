@@ -560,9 +560,13 @@ public:
 
     /** @name checking of internal state */
     //@{
-    /// returns the name to which the command belongs
+    const char* getModuleName() const;
+    /// returns the App module name which the command belongs to
     const char* getAppModuleName() const {return sAppModule;}
     void setAppModuleName(const char*);
+    /// returns the Python module name which the command belongs to
+    const char* getPythonModuleName() const {return sPyModule;}
+    void setPythonModuleName(const char*);
     /// Get the command name
     const char* getName() const { return sName; }
     /// Get the name of the grouping of the command
@@ -614,6 +618,7 @@ protected:
     //@{
     const char* sAppModule;
     const char* sGroup;
+    const char* sPyModule;
     const char* sName;
     const char* sHelpUrl;
     int         eType;

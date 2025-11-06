@@ -34,11 +34,7 @@
 
 #if defined(_USE_3DCONNEXION_SDK) || defined(SPNAV_FOUND)
 #if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
-  #if defined(SPNAV_USE_X11)
-    #include "3Dconnexion/GuiNativeEventLinuxX11.h"
-  #else
-    #include "3Dconnexion/GuiNativeEventLinux.h"
-  #endif
+  #include "3Dconnexion/GuiNativeEventLinux.h"
 #elif defined(Q_OS_WIN)
   #include "3Dconnexion/GuiNativeEventWin32.h"
 #elif defined(Q_OS_MACOS)
@@ -59,9 +55,14 @@ Gui::GUIApplicationNativeEventAware::~GUIApplicationNativeEventAware() = default
 void Gui::GUIApplicationNativeEventAware::initSpaceball(QMainWindow *window)
 {
 #if defined(_USE_3DCONNEXION_SDK) || defined(SPNAV_FOUND)
+#if defined(_USE_3DCONNEXION_SDK)
     ParameterGrp::handle hViewGrp = App::GetApplication().GetParameterGroupByPath(
-         "User parameter:BaseApp/Preferences/View");
-    if (nativeEvent && hViewGrp->GetBool("LegacySpaceMouseDevices", false)) {
+        "User parameter:BaseApp/Preferences/View");
+    bool legacySpaceMouse = hViewGrp->GetBool("LegacySpaceMouseDevices", false);
+#elif defined(SPNAV_FOUND)
+    bool legacySpaceMouse = true;
+#endif
+    if (nativeEvent && legacySpaceMouse) {
         nativeEvent->initSpaceball(window);
     }
 #else

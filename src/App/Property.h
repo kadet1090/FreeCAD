@@ -78,9 +78,9 @@ public:
         EvalOnRestore = 14,      // In case of expression binding, evaluate the
                                  // expression on restore and touch the object on value change.
         Busy = 15,               // internal use to avoid recursive signaling
-        CopyOnChange =
-            16,  // for Link to copy the linked object on change of the property with this flag
-        UserEdit = 17,  // cause property editor to create button for user defined editing
+        CopyOnChange = 16,       // for Link to copy the linked object on change of the property with this flag
+        UserEdit = 17,           // cause property editor to create button for user defined editing
+        DisableNotify = 18,      // do not propagate changes of the property to its container
 
         // The following bits are corresponding to PropertyType set when the
         // property added. These types are meant to be static, and cannot be
@@ -88,19 +88,19 @@ public:
         // required in PropertyContainer::getPropertyType()
         //
         PropStaticBegin = 21,
-        PropDynamic = 21,      // indicating the property is dynamically added
-        PropNoPersist = 22,    // corresponding to Prop_NoPersist
-        PropNoRecompute = 23,  // corresponding to Prop_NoRecompute
-        PropReadOnly = 24,     // corresponding to Prop_ReadOnly
-        PropTransient = 25,    // corresponding to Prop_Transient
-        PropHidden = 26,       // corresponding to Prop_Hidden
-        PropOutput = 27,       // corresponding to Prop_Output
+        PropDynamic = 21,        // indicating the property is dynamically added
+        PropNoPersist = 22,      // corresponding to Prop_NoPersist
+        PropNoRecompute = 23,    // corresponding to Prop_NoRecompute
+        PropReadOnly = 24,       // corresponding to Prop_ReadOnly
+        PropTransient = 25,      // corresponding to Prop_Transient
+        PropHidden = 26,         // corresponding to Prop_Hidden
+        PropOutput = 27,         // corresponding to Prop_Output
         PropStaticEnd = 28,
 
-        User1 = 28,  // user-defined status
-        User2 = 29,  // user-defined status
-        User3 = 30,  // user-defined status
-        User4 = 31   // user-defined status
+        User1 = 28,              // user-defined status
+        User2 = 29,              // user-defined status
+        User3 = 30,              // user-defined status
+        User4 = 31               // user-defined status
     };
 
     Property();
@@ -222,6 +222,12 @@ public:
     /** Property status handling
      */
     //@{
+    /// This method sets whether notification will be propagated on changing
+    /// the value of the property. The old value of the setting is returned.
+    bool enableNotify(bool on);
+    /// This method returns whether notification of changes to the property value
+    /// are propagated to the container.
+    bool isNotifyEnabled() const;
     /// Set the property touched
     void touch();
     /// Test if this property is touched
