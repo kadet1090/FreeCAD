@@ -1,18 +1,15 @@
-<a href="https://freecad.org"><img src="./src/Gui/Icons/freecad.svg" height="100px" width="100px"></a>
+<a href="https://codeberg.org/xCAD"><img src="./src/Gui/Icons/freecad.svg" height="100px" width="100px"></a>
 
 ### Your own 3D parametric modeler
 
 [Website](https://www.freecad.org) •
 [Documentation](https://wiki.freecad.org) •
-[Forum](https://forum.freecad.org/) •
+[Discussions](https://codeberg.org/xCAD/xCAD_discussions/issues) •
 [Bug tracker](https://codeberg.org/xCAD/FreeCAD11/issues) •
 [Git repository](https://codeberg.org/xCAD/FreeCAD11) •
-[Blog](https://blog.freecad.org)
 
 
-[![Release](https://img.shields.io/github/release/freecad/freecad.svg)](https://github.com/freecad/freecad/releases/latest) [![Crowdin](https://d322cqt584bo4o.cloudfront.net/freecad/localized.svg)](https://crowdin.com/project/freecad) [![Liberapay](https://img.shields.io/liberapay/receives/FreeCAD.svg?logo=liberapay)](https://liberapay.com/FreeCAD)
-
-<img src="./.github/images/partdesign.png" width="800"/>
+<img src="./.github/images/F16_MLG_window.png" width="800"/>
 
 Overview
 --------
@@ -31,7 +28,7 @@ your model history to change its parameters.
 including product design, mechanical engineering and architecture,
 whether you are a hobbyist, programmer, experienced CAD user, student or teacher.
 
-* **Cross platform** FreeCAD runs on Windows, macOS and Linux operating systems.
+* **Cross platform** FreeCAD runs on Windows, macOS, Linux and *BSD operating systems.
 
 * **Underlying technology**
     * **OpenCASCADE** A powerful geometry kernel, the most important component of FreeCAD
