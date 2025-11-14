@@ -1,7 +1,5 @@
 # FreeCAD Contribution Process (FCP)
 
-FreeCAD's contribution process is inspired by the Collective Code Construction Contract which itself is an evolution of the github.com Fork and Pull Model.
-
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.
 
 
@@ -24,9 +22,9 @@ The FreeCAD Contribution Process is expressed here with the following specific g
 ## 2. Fundamentals
 
 1. FreeCAD uses the git distributed revision control system.
-2. Source code for the main application and related subprojects is hosted on github.com in the FreeCAD organization.
+2. Source code for the main application and related subprojects is hosted on codeberg.de in the xCAD organization.
 3. Problems are discrete, well-defined limitations or bugs.
-4. FreeCAD uses GitHub's issue-tracking system to track problems and contributions. For help requests and general discussions, use the project forum.
+4. FreeCAD uses codeberg's issue-tracking system to track problems and contributions. For help requests and general discussions, use the project forum.
 5. Contributions are sets of code changes that resolve a single problem.
 6. FreeCAD uses the Pull Request workflow for evaluating and accepting contributions.
 
@@ -41,14 +39,13 @@ The FreeCAD Contribution Process is expressed here with the following specific g
 2. All contributions to FreeCAD MUST use a compatible license.
 3. All contributions are owned by their authors unless assigned to another.
 4. FreeCAD does not have a mandatory copyright assignment policy.
-5. A Contributor who wishes to be identified in the Credits section of the application "About" dialog is responsible for identifying themselves. They should modify the Contributors file and submit a PR with a single commit for this modification only. The contributors file is found at https://github.com/FreeCAD/FreeCAD/blob/main/src/Doc/CONTRIBUTORS
-6. A contributor who does not wish to assume the copyright of their contribution MAY choose to assign it to the [FreeCAD project association](https://fpa.freecad.org) by mentioning **Copyright (c) 2022 The FreeCAD project association <fpa@freecad.org>** in the file's license code block.
+5. A Contributor who wishes to be identified in the Credits section of the application "About" dialog is responsible for identifying themselves. They should modify the Contributors file and submit a PR with a single commit for this modification only. The contributors file is found at https://codeberg.org/xCAD/FreeCAD11/src/branch/main/src/Doc/CONTRIBUTORS
 
 ## 5. Contribution Requirements
 
 1. Contributions are submitted in the form of Pull Requests (PR).
-2. Maintainers and Contributors MUST have a GitHub account and SHOULD use their real names or a well-known alias.
-3. If the GitHub username differs from the username on the FreeCAD Forum, effort SHOULD be taken to avoid confusion.
+2. Maintainers and Contributors MUST have a codeberg account
+3. If the codeberg username differs from the username on the FreeCAD Forum, effort SHOULD be taken to avoid confusion.
 4. A PR SHOULD be a minimal and accurate answer to exactly one identified and agreed-on problem.
 5. A PR SHOULD refrain from adding additional dependencies to the FreeCAD project unless no other option is available.
 6. Code submissions MUST adhere to the code style guidelines of the project if these are defined.
@@ -63,39 +60,36 @@ The FreeCAD Contribution Process is expressed here with the following specific g
 ## 6. Process
 
 1. Change on the project follows the pattern of accurately identifying problems and applying minimal, accurate solutions to these problems.
-2. To request changes, a User logs an issue on the project GitHub issue tracker.
+2. To request changes, a User logs an issue on the project [codeberg issue tracker](https://codeberg.org/xCAD/FreeCAD11/issues).
 3. The User or Contributor SHOULD write the issue by describing the problem they face or observe. Links to the forum or other resources are permitted but the issue SHOULD be complete and accurate and SHOULD NOT require the reader to visit the forum or any other platform to understand what is being described.
 4. Issue authors SHOULD strive to describe the minimum acceptable condition.
-5. Issue authors SHOULD focus on User tasks and avoid comparisons to other software solutions.
+5. Issue authors SHOULD focus on User tasks and SHOULD compare to other similar software solutions to strive for general good practices.
 6. The User or Contributor SHOULD seek consensus on the accuracy of their observation and the value of solving the problem.
-7. To submit a solution to a problem, a Contributor SHALL create a pull request back to the project.
-8. Contributors and Maintainers SHALL NOT commit changes directly to the target branch.
-9. To discuss a proposed solution, Users MAY comment on the Pull Request in GitHub. Forum conversations regarding the solution SHOULD be discouraged and conversation redirected to the Pull Request or the related issue.
-10. To accept or reject a Pull Request, a Maintainer SHALL use GitHub's interface.
-11. Maintainers SHOULD NOT merge their own PRs except:
-    1. in exceptional cases, such as non-responsiveness from other Maintainers for an extended period.
-    2. If the Maintainer is also the primary developer of the workbench or subsystem.
-
+7. To submit a solution to a problem, a Contributor SHALL create a pull request back to the project
+8. Pull-requests MUST be made for the [main-dev development branch](https://codeberg.org/xCAD/FreeCAD11/src/branch/main-dev).
+9. To discuss a proposed solution, Users MAY comment on the Pull Request in codeberg
+10. To accept or reject a Pull Request, a Maintainer SHALL use codeberg's interface.
 12. Maintainers SHALL merge valid PRs from other Contributors rapidly.
 13. Maintainers MAY, at their discretion merge PRs that have not met all criteria to be considered valid to:
     1. end fruitless discussions
     2. capture toxic contributions in the historical record
     3. engage with the Contributor on improving their contribution quality.
-14. Maintainers SHALL NOT make value judgments on correct contributions.
-15. Any Contributor who has value judgments on a PR SHOULD express these via their own PR.
-16. The User who created an issue SHOULD close the issue after checking the PR is successful.
-17. Maintainers SHOULD close issues that are left open without action or update for an unreasonable period.
+14. Maintainer's role is to maintain the software's integrity and therefore SHALL make value judgments about the pertinence of new code and, if necessary, SHALL correct contributions.
+15. The User who created an issue SHOULD close the issue after checking the PR is successful.
+16. Maintainers SHOULD close issues that are left open without action or update for an unreasonable period.
 
 ## 7. Branches and Releases
 
-1. The project SHALL have one branch (“main”) that always holds the latest in-progress version and SHOULD always build.
-2. The project SHALL NOT use topic branches for any reason. Personal forks MAY use topic branches.
-3. To make a stable release a Maintainer SHALL tag the repository. Stable releases SHALL always be released from the repository main branch.
+1. The project SHALL have at least two branches : 
+    1. “main” that always holds the latest stable version and SHOULD always build and execute without errors
+    2. "main-dev" that holds the current development code and SHOULD always build but MAY sometimes break or crash
+    3. Only contributors in the "Maintainers" group CAN accept PRs in the "main-dev" development branch
+2. To make a stable release a contributors in the "ReleaseManagers" SHALL merge the "main-dev" development branch into the stable "main" branch. Stable releases SHALL always be released from the repository main branch.
 
 ## 8. Project Administration
 
-1. Project Administrators are those individuals who are members of the FreeCAD Github organization and have the role of 'owner'.  They have the task of administering the organization including adding and removing individuals from various teams.
-2. Project Administrator is a technical role necessitated by the GitHub platform. Except for the specific exceptions listed below, the Project Administrators do not make the decision about individual team members. Rather, they carry out the collective wishes of the Maintainers team. Project Administrators will be selected from the Maintainers team by the Maintainers themselves.
+1. Project Administrators are those individuals who are members of the FreeCAD codeberg organization and have the role of 'owner'.  They have the task of administering the organization including adding and removing individuals from various teams.
+2. Project Administrator is a technical role necessitated by the codeberg platform. Except for the specific exceptions listed below, the Project Administrators do not make the decision about individual team members. Rather, they carry out the collective wishes of the Maintainers team. Project Administrators will be selected from the Maintainers team by the Maintainers themselves.
 3. To ensure continuity there SHALL be at least four Project Administrators at all times.
 4. The project Administrators will manage the set of project Maintainers.  They SHALL maintain a sufficiently large pool of Maintainers to ensure their succession and permit timely review of contributions. If the pool of Maintainers is insufficient, the Project Administrators will request that the Maintainers select additional individuals to add.
 5. Contributors who have a history of successful PRs and have demonstrated continued professionalism should be invited to be Maintainers.
