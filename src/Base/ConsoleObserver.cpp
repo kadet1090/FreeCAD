@@ -244,6 +244,8 @@ void ConsoleObserverStd::Critical(const char* sCritical)
     }
 }
 
+std::mutex RedirectStdOutput::mutex_buffer{};
+
 RedirectStdOutput::RedirectStdOutput()
 {
     buffer.reserve(80);
@@ -252,6 +254,7 @@ RedirectStdOutput::RedirectStdOutput()
 int RedirectStdOutput::overflow(int ch)
 {
     if (ch != EOF) {
+        std::lock_guard<std::mutex> guard(mutex_buffer);
         buffer.push_back(static_cast<char>(ch));
     }
     return ch;
@@ -259,6 +262,7 @@ int RedirectStdOutput::overflow(int ch)
 
 int RedirectStdOutput::sync()
 {
+    std::lock_guard<std::mutex> guard(mutex_buffer);
     // Print as log as this might be verbose
     if (!buffer.empty() && buffer.back() == '\n') {
         Base::Console().Log("%s", buffer.c_str());
@@ -266,6 +270,8 @@ int RedirectStdOutput::sync()
     }
     return 0;
 }
+
+std::mutex RedirectStdLog::mutex_buffer{};
 
 RedirectStdLog::RedirectStdLog()
 {
@@ -275,6 +281,7 @@ RedirectStdLog::RedirectStdLog()
 int RedirectStdLog::overflow(int ch)
 {
     if (ch != EOF) {
+        std::lock_guard<std::mutex> guard(mutex_buffer);
         buffer.push_back(static_cast<char>(ch));
     }
     return ch;
@@ -282,6 +289,7 @@ int RedirectStdLog::overflow(int ch)
 
 int RedirectStdLog::sync()
 {
+    std::lock_guard<std::mutex> guard(mutex_buffer);
     // Print as log as this might be verbose
     if (!buffer.empty() && buffer.back() == '\n') {
         Base::Console().Log("%s", buffer.c_str());
@@ -289,6 +297,8 @@ int RedirectStdLog::sync()
     }
     return 0;
 }
+
+std::mutex RedirectStdError::mutex_buffer{};
 
 RedirectStdError::RedirectStdError()
 {
@@ -298,6 +308,7 @@ RedirectStdError::RedirectStdError()
 int RedirectStdError::overflow(int ch)
 {
     if (ch != EOF) {
+        std::lock_guard<std::mutex> guard(mutex_buffer);
         buffer.push_back(static_cast<char>(ch));
     }
     return ch;
@@ -305,6 +316,7 @@ int RedirectStdError::overflow(int ch)
 
 int RedirectStdError::sync()
 {
+    std::lock_guard<std::mutex> guard(mutex_buffer);
     if (!buffer.empty() && buffer.back() == '\n') {
         Base::Console().Error("%s", buffer.c_str());
         buffer.clear();
