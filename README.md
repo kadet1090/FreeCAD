@@ -41,13 +41,15 @@ whether you are a hobbyist, programmer, experienced CAD user, student or teacher
 History
 -------
 
-This repository is forked from the 1.1 FreeCAD version on GitHub, at commit #xyz (Werner can you please fill this). The reasons for this forking are numerous : 
+This repository is forked from the 1.1 FreeCAD version on GitHub, at commit [#1ae8524dce](https://codeberg.org/xCAD/FreeCAD11/commit/1ae8524dce2). The reasons for this forking are numerous : 
 
 * **Data Compatibility**
 
 During the 0.22=>1.0 development period, a single commit on the previous GitHub repository, [#12714](https://github.com/FreeCAD/FreeCAD/pull/12714), made the new data format incompatible with the original data format used since the beginnings of FreeCAD. Some backwards compatibility scripts were introduced, but no forward compatibility was possible. Furthermore, this data incompatibility was subtle and not documented, leading to data corruption.
 
 This data incompatibility lead also to the impossibility to develop a same model across several designers using different FreeCAD versions, eliminating one of FreeCAD's strength to be multi-platform. Since there couldn't be any guarantee that a team of designers using FreeCAD on MacOS, Linux, Windows or *BSD would all use the exact same version, it became instantly impossible to share a complex assembly, limiting usage of FreeCAD to hobbyists, while our goal is to aim for FreeCAD to be equal to the top-tier CAD systems worldwide.
+
+The current 2.0 version is fully backwards and forwards compatible with the old stable maintenance branch of [0.21 maintained on codeberg](https://codeberg.org/xCAD/FreeCAD21). 
 
 * **Development Model**
 
