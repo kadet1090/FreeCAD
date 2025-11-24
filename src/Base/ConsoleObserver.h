@@ -24,6 +24,7 @@
 #ifndef BASE_CONSOLEOBSERVER_H
 #define BASE_CONSOLEOBSERVER_H
 
+#include <mutex>
 #include <Base/Console.h>
 #include <Base/Stream.h>
 
@@ -157,6 +158,7 @@ protected:
     int sync() override;
 
 private:
+    static std::mutex mutex_buffer;
     std::string buffer;
 };
 
@@ -170,6 +172,7 @@ protected:
     int sync() override;
 
 private:
+    static std::mutex mutex_buffer;
     std::string buffer;
 };
 
@@ -183,6 +186,7 @@ protected:
     int sync() override;
 
 private:
+    static std::mutex mutex_buffer;
     std::string buffer;
 };
 

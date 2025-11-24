@@ -410,7 +410,7 @@ class GitControl(VersionControl):
         print("git")
 
     def activeBranch(self):
-        return "main-dev"
+        return "main"
 
     def writeVersion(self, lines):
         content = VersionControl.writeVersion(self, lines)

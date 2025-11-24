@@ -195,16 +195,30 @@ class ViewProviderSprocket:
         self.ViewObject = vobj
         self.Object = vobj.Object
 
+    def setupContextMenu(self, viewObject, menu):
+        action = menu.addAction(FreeCAD.Qt.translate("QObject", "Edit %1").replace("%1", viewObject.Object.Label))
+        action.triggered.connect(lambda: self.startDefaultEditMode(viewObject))
+        return False
+
+    def startDefaultEditMode(self, viewObject):
+        document = viewObject.Document.Document
+        if not document.HasPendingTransaction:
+            text = FreeCAD.Qt.translate("QObject", "Edit %1").replace("%1", viewObject.Object.Label)
+            document.openTransaction(text)
+        viewObject.Document.setEdit(viewObject.Object, 0)
+
     def setEdit(self, vobj, mode):
-        taskd = SprocketTaskPanel(self.Object, mode)
-        taskd.obj = vobj.Object
-        taskd.update()
-        FreeCADGui.Control.showDialog(taskd)
-        return True
+        if mode == 0:
+            taskd = SprocketTaskPanel(self.Object, mode)
+            taskd.obj = vobj.Object
+            taskd.update()
+            FreeCADGui.Control.showDialog(taskd)
+            return True
 
     def unsetEdit(self, vobj, mode):
-        FreeCADGui.Control.closeDialog()
-        return
+        if mode == 0:
+            FreeCADGui.Control.closeDialog()
+            return
 
     def dumps(self):
         return None
@@ -328,7 +342,6 @@ class SprocketTaskPanel:
         FreeCADGui.ActiveDocument.resetEdit()
 
     def reject(self):
-        FreeCAD.ActiveDocument.removeObject(self.obj.Name)
         FreeCAD.ActiveDocument.recompute()
         FreeCADGui.ActiveDocument.resetEdit()
         FreeCAD.ActiveDocument.abortTransaction()

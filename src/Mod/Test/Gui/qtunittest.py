@@ -150,6 +150,10 @@ class BaseGUITestRunner:
         "Override to indicate that a test has just failed"
         pass
 
+    def notifySubTestFailed(self, test, subtest, err):
+        "Override to indicate that a subtest has just failed"
+        pass
+
     def notifyTestErrored(self, test, err):
         "Override to indicate that a test has just errored"
         pass
@@ -189,6 +193,10 @@ class GUITestResult(unittest.TestResult):
         unittest.TestResult.startTest(self, test)
         self.callback.notifyTestStarted(test)
 
+    def addSubTest(self, test, subtest, err):
+        unittest.TestResult.addSubTest(self, test, subtest, err)
+        if err is not None:
+            self.callback.notifySubTestFailed(test, subtest, err)
 
 class RollbackImporter:
     """This tricky little class is used to make sure that modules under test
@@ -212,6 +220,8 @@ class RollbackImporter:
 
 class QtTestRunner(BaseGUITestRunner):
     """An implementation of BaseGUITestRunner using Qt."""
+    separator1 = '=' * 70
+    separator2 = '-' * 70
 
     def initGUI(self, root, initialTestName):
         """Set up the GUI inside the given root window. The test name entry
@@ -234,6 +244,13 @@ class QtTestRunner(BaseGUITestRunner):
 
     def errorDialog(self, title, message):
         return self.gui.errorDialog(title, message)
+
+    def getDescription(self, test):
+        doc_first_line = test.shortDescription()
+        if doc_first_line:
+            return '\n'.join((str(test), doc_first_line))
+        else:
+            return str(test)
 
     def notifyRunning(self):
         self.runCountVar = 0
@@ -266,6 +283,16 @@ class QtTestRunner(BaseGUITestRunner):
         self.gui.insertError("Failure: %s" % test, tracebackText)
         self.errorInfo.append((test, err))
         self.stream.write("FAILED: {}\n{}\n".format(test, tracebackText))
+
+    def notifySubTestFailed(self, test, subtest, err):
+        tracebackLines = traceback.format_exception(*err + (-1,))
+        tracebackText = "".join(tracebackLines)
+        self.gui.insertError("Fail: %s" % subtest, tracebackText)
+        self.errorInfo.append((subtest, err))
+        self.stream.write("{}\n".format(self.separator1))
+        self.stream.write("FAIL: {}\n".format(self.getDescription(subtest)))
+        self.stream.write("{}\n".format(self.separator2))
+        self.stream.write("{}\n".format(tracebackText))
 
     def notifyTestErrored(self, test, err):
         self.errorCountVar = self.errorCountVar + 1
