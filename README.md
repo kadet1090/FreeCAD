@@ -36,6 +36,32 @@ whether you are a hobbyist, programmer, experienced CAD user, student or teacher
     * **Python** FreeCAD offers a broad Python API
     * **Qt** Graphical user interface built with Qt
 
+    
+    
+History
+-------
+
+This repository is forked from the 1.1 FreeCAD version on GitHub, at commit #xyz (Werner can you please fill this). The reasons for this forking are numerous : 
+
+* **Data Compatibility**
+
+During the 0.22=>1.0 development period, a single commit on the previous GitHub repository, [#12714](https://github.com/FreeCAD/FreeCAD/pull/12714), made the new data format incompatible with the original data format used since the beginnings of FreeCAD. Some backwards compatibility scripts were introduced, but no forward compatibility was possible. Furthermore, this data incompatibility was subtle and not documented, leading to data corruption.
+
+This data incompatibility lead also to the impossibility to develop a same model across several designers using different FreeCAD versions, eliminating one of FreeCAD's strength to be multi-platform. Since there couldn't be any guarantee that a team of designers using FreeCAD on MacOS, Linux, Windows or *BSD would all use the exact same version, it became instantly impossible to share a complex assembly, limiting usage of FreeCAD to hobbyists, while our goal is to aim for FreeCAD to be equal to the top-tier CAD systems worldwide.
+
+* **Development Model**
+
+The introduction of this data format change was not only a technical issue, but the manner in which it was introduced, without any discussion and testing, destroyed the most valuable asset of any free and open-source software : trust. 
+
+The subsequent departure of most of the main developers, either dropping out silently or banned with a loud bang, called for an alternative hosting restoring the successful 20 year old development model, based on code quality and testing, and not on the fast addition of questionable features. 
+
+* **Independence**
+
+The previous hosting platform, GitHub, while open nominally, is actually the private property of a US corporation hostile to free and open-source software (Microsoft). This, combined with the recent injection of private venture capital money by an unknown US startup (Ondsel) and obvious conflicts of interest between some FreeCAD developers and unknown financial backing, made some of us question the true  independence of FreeCAD. Thus, a team of former core FreeCAD developers, including one of its original founders (Werner Mayer), decided to create this fork hosted on a European plateform [codeberg.org](https://codeberg.org) (based in Germany) by a non-profit organisation : [Codeberg](https://codeberg.org/about)
+
+
+The goal of this fork is to maintain the original credo of FreeCAD to be a truly free and open-source software (FOSS) with a strong and lively community. We believe that true engineers need stability and quality before shiny features, and we believe that the external addon ecosystem is as important for FreeCAD as the core software. 
+
 
 Installing
 ----------
@@ -49,6 +75,7 @@ software center application.
 For development releases visit the [weekly-builds page](https://github.com/FreeCAD/FreeCAD-Bundle/releases/tag/weekly-builds).
 
 Other options are described on the [wiki Download page](https://wiki.freecad.org/Download).
+
 
 Compiling
 ---------
