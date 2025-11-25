@@ -39,7 +39,6 @@
 #include "../App/DisplayedFilesModel.h"
 #include "App/Application.h"
 #include <Base/Color.h>
-#include <gsl/pointers>
 
 using namespace Start;
 
@@ -50,7 +49,7 @@ FileCardDelegate::FileCardDelegate(QObject* parent)
         "User parameter:BaseApp/Preferences/Mod/Start");
     _widget = std::make_unique<QWidget>();
     _widget->setObjectName(QLatin1String("thumbnailWidget"));
-    auto layout = gsl::owner<QVBoxLayout*>(new QVBoxLayout());
+    auto layout = new QVBoxLayout();
     layout->setSpacing(0);
     _widget->setLayout(layout);
 }

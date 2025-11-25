@@ -37,8 +37,6 @@
 #include "DlgStartPreferencesImp.h"
 
 
-#include <gsl/pointers>
-
 #include "Manipulator.h"
 #include "StartView.h"
 
@@ -107,7 +105,7 @@ public:
 
 PyObject* initModule()
 {
-    auto newModule = gsl::owner<Module*>(new Module);
+    auto newModule = new Module;
     return Base::Interpreter().addModule(newModule);  // Transfer ownership
 }
 
