@@ -36,8 +36,6 @@
 #include <Gui/MainWindow.h>
 #include <Gui/MenuManager.h>
 
-#include <gsl/pointers>
-
 DEF_STD_CMD(CmdStart)
 
 CmdStart::CmdStart()
@@ -58,7 +56,7 @@ void CmdStart::activated(int iMsg)
     auto mw = Gui::getMainWindow();
     auto existingView = mw->findChild<StartGui::StartView*>(QLatin1String("StartView"));
     if (!existingView) {
-        existingView = gsl::owner<StartGui::StartView*>(new StartGui::StartView(mw));
+        existingView = new StartGui::StartView(mw);
         mw->addWindow(existingView);  // Transfers ownership
         QObject::connect(mw,
                          &Gui::MainWindow::recentFileAdded,
@@ -73,7 +71,7 @@ void StartGui::Manipulator::modifyMenuBar(Gui::MenuItem* menuBar)
 {
     Gui::CommandManager& rcCmdMgr = Gui::Application::Instance->commandManager();
     if (!rcCmdMgr.getCommandByName("Start_Start")) {
-        auto newCommand = gsl::owner<CmdStart*>(new CmdStart);
+        auto newCommand = new CmdStart;
         rcCmdMgr.addCommand(newCommand);  // Transfer ownership
     }
 

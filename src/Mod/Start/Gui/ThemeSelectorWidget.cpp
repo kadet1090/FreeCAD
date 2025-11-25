@@ -32,7 +32,6 @@
 #endif
 
 #include "ThemeSelectorWidget.h"
-#include <gsl/pointers>
 #include <App/Application.h>
 #include <Gui/Command.h>
 #include <Gui/PreferencePackManager.h>
@@ -121,7 +120,7 @@ void ThemeSelectorWidget::setupButtons(QBoxLayout* layout)
         "User parameter:BaseApp/Preferences/MainWindow");
     auto styleSheetName = QString::fromStdString(hGrp->GetASCII("StyleSheet"));
     for (const auto& theme : themeMap) {
-        auto button = gsl::owner<QToolButton*>(new QToolButton());
+        auto button = new QToolButton();
 
         if (theme.first == Theme::Classic && shouldHideClassicTheme()) {
             button->setVisible(false);
@@ -156,10 +155,10 @@ void ThemeSelectorWidget::setupButtons(QBoxLayout* layout)
 
 void ThemeSelectorWidget::setupUi()
 {
-    auto* outerLayout = gsl::owner<QVBoxLayout*>(new QVBoxLayout(this));
-    auto* buttonLayout = gsl::owner<QHBoxLayout*>(new QHBoxLayout);
-    _titleLabel = gsl::owner<QLabel*>(new QLabel);
-    _descriptionLabel = gsl::owner<QLabel*>(new QLabel);
+    auto* outerLayout = new QVBoxLayout(this);
+    auto* buttonLayout = new QHBoxLayout;
+    _titleLabel = new QLabel;
+    _descriptionLabel = new QLabel;
     outerLayout->addWidget(_titleLabel);
     outerLayout->addLayout(buttonLayout);
     outerLayout->addWidget(_descriptionLabel);
