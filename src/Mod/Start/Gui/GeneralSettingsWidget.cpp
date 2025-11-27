@@ -34,7 +34,6 @@
 #endif
 
 #include "GeneralSettingsWidget.h"
-#include <gsl/pointers>
 #include <App/Application.h>
 #include <Base/Parameter.h>
 #include <Base/UnitsApi.h>
@@ -63,9 +62,9 @@ void GeneralSettingsWidget::setupUi()
         qDeleteAll(findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly));
         delete layout();
     }
-    _languageLabel = gsl::owner<QLabel*>(new QLabel);
-    _navigationStyleLabel = gsl::owner<QLabel*>(new QLabel);
-    _unitSystemLabel = gsl::owner<QLabel*>(new QLabel);
+    _languageLabel = new QLabel;
+    _navigationStyleLabel = new QLabel;
+    _unitSystemLabel = new QLabel;
     createLanguageComboBox();
     createUnitSystemComboBox();
     createNavigationStyleComboBox();
@@ -75,7 +74,7 @@ void GeneralSettingsWidget::setupUi()
 
 void GeneralSettingsWidget::createHorizontalUi()
 {
-    auto mainLayout = gsl::owner<QHBoxLayout*>(new QHBoxLayout(this));
+    auto mainLayout = new QHBoxLayout(this);
     const int extraSpace {36};
     mainLayout->addWidget(_languageLabel);
     mainLayout->addWidget(_languageComboBox);
@@ -95,13 +94,13 @@ QString GeneralSettingsWidget::createLabelText(const QString& translatedText) co
     return h2Start + translatedText + h2End;
 }
 
-gsl::owner<QComboBox*> GeneralSettingsWidget::createLanguageComboBox()
+QComboBox* GeneralSettingsWidget::createLanguageComboBox()
 {
     ParameterGrp::handle hGrp =
         App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/General");
     auto langToStr = Gui::Translator::instance()->activeLanguage();
     QByteArray language = hGrp->GetASCII("Language", langToStr.c_str()).c_str();
-    auto comboBox = gsl::owner<QComboBox*>(new QComboBox);
+    auto comboBox = new QComboBox;
     comboBox->addItem(QStringLiteral("English"), QByteArray("English"));
     Gui::TStringMap list = Gui::Translator::instance()->supportedLocales();
     int index {1};
@@ -140,10 +139,10 @@ gsl::owner<QComboBox*> GeneralSettingsWidget::createLanguageComboBox()
     return comboBox;
 }
 
-gsl::owner<QComboBox*> GeneralSettingsWidget::createUnitSystemComboBox()
+QComboBox* GeneralSettingsWidget::createUnitSystemComboBox()
 {
     // Contents are created in retranslateUi()
-    auto comboBox = gsl::owner<QComboBox*>(new QComboBox);
+    auto comboBox = new QComboBox;
     _unitSystemComboBox = comboBox;
     connect(_unitSystemComboBox,
             qOverload<int>(&QComboBox::currentIndexChanged),
@@ -152,10 +151,10 @@ gsl::owner<QComboBox*> GeneralSettingsWidget::createUnitSystemComboBox()
     return comboBox;
 }
 
-gsl::owner<QComboBox*> GeneralSettingsWidget::createNavigationStyleComboBox()
+QComboBox* GeneralSettingsWidget::createNavigationStyleComboBox()
 {
     // Contents are created in retranslateUi()
-    auto comboBox = gsl::owner<QComboBox*>(new QComboBox);
+    auto comboBox = new QComboBox;
     _navigationStyleComboBox = comboBox;
     connect(_navigationStyleComboBox,
             qOverload<int>(&QComboBox::currentIndexChanged),

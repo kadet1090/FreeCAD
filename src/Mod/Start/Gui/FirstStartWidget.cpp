@@ -38,7 +38,6 @@
 #include "GeneralSettingsWidget.h"
 
 #include <App/Application.h>
-#include <gsl/pointers>
 
 using namespace StartGui;
 
@@ -57,22 +56,22 @@ FirstStartWidget::FirstStartWidget(QWidget* parent)
 
 void FirstStartWidget::setupUi()
 {
-    auto outerLayout = gsl::owner<QVBoxLayout*>(new QVBoxLayout(this));
+    auto outerLayout = new QVBoxLayout(this);
     outerLayout->setAlignment(Qt::AlignCenter);
-    _welcomeLabel = gsl::owner<QLabel*>(new QLabel);
+    _welcomeLabel = new QLabel;
     outerLayout->addWidget(_welcomeLabel);
-    _descriptionLabel = gsl::owner<QLabel*>(new QLabel);
+    _descriptionLabel = new QLabel;
     outerLayout->addWidget(_descriptionLabel);
 
-    _themeSelectorWidget = gsl::owner<ThemeSelectorWidget*>(new ThemeSelectorWidget(this));
-    _generalSettingsWidget = gsl::owner<GeneralSettingsWidget*>(new GeneralSettingsWidget(this));
+    _themeSelectorWidget = new ThemeSelectorWidget(this);
+    _generalSettingsWidget = new GeneralSettingsWidget(this);
 
     outerLayout->addWidget(_generalSettingsWidget);
     outerLayout->addWidget(_themeSelectorWidget);
 
-    _doneButton = gsl::owner<QPushButton*>(new QPushButton);
+    _doneButton = new QPushButton;
     connect(_doneButton, &QPushButton::clicked, this, &FirstStartWidget::dismissed);
-    auto buttonBar = gsl::owner<QHBoxLayout*>(new QHBoxLayout);
+    auto buttonBar = new QHBoxLayout;
     buttonBar->setAlignment(Qt::AlignRight);
     buttonBar->addWidget(_doneButton);
     outerLayout->addLayout(buttonBar);

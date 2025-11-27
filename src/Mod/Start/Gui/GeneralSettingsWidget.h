@@ -25,7 +25,6 @@
 #define FREECAD_START_GENERALSETTINGSWIDGET_H
 
 #include <QWidget>
-#include <gsl/pointers>
 
 class QLabel;
 class QComboBox;
@@ -48,9 +47,9 @@ private:
     void createHorizontalUi();
 
     QString createLabelText(const QString& translatedText) const;
-    gsl::owner<QComboBox*> createLanguageComboBox();
-    gsl::owner<QComboBox*> createUnitSystemComboBox();
-    gsl::owner<QComboBox*> createNavigationStyleComboBox();
+    QComboBox* createLanguageComboBox();
+    QComboBox* createUnitSystemComboBox();
+    QComboBox* createNavigationStyleComboBox();
 
     void onLanguageChanged(int index);
     void onUnitSystemChanged(int index);
