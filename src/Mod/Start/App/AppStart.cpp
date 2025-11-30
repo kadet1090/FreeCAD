@@ -29,8 +29,6 @@
 
 #include <Base/PyObjectBase.h>
 
-#include <gsl/pointers>
-
 namespace Start
 {
 class Module: public Py::ExtensionModule<Module>
@@ -45,7 +43,7 @@ public:
 
 PyObject* initModule()
 {
-    auto newModule = gsl::owner<Module*>(new Module);
+    auto newModule = new Module;
     return Base::Interpreter().addModule(newModule);  // Transfer ownership
 }
 
