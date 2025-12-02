@@ -516,7 +516,18 @@ void Gui::SoFCDB::writeX3DFields(SoNode* node, std::map<SoNode*, std::string>& n
                         ba = ba.simplified();
                     }
 
-                    out << '\n' << Base::blanks(spaces+2) << fielddata->getFieldName(i).getString() << "=\"" << ba.data() << "\" ";
+                    // output of string fields already use quotation marks
+                    if (field->isOfType(SoMFString::getClassTypeId()) ||
+                        field->isOfType(SoSFString::getClassTypeId())) {
+                        out << '\n' << Base::blanks(spaces + 2)
+                            << fielddata->getFieldName(i).getString()
+                            << "=" << ba.data() << " ";
+                    }
+                    else {
+                        out << '\n' << Base::blanks(spaces + 2)
+                            << fielddata->getFieldName(i).getString()
+                            << "=\"" << ba.data() << "\" ";
+                    }
                 }
                 else {
                     numFieldNodes++;
