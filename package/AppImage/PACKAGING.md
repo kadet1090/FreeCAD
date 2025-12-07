@@ -83,12 +83,11 @@ Check that the compiled executable works as expected by running :
 
 * move everything from `~/AppDir/usr/lib/x86_64-linux-gnu` to `~/AppDir/usr/lib` , because with the install target it may put all your shared libraries into the directory lib/x86_64-linux-gnu. In order to get a working image you have to move them one level up so that they are directly inside lib.
 
-* not sure about the following :  
 
-```
-cd ..  
-mkdir ~/AppDir/usr/lib/qml
-```
+[//]: # (not sure about the following :  )
+[//]: # (cd ..  )
+[//]: # (mkdir ~/AppDir/usr/lib/qml)
+
 
 
 ### Make metadata
@@ -110,9 +109,10 @@ _./AppDir/usr/share/applications/freecad.desktop_
 
 ### run *linuxdeploy* and *linuxdeploy-plugin-qt*
 
+[//]: # (export QML_SOURCES_PATHS=./AppDir/usr/lib/qml)
+
 ```
 export LD_LIBRARY_PATH=./build/lib/:./AppDir/usr/lib/
-export QML_SOURCES_PATHS=./AppDir/usr/lib/qml
 
 ./tools/linuxdeploy-x86_64.AppImage                            \
     --appdir AppDir                                            \
@@ -123,14 +123,20 @@ export QML_SOURCES_PATHS=./AppDir/usr/lib/qml
 ./tools/linuxdeploy-plugin-qt-x86_64.AppImage --appdir AppDir
 ```
 
-* copy Python distribution files
-* copy /usr/lib/python3.11 to ./AppImageDir/usr/lib
-* copy /usr/lib/python to ./AppImageDir/usr/lib
-* remove all `*.pyc` files and `__pycache__` directories
-* saves 200Mb
+Copy Python distribution files
+------------------------------
+
+* copy /usr/lib/python3.11 to ./AppImageDir/usr/lib  
+* copy /usr/lib/python3 to ./AppImageDir/usr/lib  
+* remove all `*.pyc` files and `__pycache__` directories  
+* saves 200Mb  
+
+```
 cd AppDir/usr/lib
 find -name *.pyc | xargs rm
 find -name __pycache__ | xargs rmdir
+```
+
 * go back : `cd ../..`
 
 * run linuxdeploy again
