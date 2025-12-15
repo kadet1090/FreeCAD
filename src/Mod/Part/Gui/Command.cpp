@@ -63,6 +63,7 @@
 #include "DlgPrimitives.h"
 #include "DlgProjectionOnSurface.h"
 #include "DlgRevolution.h"
+#include "DlgTextToWire.h"
 #include "Mirroring.h"
 #include "SectionCutting.h"
 #include "TaskCheckGeometry.h"
@@ -2168,6 +2169,34 @@ bool CmdPartProjectionOnSurface::isActive()
 }
 
 //===========================================================================
+// Part_Text2Wire
+//===========================================================================
+DEF_STD_CMD_A(CmdPartText2Wire)
+
+CmdPartText2Wire::CmdPartText2Wire()
+    :Command("Part_Text2Wire")
+{
+    sAppModule = "Part";
+    sGroup = QT_TR_NOOP("Part");
+    sMenuText = QT_TR_NOOP("Text to wire...");
+    sToolTipText = QT_TR_NOOP("Convert text to wire");
+    sWhatsThis = "Part_Text2Wire";
+    sStatusTip = sToolTipText;
+}
+
+void CmdPartText2Wire::activated(int iMsg)
+{
+    Q_UNUSED(iMsg);
+    auto dlg = new PartGui::TaskTextToWire();
+    Gui::Control().showDialog(dlg);
+}
+
+bool CmdPartText2Wire::isActive()
+{
+    return (hasActiveDocument() && !Gui::Control().activeDialog());
+}
+
+//===========================================================================
 // Part_SectionCut
 //===========================================================================
 
@@ -2437,6 +2466,7 @@ void CreatePartCommands()
     rcCmdMgr.addCommand(new CmdColorPerFace());
     rcCmdMgr.addCommand(new CmdBoxSelection());
     rcCmdMgr.addCommand(new CmdPartProjectionOnSurface());
+    rcCmdMgr.addCommand(new CmdPartText2Wire());
     rcCmdMgr.addCommand(new CmdPartSectionCut());
 
     rcCmdMgr.addCommand(new CmdPartCoordinateSystem());
