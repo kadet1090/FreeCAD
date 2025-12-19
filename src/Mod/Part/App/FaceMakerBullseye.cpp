@@ -45,6 +45,8 @@
 #include "TopoShape.h"
 #include "WireJoiner.h"
 
+#include <Base/TimeInfo.h>
+
 
 using namespace Part;
 
@@ -158,6 +160,7 @@ void FaceMakerBullseye::Build_Essence()
                 }
             }
             else {
+                Base::TimeTracker tracker("make_unique<FaceDriller>");
                 // wire is not on a face. Start a new face.
                 faces.push_back(std::make_unique<FaceDriller>(plane, w));
             }
@@ -183,6 +186,7 @@ void FaceMakerBullseye::Build_Essence()
 
 FaceMakerBullseye::FaceDriller::FaceDriller(const gp_Pln& plane, TopoDS_Wire outerWire)
 {
+    Base::TimeTracker tracker("FaceDriller::FaceDriller");
     this->myPlane = plane;
     this->myFace = TopoDS_Face();
 
@@ -190,6 +194,8 @@ FaceMakerBullseye::FaceDriller::FaceDriller(const gp_Pln& plane, TopoDS_Wire out
     if (getWireDirection(myPlane, outerWire) < 0) {
         outerWire.Reverse();
     }
+
+    tracker.report("getWireDirection");
 
     myHPlane = new Geom_Plane(this->myPlane);
     BRep_Builder builder;
@@ -338,16 +344,22 @@ void FaceMakerBullseye::FaceDriller::addHole(const WireInfo& wireInfo, std::vect
 
 int FaceMakerBullseye::FaceDriller::getWireDirection(const gp_Pln& plane, const TopoDS_Wire& wire)
 {
+    Base::TimeTracker tracker("FaceMakerBullseye::FaceDriller::getWireDirection");
     // make a test face
     BRepBuilderAPI_MakeFace mkFace(wire, /*onlyplane=*/Standard_True);
+    tracker.report("mkFace");
     TopoDS_Face tmpFace = mkFace.Face();
+    tracker.report("mkFace.Face()");
     if (tmpFace.IsNull()) {
         throw Standard_Failure("getWireDirection: Failed to create face from wire");
     }
+    tracker.report("mkFace");
 
     // compare face surface normal with our plane's one
     BRepAdaptor_Surface surf(tmpFace);
     bool normal_co = surf.Plane().Axis().Direction().Dot(plane.Axis().Direction()) > 0;
+
+    tracker.report("normal_co");
 
     // unlikely, but just in case OCC decided to reverse our wire for the face...  take that into
     // account!
