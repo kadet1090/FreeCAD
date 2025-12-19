@@ -27,6 +27,9 @@
 #ifndef BASE_TIMEINFO_H
 #define BASE_TIMEINFO_H
 
+#include "Console.h"
+
+
 #include <chrono>
 #include <sstream>
 #include <string>
@@ -129,6 +132,42 @@ public:
         return ss.str();
     }
 };  // class TimeElapsed
+
+class TimeTracker
+{
+public:
+    explicit TimeTracker(const std::string& name)
+        : name(name)
+        , lastCheckpoint("start")
+    {}
+
+    void report(const std::string& checkpoint = "")
+    {
+        Console().warning(
+            "(%s) %s -> %s: %f (%f total)\n",
+            name,
+            lastCheckpoint,
+            checkpoint,
+            TimeElapsed::diffTimeF(lastCheckpointTime),
+            TimeElapsed::diffTimeF(start)
+        );
+
+        lastCheckpoint = checkpoint;
+        lastCheckpointTime.setCurrent();
+    }
+
+    ~TimeTracker()
+    {
+        report("finish");
+    }
+
+private:
+    std::string name;
+    std::string lastCheckpoint;
+
+    TimeElapsed start;
+    TimeElapsed lastCheckpointTime;
+};
 
 }  // namespace Base
 
