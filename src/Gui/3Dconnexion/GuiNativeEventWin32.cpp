@@ -99,9 +99,8 @@ static const int kTimeToLive = 5;
     SpaceNavigator for Notebooks: USB\0x046d:0xc628
     SpacePilot Pro: USB\0x046d:0xc629
     SpaceMouse Enterprise: USB\0x256f:0xc633
-
-    Not yet supported:
     SpaceMouse Compact: USB\0x256f:0xc635
+    SpaceMouse Module: USB\0x256f:0xc636
 
     Not supported:
     CadMan: USB\0x046d:0xc605
@@ -128,7 +127,8 @@ enum e3dconnexion_pid {
    eSpaceMousePROWireless = 0xc631,
    eSpaceMousePROWirelessReceiver = 0xc632,
    eSpaceMouseEnterprise = 0xc633,
-   eSpaceMouseCompact = 0xc635
+   eSpaceMouseCompact = 0xc635,
+   eSpaceMouseModule = 0xc636
 };
 
 enum e3dmouse_virtual_key
