@@ -24,8 +24,8 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <array>
-#include <set>
+# include <array>
+# include <set>
 #endif
 
 #include "Tools2D.h"
@@ -338,8 +338,7 @@ bool Polygon2d::Contains(const Vector2d& rclV) const
     return sTorsion != 0;
 }
 
-void Polygon2d::Intersect(const Polygon2d& rclPolygon,
-                          std::list<Polygon2d>& rclResultPolygonList) const
+void Polygon2d::Intersect(const Polygon2d& rclPolygon, std::list<Polygon2d>& rclResultPolygonList) const
 {
     // trim the passed polygon with the current one, the result is a list of polygons (subset of the
     // passed polygon) your own (trim) polygon is closed

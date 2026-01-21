@@ -23,9 +23,9 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <QCoreApplication>
-#include <QCoreApplication>
-#include <QLayout>
+# include <QCoreApplication>
+# include <QCoreApplication>
+# include <QLayout>
 #endif
 
 #include "Manipulator.h"
@@ -58,10 +58,12 @@ void CmdStart::activated(int iMsg)
     if (!existingView) {
         existingView = new StartGui::StartView(mw);
         mw->addWindow(existingView);  // Transfers ownership
-        QObject::connect(mw,
-                         &Gui::MainWindow::recentFileAdded,
-                         existingView,
-                         &StartGui::StartView::recentFileAdded);
+        QObject::connect(
+            mw,
+            &Gui::MainWindow::recentFileAdded,
+            existingView,
+            &StartGui::StartView::recentFileAdded
+        );
     }
     Gui::getMainWindow()->setActiveWindow(existingView);
     existingView->show();

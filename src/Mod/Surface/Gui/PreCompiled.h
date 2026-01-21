@@ -28,25 +28,25 @@
 #ifdef _PreComp_
 
 // STL
-#include <sstream>
+# include <sstream>
 
 // OpenCasCade
-#include <BRepAdaptor_Curve.hxx>
-#include <GeomAPI_ProjectPointOnCurve.hxx>
-#include <GeomAbs_Shape.hxx>
-#include <TopExp.hxx>
-#include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
-#include <TopTools_IndexedMapOfShape.hxx>
-#include <TopTools_ListIteratorOfListOfShape.hxx>
-#include <TopoDS_Edge.hxx>
-#include <TopoDS_Shape.hxx>
+# include <BRepAdaptor_Curve.hxx>
+# include <GeomAPI_ProjectPointOnCurve.hxx>
+# include <GeomAbs_Shape.hxx>
+# include <TopExp.hxx>
+# include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
+# include <TopTools_IndexedMapOfShape.hxx>
+# include <TopTools_ListIteratorOfListOfShape.hxx>
+# include <TopoDS_Edge.hxx>
+# include <TopoDS_Shape.hxx>
 
 // Qt
-#include <QAction>
-#include <QApplication>
-#include <QMenu>
-#include <QMessageBox>
-#include <QTimer>
+# include <QAction>
+# include <QApplication>
+# include <QMenu>
+# include <QMessageBox>
+# include <QTimer>
 
 #endif  //_PreComp_
 

@@ -22,9 +22,9 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <limits>
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <Geom_Parabola.hxx>
+# include <limits>
+# include <BRepBuilderAPI_MakeEdge.hxx>
+# include <Geom_Parabola.hxx>
 #endif
 
 #include <Base/Numbers.h>
@@ -50,8 +50,10 @@ Voronoi::point_type pointFromVertex(const Voronoi::vertex_type v)
     return pt;
 }
 
-Voronoi::point_type orthognalProjection(const Voronoi::point_type& point,
-                                        const Voronoi::segment_type& segment)
+Voronoi::point_type orthognalProjection(
+    const Voronoi::point_type& point,
+    const Voronoi::segment_type& segment
+)
 {
     // move segment so it goes through the origin (s)
     Voronoi::point_type offset;
@@ -125,10 +127,12 @@ double signedDistanceBetween(const pt0_type& p0, const pt1_type& p1, double scal
 }
 
 
-void addDistanceBetween(const Voronoi::diagram_type::vertex_type* v0,
-                        const Voronoi::point_type& p1,
-                        Py::List* list,
-                        double scale)
+void addDistanceBetween(
+    const Voronoi::diagram_type::vertex_type* v0,
+    const Voronoi::point_type& p1,
+    Py::List* list,
+    double scale
+)
 {
     if (v0) {
         list->append(Py::Float(distanceBetween(*v0, p1, scale)));
@@ -139,10 +143,12 @@ void addDistanceBetween(const Voronoi::diagram_type::vertex_type* v0,
     }
 }
 
-void addProjectedDistanceBetween(const Voronoi::diagram_type::vertex_type* v0,
-                                 const Voronoi::segment_type& segment,
-                                 Py::List* list,
-                                 double scale)
+void addProjectedDistanceBetween(
+    const Voronoi::diagram_type::vertex_type* v0,
+    const Voronoi::segment_type& segment,
+    Py::List* list,
+    double scale
+)
 {
     if (v0) {
         Voronoi::point_type p0;
@@ -159,10 +165,7 @@ void addProjectedDistanceBetween(const Voronoi::diagram_type::vertex_type* v0,
     }
 }
 
-bool addDistancesToPoint(const VoronoiEdge* edge,
-                         Voronoi::point_type p,
-                         Py::List* list,
-                         double scale)
+bool addDistancesToPoint(const VoronoiEdge* edge, Voronoi::point_type p, Py::List* list, double scale)
 {
     addDistanceBetween(edge->ptr->vertex0(), p, list, scale);
     addDistanceBetween(edge->ptr->vertex1(), p, list, scale);
@@ -191,9 +194,7 @@ bool pointsMatch(const Voronoi::point_type& p0, const Voronoi::point_type& p1, d
     return 1e-6 > distanceBetween(p0, p1, scale);
 }
 
-bool isPointOnSegment(const Voronoi::point_type& point,
-                      const Voronoi::segment_type& segment,
-                      double scale)
+bool isPointOnSegment(const Voronoi::point_type& point, const Voronoi::segment_type& segment, double scale)
 {
     return pointsMatch(point, low(segment), scale) || pointsMatch(point, high(segment), scale);
 }
@@ -287,8 +288,10 @@ PyObject* VoronoiEdgePy::richCompare(PyObject* lhs, PyObject* rhs, int op)
     return cmp;
 }
 
-const Voronoi::voronoi_diagram_type::edge_type* getEdgeFromPy(VoronoiEdgePy* e,
-                                                              bool throwIfNotBound = true)
+const Voronoi::voronoi_diagram_type::edge_type* getEdgeFromPy(
+    VoronoiEdgePy* e,
+    bool throwIfNotBound = true
+)
 {
     auto self = e->getVoronoiEdgePtr();
     if (self->isBound()) {
@@ -701,10 +704,10 @@ PyObject* VoronoiEdgePy::getSegmentAngle(PyObject* args) const
             double a0 = e->dia->angleOfSegment(i0);
             double a1 = e->dia->angleOfSegment(i1);
             double a = a0 - a1;
-            if (a > pi/2) {
+            if (a > pi / 2) {
                 a -= pi;
             }
-            else if (a < -pi/2) {
+            else if (a < -pi / 2) {
                 a += pi;
             }
             return Py::new_reference_to(Py::Float(a));

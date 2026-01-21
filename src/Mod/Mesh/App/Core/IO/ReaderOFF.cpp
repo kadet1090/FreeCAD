@@ -23,10 +23,10 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
-#include <istream>
-#include <sstream>
+# include <boost/algorithm/string.hpp>
+# include <boost/regex.hpp>
+# include <istream>
+# include <sstream>
 #endif
 
 #include "Core/MeshKernel.h"

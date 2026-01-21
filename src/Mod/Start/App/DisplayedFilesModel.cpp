@@ -23,16 +23,16 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <boost/algorithm/string/predicate.hpp>
-#include <QByteArray>
-#include <QCryptographicHash>
-#include <QDateTime>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
-#include <QLocale>
-#include <QStandardPaths>
-#include <QUrl>
+# include <boost/algorithm/string/predicate.hpp>
+# include <QByteArray>
+# include <QCryptographicHash>
+# include <QDateTime>
+# include <QDir>
+# include <QFile>
+# include <QFileInfo>
+# include <QLocale>
+# include <QStandardPaths>
+# include <QUrl>
 #endif
 
 #include "DisplayedFilesModel.h"
@@ -81,8 +81,7 @@ FileStats fileInfoFromFreeCADFile(const std::string& path)
     auto metadata = proj.getMetadata();
     FileStats result;
     result.insert(std::make_pair(DisplayedFilesModelRoles::author, metadata.createdBy));
-    result.insert(
-        std::make_pair(DisplayedFilesModelRoles::modifiedTime, metadata.lastModifiedDate));
+    result.insert(std::make_pair(DisplayedFilesModelRoles::modifiedTime, metadata.lastModifiedDate));
     result.insert(std::make_pair(DisplayedFilesModelRoles::creationTime, metadata.creationDate));
     result.insert(std::make_pair(DisplayedFilesModelRoles::company, metadata.company));
     result.insert(std::make_pair(DisplayedFilesModelRoles::license, metadata.license));
@@ -208,11 +207,11 @@ bool freecadCanOpen(const QString& extension)
 {
     std::string ext = extension.toStdString();
     auto importTypes = App::GetApplication().getImportTypes();
-    return std::find_if(importTypes.begin(),
-                        importTypes.end(),
-                        [&ext](const auto& item) {
-                            return boost::iequals(item, ext);
-                        })
+    return std::find_if(
+               importTypes.begin(),
+               importTypes.end(),
+               [&ext](const auto& item) { return boost::iequals(item, ext); }
+           )
         != importTypes.end();
 }
 
@@ -274,8 +273,7 @@ QVariant DisplayedFilesModel::data(const QModelIndex& index, int roleAsInt) cons
     switch (roleAsInt) {
         case Qt::ItemDataRole::ToolTipRole: {
             auto toolTip = QString::fromStdString(mapEntry.at(DisplayedFilesModelRoles::path));
-            auto addInfo = [&toolTip, &mapEntry](const QString& text,
-                                                 DisplayedFilesModelRoles role) {
+            auto addInfo = [&toolTip, &mapEntry](const QString& text, DisplayedFilesModelRoles role) {
                 auto it = mapEntry.find(role);
                 if (it != mapEntry.end()) {
                     auto str = QString::fromStdString(it->second);

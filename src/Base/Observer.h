@@ -122,8 +122,10 @@ public:
     virtual ~Subject()
     {
         if (!observerSet.empty()) {
-            Base::Console().DeveloperWarning(std::string("~Subject()"),
-                                             "Not detached all observers yet\n");
+            Base::Console().DeveloperWarning(
+                std::string("~Subject()"),
+                "Not detached all observers yet\n"
+            );
         }
     }
 
@@ -139,9 +141,11 @@ public:
         size_t count = observerSet.size();
         observerSet.insert(ToObserv);
         if (observerSet.size() == count) {
-            Base::Console().DeveloperWarning(std::string("Subject::Attach"),
-                                             "Observer %p already attached\n",
-                                             static_cast<void*>(ToObserv));
+            Base::Console().DeveloperWarning(
+                std::string("Subject::Attach"),
+                "Observer %p already attached\n",
+                static_cast<void*>(ToObserv)
+            );
         }
 #else
         observerSet.insert(ToObserv);
@@ -160,9 +164,11 @@ public:
         size_t count = observerSet.size();
         observerSet.erase(ToObserv);
         if (observerSet.size() == count) {
-            Base::Console().DeveloperWarning(std::string("Subject::Detach"),
-                                             "Observer %p already detached\n",
-                                             static_cast<void*>(ToObserv));
+            Base::Console().DeveloperWarning(
+                std::string("Subject::Detach"),
+                "Observer %p already detached\n",
+                static_cast<void*>(ToObserv)
+            );
         }
 #else
         observerSet.erase(ToObserv);
@@ -182,18 +188,23 @@ public:
                 it->OnChange(*this, rcReason);  // send OnChange-signal
             }
             catch (Base::Exception& e) {
-                Base::Console().Error("Unhandled Base::Exception caught when notifying observer.\n"
-                                      "The error message is: %s\n",
-                                      e.what());
+                Base::Console().Error(
+                    "Unhandled Base::Exception caught when notifying observer.\n"
+                    "The error message is: %s\n",
+                    e.what()
+                );
             }
             catch (std::exception& e) {
-                Base::Console().Error("Unhandled std::exception caught when notifying observer\n"
-                                      "The error message is: %s\n",
-                                      e.what());
+                Base::Console().Error(
+                    "Unhandled std::exception caught when notifying observer\n"
+                    "The error message is: %s\n",
+                    e.what()
+                );
             }
             catch (...) {
                 Base::Console().Error(
-                    "Unhandled unknown exception caught in when notifying observer.\n");
+                    "Unhandled unknown exception caught in when notifying observer.\n"
+                );
             }
         }
     }
@@ -233,9 +244,9 @@ private:
 
 // Workaround for MSVC
 #if defined(FreeCADBase_EXPORTS) && defined(_MSC_VER)
-#define Base_EXPORT
+# define Base_EXPORT
 #else
-#define Base_EXPORT BaseExport
+# define Base_EXPORT BaseExport
 #endif
 
 #if !defined(__MINGW32__)

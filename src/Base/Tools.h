@@ -25,7 +25,7 @@
 #define SRC_BASE_TOOLS_H_
 
 #ifndef FC_GLOBAL_H
-#include <FCGlobal.h>
+# include <FCGlobal.h>
 #endif
 #include <cmath>
 #include <ostream>
@@ -129,7 +129,7 @@ inline T sgn(T t)
 }
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846
+# define M_PI 3.14159265358979323846
 #endif
 
 template<class T>

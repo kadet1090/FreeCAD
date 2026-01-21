@@ -123,8 +123,8 @@ class BaseExport XMLReader: public XERCES_CPP_NAMESPACE::DefaultHandler
 public:
     enum ReaderStatus
     {
-        PartialRestore =
-            0,  // This bit indicates that a partial restore took place somewhere in this Document
+        PartialRestore = 0,  // This bit indicates that a partial restore took place somewhere in
+                             // this Document
         PartialRestoreInDocumentObject = 1,  // This bit is local to the DocumentObject being read
                                              // indicating a partial restore therein
         PartialRestoreInProperty = 2,        // Local to the Property
@@ -225,8 +225,7 @@ public:
 
     /// return the named attribute as unsigned integer (does type checking); if missing return
     /// defaultValue
-    unsigned long getAttributeAsUnsigned(const char* AttrName,
-                                         const char* defaultValue = nullptr) const;
+    unsigned long getAttributeAsUnsigned(const char* AttrName, const char* defaultValue = nullptr) const;
 
     /// return the named attribute as a double floating point (does type checking); if missing
     /// return defaultValue
@@ -283,13 +282,13 @@ protected:
     //@{
     void startDocument() override;
     void endDocument() override;
-    void startElement(const XMLCh* const uri,
-                      const XMLCh* const localname,
-                      const XMLCh* const qname,
-                      const XERCES_CPP_NAMESPACE::Attributes& attrs) override;
-    void endElement(const XMLCh* const uri,
-                    const XMLCh* const localname,
-                    const XMLCh* const qname) override;
+    void startElement(
+        const XMLCh* const uri,
+        const XMLCh* const localname,
+        const XMLCh* const qname,
+        const XERCES_CPP_NAMESPACE::Attributes& attrs
+    ) override;
+    void endElement(const XMLCh* const uri, const XMLCh* const localname, const XMLCh* const qname) override;
     void characters(const XMLCh* const chars, const XMLSize_t length) override;
     void ignorableWhitespace(const XMLCh* const chars, const XMLSize_t length) override;
     //@}

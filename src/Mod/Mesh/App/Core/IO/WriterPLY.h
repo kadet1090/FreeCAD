@@ -61,7 +61,8 @@ private:
         binary_little_endian
     };
 
-    struct Vertex {
+    struct Vertex
+    {
         Base::Vector3f point;
         bool hasMaterial;
         Base::Color color;

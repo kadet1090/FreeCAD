@@ -24,15 +24,15 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <QFile>
-#include <QFileIconProvider>
-#include <QImageReader>
-#include <QPainter>
-#include <QStyleOptionViewItem>
-#include <QLabel>
-#include <QModelIndex>
-#include <QVBoxLayout>
-#include <QApplication>
+# include <QFile>
+# include <QFileIconProvider>
+# include <QImageReader>
+# include <QPainter>
+# include <QStyleOptionViewItem>
+# include <QLabel>
+# include <QModelIndex>
+# include <QVBoxLayout>
+# include <QApplication>
 #endif
 
 #include "FileCardDelegate.h"
@@ -46,7 +46,8 @@ FileCardDelegate::FileCardDelegate(QObject* parent)
     : QAbstractItemDelegate(parent)
 {
     _parameterGroup = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/Mod/Start");
+        "User parameter:BaseApp/Preferences/Mod/Start"
+    );
     _widget = std::make_unique<QWidget>();
     _widget->setObjectName(QLatin1String("thumbnailWidget"));
     auto layout = new QVBoxLayout();
@@ -81,12 +82,13 @@ QColor FileCardDelegate::getSelectionColor() const
     return color;
 }
 
-void FileCardDelegate::paint(QPainter* painter,
-                             const QStyleOptionViewItem& option,
-                             const QModelIndex& index) const
+void FileCardDelegate::paint(
+    QPainter* painter,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& index
+) const
 {
-    auto thumbnailSize =
-        static_cast<int>(_parameterGroup->GetInt("FileThumbnailIconsSize", 128));  // NOLINT
+    auto thumbnailSize = static_cast<int>(_parameterGroup->GetInt("FileThumbnailIconsSize", 128));  // NOLINT
     auto cardWidth = thumbnailSize;
     auto baseName = index.data(static_cast<int>(DisplayedFilesModelRoles::baseName)).toString();
     auto size = index.data(static_cast<int>(DisplayedFilesModelRoles::size)).toString();
@@ -99,9 +101,11 @@ void FileCardDelegate::paint(QPainter* painter,
     if (!image.isEmpty()) {
         pixmap->loadFromData(image);
         if (!pixmap->isNull()) {
-            auto scaled = pixmap->scaled(QSize(thumbnailSize, thumbnailSize),
-                                         Qt::AspectRatioMode::KeepAspectRatio,
-                                         Qt::TransformationMode::SmoothTransformation);
+            auto scaled = pixmap->scaled(
+                QSize(thumbnailSize, thumbnailSize),
+                Qt::AspectRatioMode::KeepAspectRatio,
+                Qt::TransformationMode::SmoothTransformation
+            );
             thumbnail->setPixmap(scaled);
         }
     }
@@ -118,11 +122,13 @@ void FileCardDelegate::paint(QPainter* painter,
         _widget->setProperty("state", QStringLiteral("pressed"));
         if (qApp->styleSheet().isEmpty()) {
             QColor color = getSelectionColor();
-            style = QStringLiteral("QWidget#thumbnailWidget {"
-                                   " border: 2px solid rgb(%1, %2, %3);"
-                                   " border-radius: 4px;"
-                                   " padding: 2px;"
-                                   "}")
+            style = QStringLiteral(
+                        "QWidget#thumbnailWidget {"
+                        " border: 2px solid rgb(%1, %2, %3);"
+                        " border-radius: 4px;"
+                        " padding: 2px;"
+                        "}"
+            )
                         .arg(color.red())
                         .arg(color.green())
                         .arg(color.blue());
@@ -132,11 +138,13 @@ void FileCardDelegate::paint(QPainter* painter,
         _widget->setProperty("state", QStringLiteral("hovered"));
         if (qApp->styleSheet().isEmpty()) {
             QColor color = getBorderColor();
-            style = QStringLiteral("QWidget#thumbnailWidget {"
-                                   " border: 2px solid rgb(%1, %2, %3);"
-                                   " border-radius: 4px;"
-                                   " padding: 2px;"
-                                   "}")
+            style = QStringLiteral(
+                        "QWidget#thumbnailWidget {"
+                        " border: 2px solid rgb(%1, %2, %3);"
+                        " border-radius: 4px;"
+                        " padding: 2px;"
+                        "}"
+            )
                         .arg(color.red())
                         .arg(color.green())
                         .arg(color.blue());
@@ -144,10 +152,12 @@ void FileCardDelegate::paint(QPainter* painter,
     }
     else if (qApp->styleSheet().isEmpty()) {
         QColor color = getBackgroundColor();
-        style = QStringLiteral("QWidget#thumbnailWidget {"
-                               " background-color: rgb(%1, %2, %3);"
-                               " border-radius: 8px;"
-                               "}")
+        style = QStringLiteral(
+                    "QWidget#thumbnailWidget {"
+                    " background-color: rgb(%1, %2, %3);"
+                    " border-radius: 8px;"
+                    "}"
+        )
                     .arg(color.red())
                     .arg(color.green())
                     .arg(color.blue());
@@ -155,8 +165,7 @@ void FileCardDelegate::paint(QPainter* painter,
 
     _widget->setStyleSheet(style);
 
-    auto elided =
-        painter->fontMetrics().elidedText(baseName, Qt::TextElideMode::ElideRight, cardWidth);
+    auto elided = painter->fontMetrics().elidedText(baseName, Qt::TextElideMode::ElideRight, cardWidth);
     auto name = std::make_unique<QLabel>(elided);
     layout->addWidget(thumbnail.get());  // Temp. ownership transfer
     layout->addWidget(name.get());       // Temp. ownership transfer
@@ -185,8 +194,8 @@ QSize FileCardDelegate::sizeHint(const QStyleOptionViewItem& option, const QMode
     auto font = QGuiApplication::font();
     auto qfm = QFontMetrics(font);
     auto textHeight = 2 * qfm.lineSpacing();
-    auto cardHeight =
-        thumbnailSize + textHeight + 2 * spacing + cardMargin.top() + cardMargin.bottom();
+    auto cardHeight = thumbnailSize + textHeight + 2 * spacing + cardMargin.top()
+        + cardMargin.bottom();
 
     return {static_cast<int>(cardWidth), static_cast<int>(cardHeight)};
 }
@@ -195,17 +204,18 @@ namespace
 {
 QPixmap pixmapToSizedQImage(const QImage& pixmap, int size)
 {
-    return QPixmap::fromImage(pixmap).scaled(size,
-                                             size,
-                                             Qt::AspectRatioMode::KeepAspectRatio,
-                                             Qt::TransformationMode::SmoothTransformation);
+    return QPixmap::fromImage(pixmap).scaled(
+        size,
+        size,
+        Qt::AspectRatioMode::KeepAspectRatio,
+        Qt::TransformationMode::SmoothTransformation
+    );
 }
 }  // namespace
 
 QPixmap FileCardDelegate::generateThumbnail(const QString& path) const
 {
-    auto thumbnailSize =
-        static_cast<int>(_parameterGroup->GetInt("FileThumbnailIconsSize", 128));  // NOLINT
+    auto thumbnailSize = static_cast<int>(_parameterGroup->GetInt("FileThumbnailIconsSize", 128));  // NOLINT
     if (path.endsWith(QLatin1String(".fcstd"), Qt::CaseSensitivity::CaseInsensitive)) {
         QImageReader reader(QLatin1String(":/icons/freecad-doc.svg"));
         reader.setScaledSize({thumbnailSize, thumbnailSize});

@@ -31,7 +31,8 @@
 
 using namespace MeshCore;
 
-namespace {
+namespace
+{
 
 struct Color_Less
 {
@@ -59,7 +60,7 @@ std::vector<Base::Color> getUniqueColors(const Material* material)
     return colors;
 }
 
-}
+}  // namespace
 
 WriterOBJ::WriterOBJ(const MeshKernel& kernel, const Material* material)
     : _kernel(kernel)
@@ -107,8 +108,10 @@ WriterOBJ::Binding WriterOBJ::GetBinding() const
 
         if (_material->binding == MeshIO::PER_FACE) {
             if (_material->diffuseColor.size() != rFacets.size()) {
-                Base::Console().Warning("Cannot export color information because there is a "
-                                        "different number of faces and colors");
+                Base::Console().Warning(
+                    "Cannot export color information because there is a "
+                    "different number of faces and colors"
+                );
             }
             else {
                 binding = Binding::PER_FACE;
@@ -116,8 +119,10 @@ WriterOBJ::Binding WriterOBJ::GetBinding() const
         }
         else if (_material->binding == MeshIO::PER_VERTEX) {
             if (_material->diffuseColor.size() != rPoints.size()) {
-                Base::Console().Warning("Cannot export color information because there is a "
-                                        "different number of points and colors");
+                Base::Console().Warning(
+                    "Cannot export color information because there is a "
+                    "different number of points and colors"
+                );
             }
             else {
                 binding = Binding::PER_VERTEX;
@@ -126,7 +131,8 @@ WriterOBJ::Binding WriterOBJ::GetBinding() const
         else if (_material->binding == MeshIO::OVERALL) {
             if (_material->diffuseColor.empty()) {
                 Base::Console().Warning(
-                    "Cannot export color information because there is no color defined");
+                    "Cannot export color information because there is no color defined"
+                );
             }
             else {
                 binding = Binding::PER_VERTEX;

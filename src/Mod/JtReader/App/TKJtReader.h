@@ -25,19 +25,19 @@
 #define JT_READER_TKJTREADER_H
 
 #ifdef JTREADER_HAVE_TKJT
-#include <JtAttribute_GeometricTransform.hxx>
-#include <JtAttribute_Material.hxx>
-#include <JtData_Model.hxx>
-#include <JtElement_ShapeLOD_TriStripSet.hxx>
-#include <JtNode_Instance.hxx>
-#include <JtNode_Partition.hxx>
-#include <JtNode_RangeLOD.hxx>
-#include <JtNode_Shape_TriStripSet.hxx>
-#include <JtNode_Shape_Vertex.hxx>
-#include <TCollection_AsciiString.hxx>
-#include <TCollection_ExtendedString.hxx>
-#include <list>
-#include <Base/Builder3D.h>
+# include <JtAttribute_GeometricTransform.hxx>
+# include <JtAttribute_Material.hxx>
+# include <JtData_Model.hxx>
+# include <JtElement_ShapeLOD_TriStripSet.hxx>
+# include <JtNode_Instance.hxx>
+# include <JtNode_Partition.hxx>
+# include <JtNode_RangeLOD.hxx>
+# include <JtNode_Shape_TriStripSet.hxx>
+# include <JtNode_Shape_Vertex.hxx>
+# include <TCollection_AsciiString.hxx>
+# include <TCollection_ExtendedString.hxx>
+# include <list>
+# include <Base/Builder3D.h>
 
 namespace JtReaderNS
 {

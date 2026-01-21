@@ -37,8 +37,10 @@ class ImportExport ReaderIges
 public:
     explicit ReaderIges(const Base::FileInfo& file);
 
-    void read(Handle(TDocStd_Document) hDoc,
-              const Message_ProgressRange& theProgress = Message_ProgressRange());
+    void read(
+        Handle(TDocStd_Document) hDoc,
+        const Message_ProgressRange& theProgress = Message_ProgressRange()
+    );
 
 private:
     Base::FileInfo file;

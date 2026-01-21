@@ -23,7 +23,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <istream>
+# include <istream>
 #endif
 
 #include "Core/Builder.h"
@@ -39,8 +39,8 @@ using namespace MeshCore;
 
 WriterSTL::WriterSTL(const MeshKernel& kernel)
     : _kernel(kernel)
-    , stlHeader{"MESH-MESH-MESH-MESH-MESH-MESH-MESH-MESH-"
-                "MESH-MESH-MESH-MESH-MESH-MESH-MESH-MESH\n"}
+    , stlHeader {"MESH-MESH-MESH-MESH-MESH-MESH-MESH-MESH-"
+                 "MESH-MESH-MESH-MESH-MESH-MESH-MESH-MESH\n"}
 {}
 
 void WriterSTL::SetHeaderData(const std::string& header)

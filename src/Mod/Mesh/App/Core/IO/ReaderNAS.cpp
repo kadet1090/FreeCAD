@@ -23,9 +23,9 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
-#include <istream>
+# include <boost/algorithm/string.hpp>
+# include <boost/regex.hpp>
+# include <istream>
 #endif
 
 #include <boost/convert.hpp>
@@ -75,7 +75,7 @@ struct QUAD
     int iV[4];
 };
 
-}
+}  // namespace
 
 ReaderNAS::ReaderNAS(MeshKernel& kernel)
     : _kernel(kernel)
@@ -87,10 +87,14 @@ bool ReaderNAS::Load(std::istream& input)
         return false;
     }
 
-    boost::regex rx_t("\\s*CTRIA3\\s+([0-9]+)\\s+([0-9]+)"
-                      "\\s+([0-9]+)\\s+([0-9]+)\\s+([0-9]+)\\s*");
-    boost::regex rx_q("\\s*CQUAD4\\s+([0-9]+)\\s+([0-9]+)"
-                      "\\s+([0-9]+)\\s+([0-9]+)\\s+([0-9]+)\\s+([0-9]+)\\s*");
+    boost::regex rx_t(
+        "\\s*CTRIA3\\s+([0-9]+)\\s+([0-9]+)"
+        "\\s+([0-9]+)\\s+([0-9]+)\\s+([0-9]+)\\s*"
+    );
+    boost::regex rx_q(
+        "\\s*CQUAD4\\s+([0-9]+)\\s+([0-9]+)"
+        "\\s+([0-9]+)\\s+([0-9]+)\\s+([0-9]+)\\s+([0-9]+)\\s*"
+    );
     boost::cmatch what;
 
     std::string line;
@@ -160,8 +164,7 @@ bool ReaderNAS::Load(std::istream& input)
                 badElementCounter++;
                 continue;
             }
-            index =
-                indexCheck.get() - 1;  // Minus one so we are zero-indexed to match existing code
+            index = indexCheck.get() - 1;  // Minus one so we are zero-indexed to match existing code
 
             // Get the high-precision versions first
             auto x = boost::convert<double>(xString, converter);
@@ -181,10 +184,12 @@ bool ReaderNAS::Load(std::istream& input)
         }
         else if (line.rfind("GRID", 0) == 0) {
 
-            boost::regex rx_spaceDelimited("\\s*GRID\\s+([0-9]+)"
-                                           "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
-                                           "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
-                                           "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)\\s*");
+            boost::regex rx_spaceDelimited(
+                "\\s*GRID\\s+([0-9]+)"
+                "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
+                "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
+                "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)\\s*"
+            );
 
             if (boost::regex_match(line.c_str(), what, rx_spaceDelimited)) {
                 // insert the read-in vertex into a map to preserve the order
@@ -270,7 +275,8 @@ bool ReaderNAS::Load(std::istream& input)
         for (int i : tri.second.iV) {
             if (mNode.find(i) == mNode.end()) {
                 Base::Console().Error(
-                    "CTRIA3 element refers to a node that does not exist, or could not be read.\n");
+                    "CTRIA3 element refers to a node that does not exist, or could not be read.\n"
+                );
                 return false;
             }
         }
@@ -281,7 +287,8 @@ bool ReaderNAS::Load(std::istream& input)
         for (int i : quad.second.iV) {
             if (mNode.find(i) == mNode.end()) {
                 Base::Console().Error(
-                    "CQUAD4 element refers to a node that does not exist, or could not be read.\n");
+                    "CQUAD4 element refers to a node that does not exist, or could not be read.\n"
+                );
                 return false;
             }
         }

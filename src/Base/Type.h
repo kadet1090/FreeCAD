@@ -31,7 +31,7 @@
 #include <set>
 #include <vector>
 #ifndef FC_GLOBAL_H
-#include <FCGlobal.h>
+# include <FCGlobal.h>
 #endif
 
 namespace Base
@@ -110,13 +110,15 @@ public:
     /// Returns all descendants from the given type
     static int getAllDerivedFrom(Type type, std::vector<Type>& list);
     /// Returns the given named type if is derived from parent type, otherwise return bad type
-    [[nodiscard]] static Type
-    getTypeIfDerivedFrom(const char* name, Type parent, bool loadModule = false);
+    [[nodiscard]] static Type getTypeIfDerivedFrom(const char* name, Type parent, bool loadModule = false);
     /// Returns the number of types created so far
     [[nodiscard]] static int getNumTypes();
     /// Creates a new type with the given name, parent and instantiation method
-    [[nodiscard]] static Type
-    createType(Type parent, const char* name, instantiationMethod method = nullptr);
+    [[nodiscard]] static Type createType(
+        Type parent,
+        const char* name,
+        instantiationMethod method = nullptr
+    );
     /// Returns the inner index of the type
     [[nodiscard]] TypeId getKey() const;
     /// Checks if the type is invalid

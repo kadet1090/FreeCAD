@@ -22,7 +22,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <QPushButton>
+# include <QPushButton>
 #endif
 
 #include <Gui/Application.h>

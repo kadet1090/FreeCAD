@@ -43,20 +43,11 @@ RegExpDialog::RegExpDialog(QWidget* parent)
     connect(ui->lineEditRegExp, &QLineEdit::textChanged, this, &RegExpDialog::performRegExp);
     connect(ui->caseInsensitiveOption, &QCheckBox::toggled, this, &RegExpDialog::performRegExp);
     connect(ui->invertedGreedinessOption, &QCheckBox::toggled, this, &RegExpDialog::performRegExp);
-    connect(ui->dotMatchesEverythingOption,
-            &QCheckBox::toggled,
-            this,
-            &RegExpDialog::performRegExp);
+    connect(ui->dotMatchesEverythingOption, &QCheckBox::toggled, this, &RegExpDialog::performRegExp);
     connect(ui->multilineOption, &QCheckBox::toggled, this, &RegExpDialog::performRegExp);
-    connect(ui->extendedPatternSyntaxOption,
-            &QCheckBox::toggled,
-            this,
-            &RegExpDialog::performRegExp);
+    connect(ui->extendedPatternSyntaxOption, &QCheckBox::toggled, this, &RegExpDialog::performRegExp);
     connect(ui->dontCaptureOption, &QCheckBox::toggled, this, &RegExpDialog::performRegExp);
-    connect(ui->useUnicodePropertiesOption,
-            &QCheckBox::toggled,
-            this,
-            &RegExpDialog::performRegExp);
+    connect(ui->useUnicodePropertiesOption, &QCheckBox::toggled, this, &RegExpDialog::performRegExp);
 }
 
 RegExpDialog::~RegExpDialog()

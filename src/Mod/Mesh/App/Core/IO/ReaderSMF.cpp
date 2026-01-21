@@ -23,8 +23,8 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <boost/regex.hpp>
-#include <istream>
+# include <boost/regex.hpp>
+# include <istream>
 #endif
 
 #include "Core/MeshKernel.h"
@@ -41,12 +41,16 @@ ReaderSMF::ReaderSMF(MeshKernel& kernel)
 
 bool ReaderSMF::Load(std::istream& input)
 {
-    boost::regex rx_p("^v\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
-                      "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
-                      "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)\\s*$");
-    boost::regex rx_f3("^f\\s+([-+]?[0-9]+)"
-                       "\\s+([-+]?[0-9]+)"
-                       "\\s+([-+]?[0-9]+)\\s*$");
+    boost::regex rx_p(
+        "^v\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
+        "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)"
+        "\\s+([-+]?[0-9]*)\\.?([0-9]+([eE][-+]?[0-9]+)?)\\s*$"
+    );
+    boost::regex rx_f3(
+        "^f\\s+([-+]?[0-9]+)"
+        "\\s+([-+]?[0-9]+)"
+        "\\s+([-+]?[0-9]+)\\s*$"
+    );
     boost::cmatch what;
 
     unsigned long segment = 0;

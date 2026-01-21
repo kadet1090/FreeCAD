@@ -21,8 +21,8 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <QApplication>
-#include <Inventor/events/SoEvent.h>
+# include <QApplication>
+# include <Inventor/events/SoEvent.h>
 #endif
 
 #include <App/Application.h>
@@ -94,13 +94,13 @@ DEF_STD_CMD_A(StdCmdMeasureDistance)
 StdCmdMeasureDistance::StdCmdMeasureDistance()
     : Command("Std_MeasureDistance")
 {
-    sGroup        = "View";
-    sMenuText     = QT_TR_NOOP("Measure distance");
-    sToolTipText  = QT_TR_NOOP("Activate the distance measurement tool");
-    sWhatsThis    = "Std_MeasureDistance";
-    sStatusTip    = QT_TR_NOOP("Activate the distance measurement tool");
-    sPixmap       = "view-measurement";
-    eType         = Alter3DView;
+    sGroup = "View";
+    sMenuText = QT_TR_NOOP("Measure distance");
+    sToolTipText = QT_TR_NOOP("Activate the distance measurement tool");
+    sWhatsThis = "Std_MeasureDistance";
+    sStatusTip = QT_TR_NOOP("Activate the distance measurement tool");
+    sPixmap = "view-measurement";
+    eType = Alter3DView;
 }
 
 void StdCmdMeasureDistance::activated(int iMsg)
@@ -112,16 +112,23 @@ void StdCmdMeasureDistance::activated(int iMsg)
         Gui::View3DInventorViewer* viewer = view->getViewer();
         viewer->setEditing(true);
         // NOLINTBEGIN
-        QCursor cursor = Gui::SelectionCallbackHandler::makeCursor(viewer, QSize(32, 32),
-                                                              "view-measurement-cross", 6, 25);
+        QCursor cursor = Gui::SelectionCallbackHandler::makeCursor(
+            viewer,
+            QSize(32, 32),
+            "view-measurement-cross",
+            6,
+            25
+        );
         viewer->setEditingCursor(cursor);
         // NOLINTEND
         // Derives from QObject and we have a parent object, so we don't
         // require a delete.
         auto marker = new MeasureGui::PointMarker(viewer);
-        viewer->addEventCallback(SoEvent::getClassTypeId(),
-                                 MeasureGui::ViewProviderMeasureDistance::measureDistanceCallback,
-                                 marker);
+        viewer->addEventCallback(
+            SoEvent::getClassTypeId(),
+            MeasureGui::ViewProviderMeasureDistance::measureDistanceCallback,
+            marker
+        );
     }
 }
 

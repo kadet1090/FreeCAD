@@ -23,11 +23,11 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <vector>
-#include <string>
-#include <sstream>
-#include <QDateTime>
-#include <QTimeZone>
+# include <vector>
+# include <string>
+# include <sstream>
+# include <QDateTime>
+# include <QTimeZone>
 #endif
 
 #include "PyExport.h"
@@ -36,8 +36,7 @@
 
 std::string Base::Tools::getIdentifier(const std::string& name)
 {
-    auto isXidStartUnicode = [](char32_t ucs4)
-    {
+    auto isXidStartUnicode = [](char32_t ucs4) {
         // clang-format off
         auto category = QChar::category(ucs4);
         return (category == QChar::Letter_Uppercase ||
@@ -48,8 +47,7 @@ std::string Base::Tools::getIdentifier(const std::string& name)
                 category == QChar::Number_Letter);
         // clang-format on
     };
-    auto isXidContinueUnicode = [](char32_t ucs4)
-    {
+    auto isXidContinueUnicode = [](char32_t ucs4) {
         // clang-format off
         auto category = QChar::category(ucs4);
         return (category == QChar::Letter_Uppercase ||
@@ -75,23 +73,19 @@ std::string Base::Tools::getIdentifier(const std::string& name)
 
     auto ucsStr = QString::fromStdString(name).toUcs4();
     QVector<char32_t> CleanName;
-    std::transform(ucsStr.begin(),
-                   ucsStr.end(),
-                   std::back_inserter(CleanName),
-                   [](auto ucs) {
-                       return static_cast<char32_t>(ucs);
-                   });
+    std::transform(ucsStr.begin(), ucsStr.end(), std::back_inserter(CleanName), [](auto ucs) {
+        return static_cast<char32_t>(ucs);
+    });
 
     // We'll replace all non Xid-Continue characeter as _. Special handling for
     // the first character. If it is non Xid-Start but a valid Xid-Continue,
     // insert an underscore as the new starting characeter.
-    if (CleanName[0] != '_' &&
-        isXidContinueUnicode(CleanName[0]) &&
-        !isXidStartUnicode(CleanName[0])) {
+    if (CleanName[0] != '_' && isXidContinueUnicode(CleanName[0])
+        && !isXidStartUnicode(CleanName[0])) {
         CleanName.push_front('_');
     }
 
-    for (auto &c : CleanName) {
+    for (auto& c : CleanName) {
         if (!isXidContinueUnicode(c)) {
             c = '_';
         }
@@ -146,8 +140,8 @@ std::string Base::Tools::escapedUnicodeToUtf8(const std::string& s)
     Base::PyGILStateLocker lock;
     std::string string;
 
-    PyObject* unicode =
-        PyUnicode_DecodeUnicodeEscape(s.c_str(), static_cast<Py_ssize_t>(s.size()), "strict");
+    PyObject* unicode
+        = PyUnicode_DecodeUnicodeEscape(s.c_str(), static_cast<Py_ssize_t>(s.size()), "strict");
     if (!unicode) {
         return string;
     }

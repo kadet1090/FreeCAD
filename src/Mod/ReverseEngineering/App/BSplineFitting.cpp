@@ -22,28 +22,28 @@
 
 #include "PreCompiled.h"
 #if defined(HAVE_PCL_OPENNURBS)
-#ifndef _PreComp_
-#include <map>
+# ifndef _PreComp_
+#  include <map>
 
-#include <Geom_BSplineSurface.hxx>
-#include <TColStd_Array1OfInteger.hxx>
-#include <TColStd_Array1OfReal.hxx>
-#include <TColStd_Array2OfReal.hxx>
-#include <TColgp_Array2OfPnt.hxx>
-#endif
+#  include <Geom_BSplineSurface.hxx>
+#  include <TColStd_Array1OfInteger.hxx>
+#  include <TColStd_Array1OfReal.hxx>
+#  include <TColStd_Array2OfReal.hxx>
+#  include <TColgp_Array2OfPnt.hxx>
+# endif
 
-#include <Mod/Points/App/PointsPy.h>
+# include <Mod/Points/App/PointsPy.h>
 
-#include "BSplineFitting.h"
+# include "BSplineFitting.h"
 
-#include <pcl/pcl_config.h>
-#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/surface/on_nurbs/fitting_curve_2d_asdm.h>
-#include <pcl/surface/on_nurbs/fitting_surface_tdm.h>
-#endif
+# include <pcl/pcl_config.h>
+# if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+#  include <pcl/io/pcd_io.h>
+#  include <pcl/point_cloud.h>
+#  include <pcl/point_types.h>
+#  include <pcl/surface/on_nurbs/fitting_curve_2d_asdm.h>
+#  include <pcl/surface/on_nurbs/fitting_surface_tdm.h>
+# endif
 
 using namespace Reen;
 
@@ -96,7 +96,7 @@ void BSplineFitting::setBoundaryWeight(double value)
 
 Handle(Geom_BSplineSurface) BSplineFitting::perform()
 {
-#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+# if PCL_VERSION_COMPARE(>=, 1, 7, 0)
     pcl::on_nurbs::NurbsDataSurface data;
     for (std::vector<Base::Vector3f>::const_iterator it = myPoints.begin(); it != myPoints.end();
          ++it) {
@@ -135,7 +135,7 @@ Handle(Geom_BSplineSurface) BSplineFitting::perform()
     }
 
     // fit B-spline curve
-#if 0
+#  if 0
     // parameters
     pcl::on_nurbs::FittingCurve2dAPDM::FitParameter curve_params;
     curve_params.addCPsAccuracy = 5e-2;
@@ -161,7 +161,7 @@ Handle(Geom_BSplineSurface) BSplineFitting::perform()
     pcl::on_nurbs::FittingCurve2dASDM curve_fit (&curve_data, curve_nurbs);
     // curve_fit.setQuiet (false); // enable/disable debug output
     curve_fit.fitting (curve_params);
-#endif
+#  endif
 
     // u parameters
     int numUKnots = fit.m_nurbs.KnotCount(0);
@@ -235,19 +235,21 @@ Handle(Geom_BSplineSurface) BSplineFitting::perform()
         vMultArray.SetValue(index, it->second);
     }
 
-    Handle(Geom_BSplineSurface) spline = new Geom_BSplineSurface(poles,
-                                                                 weights,
-                                                                 uKnotArray,
-                                                                 vKnotArray,
-                                                                 uMultArray,
-                                                                 vMultArray,
-                                                                 uDegree,
-                                                                 vDegree,
-                                                                 uPeriodic,
-                                                                 vPeriodic);
+    Handle(Geom_BSplineSurface) spline = new Geom_BSplineSurface(
+        poles,
+        weights,
+        uKnotArray,
+        vKnotArray,
+        uMultArray,
+        vMultArray,
+        uDegree,
+        vDegree,
+        uPeriodic,
+        vPeriodic
+    );
     return spline;
-#else
+# else
     return Handle(Geom_BSplineSurface)();
-#endif
+# endif
 }
 #endif  // HAVE_PCL_OPENNURBS

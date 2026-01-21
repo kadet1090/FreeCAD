@@ -22,17 +22,17 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <QContextMenuEvent>
-#include <QImage>
-#include <QMenu>
-#include <QPainter>
-#include <QPixmap>
-#include <QRegularExpression>
-#include <QRegularExpressionMatch>
-#include <QShortcut>
-#include <QString>
-#include <QWidgetAction>
-#include <boost/core/ignore_unused.hpp>
+# include <QContextMenuEvent>
+# include <QImage>
+# include <QMenu>
+# include <QPainter>
+# include <QPixmap>
+# include <QRegularExpression>
+# include <QRegularExpressionMatch>
+# include <QShortcut>
+# include <QString>
+# include <QWidgetAction>
+# include <boost/core/ignore_unused.hpp>
 #endif
 
 #include <App/Application.h>
@@ -165,14 +165,16 @@ public:
         Hidden = 2,
     };
 
-    ElementItem(int elementnr,
-                int startingVertex,
-                int midVertex,
-                int endVertex,
-                Base::Type geometryType,
-                GeometryState state,
-                const QString& lab,
-                ViewProviderSketch* sketchView)
+    ElementItem(
+        int elementnr,
+        int startingVertex,
+        int midVertex,
+        int endVertex,
+        Base::Type geometryType,
+        GeometryState state,
+        const QString& lab,
+        ViewProviderSketch* sketchView
+    )
         : ElementNbr(elementnr)
         , StartingVertex(startingVertex)
         , MidVertex(midVertex)
@@ -876,9 +878,11 @@ ElementItemDelegate::ElementItemDelegate(ElementView* parent)
 {  // This class relies on the parent being an ElementView, see getElementtItem
 }
 
-void ElementItemDelegate::paint(QPainter* painter,
-                                const QStyleOptionViewItem& option,
-                                const QModelIndex& index) const
+void ElementItemDelegate::paint(
+    QPainter* painter,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& index
+) const
 {
     ElementItem* item = getElementItem(index);
 
@@ -907,9 +911,11 @@ void ElementItemDelegate::paint(QPainter* painter,
     drawSubControl(SubControl::Label, painter, option, index);
 }
 
-QRect ElementItemDelegate::subControlRect(SubControl element,
-                                          const QStyleOptionViewItem& option,
-                                          const QModelIndex& index) const
+QRect ElementItemDelegate::subControlRect(
+    SubControl element,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& index
+) const
 {
     auto itemOption = option;
 
@@ -917,19 +923,18 @@ QRect ElementItemDelegate::subControlRect(SubControl element,
 
     initStyleOption(&itemOption, index);
 
-    QRect checkBoxRect =
-        style->subElementRect(QStyle::SE_CheckBoxIndicator, &itemOption, option.widget);
+    QRect checkBoxRect
+        = style->subElementRect(QStyle::SE_CheckBoxIndicator, &itemOption, option.widget);
 
-    checkBoxRect.moveTo(gap,
-                        option.rect.top() + (option.rect.height() - checkBoxRect.height()) / 2);
+    checkBoxRect.moveTo(gap, option.rect.top() + (option.rect.height() - checkBoxRect.height()) / 2);
 
     if (element == SubControl::CheckBox) {
         return checkBoxRect;
     }
 
-    QRect selectRect =
-        style->subElementRect(QStyle::SE_ItemViewItemDecoration, &itemOption, option.widget)
-            .translated(checkBoxRect.right() + gap, 0);
+    QRect selectRect
+        = style->subElementRect(QStyle::SE_ItemViewItemDecoration, &itemOption, option.widget)
+              .translated(checkBoxRect.right() + gap, 0);
 
     unsigned pos = element - SubControl::LineSelect;
 
@@ -944,10 +949,12 @@ QRect ElementItemDelegate::subControlRect(SubControl element,
     return rect;
 }
 
-void ElementItemDelegate::drawSubControl(SubControl element,
-                                         QPainter* painter,
-                                         const QStyleOptionViewItem& option,
-                                         const QModelIndex& index) const
+void ElementItemDelegate::drawSubControl(
+    SubControl element,
+    QPainter* painter,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& index
+) const
 {
     auto item = getElementItem(index);
     auto style = option.widget ? option.widget->style() : QApplication::style();
@@ -1002,10 +1009,12 @@ void ElementItemDelegate::drawSubControl(SubControl element,
                 checkboxOption.state |= QStyle::State_Off;
             }
 
-            style->drawPrimitive(QStyle::PE_IndicatorItemViewItemCheck,
-                                 &checkboxOption,
-                                 painter,
-                                 option.widget);
+            style->drawPrimitive(
+                QStyle::PE_IndicatorItemViewItemCheck,
+                &checkboxOption,
+                painter,
+                option.widget
+            );
 
             break;
         }
@@ -1035,10 +1044,11 @@ void ElementItemDelegate::drawSubControl(SubControl element,
 
             auto labelBoundingBox = painter->fontMetrics().tightBoundingRect(item->label);
 
-            painter->drawText(rect.x(),
-                              option.rect.bottom()
-                                  - (option.rect.height() - labelBoundingBox.height()) / 2,
-                              item->label);
+            painter->drawText(
+                rect.x(),
+                option.rect.bottom() - (option.rect.height() - labelBoundingBox.height()) / 2,
+                item->label
+            );
 
             break;
         }
@@ -1292,7 +1302,8 @@ void TaskSketcherElements::onFilterBoxStateChanged(int val)
 {
     Q_UNUSED(val);
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/Mod/Sketcher/General");
+        "User parameter:BaseApp/Preferences/Mod/Sketcher/General"
+    );
     hGrp->SetBool("ElementFilterEnabled", ui->filterBox->checkState() == Qt::Checked);
 
     ui->filterButton->setEnabled(ui->filterBox->checkState() == Qt::Checked);
@@ -1341,12 +1352,12 @@ void TaskSketcherElements::onListMultiFilterItemChanged(QListWidgetItem* item)
     int filterState = std::numeric_limits<int>::min();
     for (int i = filterList->count() - 1; i >= 0; i--) {
         bool isChecked = filterList->item(i)->checkState() == Qt::Checked;
-        filterState =
-            filterState << 1;  // we shift left first, else the list is shifted at the end.
+        filterState = filterState << 1;  // we shift left first, else the list is shifted at the end.
         filterState = filterState | (isChecked ? 1 : 0);
     }
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/Mod/Sketcher/General");
+        "User parameter:BaseApp/Preferences/Mod/Sketcher/General"
+    );
     hGrp->SetInt("ElementFilterState", filterState);
 
     updateVisibility();
@@ -1363,44 +1374,33 @@ void TaskSketcherElements::setItemVisibility(QListWidgetItem* it)
 
     using GeometryState = ElementItem::GeometryState;
 
-    if ((filterList->item(static_cast<int>(GeoFilterType::NormalGeos))->checkState()
-             == Qt::Unchecked
+    if ((filterList->item(static_cast<int>(GeoFilterType::NormalGeos))->checkState() == Qt::Unchecked
          && item->State == GeometryState::Normal)
         || (filterList->item(static_cast<int>(GeoFilterType::ConstructionGeos))->checkState()
                 == Qt::Unchecked
             && item->State == GeometryState::Construction)
-        || (filterList->item(static_cast<int>(GeoFilterType::InternalGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::InternalGeos))->checkState() == Qt::Unchecked
             && item->State == GeometryState::InternalAlignment)
-        || (filterList->item(static_cast<int>(GeoFilterType::ExternalGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::ExternalGeos))->checkState() == Qt::Unchecked
             && item->State == GeometryState::External)
-        || (filterList->item(static_cast<int>(GeoFilterType::PointGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::PointGeos))->checkState() == Qt::Unchecked
             && item->GeometryType == Part::GeomPoint::getClassTypeId())
-        || (filterList->item(static_cast<int>(GeoFilterType::LineGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::LineGeos))->checkState() == Qt::Unchecked
             && item->GeometryType == Part::GeomLineSegment::getClassTypeId())
-        || (filterList->item(static_cast<int>(GeoFilterType::CircleGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::CircleGeos))->checkState() == Qt::Unchecked
             && item->GeometryType == Part::GeomCircle::getClassTypeId())
-        || (filterList->item(static_cast<int>(GeoFilterType::EllipseGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::EllipseGeos))->checkState() == Qt::Unchecked
             && item->GeometryType == Part::GeomEllipse::getClassTypeId())
-        || (filterList->item(static_cast<int>(GeoFilterType::ArcGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::ArcGeos))->checkState() == Qt::Unchecked
             && item->GeometryType == Part::GeomArcOfCircle::getClassTypeId())
         || (filterList->item(static_cast<int>(GeoFilterType::ArcOfEllipseGeos))->checkState()
                 == Qt::Unchecked
             && item->GeometryType == Part::GeomArcOfEllipse::getClassTypeId())
-        || (filterList->item(static_cast<int>(GeoFilterType::HyperbolaGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::HyperbolaGeos))->checkState() == Qt::Unchecked
             && item->GeometryType == Part::GeomArcOfHyperbola::getClassTypeId())
-        || (filterList->item(static_cast<int>(GeoFilterType::ParabolaGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::ParabolaGeos))->checkState() == Qt::Unchecked
             && item->GeometryType == Part::GeomArcOfParabola::getClassTypeId())
-        || (filterList->item(static_cast<int>(GeoFilterType::BSplineGeos))->checkState()
-                == Qt::Unchecked
+        || (filterList->item(static_cast<int>(GeoFilterType::BSplineGeos))->checkState() == Qt::Unchecked
             && item->GeometryType == Part::GeomBSplineCurve::getClassTypeId())) {
         item->setHidden(true);
         return;
@@ -1446,8 +1446,9 @@ void TaskSketcherElements::onSelectionChanged(const Gui::SelectionChanges& msg)
                             // Perhaps we should also maintain a map so that we can look up items
                             // by element number.
                             for (int i = 0; i < countItems; i++) {
-                                ElementItem* item =
-                                    static_cast<ElementItem*>(ui->listWidgetElements->item(i));
+                                ElementItem* item = static_cast<ElementItem*>(
+                                    ui->listWidgetElements->item(i)
+                                );
                                 if (item->ElementNbr == ElementId) {
                                     item->isLineSelected = select;
                                     modified_item = item;
@@ -1468,8 +1469,9 @@ void TaskSketcherElements::onSelectionChanged(const Gui::SelectionChanges& msg)
                         if (ok) {
                             int countItems = ui->listWidgetElements->count();
                             for (int i = 0; i < countItems; i++) {
-                                ElementItem* item =
-                                    static_cast<ElementItem*>(ui->listWidgetElements->item(i));
+                                ElementItem* item = static_cast<ElementItem*>(
+                                    ui->listWidgetElements->item(i)
+                                );
                                 if (item->ElementNbr == ElementId) {
                                     item->isLineSelected = select;
                                     modified_item = item;
@@ -1490,14 +1492,13 @@ void TaskSketcherElements::onSelectionChanged(const Gui::SelectionChanges& msg)
                             // Get the GeoID&Pos
                             int GeoId;
                             Sketcher::PointPos PosId;
-                            sketchView->getSketchObject()->getGeoVertexIndex(ElementId,
-                                                                             GeoId,
-                                                                             PosId);
+                            sketchView->getSketchObject()->getGeoVertexIndex(ElementId, GeoId, PosId);
 
                             int countItems = ui->listWidgetElements->count();
                             for (int i = 0; i < countItems; i++) {
-                                ElementItem* item =
-                                    static_cast<ElementItem*>(ui->listWidgetElements->item(i));
+                                ElementItem* item = static_cast<ElementItem*>(
+                                    ui->listWidgetElements->item(i)
+                                );
                                 if (item->ElementNbr == GeoId) {
                                     modified_item = item;
                                     switch (PosId) {
@@ -1604,8 +1605,8 @@ void TaskSketcherElements::onListWidgetElementsItemPressed(QListWidgetItem* it)
             multipleconsecutiveselection = true;
         }
 
-        if (multipleselection
-            && multipleconsecutiveselection) {  // ctrl takes priority over shift functionality
+        if (multipleselection && multipleconsecutiveselection) {  // ctrl takes priority over shift
+                                                                  // functionality
             multipleselection = true;
             multipleconsecutiveselection = false;
         }
@@ -1686,9 +1687,9 @@ void TaskSketcherElements::onListWidgetElementsItemPressed(QListWidgetItem* it)
                 QSignalBlocker sigblk(ui->listWidgetElements);
 
                 if (item->isSelected() && selected) {
-                    item->setSelected(
-                        false);  // if already selected and changing or adding subelement, ensure
-                                 // selection change is triggered, which ensures timely repaint
+                    item->setSelected(false);  // if already selected and changing or adding
+                                               // subelement, ensure selection change is triggered,
+                                               // which ensures timely repaint
                     item->setSelected(selected);
                 }
                 else {
@@ -1731,7 +1732,8 @@ void TaskSketcherElements::onListWidgetElementsItemPressed(QListWidgetItem* it)
             Gui::Selection().addSelection2(
                 doc_name.c_str(),
                 obj_name.c_str(),
-                sketchView->getSketchObject()->convertSubName(elementSubName).c_str());
+                sketchView->getSketchObject()->convertSubName(elementSubName).c_str()
+            );
         }
 
         this->blockSelection(block);
@@ -1848,8 +1850,7 @@ void TaskSketcherElements::slotElementsChanged()
     using GeometryState = ElementItem::GeometryState;
 
     int i = 1;
-    for (std::vector<Part::Geometry*>::const_iterator it = vals.begin(); it != vals.end();
-         ++it, ++i) {
+    for (std::vector<Part::Geometry*>::const_iterator it = vals.begin(); it != vals.end(); ++it, ++i) {
         Base::Type type = (*it)->getTypeId();
         GeometryState state = GeometryState::Normal;
 
@@ -1883,88 +1884,79 @@ void TaskSketcherElements::slotElementsChanged()
             sketchView->getSketchObject()->getVertexIndexGeoPos(i - 1, Sketcher::PointPos::end),
             type,
             state,
-            type == Part::GeomPoint::getClassTypeId() ? (
-                isNamingBoxChecked ? (tr("Point") + IdInformation())
-                        + (construction ? (QStringLiteral("-") + tr("Construction"))
-                                        : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                           : QStringLiteral("")))
-                                   : (QStringLiteral("%1-").arg(i) + tr("Point")))
+            type == Part::GeomPoint::getClassTypeId()
+                ? (isNamingBoxChecked ? (tr("Point") + IdInformation())
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
+                                      : (QStringLiteral("%1-").arg(i) + tr("Point")))
                 : type == Part::GeomLineSegment::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("Line") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("Line")))
                 : type == Part::GeomArcOfCircle::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("Arc") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("Arc")))
                 : type == Part::GeomCircle::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("Circle") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("Circle")))
                 : type == Part::GeomEllipse::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("Ellipse") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("Ellipse")))
                 : type == Part::GeomArcOfEllipse::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("Elliptical Arc") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("Elliptical Arc")))
                 : type == Part::GeomArcOfHyperbola::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("Hyperbolic Arc") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("Hyperbolic Arc")))
                 : type == Part::GeomArcOfParabola::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("Parabolic Arc") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("Parabolic Arc")))
                 : type == Part::GeomBSplineCurve::getClassTypeId()
                 ? (isNamingBoxChecked ? (tr("B-spline") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("B-spline")))
                 : (isNamingBoxChecked ? (tr("Other") + IdInformation())
-                           + (construction
-                                  ? (QStringLiteral("-") + tr("Construction"))
-                                  : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
-                                                     : QStringLiteral("")))
+                           + (construction ? (QStringLiteral("-") + tr("Construction"))
+                                           : (internalAligned ? (QStringLiteral("-") + tr("Internal"))
+                                                              : QStringLiteral("")))
                                       : (QStringLiteral("%1-").arg(i) + tr("Other"))),
-            sketchView);
+            sketchView
+        );
 
         ui->listWidgetElements->addItem(itemN);
 
         setItemVisibility(itemN);
     }
 
-    const std::vector<Part::Geometry*>& ext_vals =
-        sketchView->getSketchObject()->getExternalGeometry();
+    const std::vector<Part::Geometry*>& ext_vals = sketchView->getSketchObject()->getExternalGeometry();
 
-    const std::vector<App::DocumentObject*> linkobjs =
-        sketchView->getSketchObject()->ExternalGeometry.getValues();
-    const std::vector<std::string> linksubs =
-        sketchView->getSketchObject()->ExternalGeometry.getSubValues();
+    const std::vector<App::DocumentObject*> linkobjs
+        = sketchView->getSketchObject()->ExternalGeometry.getValues();
+    const std::vector<std::string> linksubs
+        = sketchView->getSketchObject()->ExternalGeometry.getSubValues();
 
     int j = 1;
     for (std::vector<Part::Geometry*>::const_iterator it = ext_vals.begin(); it != ext_vals.end();
@@ -1978,16 +1970,10 @@ void TaskSketcherElements::slotElementsChanged()
             auto IdInformation = [this, j, layerId](bool link) {
                 if (sketchView->VisualLayerList.getSize() > 1) {
                     if (link) {
-                        return QStringLiteral("(ExternalEdge%1#ID%2#VL%3, ")
-                            .arg(j - 2)
-                            .arg(-j)
-                            .arg(layerId);
+                        return QStringLiteral("(ExternalEdge%1#ID%2#VL%3, ").arg(j - 2).arg(-j).arg(layerId);
                     }
                     else {
-                        return QStringLiteral("(ExternalEdge%1#ID%2#VL%3)")
-                            .arg(j - 2)
-                            .arg(-j)
-                            .arg(layerId);
+                        return QStringLiteral("(ExternalEdge%1#ID%2#VL%3)").arg(j - 2).arg(-j).arg(layerId);
                     }
                 }
                 else {
@@ -2039,23 +2025,21 @@ void TaskSketcherElements::slotElementsChanged()
                     ? (isNamingBoxChecked ? (tr("Ellipse") + linkname)
                                           : (QStringLiteral("%1-").arg(i - 2) + tr("Ellipse")))
                     : type == Part::GeomArcOfEllipse::getClassTypeId()
-                    ? (isNamingBoxChecked
-                           ? (tr("Elliptical Arc") + linkname)
-                           : (QStringLiteral("%1-").arg(i - 2) + tr("Elliptical Arc")))
+                    ? (isNamingBoxChecked ? (tr("Elliptical Arc") + linkname)
+                                          : (QStringLiteral("%1-").arg(i - 2) + tr("Elliptical Arc")))
                     : type == Part::GeomArcOfHyperbola::getClassTypeId()
-                    ? (isNamingBoxChecked
-                           ? (tr("Hyperbolic Arc") + linkname)
-                           : (QStringLiteral("%1-").arg(i - 2) + tr("Hyperbolic Arc")))
+                    ? (isNamingBoxChecked ? (tr("Hyperbolic Arc") + linkname)
+                                          : (QStringLiteral("%1-").arg(i - 2) + tr("Hyperbolic Arc")))
                     : type == Part::GeomArcOfParabola::getClassTypeId()
-                    ? (isNamingBoxChecked
-                           ? (tr("Parabolic Arc") + linkname)
-                           : (QStringLiteral("%1-").arg(i - 2) + tr("Parabolic Arc")))
+                    ? (isNamingBoxChecked ? (tr("Parabolic Arc") + linkname)
+                                          : (QStringLiteral("%1-").arg(i - 2) + tr("Parabolic Arc")))
                     : type == Part::GeomBSplineCurve::getClassTypeId()
                     ? (isNamingBoxChecked ? (tr("B-spline") + linkname)
                                           : (QStringLiteral("%1-").arg(i - 2) + tr("B-spline")))
                     : (isNamingBoxChecked ? (tr("Other") + linkname)
                                           : (QStringLiteral("%1-").arg(i - 2) + tr("Other"))),
-                sketchView);
+                sketchView
+            );
 
             ui->listWidgetElements->addItem(itemN);
 
@@ -2099,7 +2083,8 @@ void TaskSketcherElements::createSettingsButtonActions()
     action->setCheckable(true);
 
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/Mod/Sketcher/Elements");
+        "User parameter:BaseApp/Preferences/Mod/Sketcher/Elements"
+    );
     {
         QSignalBlocker block(this);
         action->setChecked(hGrp->GetBool("ExtendedNaming", false));
@@ -2116,7 +2101,8 @@ void TaskSketcherElements::onSettingsExtendedInformationChanged()
     isNamingBoxChecked = acts[0]->isChecked();
 
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/Mod/Sketcher/Elements");
+        "User parameter:BaseApp/Preferences/Mod/Sketcher/Elements"
+    );
     hGrp->SetBool("ExtendedNaming", isNamingBoxChecked);
 
     slotElementsChanged();

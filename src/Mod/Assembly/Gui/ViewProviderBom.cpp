@@ -24,8 +24,8 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <vector>
-#include <QMenu>
+# include <vector>
+# include <QMenu>
 #endif
 
 #include <App/Document.h>
@@ -74,9 +74,7 @@ void ViewProviderBom::setupContextMenu(QMenu* menu, QObject* receiver, const cha
 {
     Gui::ActionFunction* func = new Gui::ActionFunction(menu);
     QAction* action = menu->addAction(QObject::tr("Edit BOM..."));
-    func->trigger(action, [this]() {
-        this->doubleClicked();
-    });
+    func->trigger(action, [this]() { this->doubleClicked(); });
 
     ViewProviderSheet::setupContextMenu(menu, receiver, member);
 }

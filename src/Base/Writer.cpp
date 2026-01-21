@@ -23,11 +23,11 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <memory>
-#include <set>
-#include <vector>
-#include <string>
-#include <system_error>
+# include <memory>
+# include <set>
+# include <vector>
+# include <string>
+# include <system_error>
 #endif
 
 #include <limits>
@@ -261,10 +261,12 @@ void Writer::checkSystemError()
 {
     // See https://en.cppreference.com/w/cpp/error/errc for
     // mapping of errno and std::errc
-    constexpr static std::array errors = {std::errc::no_space_on_device,
-                                          std::errc::read_only_file_system,
-                                          std::errc::no_such_device,
-                                          std::errc::permission_denied};
+    constexpr static std::array errors = {
+        std::errc::no_space_on_device,
+        std::errc::read_only_file_system,
+        std::errc::no_such_device,
+        std::errc::permission_denied
+    };
 
     int errno_value = errno;
     std::error_code error_code = std::make_error_code(std::errc(errno_value));

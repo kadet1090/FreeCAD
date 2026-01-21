@@ -22,11 +22,11 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <sstream>
+# include <sstream>
 #endif
 
 #if defined(FC_OS_WIN32)
-#include <sys/timeb.h>
+# include <sys/timeb.h>
 #endif
 
 #include <App/Document.h>
@@ -70,8 +70,9 @@ void CmdSpreadsheetMergeCells::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -83,10 +84,12 @@ void CmdSpreadsheetMergeCells::activated(int iMsg)
                 std::vector<Range>::const_iterator i = ranges.begin();
                 for (; i != ranges.end(); ++i) {
                     if (i->size() > 1) {
-                        Gui::Command::doCommand(Gui::Command::Doc,
-                                                "App.ActiveDocument.%s.mergeCells('%s')",
-                                                sheet->getNameInDocument(),
-                                                i->rangeString().c_str());
+                        Gui::Command::doCommand(
+                            Gui::Command::Doc,
+                            "App.ActiveDocument.%s.mergeCells('%s')",
+                            sheet->getNameInDocument(),
+                            i->rangeString().c_str()
+                        );
                     }
                 }
                 Gui::Command::commitCommand();
@@ -100,8 +103,9 @@ bool CmdSpreadsheetMergeCells::isActive()
 {
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             return (sheetView->selectedIndexesRaw().size() > 1);
@@ -131,8 +135,9 @@ void CmdSpreadsheetSplitCell::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -141,10 +146,12 @@ void CmdSpreadsheetSplitCell::activated(int iMsg)
             if (current.isValid()) {
                 std::string address = CellAddress(current.row(), current.column()).toString();
                 Gui::Command::openCommand(QT_TRANSLATE_NOOP("Command", "Sp&lit cell"));
-                Gui::Command::doCommand(Gui::Command::Doc,
-                                        "App.ActiveDocument.%s.splitCell('%s')",
-                                        sheet->getNameInDocument(),
-                                        address.c_str());
+                Gui::Command::doCommand(
+                    Gui::Command::Doc,
+                    "App.ActiveDocument.%s.splitCell('%s')",
+                    sheet->getNameInDocument(),
+                    address.c_str()
+                );
                 Gui::Command::commitCommand();
                 Gui::Command::doCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");
             }
@@ -156,16 +163,19 @@ bool CmdSpreadsheetSplitCell::isActive()
 {
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             QModelIndex current = sheetView->currentIndex();
             Sheet* sheet = sheetView->getSheet();
 
             if (current.isValid()) {
-                return (sheetView->selectedIndexesRaw().size() == 1
-                        && sheet->isMergedCell(CellAddress(current.row(), current.column())));
+                return (
+                    sheetView->selectedIndexesRaw().size() == 1
+                    && sheet->isMergedCell(CellAddress(current.row(), current.column()))
+                );
             }
         }
     }
@@ -193,11 +203,13 @@ void CmdSpreadsheetImport::activated(int iMsg)
     Q_UNUSED(iMsg);
     QString selectedFilter;
     QString formatList = QObject::tr("CSV (*.csv *.CSV);;All (*)");
-    QString fileName = Gui::FileDialog::getOpenFileName(Gui::getMainWindow(),
-                                                        QObject::tr("Import file"),
-                                                        QString(),
-                                                        formatList,
-                                                        &selectedFilter);
+    QString fileName = Gui::FileDialog::getOpenFileName(
+        Gui::getMainWindow(),
+        QObject::tr("Import file"),
+        QString(),
+        formatList,
+        &selectedFilter
+    );
     if (!fileName.isEmpty()) {
         std::string FeatName = getUniqueObjectName("Spreadsheet");
         auto* doc = App::GetApplication().getActiveDocument();
@@ -245,8 +257,9 @@ void CmdSpreadsheetExport::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -291,8 +304,9 @@ void CmdSpreadsheetAlignLeft::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -307,7 +321,8 @@ void CmdSpreadsheetAlignLeft::activated(int iMsg)
                         Gui::Command::Doc,
                         "App.ActiveDocument.%s.setAlignment('%s', 'left', 'keep')",
                         sheet->getNameInDocument(),
-                        i->rangeString().c_str());
+                        i->rangeString().c_str()
+                    );
                 }
                 Gui::Command::commitCommand();
                 Gui::Command::doCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");
@@ -348,8 +363,9 @@ void CmdSpreadsheetAlignCenter::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -364,7 +380,8 @@ void CmdSpreadsheetAlignCenter::activated(int iMsg)
                         Gui::Command::Doc,
                         "App.ActiveDocument.%s.setAlignment('%s', 'center', 'keep')",
                         sheet->getNameInDocument(),
-                        i->rangeString().c_str());
+                        i->rangeString().c_str()
+                    );
                 }
                 Gui::Command::commitCommand();
                 Gui::Command::doCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");
@@ -405,8 +422,9 @@ void CmdSpreadsheetAlignRight::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -421,7 +439,8 @@ void CmdSpreadsheetAlignRight::activated(int iMsg)
                         Gui::Command::Doc,
                         "App.ActiveDocument.%s.setAlignment('%s', 'right', 'keep')",
                         sheet->getNameInDocument(),
-                        i->rangeString().c_str());
+                        i->rangeString().c_str()
+                    );
                 }
                 Gui::Command::commitCommand();
                 Gui::Command::doCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");
@@ -462,8 +481,9 @@ void CmdSpreadsheetAlignTop::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -478,7 +498,8 @@ void CmdSpreadsheetAlignTop::activated(int iMsg)
                         Gui::Command::Doc,
                         "App.ActiveDocument.%s.setAlignment('%s', 'top', 'keep')",
                         sheet->getNameInDocument(),
-                        i->rangeString().c_str());
+                        i->rangeString().c_str()
+                    );
                 }
                 Gui::Command::commitCommand();
                 Gui::Command::doCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");
@@ -519,8 +540,9 @@ void CmdSpreadsheetAlignBottom::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -535,7 +557,8 @@ void CmdSpreadsheetAlignBottom::activated(int iMsg)
                         Gui::Command::Doc,
                         "App.ActiveDocument.%s.setAlignment('%s', 'bottom', 'keep')",
                         sheet->getNameInDocument(),
-                        i->rangeString().c_str());
+                        i->rangeString().c_str()
+                    );
                 }
                 Gui::Command::commitCommand();
                 Gui::Command::doCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");
@@ -576,8 +599,9 @@ void CmdSpreadsheetAlignVCenter::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -592,7 +616,8 @@ void CmdSpreadsheetAlignVCenter::activated(int iMsg)
                         Gui::Command::Doc,
                         "App.ActiveDocument.%s.setAlignment('%s', 'vcenter', 'keep')",
                         sheet->getNameInDocument(),
-                        i->rangeString().c_str());
+                        i->rangeString().c_str()
+                    );
                 }
                 Gui::Command::commitCommand();
                 Gui::Command::doCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");
@@ -634,8 +659,9 @@ void CmdSpreadsheetStyleBold::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -668,14 +694,16 @@ void CmdSpreadsheetStyleBold::activated(int iMsg)
                             Gui::Command::Doc,
                             "App.ActiveDocument.%s.setStyle('%s', 'bold', 'add')",
                             sheet->getNameInDocument(),
-                            i->rangeString().c_str());
+                            i->rangeString().c_str()
+                        );
                     }
                     else {
                         Gui::Command::doCommand(
                             Gui::Command::Doc,
                             "App.ActiveDocument.%s.setStyle('%s', 'bold', 'remove')",
                             sheet->getNameInDocument(),
-                            i->rangeString().c_str());
+                            i->rangeString().c_str()
+                        );
                     }
                 }
                 Gui::Command::commitCommand();
@@ -718,8 +746,9 @@ void CmdSpreadsheetStyleItalic::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -752,14 +781,16 @@ void CmdSpreadsheetStyleItalic::activated(int iMsg)
                             Gui::Command::Doc,
                             "App.ActiveDocument.%s.setStyle('%s', 'italic', 'add')",
                             sheet->getNameInDocument(),
-                            i->rangeString().c_str());
+                            i->rangeString().c_str()
+                        );
                     }
                     else {
                         Gui::Command::doCommand(
                             Gui::Command::Doc,
                             "App.ActiveDocument.%s.setStyle('%s', 'italic', 'remove')",
                             sheet->getNameInDocument(),
-                            i->rangeString().c_str());
+                            i->rangeString().c_str()
+                        );
                     }
                 }
                 Gui::Command::commitCommand();
@@ -802,8 +833,9 @@ void CmdSpreadsheetStyleUnderline::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -836,14 +868,16 @@ void CmdSpreadsheetStyleUnderline::activated(int iMsg)
                             Gui::Command::Doc,
                             "App.ActiveDocument.%s.setStyle('%s', 'underline', 'add')",
                             sheet->getNameInDocument(),
-                            i->rangeString().c_str());
+                            i->rangeString().c_str()
+                        );
                     }
                     else {
                         Gui::Command::doCommand(
                             Gui::Command::Doc,
                             "App.ActiveDocument.%s.setStyle('%s', 'underline', 'remove')",
                             sheet->getNameInDocument(),
-                            i->rangeString().c_str());
+                            i->rangeString().c_str()
+                        );
                     }
                 }
                 Gui::Command::commitCommand();
@@ -886,8 +920,9 @@ void CmdSpreadsheetSetAlias::activated(int iMsg)
     Q_UNUSED(iMsg);
     if (getActiveGuiDocument()) {
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
-        SpreadsheetGui::SheetView* sheetView =
-            freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+        SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+            activeWindow
+        );
 
         if (sheetView) {
             Sheet* sheet = sheetView->getSheet();
@@ -896,13 +931,14 @@ void CmdSpreadsheetSetAlias::activated(int iMsg)
             if (selection.size() == 1) {
                 std::vector<Range> range;
 
-                range.emplace_back(selection[0].row(),
-                                   selection[0].column(),
-                                   selection[0].row(),
-                                   selection[0].column());
+                range.emplace_back(
+                    selection[0].row(),
+                    selection[0].column(),
+                    selection[0].row(),
+                    selection[0].column()
+                );
 
-                std::unique_ptr<PropertiesDialog> dialog(
-                    new PropertiesDialog(sheet, range, sheetView));
+                std::unique_ptr<PropertiesDialog> dialog(new PropertiesDialog(sheet, range, sheetView));
 
                 dialog->selectAlias();
 
@@ -920,8 +956,9 @@ bool CmdSpreadsheetSetAlias::isActive()
         Gui::MDIView* activeWindow = Gui::getMainWindow()->activeWindow();
 
         if (activeWindow) {
-            SpreadsheetGui::SheetView* sheetView =
-                freecad_dynamic_cast<SpreadsheetGui::SheetView>(activeWindow);
+            SpreadsheetGui::SheetView* sheetView = freecad_dynamic_cast<SpreadsheetGui::SheetView>(
+                activeWindow
+            );
 
             if (sheetView) {
                 QModelIndexList selection = sheetView->selectedIndexes();

@@ -23,8 +23,8 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <QFont>
-#include <QLocale>
+# include <QFont>
+# include <QLocale>
 #endif
 
 #include <App/Document.h>
@@ -48,21 +48,23 @@ SheetModel::SheetModel(Sheet* _sheet, QObject* parent)
     , sheet(_sheet)
 {
     // NOLINTBEGIN
-    cellUpdatedConnection =
-        sheet->cellUpdated.connect(std::bind(&SheetModel::cellUpdated, this, sp::_1));
-    rangeUpdatedConnection =
-        sheet->rangeUpdated.connect(std::bind(&SheetModel::rangeUpdated, this, sp::_1));
+    cellUpdatedConnection = sheet->cellUpdated.connect(
+        std::bind(&SheetModel::cellUpdated, this, sp::_1)
+    );
+    rangeUpdatedConnection = sheet->rangeUpdated.connect(
+        std::bind(&SheetModel::rangeUpdated, this, sp::_1)
+    );
     // NOLINTEND
 
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/Mod/Spreadsheet");
-    aliasBgColor =
-        QColor(QString::fromStdString(hGrp->GetASCII("AliasedCellBackgroundColor", "#feff9e")));
+        "User parameter:BaseApp/Preferences/Mod/Spreadsheet"
+    );
+    aliasBgColor = QColor(
+        QString::fromStdString(hGrp->GetASCII("AliasedCellBackgroundColor", "#feff9e"))
+    );
     textFgColor = QColor(QString::fromStdString(hGrp->GetASCII("TextColor", "#000000")));
-    positiveFgColor =
-        QColor(QString::fromStdString(hGrp->GetASCII("PositiveNumberColor", "#000000")));
-    negativeFgColor =
-        QColor(QString::fromStdString(hGrp->GetASCII("NegativeNumberColor", "#000000")));
+    positiveFgColor = QColor(QString::fromStdString(hGrp->GetASCII("PositiveNumberColor", "#000000")));
+    negativeFgColor = QColor(QString::fromStdString(hGrp->GetASCII("NegativeNumberColor", "#000000")));
 }
 
 SheetModel::~SheetModel()
@@ -88,11 +90,13 @@ namespace
 QVariant formatCellDisplay(QString value, const Cell* cell)
 {
     std::string alias;
-    static auto hGrpSpreadsheet =
-        App::GetApplication().GetUserParameter().GetGroup("BaseApp/Preferences/Mod/Spreadsheet");
+    static auto hGrpSpreadsheet = App::GetApplication().GetUserParameter().GetGroup(
+        "BaseApp/Preferences/Mod/Spreadsheet"
+    );
     if (cell->getAlias(alias) && hGrpSpreadsheet->GetBool("showAliasName", false)) {
         QString formatStr = QString::fromStdString(
-            hGrpSpreadsheet->GetASCII("DisplayAliasFormatString", "%V = %A"));
+            hGrpSpreadsheet->GetASCII("DisplayAliasFormatString", "%V = %A")
+        );
         if (formatStr.contains(QLatin1String("%V")) || formatStr.contains(QLatin1String("%A"))) {
             formatStr.replace(QLatin1String("%A"), QString::fromStdString(alias));
             formatStr.replace(QLatin1String("%V"), value);
@@ -159,7 +163,8 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
             case Qt::DisplayRole: {
 #ifdef DEBUG_DEPS
                 return QVariant::fromValue(
-                    QStringLiteral("#ERR: %1").arg(Tools::fromStdString(cell->getException())));
+                    QStringLiteral("#ERR: %1").arg(Tools::fromStdString(cell->getException()))
+                );
 #else
                 std::string str;
                 if (cell->getStringContent(str)) {
@@ -196,7 +201,8 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
 
         if (cell->getBackground(color)) {
             return QVariant::fromValue(
-                QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a));
+                QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a)
+            );
         }
         else {
             std::string alias;
@@ -256,9 +262,11 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
     if (!prop || dirty) {
         switch (role) {
             case Qt::ForegroundRole: {
-                return QColor(0,
-                              0,
-                              255.0);  // TODO: Remove this hardcoded color, replace with preference
+                return QColor(
+                    0,
+                    0,
+                    255.0
+                );  // TODO: Remove this hardcoded color, replace with preference
             }
             case Qt::TextAlignmentRole: {
                 qtAlignment = Qt::AlignHCenter | Qt::AlignVCenter;
@@ -296,7 +304,8 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
 
                 if (cell->getForeground(color)) {
                     return QVariant::fromValue(
-                        QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a));
+                        QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a)
+                    );
                 }
                 else {
                     return QVariant(QColor(textFgColor));
@@ -331,7 +340,8 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
 
                 if (cell->getForeground(color)) {
                     return QVariant::fromValue(
-                        QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a));
+                        QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a)
+                    );
                 }
                 else {
                     if (floatProp->getValue() < 0) {
@@ -361,10 +371,11 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
                 // Display locale specific decimal separator (#0003875,#0003876)
                 if (cell->getDisplayUnit(displayUnit)) {
                     if (computedUnit.isEmpty() || computedUnit == displayUnit.unit) {
-                        QString number =
-                            QLocale().toString(floatProp->getValue() / displayUnit.scaler,
-                                               'f',
-                                               Base::UnitsApi::getDecimals());
+                        QString number = QLocale().toString(
+                            floatProp->getValue() / displayUnit.scaler,
+                            'f',
+                            Base::UnitsApi::getDecimals()
+                        );
                         // QString number = QString::number(floatProp->getValue() /
                         // displayUnit.scaler);
                         v = number + QString::fromStdString(" " + displayUnit.stringRep);
@@ -407,7 +418,8 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
 
                 if (cell->getForeground(color)) {
                     return QVariant::fromValue(
-                        QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a));
+                        QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a)
+                    );
                 }
                 else {
                     if (d < 0) {
@@ -435,9 +447,11 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
 
                 // Display locale specific decimal separator (#0003875,#0003876)
                 if (cell->getDisplayUnit(displayUnit)) {
-                    QString number = QLocale().toString(d / displayUnit.scaler,
-                                                        'f',
-                                                        Base::UnitsApi::getDecimals());
+                    QString number = QLocale().toString(
+                        d / displayUnit.scaler,
+                        'f',
+                        Base::UnitsApi::getDecimals()
+                    );
                     // QString number = QString::number(d / displayUnit.scaler);
                     v = number + QString::fromStdString(" " + displayUnit.stringRep);
                 }
@@ -463,7 +477,8 @@ QVariant SheetModel::data(const QModelIndex& index, int role) const
 
                 if (cell->getForeground(color)) {
                     return QVariant::fromValue(
-                        QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a));
+                        QColor(255.0 * color.r, 255.0 * color.g, 255.0 * color.b, 255.0 * color.a)
+                    );
                 }
                 else {
                     return QVariant(QColor(textFgColor));
@@ -513,12 +528,12 @@ QVariant SheetModel::headerData(int section, Qt::Orientation orientation, int ro
 {
     if (role == Qt::SizeHintRole) {
         if (orientation == Qt::Horizontal) {
-            return QVariant(
-                QSize(sheet->getColumnWidth(section), PropertyRowHeights::defaultHeight));
+            return QVariant(QSize(sheet->getColumnWidth(section), PropertyRowHeights::defaultHeight));
         }
         else {
             return QVariant(
-                QSize(PropertyColumnWidths::defaultHeaderWidth, sheet->getRowHeight(section)));
+                QSize(PropertyColumnWidths::defaultHeaderWidth, sheet->getRowHeight(section))
+            );
         }
     }
     if (role == Qt::DisplayRole) {
@@ -578,11 +593,13 @@ bool SheetModel::setData(const QModelIndex& index, const QVariant& value, int ro
             }
         }
 
-        QMetaObject::invokeMethod(this,
-                                  "setCellData",
-                                  Qt::QueuedConnection,
-                                  Q_ARG(QModelIndex, index),
-                                  Q_ARG(QString, str));
+        QMetaObject::invokeMethod(
+            this,
+            "setCellData",
+            Qt::QueuedConnection,
+            Q_ARG(QModelIndex, index),
+            Q_ARG(QString, str)
+        );
     }
     return true;
 }

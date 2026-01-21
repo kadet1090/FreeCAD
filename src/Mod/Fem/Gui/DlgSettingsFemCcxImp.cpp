@@ -25,9 +25,9 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <QMessageBox>
-#include <QThread>
-#include <limits>
+# include <QMessageBox>
+# include <QThread>
+# include <limits>
 #endif
 
 #include <App/Application.h>
@@ -47,10 +47,12 @@ DlgSettingsFemCcxImp::DlgSettingsFemCcxImp(QWidget* parent)
     ui->dsb_ccx_analysis_time->setMaximum(std::numeric_limits<float>::max());
     ui->dsb_ccx_initial_time_step->setMaximum(std::numeric_limits<float>::max());
 
-    connect(ui->fc_ccx_binary_path,
-            &Gui::PrefFileChooser::fileNameChanged,
-            this,
-            &DlgSettingsFemCcxImp::onfileNameChanged);
+    connect(
+        ui->fc_ccx_binary_path,
+        &Gui::PrefFileChooser::fileNameChanged,
+        this,
+        &DlgSettingsFemCcxImp::onfileNameChanged
+    );
 }
 
 DlgSettingsFemCcxImp::~DlgSettingsFemCcxImp() = default;
@@ -58,7 +60,8 @@ DlgSettingsFemCcxImp::~DlgSettingsFemCcxImp() = default;
 void DlgSettingsFemCcxImp::saveSettings()
 {
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/Mod/Fem/Ccx");
+        "User parameter:BaseApp/Preferences/Mod/Fem/Ccx"
+    );
     hGrp->SetInt("Solver", ui->cmb_solver->currentIndex());
     hGrp->SetInt("AnalysisType", ui->cb_analysis_type->currentIndex());
 
@@ -118,7 +121,8 @@ void DlgSettingsFemCcxImp::loadSettings()
     ui->cb_split_inp_writer->onRestore();
 
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/Mod/Fem/Ccx");
+        "User parameter:BaseApp/Preferences/Mod/Fem/Ccx"
+    );
 
     // determine number of CPU threads
     int processor_count = hGrp->GetInt("AnalysisNumCPUs", QThread::idealThreadCount());
@@ -152,11 +156,13 @@ void DlgSettingsFemCcxImp::changeEvent(QEvent* e)
 void DlgSettingsFemCcxImp::onfileNameChanged(QString FileName)
 {
     if (!QFileInfo::exists(FileName)) {
-        QMessageBox::critical(this,
-                              tr("File does not exist"),
-                              tr("The specified executable\n'%1'\n does not exist!\n"
-                                 "Specify another file please.")
-                                  .arg(FileName));
+        QMessageBox::critical(
+            this,
+            tr("File does not exist"),
+            tr("The specified executable\n'%1'\n does not exist!\n"
+               "Specify another file please.")
+                .arg(FileName)
+        );
     }
 }
 

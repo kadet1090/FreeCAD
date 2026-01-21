@@ -24,31 +24,31 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <sstream>
-#include <QApplication>
-#include <Inventor/SoPickedPoint.h>
-#include <Inventor/engines/SoCalculator.h>
-#include <Inventor/engines/SoConcatenate.h>
-#include <Inventor/engines/SoComposeRotation.h>
-#include <Inventor/engines/SoComposeRotationFromTo.h>
-#include <Inventor/engines/SoComposeVec3f.h>
-#include <Inventor/engines/SoDecomposeVec3f.h>
-#include <Inventor/events/SoEvents.h>
-#include <Inventor/nodes/SoAnnotation.h>
-#include <Inventor/nodes/SoBaseColor.h>
-#include <Inventor/nodes/SoCoordinate3.h>
-#include <Inventor/nodes/SoDrawStyle.h>
-#include <Inventor/nodes/SoFontStyle.h>
-#include <Inventor/nodes/SoIndexedLineSet.h>
-#include <Inventor/nodes/SoMarkerSet.h>
-#include <Inventor/nodes/SoPickStyle.h>
-#include <Inventor/nodes/SoText2.h>
-#include <Inventor/nodes/SoTranslation.h>
-#include <Inventor/nodes/SoMaterial.h>
-#include <Inventor/nodes/SoSwitch.h>
-#include <Inventor/nodes/SoCone.h>
-#include <Inventor/nodes/SoResetTransform.h>
-#include <Inventor/nodes/SoNodes.h>
+# include <sstream>
+# include <QApplication>
+# include <Inventor/SoPickedPoint.h>
+# include <Inventor/engines/SoCalculator.h>
+# include <Inventor/engines/SoConcatenate.h>
+# include <Inventor/engines/SoComposeRotation.h>
+# include <Inventor/engines/SoComposeRotationFromTo.h>
+# include <Inventor/engines/SoComposeVec3f.h>
+# include <Inventor/engines/SoDecomposeVec3f.h>
+# include <Inventor/events/SoEvents.h>
+# include <Inventor/nodes/SoAnnotation.h>
+# include <Inventor/nodes/SoBaseColor.h>
+# include <Inventor/nodes/SoCoordinate3.h>
+# include <Inventor/nodes/SoDrawStyle.h>
+# include <Inventor/nodes/SoFontStyle.h>
+# include <Inventor/nodes/SoIndexedLineSet.h>
+# include <Inventor/nodes/SoMarkerSet.h>
+# include <Inventor/nodes/SoPickStyle.h>
+# include <Inventor/nodes/SoText2.h>
+# include <Inventor/nodes/SoTranslation.h>
+# include <Inventor/nodes/SoMaterial.h>
+# include <Inventor/nodes/SoSwitch.h>
+# include <Inventor/nodes/SoCone.h>
+# include <Inventor/nodes/SoResetTransform.h>
+# include <Inventor/nodes/SoNodes.h>
 #endif
 
 #include <Gui/Inventor/MarkerBitmaps.h>
@@ -237,10 +237,12 @@ SbMatrix ViewProviderMeasureDistance::getMatrix()
         return {};
     }
 
-    auto prop1 =
-        Base::freecad_dynamic_cast<App::PropertyVector>(pcObject->getPropertyByName("Position1"));
-    auto prop2 =
-        Base::freecad_dynamic_cast<App::PropertyVector>(pcObject->getPropertyByName("Position2"));
+    auto prop1 = Base::freecad_dynamic_cast<App::PropertyVector>(
+        pcObject->getPropertyByName("Position1")
+    );
+    auto prop2 = Base::freecad_dynamic_cast<App::PropertyVector>(
+        pcObject->getPropertyByName("Position2")
+    );
 
     if (!prop1 || !prop2) {
         return {};
@@ -258,23 +260,25 @@ SbMatrix ViewProviderMeasureDistance::getMatrix()
     assert(fabs(localYAxis.Dot(localXAxis)) < tolerance);
     Base::Vector3d localZAxis = localYAxis.Cross(localXAxis).Normalize();
 
-    SbMatrix matrix = SbMatrix(localXAxis.x,
-                               localXAxis.y,
-                               localXAxis.z,
-                               0,
-                               localYAxis.x,
-                               localYAxis.y,
-                               localYAxis.z,
-                               0,
-                               localZAxis.x,
-                               localZAxis.y,
-                               localZAxis.z,
-                               0,
-                               // 0,0,0,1
-                               origin[0],
-                               origin[1],
-                               origin[2],
-                               1);
+    SbMatrix matrix = SbMatrix(
+        localXAxis.x,
+        localXAxis.y,
+        localXAxis.z,
+        0,
+        localYAxis.x,
+        localYAxis.y,
+        localYAxis.z,
+        0,
+        localZAxis.x,
+        localZAxis.y,
+        localZAxis.z,
+        0,
+        // 0,0,0,1
+        origin[0],
+        origin[1],
+        origin[2],
+        1
+    );
 
     return matrix;
 }
@@ -284,8 +288,10 @@ SbMatrix ViewProviderMeasureDistance::getMatrix()
 //! layout of the elements and its relationship with the cardinal axes and the view direction.
 //! elementDirection is expected to be a normalized vector. an example of an elementDirection would
 //! be the vector from the start of a line to the end.
-Base::Vector3d ViewProviderMeasureDistance::getTextDirection(Base::Vector3d elementDirection,
-                                                             double tolerance)
+Base::Vector3d ViewProviderMeasureDistance::getTextDirection(
+    Base::Vector3d elementDirection,
+    double tolerance
+)
 {
     const Base::Vector3d stdX(1.0, 0.0, 0.0);
     const Base::Vector3d stdY(0.0, 1.0, 0.0);
@@ -311,11 +317,13 @@ ViewProviderMeasureDistance::ViewProviderMeasureDistance()
 {
     sPixmap = "Measurement-Distance";
 
-    ADD_PROPERTY_TYPE(ShowDelta,
-                      (false),
-                      "Appearance",
-                      App::Prop_None,
-                      "Display the X, Y and Z components of the distance");
+    ADD_PROPERTY_TYPE(
+        ShowDelta,
+        (false),
+        "Appearance",
+        App::Prop_None,
+        "Display the X, Y and Z components of the distance"
+    );
 
     // vert indexes used to create the annotation lines
     const size_t lineCount(3);
@@ -348,8 +356,10 @@ ViewProviderMeasureDistance::ViewProviderMeasureDistance()
     auto engineCoords = new SoCalculator();
     engineCoords->a.connectFrom(&fieldDistance);
     engineCoords->A.connectFrom(&pLabelTranslation->translation);
-    engineCoords->expression.setValue("ta=a/2; tb=A[1]; oA=vec3f(ta, 0, 0); oB=vec3f(-ta, 0, 0); "
-                                      "oC=vec3f(ta, tb, 0); oD=vec3f(-ta, tb, 0)");
+    engineCoords->expression.setValue(
+        "ta=a/2; tb=A[1]; oA=vec3f(ta, 0, 0); oB=vec3f(-ta, 0, 0); "
+        "oC=vec3f(ta, tb, 0); oD=vec3f(-ta, tb, 0)"
+    );
 
     auto engineCat = new SoConcatenate(SoMFVec3f::getClassTypeId());
     engineCat->input[0]->connectFrom(&engineCoords->oA);
@@ -379,9 +389,10 @@ ViewProviderMeasureDistance::ViewProviderMeasureDistance()
     pLineSeparatorSecondary->addChild(lineSetSecondary);
 
     auto points = new SoMarkerSet();
-    points->markerIndex =
-        Gui::Inventor::MarkerBitmaps::getMarkerIndex("CROSS",
-                                                     ViewParams::instance()->getMarkerSize());
+    points->markerIndex = Gui::Inventor::MarkerBitmaps::getMarkerIndex(
+        "CROSS",
+        ViewParams::instance()->getMarkerSize()
+    );
     points->numPoints = 2;
     pLineSeparator->addChild(points);
 
@@ -461,10 +472,12 @@ void ViewProviderMeasureDistance::redrawAnnotation()
         return;
     }
 
-    auto prop1 =
-        Base::freecad_dynamic_cast<App::PropertyVector>(pcObject->getPropertyByName("Position1"));
-    auto prop2 =
-        Base::freecad_dynamic_cast<App::PropertyVector>(pcObject->getPropertyByName("Position2"));
+    auto prop1 = Base::freecad_dynamic_cast<App::PropertyVector>(
+        pcObject->getPropertyByName("Position1")
+    );
+    auto prop2 = Base::freecad_dynamic_cast<App::PropertyVector>(
+        pcObject->getPropertyByName("Position2")
+    );
 
     if (!prop1 || !prop2) {
         return;
@@ -479,23 +492,25 @@ void ViewProviderMeasureDistance::redrawAnnotation()
     // Set the distance
     fieldDistance = (vec2 - vec1).Length();
 
-    auto propDistance =
-        dynamic_cast<App::PropertyDistance*>(pcObject->getPropertyByName("Distance"));
+    auto propDistance = dynamic_cast<App::PropertyDistance*>(pcObject->getPropertyByName("Distance"));
     setLabelValue(QString::fromStdString(propDistance->getQuantityValue().getUserString()));
 
     // Set delta distance
-    auto propDistanceX =
-        static_cast<App::PropertyDistance*>(getMeasureObject()->getPropertyByName("DistanceX"));
+    auto propDistanceX = static_cast<App::PropertyDistance*>(
+        getMeasureObject()->getPropertyByName("DistanceX")
+    );
     static_cast<DimensionLinear*>(pDeltaDimensionSwitch->getChild(0))
         ->text.setValue(("Δx: " + propDistanceX->getQuantityValue().getUserString()).c_str());
 
-    auto propDistanceY =
-        static_cast<App::PropertyDistance*>(getMeasureObject()->getPropertyByName("DistanceY"));
+    auto propDistanceY = static_cast<App::PropertyDistance*>(
+        getMeasureObject()->getPropertyByName("DistanceY")
+    );
     static_cast<DimensionLinear*>(pDeltaDimensionSwitch->getChild(1))
         ->text.setValue(("Δy: " + propDistanceY->getQuantityValue().getUserString()).c_str());
 
-    auto propDistanceZ =
-        static_cast<App::PropertyDistance*>(getMeasureObject()->getPropertyByName("DistanceZ"));
+    auto propDistanceZ = static_cast<App::PropertyDistance*>(
+        getMeasureObject()->getPropertyByName("DistanceZ")
+    );
     static_cast<DimensionLinear*>(pDeltaDimensionSwitch->getChild(2))
         ->text.setValue(("Δz: " + propDistanceZ->getQuantityValue().getUserString()).c_str());
 
@@ -511,8 +526,9 @@ void ViewProviderMeasureDistance::onChanged(const App::Property* prop)
 {
 
     if (prop == &ShowDelta) {
-        pDeltaDimensionSwitch->whichChild.setValue(ShowDelta.getValue() ? SO_SWITCH_ALL
-                                                                        : SO_SWITCH_NONE);
+        pDeltaDimensionSwitch->whichChild.setValue(
+            ShowDelta.getValue() ? SO_SWITCH_ALL : SO_SWITCH_NONE
+        );
     }
     else if (prop == &TextBackgroundColor) {
         auto bColor = TextBackgroundColor.getValue();
@@ -536,8 +552,9 @@ void ViewProviderMeasureDistance::positionAnno(const Measure::MeasureBase* measu
 
 // ----------------------------------------------------------------------------
 
-PointMarker::PointMarker(View3DInventorViewer* iv) : view(iv),
-    vp(new ViewProviderPointMarker)
+PointMarker::PointMarker(View3DInventorViewer* iv)
+    : view(iv)
+    , vp(new ViewProviderPointMarker)
 {
     view->addViewProvider(vp);
     previousSelectionEn = view->isSelectionEnabled();
@@ -571,12 +588,11 @@ void PointMarker::customEvent(QEvent*)
 
     const SbVec3f& pt1 = vp->pCoords->point[0];
     const SbVec3f& pt2 = vp->pCoords->point[1];
-    md->Position1.setValue(Base::Vector3d(pt1[0],pt1[1],pt1[2]));
-    md->Position2.setValue(Base::Vector3d(pt2[0],pt2[1],pt2[2]));
+    md->Position1.setValue(Base::Vector3d(pt1[0], pt1[1], pt1[2]));
+    md->Position2.setValue(Base::Vector3d(pt2[0], pt2[1], pt2[2]));
 
     Base::Quantity len(md->Distance.getValue(), Base::Unit::Length);
-    QString str = QString::fromLatin1("Distance: %1")
-                      .arg(QString::fromStdString(len.getUserString()));
+    QString str = QString::fromLatin1("Distance: %1").arg(QString::fromStdString(len.getUserString()));
     md->Label.setValue(str.toUtf8().constData());
     doc->commitCommand();
 
@@ -591,9 +607,11 @@ ViewProviderPointMarker::ViewProviderPointMarker()
     pCoords->ref();
     pCoords->point.setNum(0);
     pMarker = new SoMarkerSet();
-    pMarker->markerIndex = Gui::Inventor::MarkerBitmaps::getMarkerIndex("CROSS",
-                                                                        ViewParams::instance()->getMarkerSize());
-    pMarker->numPoints=0;
+    pMarker->markerIndex = Gui::Inventor::MarkerBitmaps::getMarkerIndex(
+        "CROSS",
+        ViewParams::instance()->getMarkerSize()
+    );
+    pMarker->numPoints = 0;
     pMarker->ref();
 
     auto grp = new SoGroup();
@@ -614,9 +632,9 @@ bool ViewProviderPointMarker::isPartOfPhysicalObject() const
     return false;
 }
 
-void ViewProviderMeasureDistance::measureDistanceCallback(void * ud, SoEventCallback * n)
+void ViewProviderMeasureDistance::measureDistanceCallback(void* ud, SoEventCallback* n)
 {
-    auto view  = static_cast<Gui::View3DInventorViewer*>(n->getUserData());
+    auto view = static_cast<Gui::View3DInventorViewer*>(n->getUserData());
     auto pm = static_cast<PointMarker*>(ud);
     const SoEvent* ev = n->getEvent();
     if (ev->isOfType(SoKeyboardEvent::getClassTypeId())) {
@@ -636,8 +654,9 @@ void ViewProviderMeasureDistance::measureDistanceCallback(void * ud, SoEventCall
         // Mark all incoming mouse button events as handled, especially, to deactivate the selection node
         n->getAction()->setHandled();
 
-        if (mbe->getButton() == SoMouseButtonEvent::BUTTON1 && mbe->getState() == SoButtonEvent::DOWN) {
-            const SoPickedPoint * point = n->getPickedPoint();
+        if (mbe->getButton() == SoMouseButtonEvent::BUTTON1
+            && mbe->getState() == SoButtonEvent::DOWN) {
+            const SoPickedPoint* point = n->getPickedPoint();
             if (!point) {
                 Base::Console().Message("No point picked.\n");
                 return;
@@ -653,18 +672,26 @@ void ViewProviderMeasureDistance::measureDistanceCallback(void * ud, SoEventCall
                 view->removeEventCallback(SoEvent::getClassTypeId(), measureDistanceCallback, ud);
             }
         }
-        else if (mbe->getButton() != SoMouseButtonEvent::BUTTON1 && mbe->getState() == SoButtonEvent::UP) {
+        else if (mbe->getButton() != SoMouseButtonEvent::BUTTON1
+                 && mbe->getState() == SoButtonEvent::UP) {
             endMeasureDistanceMode(ud, view, n, pm);
         }
     }
 }
-void ViewProviderMeasureDistance::endMeasureDistanceMode(void * ud, Gui::View3DInventorViewer* view,
-                                                         SoEventCallback * n, PointMarker *pm)
+void ViewProviderMeasureDistance::endMeasureDistanceMode(
+    void* ud,
+    Gui::View3DInventorViewer* view,
+    SoEventCallback* n,
+    PointMarker* pm
+)
 {
     n->setHandled();
     view->setEditing(false);
-    view->removeEventCallback(SoEvent::getClassTypeId(),
-                              ViewProviderMeasureDistance::measureDistanceCallback, ud);
+    view->removeEventCallback(
+        SoEvent::getClassTypeId(),
+        ViewProviderMeasureDistance::measureDistanceCallback,
+        ud
+    );
     Application::Instance->commandManager().testActive();
     pm->deleteLater();
 }

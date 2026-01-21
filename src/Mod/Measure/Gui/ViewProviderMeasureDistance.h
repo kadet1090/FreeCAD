@@ -83,7 +83,7 @@ private:
 };
 
 class ViewProviderPointMarker;
-class PointMarker : public QObject
+class PointMarker: public QObject
 {
 public:
     explicit PointMarker(Gui::View3DInventorViewer* view);
@@ -96,12 +96,12 @@ protected:
     void customEvent(QEvent* e) override;
 
 private:
-    Gui::View3DInventorViewer *view;
-    ViewProviderPointMarker *vp;
+    Gui::View3DInventorViewer* view;
+    ViewProviderPointMarker* vp;
     bool previousSelectionEn;
 };
 
-class ViewProviderPointMarker : public Gui::ViewProviderDocumentObject
+class ViewProviderPointMarker: public Gui::ViewProviderDocumentObject
 {
     PROPERTY_HEADER_WITH_OVERRIDE(MeasureGui::ViewProviderPointMarker);
 
@@ -129,13 +129,19 @@ public:
 
     void redrawAnnotation() override;
     void positionAnno(const Measure::MeasureBase* measureObject) override;
-    static void measureDistanceCallback(void * ud, SoEventCallback * n);
-    static void endMeasureDistanceMode(void * ud, Gui::View3DInventorViewer* view,
-                                       SoEventCallback * n, PointMarker *pm);
+    static void measureDistanceCallback(void* ud, SoEventCallback* n);
+    static void endMeasureDistanceMode(
+        void* ud,
+        Gui::View3DInventorViewer* view,
+        SoEventCallback* n,
+        PointMarker* pm
+    );
 
 protected:
-    Base::Vector3d getTextDirection(Base::Vector3d elementDirection,
-                                    double tolerance = defaultTolerance) override;
+    Base::Vector3d getTextDirection(
+        Base::Vector3d elementDirection,
+        double tolerance = defaultTolerance
+    ) override;
     void onChanged(const App::Property* prop) override;
 
 private:

@@ -53,9 +53,11 @@ public:
 
     virtual bool supports(const Part::Geometry* geo) const = 0;
     virtual Base::Vector3d getPoint(const Part::Geometry* geo, PointPos PosId) const = 0;
-    virtual int exposeInternalGeometry([[maybe_unused]] int GeoId,
-                                       [[maybe_unused]] const Part::Geometry* geo,
-                                       [[maybe_unused]] SketchObject* sketch) const
+    virtual int exposeInternalGeometry(
+        [[maybe_unused]] int GeoId,
+        [[maybe_unused]] const Part::Geometry* geo,
+        [[maybe_unused]] SketchObject* sketch
+    ) const
     {
         return -1;  // not supported
     }

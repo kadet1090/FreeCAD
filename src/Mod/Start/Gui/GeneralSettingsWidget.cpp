@@ -23,14 +23,14 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <QApplication>
-#include <QComboBox>
-#include <QGridLayout>
-#include <QLabel>
-#include <QLayout>
-#include <QToolButton>
-#include <QVBoxLayout>
-#include <QWidget>
+# include <QApplication>
+# include <QComboBox>
+# include <QGridLayout>
+# include <QLabel>
+# include <QLayout>
+# include <QToolButton>
+# include <QVBoxLayout>
+# include <QWidget>
 #endif
 
 #include "GeneralSettingsWidget.h"
@@ -96,8 +96,9 @@ QString GeneralSettingsWidget::createLabelText(const QString& translatedText) co
 
 QComboBox* GeneralSettingsWidget::createLanguageComboBox()
 {
-    ParameterGrp::handle hGrp =
-        App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/General");
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/General"
+    );
     auto langToStr = Gui::Translator::instance()->activeLanguage();
     QByteArray language = hGrp->GetASCII("Language", langToStr.c_str()).c_str();
     auto comboBox = new QComboBox;
@@ -132,10 +133,12 @@ QComboBox* GeneralSettingsWidget::createLanguageComboBox()
         model->sort(0);
     }
     _languageComboBox = comboBox;
-    connect(_languageComboBox,
-            qOverload<int>(&QComboBox::currentIndexChanged),
-            this,
-            &GeneralSettingsWidget::onLanguageChanged);
+    connect(
+        _languageComboBox,
+        qOverload<int>(&QComboBox::currentIndexChanged),
+        this,
+        &GeneralSettingsWidget::onLanguageChanged
+    );
     return comboBox;
 }
 
@@ -144,10 +147,12 @@ QComboBox* GeneralSettingsWidget::createUnitSystemComboBox()
     // Contents are created in retranslateUi()
     auto comboBox = new QComboBox;
     _unitSystemComboBox = comboBox;
-    connect(_unitSystemComboBox,
-            qOverload<int>(&QComboBox::currentIndexChanged),
-            this,
-            &GeneralSettingsWidget::onUnitSystemChanged);
+    connect(
+        _unitSystemComboBox,
+        qOverload<int>(&QComboBox::currentIndexChanged),
+        this,
+        &GeneralSettingsWidget::onUnitSystemChanged
+    );
     return comboBox;
 }
 
@@ -156,10 +161,12 @@ QComboBox* GeneralSettingsWidget::createNavigationStyleComboBox()
     // Contents are created in retranslateUi()
     auto comboBox = new QComboBox;
     _navigationStyleComboBox = comboBox;
-    connect(_navigationStyleComboBox,
-            qOverload<int>(&QComboBox::currentIndexChanged),
-            this,
-            &GeneralSettingsWidget::onNavigationStyleChanged);
+    connect(
+        _navigationStyleComboBox,
+        qOverload<int>(&QComboBox::currentIndexChanged),
+        this,
+        &GeneralSettingsWidget::onNavigationStyleChanged
+    );
     return comboBox;
 }
 
@@ -169,9 +176,11 @@ void GeneralSettingsWidget::onLanguageChanged(int index)
         return;  // happens when clearing the combo box in retranslateUi()
     }
     Gui::Translator::instance()->activateLanguage(
-        _languageComboBox->itemData(index).toByteArray().data());
-    ParameterGrp::handle hGrp =
-        App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/General");
+        _languageComboBox->itemData(index).toByteArray().data()
+    );
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/General"
+    );
     auto langToStr = Gui::Translator::instance()->activeLanguage();
     hGrp->SetASCII("Language", langToStr.c_str());
 }
@@ -182,8 +191,9 @@ void GeneralSettingsWidget::onUnitSystemChanged(int index)
         return;  // happens when clearing the combo box in retranslateUi()
     }
     Base::UnitsApi::setSchema(static_cast<Base::UnitSystem>(index));
-    ParameterGrp::handle hGrp =
-        App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Units");
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/Units"
+    );
     hGrp->SetInt("UserSchema", index);
 }
 
@@ -193,8 +203,9 @@ void GeneralSettingsWidget::onNavigationStyleChanged(int index)
         return;  // happens when clearing the combo box in retranslateUi()
     }
     auto navStyleName = _navigationStyleComboBox->itemData(index).toByteArray();
-    ParameterGrp::handle hGrp =
-        App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/View");
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/View"
+    );
     hGrp->SetASCII("NavigationStyle", navStyleName.constData());
 }
 
@@ -212,8 +223,9 @@ void GeneralSettingsWidget::retranslateUi()
     _unitSystemLabel->setText(createLabelText(tr("Unit System")));
 
     _unitSystemComboBox->clear();
-    ParameterGrp::handle hGrpUnits =
-        App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Units");
+    ParameterGrp::handle hGrpUnits = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/Units"
+    );
     auto userSchema = hGrpUnits->GetInt("UserSchema", 0);
     int num = static_cast<int>(Base::UnitSystem::NumUnitSystemTypes);
     for (int i = 0; i < num; i++) {
@@ -224,10 +236,11 @@ void GeneralSettingsWidget::retranslateUi()
 
     _navigationStyleLabel->setText(createLabelText(tr("Navigation Style")));
     _navigationStyleComboBox->clear();
-    ParameterGrp::handle hGrpNav =
-        App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/View");
-    auto navStyleName =
-        hGrpNav->GetASCII("NavigationStyle", Gui::CADNavigationStyle::getClassTypeId().getName());
+    ParameterGrp::handle hGrpNav = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/View"
+    );
+    auto navStyleName
+        = hGrpNav->GetASCII("NavigationStyle", Gui::CADNavigationStyle::getClassTypeId().getName());
     std::map<Base::Type, std::string> styles = Gui::UserNavigationStyle::getUserFriendlyNames();
     for (const auto& style : styles) {
         QByteArray data(style.first.getName());

@@ -31,7 +31,7 @@ using namespace MeshCore;
 
 WriterPLY::WriterPLY(const MeshKernel& kernel, const Material* mat)
     : _kernel(kernel)
-    , _material{mat}
+    , _material {mat}
 {}
 
 void WriterPLY::SetTransform(const Base::Matrix4D& mat)
@@ -45,8 +45,10 @@ void WriterPLY::SetTransform(const Base::Matrix4D& mat)
 bool WriterPLY::SaveMaterial() const
 {
     const MeshPointArray& rPoints = _kernel.GetPoints();
-    return (_material && _material->binding == MeshIO::PER_VERTEX
-            && _material->diffuseColor.size() == rPoints.size());
+    return (
+        _material && _material->binding == MeshIO::PER_VERTEX
+        && _material->diffuseColor.size() == rPoints.size()
+    );
 }
 
 bool WriterPLY::CheckStream(std::ostream& out) const
@@ -62,8 +64,7 @@ void WriterPLY::SaveHeader(Format format, bool material, std::ostream& out) cons
     std::size_t f_count = rFacets.size();
 
     out << "ply\n"
-        << (format == ascii ? "format ascii 1.0\n"
-                            : "format binary_little_endian 1.0\n")
+        << (format == ascii ? "format ascii 1.0\n" : "format binary_little_endian 1.0\n")
         << "comment Created by FreeCAD <https://www.freecad.org>\n"
         << "element vertex " << v_count << '\n'
         << "property float32 x\n"
@@ -127,7 +128,7 @@ bool WriterPLY::SaveBinary(std::ostream& out) const
     Base::OutputStream os(out);
     os.setByteOrder(Base::Stream::LittleEndian);
 
-    auto writePoints = [&os] (const Vertex& v) {
+    auto writePoints = [&os](const Vertex& v) {
         os << v.point.x << v.point.y << v.point.z;
         if (v.hasMaterial) {
             // NOLINTBEGIN
@@ -141,7 +142,7 @@ bool WriterPLY::SaveBinary(std::ostream& out) const
 
     SaveVertexes(saveVertexColor, writePoints);
 
-    auto writeFacets = [&os] (int f1, int f2, int f3) {
+    auto writeFacets = [&os](int f1, int f2, int f3) {
         const unsigned char n = 3;
         os << n;
         os << f1 << f2 << f3;
@@ -164,7 +165,7 @@ bool WriterPLY::SaveAscii(std::ostream& out) const
     out.precision(6);
     out.setf(std::ios::fixed | std::ios::showpoint);
 
-    auto writePoints = [&out] (const Vertex& v) {
+    auto writePoints = [&out](const Vertex& v) {
         out << v.point.x << " " << v.point.y << " " << v.point.z;
         if (v.hasMaterial) {
             // NOLINTBEGIN
@@ -180,7 +181,7 @@ bool WriterPLY::SaveAscii(std::ostream& out) const
 
     SaveVertexes(saveVertexColor, writePoints);
 
-    auto writeFacets = [&out] (int f1, int f2, int f3) {
+    auto writeFacets = [&out](int f1, int f2, int f3) {
         const unsigned int n = 3;
         out << n << " " << f1 << " " << f2 << " " << f3 << '\n';
     };

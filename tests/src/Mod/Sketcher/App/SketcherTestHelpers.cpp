@@ -111,12 +111,14 @@ std::unique_ptr<Part::GeomBSplineCurve> createTypicalNonPeriodicBSpline()
     std::vector<double> weights(5, 1.0);
     std::vector<double> knotsNonPeriodic = {0.0, 1.0, 2.0};
     std::vector<int> multiplicitiesNonPeriodic = {degree + 1, 1, degree + 1};
-    return std::make_unique<Part::GeomBSplineCurve>(poles,
-                                                    weights,
-                                                    knotsNonPeriodic,
-                                                    multiplicitiesNonPeriodic,
-                                                    degree,
-                                                    false);
+    return std::make_unique<Part::GeomBSplineCurve>(
+        poles,
+        weights,
+        knotsNonPeriodic,
+        multiplicitiesNonPeriodic,
+        degree,
+        false
+    );
 }
 
 std::unique_ptr<Part::GeomBSplineCurve> createTypicalPeriodicBSpline()
@@ -131,30 +133,33 @@ std::unique_ptr<Part::GeomBSplineCurve> createTypicalPeriodicBSpline()
     std::vector<double> weights(5, 1.0);
     std::vector<double> knotsPeriodic = {0.0, 0.3, 1.0, 1.5, 1.8, 2.0};
     std::vector<int> multiplicitiesPeriodic(6, 1);
-    return std::make_unique<Part::GeomBSplineCurve>(poles,
-                                                    weights,
-                                                    knotsPeriodic,
-                                                    multiplicitiesPeriodic,
-                                                    degree,
-                                                    true);
+    return std::make_unique<Part::GeomBSplineCurve>(
+        poles,
+        weights,
+        knotsPeriodic,
+        multiplicitiesPeriodic,
+        degree,
+        true
+    );
 }
 
 int countConstraintsOfType(const Sketcher::SketchObject* obj, const Sketcher::ConstraintType cType)
 {
     const std::vector<Sketcher::Constraint*>& constraints = obj->Constraints.getValues();
 
-    int result = std::count_if(constraints.begin(),
-                               constraints.end(),
-                               [&cType](const Sketcher::Constraint* constr) {
-                                   return constr->Type == cType;
-                               });
+    int result = std::count_if(
+        constraints.begin(),
+        constraints.end(),
+        [&cType](const Sketcher::Constraint* constr) { return constr->Type == cType; }
+    );
 
     return result;
 }
 
 Base::Vector3d getPointAtNormalizedParameter(const Part::GeomCurve& curve, double param)
 {
-    return curve.pointAtParameter(curve.getFirstParameter()
-                                  + (curve.getLastParameter() - curve.getFirstParameter()) * param);
+    return curve.pointAtParameter(
+        curve.getFirstParameter() + (curve.getLastParameter() - curve.getFirstParameter()) * param
+    );
 }
 }  // namespace SketcherTestHelpers

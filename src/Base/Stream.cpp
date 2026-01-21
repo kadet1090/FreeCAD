@@ -24,11 +24,11 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <QBuffer>
-#include <QIODevice>
-#ifdef __GNUC__
-#include <cstdint>
-#endif
+# include <QBuffer>
+# include <QIODevice>
+# ifdef __GNUC__
+#  include <cstdint>
+# endif
 #endif
 
 #include "Stream.h"
@@ -287,9 +287,8 @@ std::streamsize ByteArrayOStreambuf::xsputn(const char* s, std::streamsize num)
     return _buffer->write(s, num);
 }
 
-std::streambuf::pos_type ByteArrayOStreambuf::seekoff(std::streambuf::off_type off,
-                                                      std::ios_base::seekdir way,
-                                                      std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type ByteArrayOStreambuf::
+    seekoff(std::streambuf::off_type off, std::ios_base::seekdir way, std::ios_base::openmode /*mode*/)
 {
     off_type endpos = 0;
     off_type curpos = _buffer->pos();
@@ -316,8 +315,7 @@ std::streambuf::pos_type ByteArrayOStreambuf::seekoff(std::streambuf::off_type o
     return {endpos};
 }
 
-std::streambuf::pos_type ByteArrayOStreambuf::seekpos(std::streambuf::pos_type pos,
-                                                      std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type ByteArrayOStreambuf::seekpos(std::streambuf::pos_type pos, std::ios_base::openmode /*mode*/)
 {
     return seekoff(pos, std::ios_base::beg);
 }
@@ -365,9 +363,8 @@ std::streamsize ByteArrayIStreambuf::showmanyc()
     return _end - _cur;
 }
 
-std::streambuf::pos_type ByteArrayIStreambuf::seekoff(std::streambuf::off_type off,
-                                                      std::ios_base::seekdir way,
-                                                      std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type ByteArrayIStreambuf::
+    seekoff(std::streambuf::off_type off, std::ios_base::seekdir way, std::ios_base::openmode /*mode*/)
 {
     int p_pos = -1;
     if (way == std::ios_base::beg) {
@@ -393,8 +390,7 @@ std::streambuf::pos_type ByteArrayIStreambuf::seekoff(std::streambuf::off_type o
     return ((p_pos + off) - _beg);
 }
 
-std::streambuf::pos_type ByteArrayIStreambuf::seekpos(std::streambuf::pos_type pos,
-                                                      std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type ByteArrayIStreambuf::seekpos(std::streambuf::pos_type pos, std::ios_base::openmode /*mode*/)
 {
     return seekoff(pos, std::ios_base::beg);
 }
@@ -423,9 +419,8 @@ std::streamsize IODeviceOStreambuf::xsputn(const char* s, std::streamsize num)
     return device->write(s, num);
 }
 
-std::streambuf::pos_type IODeviceOStreambuf::seekoff(std::streambuf::off_type off,
-                                                     std::ios_base::seekdir way,
-                                                     std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type IODeviceOStreambuf::
+    seekoff(std::streambuf::off_type off, std::ios_base::seekdir way, std::ios_base::openmode /*mode*/)
 {
     off_type endpos = 0;
     off_type curpos = device->pos();
@@ -452,8 +447,7 @@ std::streambuf::pos_type IODeviceOStreambuf::seekoff(std::streambuf::off_type of
     return {endpos};
 }
 
-std::streambuf::pos_type IODeviceOStreambuf::seekpos(std::streambuf::pos_type pos,
-                                                     std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type IODeviceOStreambuf::seekpos(std::streambuf::pos_type pos, std::ios_base::openmode /*mode*/)
 {
     return seekoff(pos, std::ios_base::beg);
 }
@@ -463,9 +457,11 @@ std::streambuf::pos_type IODeviceOStreambuf::seekpos(std::streambuf::pos_type po
 IODeviceIStreambuf::IODeviceIStreambuf(QIODevice* dev)
     : device(dev)
 {
-    setg(buffer + pbSize,   // beginning of putback area
-         buffer + pbSize,   // read position
-         buffer + pbSize);  // end position
+    setg(
+        buffer + pbSize,  // beginning of putback area
+        buffer + pbSize,  // read position
+        buffer + pbSize
+    );  // end position
 }
 
 IODeviceIStreambuf::~IODeviceIStreambuf() = default;
@@ -505,17 +501,18 @@ std::streambuf::int_type IODeviceIStreambuf::underflow()
     }
 
     // reset buffer pointers
-    setg(buffer + (pbSize - numPutback),  // beginning of putback area
-         buffer + pbSize,                 // read position
-         buffer + pbSize + num);          // end of buffer
+    setg(
+        buffer + (pbSize - numPutback),  // beginning of putback area
+        buffer + pbSize,                 // read position
+        buffer + pbSize + num
+    );  // end of buffer
 
     // return next character
     return *gptr();
 }
 
-std::streambuf::pos_type IODeviceIStreambuf::seekoff(std::streambuf::off_type off,
-                                                     std::ios_base::seekdir way,
-                                                     std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type IODeviceIStreambuf::
+    seekoff(std::streambuf::off_type off, std::ios_base::seekdir way, std::ios_base::openmode /*mode*/)
 {
     off_type endpos = 0;
     off_type curpos = device->pos();
@@ -542,8 +539,7 @@ std::streambuf::pos_type IODeviceIStreambuf::seekoff(std::streambuf::off_type of
     return {endpos};
 }
 
-std::streambuf::pos_type IODeviceIStreambuf::seekpos(std::streambuf::pos_type pos,
-                                                     std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type IODeviceIStreambuf::seekpos(std::streambuf::pos_type pos, std::ios_base::openmode /*mode*/)
 {
     return seekoff(pos, std::ios_base::beg);
 }
@@ -722,9 +718,8 @@ std::streamsize PyStreambuf::xsputn(const char* s, std::streamsize num)
 #endif
 }
 
-PyStreambuf::pos_type PyStreambuf::seekoff(PyStreambuf::off_type offset,
-                                           PyStreambuf::seekdir dir,
-                                           PyStreambuf::openmode /*mode*/)
+PyStreambuf::pos_type PyStreambuf::
+    seekoff(PyStreambuf::off_type offset, PyStreambuf::seekdir dir, PyStreambuf::openmode /*mode*/)
 {
     int whence = 0;
     switch (dir) {
@@ -810,9 +805,8 @@ std::streamsize Streambuf::showmanyc()
     return _end - _cur;
 }
 
-std::streambuf::pos_type Streambuf::seekoff(std::streambuf::off_type off,
-                                            std::ios_base::seekdir way,
-                                            std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type Streambuf::
+    seekoff(std::streambuf::off_type off, std::ios_base::seekdir way, std::ios_base::openmode /*mode*/)
 {
     std::string::const_iterator p_pos;
     if (way == std::ios_base::beg) {
@@ -838,8 +832,7 @@ std::streambuf::pos_type Streambuf::seekoff(std::streambuf::off_type off,
     return ((p_pos + off) - _beg);
 }
 
-std::streambuf::pos_type Streambuf::seekpos(std::streambuf::pos_type pos,
-                                            std::ios_base::openmode /*mode*/)
+std::streambuf::pos_type Streambuf::seekpos(std::streambuf::pos_type pos, std::ios_base::openmode /*mode*/)
 {
     return seekoff(pos, std::ios_base::beg);
 }

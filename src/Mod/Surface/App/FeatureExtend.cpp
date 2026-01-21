@@ -22,17 +22,17 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <BRepAdaptor_Surface.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepLProp_SLProps.hxx>
-#include <GeomAPI_PointsToBSplineSurface.hxx>
-#include <Geom_BSplineSurface.hxx>
-#include <Precision.hxx>
-#include <Standard_Version.hxx>
-#include <TColgp_Array2OfPnt.hxx>
-#include <TopoDS.hxx>
-#include <TopoDS_Face.hxx>
-#include <gp_Pnt.hxx>
+# include <BRepAdaptor_Surface.hxx>
+# include <BRepBuilderAPI_MakeFace.hxx>
+# include <BRepLProp_SLProps.hxx>
+# include <GeomAPI_PointsToBSplineSurface.hxx>
+# include <Geom_BSplineSurface.hxx>
+# include <Precision.hxx>
+# include <Standard_Version.hxx>
+# include <TColgp_Array2OfPnt.hxx>
+# include <TopoDS.hxx>
+# include <TopoDS_Face.hxx>
+# include <gp_Pnt.hxx>
 #endif
 
 #include <Base/Tools.h>
@@ -104,8 +104,9 @@ App::DocumentObjectExecReturn* Extend::execute()
         return new App::DocumentObjectExecReturn("Not exactly one sub-shape linked.");
     }
 
-    TopoDS_Shape shape =
-        static_cast<Part::Feature*>(part)->Shape.getShape().getSubShape(faces[0].c_str());
+    TopoDS_Shape shape = static_cast<Part::Feature*>(part)->Shape.getShape().getSubShape(
+        faces[0].c_str()
+    );
     if (shape.IsNull() || shape.ShapeType() != TopAbs_FACE) {
         return new App::DocumentObjectExecReturn("Sub-shape is not a face.");
     }
@@ -186,13 +187,10 @@ void Extend::onChanged(const App::Property* prop)
     Part::Spline::onChanged(prop);
 }
 
-void Extend::handleChangedPropertyName(Base::XMLReader& reader,
-                                       const char* TypeName,
-                                       const char* PropName)
+void Extend::handleChangedPropertyName(Base::XMLReader& reader, const char* TypeName, const char* PropName)
 {
     Base::Type type = Base::Type::fromName(TypeName);
-    if (App::PropertyFloatConstraint::getClassTypeId() == type
-        && strcmp(PropName, "ExtendU") == 0) {
+    if (App::PropertyFloatConstraint::getClassTypeId() == type && strcmp(PropName, "ExtendU") == 0) {
         App::PropertyFloatConstraint v;
         v.Restore(reader);
         ExtendUNeg.setValue(v.getValue());

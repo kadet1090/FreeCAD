@@ -40,8 +40,8 @@ void ExportOCAFGui::findColors(Part::Feature* part, std::vector<Base::Color>& co
     Gui::ViewProvider* vp = Gui::Application::Instance->getViewProvider(part);
     if (vp && vp->isDerivedFrom<PartGui::ViewProviderPartExt>()) {
         colors = static_cast<PartGui::ViewProviderPartExt*>(vp)->ShapeAppearance.getDiffuseColors();
-        float transp =
-            static_cast<PartGui::ViewProviderPartExt*>(vp)->ShapeAppearance.getTransparency();
+        float transp
+            = static_cast<PartGui::ViewProviderPartExt*>(vp)->ShapeAppearance.getTransparency();
         for (auto& it : colors) {
             it.setTransparency(transp);
         }

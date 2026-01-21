@@ -24,8 +24,8 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <iostream>
-#include <sstream>
+# include <iostream>
+# include <sstream>
 #endif
 
 #include "SystemHandler.h"
@@ -33,19 +33,19 @@
 #include "Exception.h"
 
 #ifdef FC_OS_WIN32
-#include <Windows.h>
+# include <Windows.h>
 #endif
 
 #ifdef _MSC_VER  // New handler for Microsoft Visual C++ compiler
-#pragma warning(disable : 4535)
-#if !defined(_DEBUG) && defined(HAVE_SEH)
-#define FC_SE_TRANSLATOR
-#endif
+# pragma warning(disable : 4535)
+# if !defined(_DEBUG) && defined(HAVE_SEH)
+#  define FC_SE_TRANSLATOR
+# endif
 
-#include <new.h>
-#include <eh.h>  // VC exception handling
-#else            // Ansi C/C++ new handler
-#include <new>
+# include <new.h>
+# include <eh.h>  // VC exception handling
+#else             // Ansi C/C++ new handler
+# include <new>
 #endif
 
 using namespace Base;
@@ -69,23 +69,23 @@ static void freecadNewHandler()
 #endif
 
 #if defined(FC_OS_LINUX)
-#include <unistd.h>
-#include <execinfo.h>
-#include <dlfcn.h>
-#include <cxxabi.h>
+# include <unistd.h>
+# include <execinfo.h>
+# include <dlfcn.h>
+# include <cxxabi.h>
 
-#include <cstdio>
-#include <cstdlib>
-#include <string>
+# include <cstdio>
+# include <cstdlib>
+# include <string>
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif  // HAVE_CONFIG_H
+# if HAVE_CONFIG_H
+#  include <config.h>
+# endif  // HAVE_CONFIG_H
 
 // This function produces a stack backtrace with demangled function & method names.
 static void printBacktrace(size_t skip = 0)
 {
-#if defined HAVE_BACKTRACE_SYMBOLS
+# if defined HAVE_BACKTRACE_SYMBOLS
     void* callstack[128];
     size_t nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
     size_t nFrames = backtrace(callstack, nMaxFrames);
@@ -117,11 +117,11 @@ static void printBacktrace(size_t skip = 0)
     }
 
     free(symbols);
-#else  // HAVE_BACKTRACE_SYMBOLS
+# else  // HAVE_BACKTRACE_SYMBOLS
     (void)skip;
     std::cerr << "Cannot print the stacktrace because the C runtime library doesn't provide "
                  "backtrace or backtrace_symbols\n";
-#endif
+# endif
 }
 #endif
 
@@ -131,25 +131,27 @@ void segmentation_fault_handler(int sig)
     (void)sig;
     std::cerr << "Program received signal SIGSEGV, Segmentation fault.\n";
     printBacktrace(2);
-#if defined(FC_DEBUG)
+# if defined(FC_DEBUG)
     abort();
-#else
+# else
     _exit(1);
-#endif
+# endif
 #else
     switch (sig) {
         case SIGSEGV:
             std::cerr << "Illegal storage access..." << '\n';
-#if !defined(_DEBUG)
-            throw Base::AccessViolation("Illegal storage access! Please save your work under a new "
-                                        "file name and restart the application!");
-#endif
+# if !defined(_DEBUG)
+            throw Base::AccessViolation(
+                "Illegal storage access! Please save your work under a new "
+                "file name and restart the application!"
+            );
+# endif
             break;
         case SIGABRT:
             std::cerr << "Abnormal program termination..." << '\n';
-#if !defined(_DEBUG)
+# if !defined(_DEBUG)
             throw Base::AbnormalProgramTermination("Break signal occurred");
-#endif
+# endif
             break;
         default:
             std::cerr << "Unknown error occurred..." << '\n';
@@ -168,12 +170,14 @@ static void unexpection_error_handler()
 {
     std::cerr << "Unexpected error occurred..." << '\n';
     // try to throw an exception and give the user chance to save their work
-#if !defined(_DEBUG)
-    throw Base::AbnormalProgramTermination("Unexpected error occurred! Please save your work under "
-                                           "a new file name and restart the application!");
-#else
+# if !defined(_DEBUG)
+    throw Base::AbnormalProgramTermination(
+        "Unexpected error occurred! Please save your work under "
+        "a new file name and restart the application!"
+    );
+# else
     terminate();
-#endif
+# endif
 }
 #endif
 

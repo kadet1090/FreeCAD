@@ -27,7 +27,7 @@
 
 #include <string>
 #ifndef FC_GLOBAL_H
-#include <FCGlobal.h>
+# include <FCGlobal.h>
 #endif
 
 
@@ -103,12 +103,11 @@ public:
 
     enum TEnum
     {
-        TVal1, /**< enum value TVal1. */
-        TVal2, /**< enum value TVal2. */
-        TVal3  /**< enum value TVal3. */
-    }
-        * enumPtr {nullptr}, /**< enum pointer. Details. */
-        enumVar {TVal1};     /**< enum variable. Details. */
+        TVal1,            /**< enum value TVal1. */
+        TVal2,            /**< enum value TVal2. */
+        TVal3             /**< enum value TVal3. */
+    } *enumPtr {nullptr}, /**< enum pointer. Details. */
+        enumVar {TVal1};  /**< enum variable. Details. */
 
     /**
      * A pure virtual member.

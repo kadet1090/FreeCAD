@@ -32,16 +32,15 @@
 
 using namespace ImportGui;
 
-ImportOCAFGui::ImportOCAFGui(Handle(TDocStd_Document) hDoc,
-                             App::Document* pDoc,
-                             const std::string& name)
+ImportOCAFGui::ImportOCAFGui(Handle(TDocStd_Document) hDoc, App::Document* pDoc, const std::string& name)
     : ImportOCAF2(hDoc, pDoc, name)
 {}
 
 void ImportOCAFGui::applyFaceColors(Part::Feature* part, const std::vector<Base::Color>& colors)
 {
     auto vp = dynamic_cast<PartGui::ViewProviderPartExt*>(
-        Gui::Application::Instance->getViewProvider(part));
+        Gui::Application::Instance->getViewProvider(part)
+    );
     if (!vp) {
         return;
     }
@@ -57,12 +56,12 @@ void ImportOCAFGui::applyFaceColors(Part::Feature* part, const std::vector<Base:
         vp->ShapeAppearance.setDiffuseColors(colors);
         std::vector<float> transp;
         transp.reserve(colors.size());
-        std::transform(colors.cbegin(),
-                       colors.cend(),
-                       std::back_inserter(transp),
-                       [](const Base::Color& col) {
-                           return col.transparency();
-                       });
+        std::transform(
+            colors.cbegin(),
+            colors.cend(),
+            std::back_inserter(transp),
+            [](const Base::Color& col) { return col.transparency(); }
+        );
         vp->ShapeAppearance.setTransparencies(transp);
     }
 }
@@ -70,7 +69,8 @@ void ImportOCAFGui::applyFaceColors(Part::Feature* part, const std::vector<Base:
 void ImportOCAFGui::applyEdgeColors(Part::Feature* part, const std::vector<Base::Color>& colors)
 {
     auto vp = dynamic_cast<PartGui::ViewProviderPartExt*>(
-        Gui::Application::Instance->getViewProvider(part));
+        Gui::Application::Instance->getViewProvider(part)
+    );
     if (!vp) {
         return;
     }
@@ -84,8 +84,7 @@ void ImportOCAFGui::applyEdgeColors(Part::Feature* part, const std::vector<Base:
 
 void ImportOCAFGui::applyLinkColor(App::DocumentObject* obj, int index, Base::Color color)
 {
-    auto vp =
-        dynamic_cast<Gui::ViewProviderLink*>(Gui::Application::Instance->getViewProvider(obj));
+    auto vp = dynamic_cast<Gui::ViewProviderLink*>(Gui::Application::Instance->getViewProvider(obj));
     if (!vp) {
         return;
     }
@@ -106,8 +105,10 @@ void ImportOCAFGui::applyLinkColor(App::DocumentObject* obj, int index, Base::Co
     vp->MaterialList.set1Value(index, mat);
 }
 
-void ImportOCAFGui::applyElementColors(App::DocumentObject* obj,
-                                       const std::map<std::string, Base::Color>& colors)
+void ImportOCAFGui::applyElementColors(
+    App::DocumentObject* obj,
+    const std::map<std::string, Base::Color>& colors
+)
 {
     auto vp = Gui::Application::Instance->getViewProvider(obj);
     if (!vp) {

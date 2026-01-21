@@ -25,20 +25,20 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <algorithm>
-#include <codecvt>
-#include <cstring>
-#include <iostream>
-#if defined(FC_OS_LINUX) || defined(FC_OS_CYGWIN) || defined(FC_OS_MACOSX) || defined(FC_OS_BSD)
-#include <dirent.h>
-#include <unistd.h>
-#include <climits>
-#elif defined(FC_OS_WIN32)
-#include <io.h>
-#include <Windows.h>
-#endif
-#include <sys/stat.h>
-#include <sys/types.h>
+# include <algorithm>
+# include <codecvt>
+# include <cstring>
+# include <iostream>
+# if defined(FC_OS_LINUX) || defined(FC_OS_CYGWIN) || defined(FC_OS_MACOSX) || defined(FC_OS_BSD)
+#  include <dirent.h>
+#  include <unistd.h>
+#  include <climits>
+# elif defined(FC_OS_WIN32)
+#  include <io.h>
+#  include <Windows.h>
+# endif
+# include <sys/stat.h>
+# include <sys/types.h>
 #endif
 
 #include "FileInfo.h"
@@ -380,12 +380,11 @@ unsigned int FileInfo::size() const
     return bytes;
 }
 
-template <typename TP>
+template<typename TP>
 std::time_t to_time_t(TP tp)
 {
     using namespace std::chrono;
-    auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
-                                                        + system_clock::now());
+    auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now() + system_clock::now());
     return system_clock::to_time_t(sctp);
 }
 
@@ -504,7 +503,7 @@ std::vector<Base::FileInfo> FileInfo::getDirectoryContent() const
     std::vector<Base::FileInfo> List;
     try {
         fs::path path = stringToPath(FileName);
-        for (const fs::directory_entry& f : fs::directory_iterator{ path }) {
+        for (const fs::directory_entry& f : fs::directory_iterator {path}) {
             List.emplace_back(pathToString(f.path()));
         }
     }

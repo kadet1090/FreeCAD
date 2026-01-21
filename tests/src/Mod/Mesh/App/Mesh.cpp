@@ -102,7 +102,7 @@ TEST(MeshTest, TestSupportedInputFormats)
 {
     std::vector<std::string> formats = MeshCore::MeshInput::supportedMeshFormats();
     EXPECT_NE(std::find(formats.begin(), formats.end(), "bms"), formats.end());
-    EXPECT_NE(std::find(formats.begin(), formats.end(), "iv"),  formats.end());
+    EXPECT_NE(std::find(formats.begin(), formats.end(), "iv"), formats.end());
     EXPECT_NE(std::find(formats.begin(), formats.end(), "3mf"), formats.end());
     EXPECT_NE(std::find(formats.begin(), formats.end(), "smf"), formats.end());
     EXPECT_NE(std::find(formats.begin(), formats.end(), "off"), formats.end());
@@ -134,7 +134,7 @@ TEST(MeshTest, TestSupportedOutputFormats)
 {
     std::vector<std::string> formats = MeshCore::MeshOutput::supportedMeshFormats();
     EXPECT_NE(std::find(formats.begin(), formats.end(), "bms"), formats.end());
-    EXPECT_NE(std::find(formats.begin(), formats.end(), "iv"),  formats.end());
+    EXPECT_NE(std::find(formats.begin(), formats.end(), "iv"), formats.end());
     EXPECT_NE(std::find(formats.begin(), formats.end(), "3mf"), formats.end());
     EXPECT_NE(std::find(formats.begin(), formats.end(), "smf"), formats.end());
     EXPECT_NE(std::find(formats.begin(), formats.end(), "off"), formats.end());

@@ -243,9 +243,7 @@ public:
         }
         return pt;
     }
-    int exposeInternalGeometry(int GeoId,
-                               const Part::Geometry* geo,
-                               SketchObject* sketch) const override
+    int exposeInternalGeometry(int GeoId, const Part::Geometry* geo, SketchObject* sketch) const override
     {
         SketchEllipticT<GeomType> sketchgeo;
         return sketchgeo.exposeInternalGeometry(GeoId, geo, sketch);
@@ -298,9 +296,7 @@ public:
         }
         return Base::Vector3d();
     }
-    int exposeInternalGeometry(int GeoId,
-                               const Part::Geometry* geo,
-                               SketchObject* sketch) const override
+    int exposeInternalGeometry(int GeoId, const Part::Geometry* geo, SketchObject* sketch) const override
     {
         SketchEllipticT<GeomType> sketchgeo;
         return sketchgeo.exposeInternalGeometry(GeoId, geo, sketch);
@@ -328,9 +324,7 @@ public:
         }
         return Base::Vector3d();
     }
-    int exposeInternalGeometry(int GeoId,
-                               const Part::Geometry* geo,
-                               SketchObject* sketch) const override
+    int exposeInternalGeometry(int GeoId, const Part::Geometry* geo, SketchObject* sketch) const override
     {
         // First we search what has to be restored
         bool major = false;
@@ -466,9 +460,7 @@ public:
         }
         return Base::Vector3d();
     }
-    int exposeInternalGeometry(int GeoId,
-                               const Part::Geometry* geo,
-                               SketchObject* sketch) const override
+    int exposeInternalGeometry(int GeoId, const Part::Geometry* geo, SketchObject* sketch) const override
     {
         // First we search what has to be restored
         bool focus = false;
@@ -571,9 +563,7 @@ public:
         }
         return Base::Vector3d();
     }
-    int exposeInternalGeometry(int GeoId,
-                               const Part::Geometry* geo,
-                               SketchObject* sketch) const override
+    int exposeInternalGeometry(int GeoId, const Part::Geometry* geo, SketchObject* sketch) const override
     {
         const auto* bsp = static_cast<const GeomType*>(geo);
         // First we search what has to be restored
@@ -604,11 +594,12 @@ public:
         }
 
         if (controlpointgeoids[0] != GeoEnum::GeoUndef) {
-            isfirstweightconstrained =
-                std::any_of(vals.begin(), vals.end(), [&controlpointgeoids](const auto& constr) {
-                    return (constr->Type == Sketcher::Weight
-                            && constr->First == controlpointgeoids[0]);
-                });
+            isfirstweightconstrained
+                = std::any_of(vals.begin(), vals.end(), [&controlpointgeoids](const auto& constr) {
+                      return (
+                          constr->Type == Sketcher::Weight && constr->First == controlpointgeoids[0]
+                      );
+                  });
         }
 
         int currentgeoid = sketch->getHighestCurveIndex();

@@ -29,7 +29,7 @@
 #include <xercesc/util/BinInputStream.hpp>
 #include <xercesc/sax/InputSource.hpp>
 #ifndef FC_GLOBAL_H
-#include <FCGlobal.h>
+# include <FCGlobal.h>
 #endif
 
 namespace XERCES_CPP_NAMESPACE
@@ -86,10 +86,12 @@ private:
 class BaseExport StdInputSource: public XERCES_CPP_NAMESPACE::InputSource
 {
 public:
-    StdInputSource(std::istream& Stream,
-                   const char* filePath,
-                   XERCES_CPP_NAMESPACE::MemoryManager* const manager =
-                       XERCES_CPP_NAMESPACE::XMLPlatformUtils::fgMemoryManager);
+    StdInputSource(
+        std::istream& Stream,
+        const char* filePath,
+        XERCES_CPP_NAMESPACE::MemoryManager* const manager
+        = XERCES_CPP_NAMESPACE::XMLPlatformUtils::fgMemoryManager
+    );
     ~StdInputSource() override;
 
     XERCES_CPP_NAMESPACE::BinInputStream* makeStream() const override;

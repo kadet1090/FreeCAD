@@ -23,11 +23,11 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <QLocale>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/tokenizer.hpp>
-#include <iomanip>
-#include <sstream>
+# include <QLocale>
+# include <boost/algorithm/string/predicate.hpp>
+# include <boost/tokenizer.hpp>
+# include <iomanip>
+# include <sstream>
 #endif
 
 #include <App/ExpressionParser.h>
@@ -44,10 +44,10 @@
 FC_LOG_LEVEL_INIT("Spreadsheet", true, true)
 
 #ifdef _MSC_VER
-#define __func__ __FUNCTION__
-#ifdef PropertySheet
-#undef PropertySheet  // Microsoft's #define conflicts with the use below
-#endif
+# define __func__ __FUNCTION__
+# ifdef PropertySheet
+#  undef PropertySheet  // Microsoft's #define conflicts with the use below
+# endif
 #endif
 
 using namespace App;
@@ -190,8 +190,9 @@ void Cell::setExpression(App::ExpressionPtr&& expr)
 
     if (expr && !expr->comment.empty()) {
         if (!boost::starts_with(expr->comment, "<Cell ")) {
-            FC_WARN("Unknown style of cell " << owner->sheet()->getFullName() << '.'
-                                             << address.toString());
+            FC_WARN(
+                "Unknown style of cell " << owner->sheet()->getFullName() << '.' << address.toString()
+            );
         }
         else {
             try {
@@ -202,9 +203,10 @@ void Cell::setExpression(App::ExpressionPtr&& expr)
             }
             catch (Base::Exception& e) {
                 e.ReportException();
-                FC_ERR("Failed to restore style of cell " << owner->sheet()->getFullName() << '.'
-                                                          << address.toString() << ": "
-                                                          << e.what());
+                FC_ERR(
+                    "Failed to restore style of cell " << owner->sheet()->getFullName() << '.'
+                                                       << address.toString() << ": " << e.what()
+                );
             }
         }
         expr->comment.clear();
@@ -331,13 +333,15 @@ void Cell::setContent(const char* value)
                 try {
                     ExpressionPtr parsedExpr(App::ExpressionParser::parse(sheet, value));
 
-                    if (const auto fraction =
-                            freecad_dynamic_cast<OperatorExpression>(parsedExpr.get())) {
+                    if (const auto fraction
+                        = freecad_dynamic_cast<OperatorExpression>(parsedExpr.get())) {
                         if (fraction->getOperator() == OperatorExpression::UNIT) {
-                            const auto left =
-                                freecad_dynamic_cast<NumberExpression>(fraction->getLeft());
-                            const auto right =
-                                freecad_dynamic_cast<UnitExpression>(fraction->getRight());
+                            const auto left = freecad_dynamic_cast<NumberExpression>(
+                                fraction->getLeft()
+                            );
+                            const auto right = freecad_dynamic_cast<UnitExpression>(
+                                fraction->getRight()
+                            );
                             if (left && right) {
                                 newExpr = std::move(parsedExpr);
                             }
@@ -347,29 +351,33 @@ void Cell::setContent(const char* value)
                             //     1/2, 1m/2, 1/2s, 1m/2s, 1/m
 
                             // check for numbers in (de)nominator
-                            const bool isNumberNom =
-                                freecad_dynamic_cast<NumberExpression>(fraction->getLeft());
-                            const bool isNumberDenom =
-                                freecad_dynamic_cast<NumberExpression>(fraction->getRight());
+                            const bool isNumberNom = freecad_dynamic_cast<NumberExpression>(
+                                fraction->getLeft()
+                            );
+                            const bool isNumberDenom = freecad_dynamic_cast<NumberExpression>(
+                                fraction->getRight()
+                            );
 
                             // check for numbers with units in (de)nominator
-                            const auto opNom =
-                                freecad_dynamic_cast<OperatorExpression>(fraction->getLeft());
-                            const auto opDenom =
-                                freecad_dynamic_cast<OperatorExpression>(fraction->getRight());
-                            const bool isQuantityNom =
-                                opNom && opNom->getOperator() == OperatorExpression::UNIT;
-                            const bool isQuantityDenom =
-                                opDenom && opDenom->getOperator() == OperatorExpression::UNIT;
+                            const auto opNom = freecad_dynamic_cast<OperatorExpression>(
+                                fraction->getLeft()
+                            );
+                            const auto opDenom = freecad_dynamic_cast<OperatorExpression>(
+                                fraction->getRight()
+                            );
+                            const bool isQuantityNom = opNom
+                                && opNom->getOperator() == OperatorExpression::UNIT;
+                            const bool isQuantityDenom = opDenom
+                                && opDenom->getOperator() == OperatorExpression::UNIT;
 
                             // check for units in denomainator
-                            const auto uDenom =
-                                freecad_dynamic_cast<UnitExpression>(fraction->getRight());
+                            const auto uDenom = freecad_dynamic_cast<UnitExpression>(
+                                fraction->getRight()
+                            );
                             const bool isUnitDenom = uDenom && uDenom->is<UnitExpression>();
 
                             const bool isNomValid = isNumberNom || isQuantityNom;
-                            const bool isDenomValid =
-                                isNumberDenom || isQuantityDenom || isUnitDenom;
+                            const bool isDenomValid = isNumberDenom || isQuantityDenom || isUnitDenom;
                             if (isNomValid && isDenomValid) {
                                 newExpr = std::move(parsedExpr);
                             }
@@ -414,8 +422,8 @@ void Cell::setAlignment(int _alignment)
         alignment = _alignment;
         setUsed(
             ALIGNMENT_SET,
-            alignment
-                != (ALIGNMENT_HIMPLIED | ALIGNMENT_LEFT | ALIGNMENT_VIMPLIED | ALIGNMENT_VCENTER));
+            alignment != (ALIGNMENT_HIMPLIED | ALIGNMENT_LEFT | ALIGNMENT_VIMPLIED | ALIGNMENT_VCENTER)
+        );
         setDirty();
         signaller.tryInvoke();
     }
@@ -531,7 +539,8 @@ void Cell::setDisplayUnit(const std::string& unit)
     DisplayUnit newDisplayUnit;
     if (!unit.empty()) {
         std::shared_ptr<App::UnitExpression> e(
-            ExpressionParser::parseUnit(owner->sheet(), unit.c_str()));
+            ExpressionParser::parseUnit(owner->sheet(), unit.c_str())
+        );
 
         if (!e) {
             throw Base::UnitsMismatchError("Invalid unit");
@@ -732,15 +741,17 @@ void Cell::moveAbsolute(CellAddress newAddress)
 void Cell::restore(Base::XMLReader& reader, bool checkAlias)
 {
     const char* style = reader.hasAttribute("style") ? reader.getAttribute("style") : nullptr;
-    const char* alignment =
-        reader.hasAttribute("alignment") ? reader.getAttribute("alignment") : nullptr;
+    const char* alignment = reader.hasAttribute("alignment") ? reader.getAttribute("alignment")
+                                                             : nullptr;
     const char* content = reader.hasAttribute("content") ? reader.getAttribute("content") : "";
-    const char* foregroundColor =
-        reader.hasAttribute("foregroundColor") ? reader.getAttribute("foregroundColor") : nullptr;
-    const char* backgroundColor =
-        reader.hasAttribute("backgroundColor") ? reader.getAttribute("backgroundColor") : nullptr;
-    const char* displayUnit =
-        reader.hasAttribute("displayUnit") ? reader.getAttribute("displayUnit") : nullptr;
+    const char* foregroundColor = reader.hasAttribute("foregroundColor")
+        ? reader.getAttribute("foregroundColor")
+        : nullptr;
+    const char* backgroundColor = reader.hasAttribute("backgroundColor")
+        ? reader.getAttribute("backgroundColor")
+        : nullptr;
+    const char* displayUnit = reader.hasAttribute("displayUnit") ? reader.getAttribute("displayUnit")
+                                                                 : nullptr;
     const char* alias = reader.hasAttribute("alias") ? reader.getAttribute("alias") : nullptr;
     const char* rowSpan = reader.hasAttribute("rowSpan") ? reader.getAttribute("rowSpan") : nullptr;
     const char* colSpan = reader.hasAttribute("colSpan") ? reader.getAttribute("colSpan") : nullptr;
@@ -760,8 +771,7 @@ void Cell::restore(Base::XMLReader& reader, bool checkAlias)
         std::string line = std::string(style);
         tokenizer<escaped_list_separator<char>> tok(line, e);
 
-        for (tokenizer<escaped_list_separator<char>>::iterator i = tok.begin(); i != tok.end();
-             ++i) {
+        for (tokenizer<escaped_list_separator<char>>::iterator i = tok.begin(); i != tok.end(); ++i) {
             styleSet.insert(*i);
         }
         setStyle(styleSet);
@@ -774,8 +784,7 @@ void Cell::restore(Base::XMLReader& reader, bool checkAlias)
         std::string line = std::string(alignment);
         tokenizer<escaped_list_separator<char>> tok(line, e);
 
-        for (tokenizer<escaped_list_separator<char>>::iterator i = tok.begin(); i != tok.end();
-             ++i) {
+        for (tokenizer<escaped_list_separator<char>>::iterator i = tok.begin(); i != tok.end(); ++i) {
             alignmentCode = decodeAlignment(*i, alignmentCode);
         }
 
@@ -1106,8 +1115,8 @@ std::string Cell::getFormattedQuantity()
         qFormatted = QLocale().toString(rawVal, 'f', Base::UnitsApi::getDecimals());
         if (hasDisplayUnit) {
             if (computedUnit.isEmpty() || computedUnit == du.unit) {
-                QString number =
-                    QLocale().toString(rawVal / duScale, 'f', Base::UnitsApi::getDecimals());
+                QString number
+                    = QLocale().toString(rawVal / duScale, 'f', Base::UnitsApi::getDecimals());
                 qFormatted = number + QString::fromStdString(" " + displayUnit.stringRep);
             }
         }
@@ -1119,8 +1128,7 @@ std::string Cell::getFormattedQuantity()
         double duScale = du.scaler;
         qFormatted = QLocale().toString(rawVal, 'f', Base::UnitsApi::getDecimals());
         if (hasDisplayUnit) {
-            QString number =
-                QLocale().toString(rawVal / duScale, 'f', Base::UnitsApi::getDecimals());
+            QString number = QLocale().toString(rawVal / duScale, 'f', Base::UnitsApi::getDecimals());
             qFormatted = number + QString::fromStdString(" " + displayUnit.stringRep);
         }
     }
@@ -1132,8 +1140,7 @@ std::string Cell::getFormattedQuantity()
         int iRawVal = std::round(rawVal);
         qFormatted = QLocale().toString(iRawVal);
         if (hasDisplayUnit) {
-            QString number =
-                QLocale().toString(rawVal / duScale, 'f', Base::UnitsApi::getDecimals());
+            QString number = QLocale().toString(rawVal / duScale, 'f', Base::UnitsApi::getDecimals());
             qFormatted = number + QString::fromStdString(" " + displayUnit.stringRep);
         }
     }

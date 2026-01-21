@@ -198,6 +198,7 @@ class GUITestResult(unittest.TestResult):
         if err is not None:
             self.callback.notifySubTestFailed(test, subtest, err)
 
+
 class RollbackImporter:
     """This tricky little class is used to make sure that modules under test
     will be reloaded the next time they are imported.
@@ -220,8 +221,9 @@ class RollbackImporter:
 
 class QtTestRunner(BaseGUITestRunner):
     """An implementation of BaseGUITestRunner using Qt."""
-    separator1 = '=' * 70
-    separator2 = '-' * 70
+
+    separator1 = "=" * 70
+    separator2 = "-" * 70
 
     def initGUI(self, root, initialTestName):
         """Set up the GUI inside the given root window. The test name entry
@@ -248,7 +250,7 @@ class QtTestRunner(BaseGUITestRunner):
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
         if doc_first_line:
-            return '\n'.join((str(test), doc_first_line))
+            return "\n".join((str(test), doc_first_line))
         else:
             return str(test)
 

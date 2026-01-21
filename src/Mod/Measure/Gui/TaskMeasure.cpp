@@ -23,8 +23,8 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <QApplication>
-#include <QKeyEvent>
+# include <QApplication>
+# include <QKeyEvent>
 #endif
 
 
@@ -64,10 +64,12 @@ using SelectionStyle = Gui::SelectionSingleton::SelectionStyle;
 TaskMeasure::TaskMeasure()
 {
     this->setButtonPosition(TaskMeasure::South);
-    auto taskbox = new Gui::TaskView::TaskBox(Gui::BitmapFactory().pixmap("umf-measurement"),
-                                              tr("Measurement"),
-                                              true,
-                                              nullptr);
+    auto taskbox = new Gui::TaskView::TaskBox(
+        Gui::BitmapFactory().pixmap("umf-measurement"),
+        tr("Measurement"),
+        true,
+        nullptr
+    );
 
     setupShortcuts(taskbox);
 
@@ -86,7 +88,7 @@ TaskMeasure::TaskMeasure()
     showDelta = new QCheckBox();
     showDelta->setChecked(delta);
     showDeltaLabel = new QLabel(tr("Show Delta:"));
-#if QT_VERSION >= QT_VERSION_CHECK(6,7,0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
     connect(showDelta, &QCheckBox::checkStateChanged, this, &TaskMeasure::showDeltaChanged);
 #else
     connect(showDelta, &QCheckBox::stateChanged, this, &TaskMeasure::showDeltaChanged);
@@ -95,22 +97,28 @@ TaskMeasure::TaskMeasure()
     autoSaveAction = new QAction(tr("Auto Save"));
     autoSaveAction->setCheckable(true);
     autoSaveAction->setChecked(mAutoSave);
-    autoSaveAction->setToolTip(tr("Auto saving of the last measurement when starting a new "
-                                  "measurement. Use SHIFT to temporarily invert the behaviour."));
+    autoSaveAction->setToolTip(
+        tr("Auto saving of the last measurement when starting a new "
+           "measurement. Use SHIFT to temporarily invert the behaviour.")
+    );
     connect(autoSaveAction, &QAction::triggered, this, &TaskMeasure::autoSaveChanged);
 
     newMeasurementBehaviourAction = new QAction(tr("Additive Selection"));
     newMeasurementBehaviourAction->setCheckable(true);
-    newMeasurementBehaviourAction->setChecked(Gui::Selection().getSelectionStyle()
-                                              == SelectionStyle::GreedySelection);
+    newMeasurementBehaviourAction->setChecked(
+        Gui::Selection().getSelectionStyle() == SelectionStyle::GreedySelection
+    );
     newMeasurementBehaviourAction->setToolTip(
         tr("If checked, new selection will be added to the measurement. If unchecked, CTRL must be "
            "pressed to add a "
-           "selection to the current measurement otherwise a new measurement will be started"));
-    connect(newMeasurementBehaviourAction,
-            &QAction::triggered,
-            this,
-            &TaskMeasure::newMeasurementBehaviourChanged);
+           "selection to the current measurement otherwise a new measurement will be started")
+    );
+    connect(
+        newMeasurementBehaviourAction,
+        &QAction::triggered,
+        this,
+        &TaskMeasure::newMeasurementBehaviourChanged
+    );
 
     mSettings = new QToolButton();
     mSettings->setToolTip(tr("Settings"));
@@ -132,10 +140,7 @@ TaskMeasure::TaskMeasure()
     }
 
     // Connect dropdown's change signal to our onModeChange slot
-    connect(modeSwitch,
-            qOverload<int>(&QComboBox::currentIndexChanged),
-            this,
-            &TaskMeasure::onModeChanged);
+    connect(modeSwitch, qOverload<int>(&QComboBox::currentIndexChanged), this, &TaskMeasure::onModeChanged);
 
     // Result widget
     valueResult = new QLineEdit();
@@ -239,7 +244,8 @@ void TaskMeasure::createObject(const App::MeasureType* measureType)
     else {
         // Create measure object
         _mMeasureObject = dynamic_cast<Measure::MeasureBase*>(
-            doc->addObject(measureType->measureObject.c_str(), measureType->label.c_str()));
+            doc->addObject(measureType->measureObject.c_str(), measureType->label.c_str())
+        );
     }
 }
 
@@ -269,8 +275,7 @@ void TaskMeasure::tryUpdate()
 
         std::string mod = Base::Type::getModuleName(sub->getTypeId().getName());
         if (!App::MeasureManager::hasMeasureHandler(mod.c_str())) {
-            Base::Console().Message("No measure handler available for geometry of module: %s\n",
-                                    mod);
+            Base::Console().Message("No measure handler available for geometry of module: %s\n", mod);
             clearSelection();
             return;
         }
@@ -384,9 +389,11 @@ void TaskMeasure::ensureGroup(Measure::MeasureBase* measurement)
     App::Document* doc = measurement->getDocument();
     auto group = dynamic_cast<App::DocumentObjectGroup*>(doc->getObject(measurementGroupName));
     if (!group || !group->isValid()) {
-        group = doc->addObject<App::DocumentObjectGroup>(measurementGroupName,
-                                                         true,
-                                                         "MeasureGui::ViewProviderMeasureGroup");
+        group = doc->addObject<App::DocumentObjectGroup>(
+            measurementGroupName,
+            true,
+            "MeasureGui::ViewProviderMeasureGroup"
+        );
     }
 
     group->addObject(measurement);

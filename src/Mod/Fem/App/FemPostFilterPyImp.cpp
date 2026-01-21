@@ -22,7 +22,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <Python.h>
+# include <Python.h>
 #endif
 
 #include <Base/FileInfo.h>
@@ -36,8 +36,8 @@
 // clang-format on
 
 #ifdef FC_USE_VTK_PYTHON
-#include <vtkUnstructuredGrid.h>
-#include <vtkPythonUtil.h>
+# include <vtkUnstructuredGrid.h>
+# include <vtkPythonUtil.h>
 #endif  // BUILD_FEM_VTK
 
 using namespace Fem;
@@ -131,8 +131,7 @@ PyObject* FemPostFilterPy::getInputData(PyObject* args)
             copy = vtkUnstructuredGrid::New();
             break;
         default:
-            PyErr_SetString(PyExc_TypeError,
-                            "cannot return datatype object; not unstructured grid");
+            PyErr_SetString(PyExc_TypeError, "cannot return datatype object; not unstructured grid");
             Py_Return;
     }
 

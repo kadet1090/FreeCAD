@@ -22,9 +22,9 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <QCoreApplication>
-#include <QGroupBox>
-#include <QLabel>
+# include <QCoreApplication>
+# include <QGroupBox>
+# include <QLabel>
 #endif
 
 #include <Gui/Application.h>

@@ -27,34 +27,34 @@
 #include <FCConfig.h>
 
 #ifdef _MSC_VER
-#pragma warning(disable : 5208)
+# pragma warning(disable : 5208)
 #endif
 
 #ifdef _PreComp_
 
 // standard
-#include <cinttypes>
-#include <cmath>
-#include <iomanip>
-#include <map>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <unordered_map>
+# include <cinttypes>
+# include <cmath>
+# include <iomanip>
+# include <map>
+# include <sstream>
+# include <string>
+# include <vector>
+# include <unordered_map>
 
 // boost
-#include <boost/algorithm/string/predicate.hpp>
+# include <boost/algorithm/string/predicate.hpp>
 
 // Qt (should never include GUI files, only QtCore)
-#include <QByteArray>
-#include <QCryptographicHash>
-#include <QDateTime>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
-#include <QLocale>
-#include <QStandardPaths>
-#include <QUrl>
+# include <QByteArray>
+# include <QCryptographicHash>
+# include <QDateTime>
+# include <QDir>
+# include <QFile>
+# include <QFileInfo>
+# include <QLocale>
+# include <QStandardPaths>
+# include <QUrl>
 
 #endif  // _PreComp_
 #endif  // START_PRECOMPILED_H

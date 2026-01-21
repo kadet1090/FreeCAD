@@ -197,11 +197,11 @@ inline XStr::~XStr()
 // string because xerces default memory manager is already deleted when destructing local static
 // variable.
 // NOLINTNEXTLINE
-#define XStrLiteral(literal)                                                                       \
-    ([]() -> const XStr& {                                                                         \
-        static XStrMemoryManager memMgr;                                                           \
-        static const XStr str {literal, &memMgr};                                                  \
-        return str;                                                                                \
+#define XStrLiteral(literal) \
+    ([]() -> const XStr& { \
+        static XStrMemoryManager memMgr; \
+        static const XStr str {literal, &memMgr}; \
+        return str; \
     }())
 
 
@@ -244,10 +244,10 @@ inline XUTF8Str::~XUTF8Str() = default;
 // can reuse the data from the lambda's initial creation. Permits the same usage as
 // XStr("literal").unicodeForm()
 // NOLINTNEXTLINE
-#define XUTF8StrLiteral(literal)                                                                   \
-    ([]() -> const XUTF8Str& {                                                                     \
-        static const XUTF8Str str {literal};                                                       \
-        return str;                                                                                \
+#define XUTF8StrLiteral(literal) \
+    ([]() -> const XUTF8Str& { \
+        static const XUTF8Str str {literal}; \
+        return str; \
     }())
 
 // -----------------------------------------------------------------------

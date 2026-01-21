@@ -50,9 +50,7 @@ TextureItem texItems[] = {
 
 int sssize = -1;
 
-TextureLoader::TextureLoader(std::string imgFolder,
-                             std::vector<std::string> fileNames,
-                             int textureSize)
+TextureLoader::TextureLoader(std::string imgFolder, std::vector<std::string> fileNames, int textureSize)
     : mImageFolder(imgFolder)
 {
     int buffsize = textureSize * textureSize * sizeof(unsigned int);
@@ -68,10 +66,7 @@ TextureLoader::TextureLoader(std::string imgFolder,
 }
 
 // parse compressed image into a texture buffer
-bool TextureLoader::AddImage(TextureItem* texItem,
-                             QImage& pixmap,
-                             unsigned int* buffPos,
-                             int stride)
+bool TextureLoader::AddImage(TextureItem* texItem, QImage& pixmap, unsigned int* buffPos, int stride)
 {
     int width = pixmap.width();
     int height = pixmap.height();

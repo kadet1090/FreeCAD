@@ -43,8 +43,10 @@ public:
     {
         codePage = cp;
     }
-    void read(Handle(TDocStd_Document) hDoc,
-              const Message_ProgressRange& theProgress = Message_ProgressRange());
+    void read(
+        Handle(TDocStd_Document) hDoc,
+        const Message_ProgressRange& theProgress = Message_ProgressRange()
+    );
 
 private:
     Base::FileInfo file;

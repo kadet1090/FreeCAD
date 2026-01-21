@@ -42,7 +42,8 @@ MeasureBase::MeasureBase()
         (Base::Placement()),
         nullptr,
         App::PropertyType(App::Prop_ReadOnly | App::Prop_Output | App::Prop_NoRecompute),
-        "Visual placement of the measurement");
+        "Visual placement of the measurement"
+    );
 }
 
 PyObject* MeasureBase::getPyObject()
@@ -177,7 +178,8 @@ QString MeasureBase::getResultString() const
 
     if (prop->isDerivedFrom<App::PropertyQuantity>()) {
         return QString::fromStdString(
-            static_cast<const App::PropertyQuantity*>(prop)->getQuantityValue().getUserString());
+            static_cast<const App::PropertyQuantity*>(prop)->getQuantityValue().getUserString()
+        );
     }
 
 

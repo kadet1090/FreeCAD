@@ -168,8 +168,7 @@ TEST_F(FeatureExtrusionTest, testExecuteSymmetric)
     Base::BoundBox3d bb = ts.getBoundBox();
     // Assert
     EXPECT_FLOAT_EQ(volume, len * wid * ext1);
-    EXPECT_TRUE(
-        PartTestHelpers::boxesMatch(bb, Base::BoundBox3d(0, 0, -ext1 / 2, len, wid, ext1 / 2)));
+    EXPECT_TRUE(PartTestHelpers::boxesMatch(bb, Base::BoundBox3d(0, 0, -ext1 / 2, len, wid, ext1 / 2)));
 }
 
 TEST_F(FeatureExtrusionTest, testExecuteAngled)
@@ -185,8 +184,7 @@ TEST_F(FeatureExtrusionTest, testExecuteAngled)
     const double centerWidth = longerSide - shorterSide;  // Width of the triang prism.
     const double topHeight = shorterSide / tangent / 2;   // Height of the truncation
     const double fullHeight = ext1 + topHeight;
-    const double fullPrismVol =
-        fullHeight * (shorterSide + ext1 * tangent * 2.0) / 2.0 * centerWidth;
+    const double fullPrismVol = fullHeight * (shorterSide + ext1 * tangent * 2.0) / 2.0 * centerWidth;
     const double fullPyrVol = pow(shorterSide + ext1 * tangent * 2.0, 2.0) / 3.0 * fullHeight;
     const double topPrismVol = topHeight * shorterSide / 2.0 * centerWidth;
     const double topPyrVol = pow(shorterSide, 2.0) / 3.0 * topHeight;
@@ -200,13 +198,12 @@ TEST_F(FeatureExtrusionTest, testExecuteAngled)
     Base::BoundBox3d bb = ts.getBoundBox();
     // Assert
     EXPECT_FLOAT_EQ(volume, targetVol);
-    EXPECT_TRUE(PartTestHelpers::boxesMatch(bb,
-                                            Base::BoundBox3d(-ext1 * tangent,
-                                                             -ext1 * tangent,
-                                                             0,
-                                                             len + ext1 * tangent,
-                                                             wid + ext1 * tangent,
-                                                             ext1)));
+    EXPECT_TRUE(
+        PartTestHelpers::boxesMatch(
+            bb,
+            Base::BoundBox3d(-ext1 * tangent, -ext1 * tangent, 0, len + ext1 * tangent, wid + ext1 * tangent, ext1)
+        )
+    );
 }
 
 TEST_F(FeatureExtrusionTest, testExecuteAngledRev)
@@ -222,13 +219,13 @@ TEST_F(FeatureExtrusionTest, testExecuteAngledRev)
     const double centerWidth = longerSide - shorterSide;  // Width of the triang prism.
     const double topHeight = shorterSide / tangent / 2;   // Height of the truncation
     const double fullHeight = ext1 / 2 + topHeight;
-    const double fullPrismVol =
-        fullHeight * (shorterSide + ext1 / 2 * tangent * 2.0) / 2.0 * centerWidth;
+    const double fullPrismVol = fullHeight * (shorterSide + ext1 / 2 * tangent * 2.0) / 2.0
+        * centerWidth;
     const double fullPyrVol = pow(shorterSide + ext1 / 2 * tangent * 2.0, 2.0) / 3.0 * fullHeight;
     const double topPrismVol = topHeight * shorterSide / 2.0 * centerWidth;
     const double topPyrVol = pow(shorterSide, 2.0) / 3.0 * topHeight;
-    const double targetVol =
-        (fullPyrVol + fullPrismVol) - (topPyrVol + topPrismVol) + len * wid * ext1 / 2;
+    const double targetVol = (fullPyrVol + fullPrismVol) - (topPyrVol + topPrismVol)
+        + len * wid * ext1 / 2;
 
     _extrusion->Solid.setValue(true);
     _extrusion->Symmetric.setValue(true);
@@ -240,13 +237,19 @@ TEST_F(FeatureExtrusionTest, testExecuteAngledRev)
     Base::BoundBox3d bb = ts.getBoundBox();
     // Assert
     EXPECT_FLOAT_EQ(volume, targetVol);
-    EXPECT_TRUE(PartTestHelpers::boxesMatch(bb,
-                                            Base::BoundBox3d(-ext1 * tangent / 2,
-                                                             -ext1 * tangent / 2,
-                                                             -ext1 / 2,
-                                                             len + ext1 * tangent / 2,
-                                                             wid + ext1 * tangent / 2,
-                                                             ext1 / 2)));
+    EXPECT_TRUE(
+        PartTestHelpers::boxesMatch(
+            bb,
+            Base::BoundBox3d(
+                -ext1 * tangent / 2,
+                -ext1 * tangent / 2,
+                -ext1 / 2,
+                len + ext1 * tangent / 2,
+                wid + ext1 * tangent / 2,
+                ext1 / 2
+            )
+        )
+    );
 }
 
 TEST_F(FeatureExtrusionTest, testExecuteEdge)
@@ -266,9 +269,12 @@ TEST_F(FeatureExtrusionTest, testExecuteEdge)
     Base::BoundBox3d bb = ts.getBoundBox();
     // Assert
     EXPECT_FLOAT_EQ(volume, len * wid * ext1 * tangent);
-    EXPECT_TRUE(PartTestHelpers::boxesMatch(
-        bb,
-        Base::BoundBox3d(0, 0, 0, len + ext1 * tangent, wid + ext1 * tangent, ext1 * tangent)));
+    EXPECT_TRUE(
+        PartTestHelpers::boxesMatch(
+            bb,
+            Base::BoundBox3d(0, 0, 0, len + ext1 * tangent, wid + ext1 * tangent, ext1 * tangent)
+        )
+    );
 }
 
 TEST_F(FeatureExtrusionTest, testExecuteDir)
@@ -284,9 +290,9 @@ TEST_F(FeatureExtrusionTest, testExecuteDir)
     Base::BoundBox3d bb = ts.getBoundBox();
     // Assert
     EXPECT_FLOAT_EQ(volume, len * wid * ext1 * sin45);
-    EXPECT_TRUE(PartTestHelpers::boxesMatch(
-        bb,
-        Base::BoundBox3d(0, 0, 0, len, wid + ext1 * sin45, ext1 * sin45)));
+    EXPECT_TRUE(
+        PartTestHelpers::boxesMatch(bb, Base::BoundBox3d(0, 0, 0, len, wid + ext1 * sin45, ext1 * sin45))
+    );
 }
 
 TEST_F(FeatureExtrusionTest, testExecuteFaceMaker)

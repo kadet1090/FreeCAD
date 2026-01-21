@@ -91,7 +91,9 @@ class TestPathCore(PathTestBase):
         p = Path.Path([c1, c2])
         self.assertAlmostEqual(str(p), "Path [ size:2 length:3.2361 ]", places=4)
 
-        self.assertEqual(str(p.Commands), "[Command('G1', {'X': 1, 'Y': 0}), Command('G1', {'X': 0, 'Y': 2})]")
+        self.assertEqual(
+            str(p.Commands), "[Command('G1', {'X': 1, 'Y': 0}), Command('G1', {'X': 0, 'Y': 2})]"
+        )
         self.assertAlmostEqual(p.Length, 3.2361, places=4)
         p.addCommands(c1)
         self.assertEqual(

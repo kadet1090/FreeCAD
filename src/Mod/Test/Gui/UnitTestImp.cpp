@@ -22,9 +22,9 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <QClipboard>
-#include <QFontMetrics>
-#include <QMessageBox>
+# include <QClipboard>
+# include <QFontMetrics>
+# include <QMessageBox>
 #endif
 
 #include <Base/Interpreter.h>
@@ -121,14 +121,16 @@ void UnitTestDialog::setupConnections()
  */
 void UnitTestDialog::setProgressColor(const QColor& col)
 {
-    QString qss = QStringLiteral("QProgressBar {\n"
-                                 "    border: 2px solid grey;\n"
-                                 "    border-radius: 5px;\n"
-                                 "}\n"
-                                 "\n"
-                                 "QProgressBar::chunk {\n"
-                                 "    background-color: %1;\n"
-                                 "}")
+    QString qss = QStringLiteral(
+                      "QProgressBar {\n"
+                      "    border: 2px solid grey;\n"
+                      "    border-radius: 5px;\n"
+                      "}\n"
+                      "\n"
+                      "QProgressBar::chunk {\n"
+                      "    background-color: %1;\n"
+                      "}"
+    )
                       .arg(col.name());
     ui->progressBar->setStyleSheet(qss);
 }
@@ -188,7 +190,8 @@ void UnitTestDialog::onHelpButtonClicked()
         tr("Enter the name of a callable object which, when called, will return a TestCase.\n"
            "Click 'start', and the test thus produced will be run.\n\n"
            "Double click on an error in the tree view to see more information about it, "
-           "including the stack trace."));
+           "including the stack trace.")
+    );
 }
 
 /**
@@ -201,7 +204,8 @@ void UnitTestDialog::onAboutButtonClicked()
         tr("About FreeCAD UnitTest"),
         tr("Copyright (c) Werner Mayer\n\n"
            "FreeCAD UnitTest is part of FreeCAD and supports writing Unit Tests for "
-           "ones own modules."));
+           "ones own modules.")
+    );
 }
 
 /**
@@ -213,11 +217,13 @@ void UnitTestDialog::onStartButtonClicked()
     setProgressColor(QColor(40, 210, 43));  // a darker green
     ui->startButton->setDisabled(true);
     try {
-        Base::Interpreter().runString("import qtunittest, gc\n"
-                                      "__qt_test__=qtunittest.QtTestRunner(0,\"\")\n"
-                                      "__qt_test__.runClicked()\n"
-                                      "del __qt_test__\n"
-                                      "gc.collect()\n");
+        Base::Interpreter().runString(
+            "import qtunittest, gc\n"
+            "__qt_test__=qtunittest.QtTestRunner(0,\"\")\n"
+            "__qt_test__.runClicked()\n"
+            "del __qt_test__\n"
+            "gc.collect()\n"
+        );
     }
     catch (const Base::PyException& e) {
         std::string msg = e.what();

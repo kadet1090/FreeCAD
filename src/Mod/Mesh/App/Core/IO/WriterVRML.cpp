@@ -23,7 +23,7 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-#include <istream>
+# include <istream>
 #endif
 
 #include "Core/Builder.h"
@@ -40,7 +40,7 @@ using namespace MeshCore;
 
 WriterVRML::WriterVRML(const MeshKernel& kernel, const Material* mat)
     : _kernel(kernel)
-    , _material{mat}
+    , _material {mat}
 {}
 
 void WriterVRML::SetTransform(const Base::Matrix4D& mat)
@@ -60,8 +60,7 @@ bool WriterVRML::Save(std::ostream& output) const
 
     Base::BoundBox3f clBB = _kernel.GetBoundBox();
 
-    Base::SequencerLauncher seq("Saving VRML file...",
-                                _kernel.CountPoints() + _kernel.CountFacets());
+    Base::SequencerLauncher seq("Saving VRML file...", _kernel.CountPoints() + _kernel.CountFacets());
 
     output << "#VRML V2.0 utf8\n";
     output << "WorldInfo {\n"

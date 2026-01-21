@@ -23,8 +23,8 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <limits>
-#include <QMessageBox>
+# include <limits>
+# include <QMessageBox>
 #endif
 
 #include <App/Document.h>

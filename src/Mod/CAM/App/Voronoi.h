@@ -34,9 +34,9 @@
 #include <boost/polygon/voronoi.hpp>
 
 #if (SIZE_MAX == UINT_MAX)
-#define PATH_VORONOI_COLOR_MASK 0x07FFFFFFul
+# define PATH_VORONOI_COLOR_MASK 0x07FFFFFFul
 #else
-#define PATH_VORONOI_COLOR_MASK 0x07FFFFFFFFFFFFFFul
+# define PATH_VORONOI_COLOR_MASK 0x07FFFFFFFFFFFFFFul
 #endif
 
 namespace Path

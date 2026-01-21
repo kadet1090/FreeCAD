@@ -73,9 +73,11 @@ protected:
         {
             virtual ~Concept() = default;
             virtual void fetch(const ParameterGrp::handle&, const char* key) = 0;
-            virtual void setParameter(const ParameterGrp::handle& handle,
-                                      const char* key,
-                                      const Type& value) = 0;
+            virtual void setParameter(
+                const ParameterGrp::handle& handle,
+                const char* key,
+                const Type& value
+            ) = 0;
             virtual Type value() const = 0;
             virtual Type defaultValue() const = 0;
             virtual void setValue(const Type&) = 0;
@@ -91,9 +93,7 @@ protected:
             {
                 object.fetch(handle, key);
             }
-            void setParameter(const ParameterGrp::handle& handle,
-                              const char* key,
-                              const Type& value) override
+            void setParameter(const ParameterGrp::handle& handle, const char* key, const Type& value) override
             {
                 object.setParameter(handle, key, value);
             }
@@ -327,10 +327,10 @@ struct type_traits<std::string>
 
 }  // namespace Base
 
-template <typename T>
+template<typename T>
 struct type_from_member;
 
-template <typename M, typename T>
+template<typename M, typename T>
 struct type_from_member<M T::*>
 {
     using type = T;

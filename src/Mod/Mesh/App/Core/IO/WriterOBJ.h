@@ -61,7 +61,8 @@ public:
     bool SaveMaterial(std::ostream&);
 
 private:
-    enum Binding {
+    enum Binding
+    {
         OVERALL,
         PER_VERTEX,
         PER_FACE
