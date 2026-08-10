@@ -599,6 +599,9 @@ bool QuantitySpinBox::isNormalized()
         }
 
         auto innerOperatorExpr = freecad_cast<OperatorExpression*>(operatorExpr->getLeft());
+        if (!innerOperatorExpr) {
+            return false;
+        }
         if (innerOperatorExpr->getOperator() != OperatorExpression::UNIT) {
             return false;
         }
