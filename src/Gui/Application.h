@@ -71,6 +71,9 @@ public:
     /// Initializes default configuration for Style Parameter Manager
     void initStyleParameterManager();
 
+    /// Builds the resolver chain a ParameterManager resolves names through.
+    static Gui::StyleParameters::StyleParameterResolver* createStyleParameterResolver();
+
     /** @name methods for support of files */
     //@{
     /// open a file

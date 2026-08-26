@@ -20,10 +20,16 @@ add_executable(Gui_tests_run
         StyleParameters/CornersTest.cpp
         StyleParameters/GradientTest.cpp
         StyleParameters/ColorShadingTest.cpp
+        StyleParameters/StyleContextTest.cpp
+        StyleParameters/ShippedThemeTest.cpp
         InputHintTest.cpp
         SelectionTest.cpp
         ThumbnailCamera.cpp
 )
+
+# ShippedThemeTest reads the theme YAML out of the build's data directory, so the copy has to
+# have happened before the suite runs - otherwise it silently checks a stale snapshot.
+add_dependencies(Gui_tests_run Stylesheets_data)
 
 # Qt tests
 setup_qt_test(ObjectSelection)

@@ -429,6 +429,17 @@ void qtInvokeOnMain(std::function<void()>&& fn, bool blocking)
 
 }  // namespace Gui
 
+StyleParameters::StyleParameterResolver* Application::createStyleParameterResolver()
+{
+    auto* naiveResolver = new StyleParameters::NaiveParameterResolver();
+    auto* inheritingResolver = new StyleParameters::InheritingParameterResolver();
+    auto* chainedResolver = new StyleParameters::ChainedParameterResolver({
+        naiveResolver,
+        inheritingResolver,
+    });
+    return new StyleParameters::CachingParameterResolver(chainedResolver);
+}
+
 void Application::initStyleParameterManager()
 {
     static ParamHandlers handlers;
@@ -449,6 +460,12 @@ void Application::initStyleParameterManager()
     auto themeParametersSource = new StyleParameters::YamlParameterSource(
         deduceParametersFilePath(),
         {.name = QT_TR_NOOP("Theme Parameters"),
+         .options = StyleParameters::ParameterSourceOption::UserEditable}
+    );
+
+    auto designSystemParametersSource = new StyleParameters::YamlParameterSource(
+        "qss:parameters/Design System.yaml",
+        {.name = QT_TR_NOOP("Design System Parameters"),
          .options = StyleParameters::ParameterSourceOption::UserEditable}
     );
 
@@ -488,6 +505,8 @@ void Application::initStyleParameterManager()
         )
     );
 
+    Base::registerServiceImplementation<StyleParameters::ParameterSource>(designSystemParametersSource);
+
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(themeParametersSource);
 
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(
@@ -506,6 +525,9 @@ void Application::initStyleParameterManager()
     }
 
     Base::registerServiceImplementation(d->styleParameterManager);
+
+    StyleParameters::populateBuiltinDescriptors(d->styleParameterManager->descriptorRegistry());
+    d->styleParameterManager->setResolver(createStyleParameterResolver());
 }
 
 // clang-format off

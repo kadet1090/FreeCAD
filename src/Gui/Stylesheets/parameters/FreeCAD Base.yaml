@@ -1,0 +1,35 @@
+---
+# "@Name" inside an expression is a flat parameter lookup: it finds a parameter literally
+# named "Name" or nothing at all. It is NOT a component-chain lookup. FreeCADStyle walks
+# Button → FormControl when a widget asks for a Height, but that walk happens at draw time
+# and the expression evaluator has no part in it — so "@ButtonHeight" here resolves to the
+# literal string "@ButtonHeight", which is an engaged value that stops the chain walk dead
+# and silently disables the property. Always reference the concrete parameter that exists
+# (here: "@FormControlHeight").
+
+# Semantic surface tokens; these drive QPalette.
+# Window / panel backgrounds
+BaseWindowBackground: "@Background.050"
+BaseAlternateBackground: "@Background.100"
+BaseInputBackground: "@Background.000"
+
+# Selection
+BaseHighlightBackground: "@Accent.500"
+BaseHighlightTextColor: "@Neutral.000"
+
+# Disabled
+BaseDisabledTextColor: "@Contrast.300"
+BaseDisabledBackground: "@Neutral.200"
+
+# Placeholder text in inputs
+BasePlaceholderTextColor: "@Contrast.400"
+
+# Links / URLs
+BaseLinkColor: "@Accent.600"
+
+# 3D shading (QPalette Light / Midlight / Mid / Dark / Shadow)
+BaseShadingLight: "@Neutral.100"
+BaseShadingMidlight: "@Neutral.200"
+BaseShadingMid: "@Neutral.400"
+BaseShadingDark: "@Neutral.600"
+BaseShadingShadow: "@Neutral.800"

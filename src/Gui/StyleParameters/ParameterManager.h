@@ -33,6 +33,8 @@
 #include <Base/Bitmask.h>
 #include <Base/Parameter.h>
 
+#include "ParameterDescriptorRegistry.h"
+#include "StyleParameterResolver.h"
 #include "Value.h"
 
 // That macro uses inline const because some older compilers to not properly support constexpr
@@ -315,6 +317,10 @@ public:
  *
  * This class maintains an in-memory map of parameters loaded from a YAML file.
  * Any changes through define() or remove() will also update the file.
+ *
+ * A YAML file may declare an `_inherits` key listing sibling files to load first.
+ * Parameters from inherited files appear in the merged map but are not written
+ * back on flush() — only parameters defined directly in this file are persisted.
  */
 class GuiExport YamlParameterSource: public ParameterSource
 {
@@ -341,8 +347,18 @@ public:
     void flush() override;
 
 private:
+    struct ParameterEntry
+    {
+        Parameter parameter;
+        bool inherited = false;
+    };
+
     std::string filePath;
-    std::map<std::string, Parameter> parameters;
+    std::vector<std::string> inheritPaths;  // relative paths from _inherits (preserved for flush)
+    std::map<std::string, ParameterEntry> parameters;  // merged: inherited entries then own on top
+
+    void rebuildMergedView(const std::map<std::string, ParameterEntry>& ownEntries);
+    void rebuildMergedView();
 };
 
 /**
@@ -359,6 +375,9 @@ class GuiExport ParameterManager
     std::list<ParameterSource*> _sources;
     mutable std::map<std::string, Value> _resolved;
 
+    StyleParameterResolver* _resolver = nullptr;
+    ParameterDescriptorRegistry _descriptorRegistry;
+
 public:
     struct ResolveContext
     {
@@ -366,7 +385,34 @@ public:
         std::set<std::string> visited;
     };
 
+private:
+    std::optional<Value> resolveFlat(const std::string& name, ResolveContext context) const;
+    std::optional<Value> evaluateOrSubstitute(
+        const std::string& expression,
+        const ResolveContext& context
+    ) const;
+
+public:
     ParameterManager();
+    ParameterManager(ParameterManager&&) = default;
+    FC_DISABLE_COPY(ParameterManager);
+
+    /**
+     * @brief Injects the top-level resolver used by resolve(name).
+     *
+     * Called once after the full decoration chain is assembled externally.
+     * Until setResolver() is called, resolve(name) falls back to the flat
+     * source lookup (same as resolve(name, {})).
+     */
+    void setResolver(StyleParameterResolver* resolver);
+
+    /// Access the descriptor registry that defines component chains and variant dimensions.
+    ParameterDescriptorRegistry& descriptorRegistry();
+    const ParameterDescriptorRegistry& descriptorRegistry() const;
+
+    /// Access the registry that deduplicates per-widget override sets into ids.
+
+
 
     /**
      * @brief Clears the internal cache of resolved values.
@@ -408,22 +454,34 @@ public:
     std::optional<std::string> expression(const std::string& name) const;
 
     /**
-     * @brief Resolves a parameter to its final value.
+     * @brief Resolves a parameter by name through the full injected resolver chain.
      *
-     * This method evaluates the parameter's expression and returns the computed
-     * value. The result is cached for subsequent calls.
+     * Delegates to the resolver set via setResolver(). Falls back to the flat
+     * source lookup if no resolver has been injected yet (safe during startup).
      *
-     * @param name The name of the parameter to resolve
-     * @param context Resolution context for handling circular references
-     * @return The resolved value
+     * @param name The parameter name to resolve.
+     * @return The resolved value, or nullopt if not found.
      */
-    std::optional<Value> resolve(const std::string& name, ResolveContext context = {}) const;
+    std::optional<Value> resolve(const std::string& name) const;
+
+    /**
+     * @brief Resolves a parameter by flat source lookup and expression evaluation.
+     *
+     * Performs direct source lookup and expression evaluation without going
+     * through the injected resolver chain. Used internally by resolver
+     * implementations and during startup before setResolver() is called.
+     *
+     * @param name The parameter name to resolve.
+     * @param context Resolution context for handling circular references.
+     * @return The resolved value, or nullopt if not found.
+     */
+    std::optional<Value> resolve(const std::string& name, ResolveContext context) const;
 
     /**
      * @brief Resolves a parameter to its final value, based on definition.
      *
-     * This method evaluates the parameter's expression and returns the computed
-     * value or default one from definition if the parameter is not available.
+     * Uses the flat resolver path (resolve(name, context)) and returns the
+     * definition's default value if the parameter is not available.
      *
      * @param definition Definition of the parameter to resolve
      * @param context Resolution context for handling circular references

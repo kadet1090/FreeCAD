@@ -47,6 +47,30 @@ namespace Gui::StyleParameters
 namespace
 {
 
+/// Opens a YAML file at the given path (supports "qss:" Qt search-path scheme) and
+/// returns the parsed root node. Returns an empty node and logs a warning on failure.
+YAML::Node loadYamlFile(const std::string& path)
+{
+    QFile file(QString::fromStdString(path));
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        FC_WARN("StyleParameters: Unable to open file " << path);
+        return YAML::Node {};
+    }
+    QTextStream stream(&file);
+    return YAML::Load(stream.readAll().toStdString());
+}
+
+/// Resolves a relative path against a base file path by replacing the last path
+/// component of 'base' with 'relative'. Preserves any scheme prefix (e.g. "qss:").
+std::string resolveRelativePath(const std::string& base, const std::string& relative)
+{
+    auto slashPos = base.rfind('/');
+    if (slashPos == std::string::npos) {
+        return relative;
+    }
+    return base.substr(0, slashPos + 1) + relative;
+}
+
 /// Converts a YAML node to a StyleParameters expression string.
 /// Scalars are returned as-is; sequences become unnamed tuples "(a, b, ...)";
 /// maps become named tuples "(key1: val1, key2: val2, ...)". Recursive.
@@ -265,38 +289,81 @@ void YamlParameterSource::changeFilePath(const std::string& path)
 
 void YamlParameterSource::reload()
 {
-    QFile file(QString::fromStdString(filePath));
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        FC_TRACE("StyleParameters: Unable to open file " << filePath);
-        return;
-    }
-
     if (filePath.starts_with(":/")) {
         this->metadata.options |= ReadOnly;
     }
 
-    QTextStream in(&file);
-    std::string content = in.readAll().toStdString();
+    const YAML::Node root = loadYamlFile(filePath);
 
-    YAML::Node root = YAML::Load(content);
-    parameters.clear();
+    inheritPaths.clear();
+    if (root["_inherits"]) {
+        const auto& inheritsNode = root["_inherits"];
+        if (inheritsNode.IsScalar()) {
+            inheritPaths.push_back(inheritsNode.as<std::string>());
+        }
+        else if (inheritsNode.IsSequence()) {
+            for (const auto& entry : inheritsNode) {
+                inheritPaths.push_back(entry.as<std::string>());
+            }
+        }
+    }
+
+    std::map<std::string, ParameterEntry> ownEntries;
     for (auto it = root.begin(); it != root.end(); ++it) {
         const auto key = it->first.as<std::string>();
+        if (key.starts_with("_")) {
+            continue;
+        }
         const auto value = yamlNodeToExpression(it->second);
-
-        parameters[key] = Parameter {
-            .name = key,
-            .value = value,
+        ownEntries[key] = ParameterEntry {
+            .parameter = {.name = key, .value = value},
+            .inherited = false,
         };
     }
+
+    rebuildMergedView(ownEntries);
+}
+
+void YamlParameterSource::rebuildMergedView(const std::map<std::string, ParameterEntry>& ownEntries)
+{
+    parameters.clear();
+
+    for (const auto& relativePath : inheritPaths) {
+        const YAML::Node inheritedRoot = loadYamlFile(resolveRelativePath(filePath, relativePath));
+        for (auto it = inheritedRoot.begin(); it != inheritedRoot.end(); ++it) {
+            const auto key = it->first.as<std::string>();
+            if (key.starts_with("_")) {
+                continue;  // skip meta-keys; recursive _inherits not supported
+            }
+            const auto value = yamlNodeToExpression(it->second);
+            parameters[key] = ParameterEntry {
+                .parameter = {.name = key, .value = value},
+                .inherited = true,
+            };
+        }
+    }
+
+    for (const auto& [name, entry] : ownEntries) {
+        parameters[name] = entry;
+    }
+}
+
+void YamlParameterSource::rebuildMergedView()
+{
+    std::map<std::string, ParameterEntry> ownEntries;
+    for (const auto& [name, entry] : parameters) {
+        if (!entry.inherited) {
+            ownEntries[name] = entry;
+        }
+    }
+    rebuildMergedView(ownEntries);
 }
 
 std::list<Parameter> YamlParameterSource::all() const
 {
     std::list<Parameter> result;
-    for (const auto& param : parameters | std::views::values) {
-        result.push_back(param);
+    for (const auto& [name, entry] : parameters) {
+        result.push_back(entry.parameter);
     }
     return result;
 }
@@ -304,7 +371,7 @@ std::list<Parameter> YamlParameterSource::all() const
 std::optional<Parameter> YamlParameterSource::get(const std::string& name) const
 {
     if (auto it = parameters.find(name); it != parameters.end()) {
-        return it->second;
+        return it->second.parameter;
     }
 
     return std::nullopt;
@@ -312,19 +379,36 @@ std::optional<Parameter> YamlParameterSource::get(const std::string& name) const
 
 void YamlParameterSource::define(const Parameter& param)
 {
-    parameters[param.name] = param;
+    parameters[param.name] = ParameterEntry {.parameter = param, .inherited = false};
 }
 
 void YamlParameterSource::remove(const std::string& name)
 {
     parameters.erase(name);
+    rebuildMergedView();  // restore inherited value for 'name' if present in a parent file
 }
 
 void YamlParameterSource::flush()
 {
     YAML::Node root;
-    for (const auto& [name, param] : parameters) {
-        root[name] = param.value;
+
+    if (!inheritPaths.empty()) {
+        if (inheritPaths.size() == 1) {
+            root["_inherits"] = inheritPaths.front();
+        }
+        else {
+            YAML::Node sequence(YAML::NodeType::Sequence);
+            for (const auto& path : inheritPaths) {
+                sequence.push_back(path);
+            }
+            root["_inherits"] = sequence;
+        }
+    }
+
+    for (const auto& [name, entry] : parameters) {
+        if (!entry.inherited) {
+            root[name] = entry.parameter.value;
+        }
     }
 
     QFile file(QString::fromStdString(filePath));
@@ -337,12 +421,33 @@ void YamlParameterSource::flush()
     out << QString::fromStdString(YAML::Dump(root));
 }
 
-ParameterManager::ParameterManager() = default;
+ParameterManager::ParameterManager()
+{
+    populateBuiltinDescriptors(_descriptorRegistry);
+}
+
+void ParameterManager::setResolver(StyleParameterResolver* resolver)
+{
+    _resolver = resolver;
+}
+
+ParameterDescriptorRegistry& ParameterManager::descriptorRegistry()
+{
+    return _descriptorRegistry;
+}
+
+const ParameterDescriptorRegistry& ParameterManager::descriptorRegistry() const
+{
+    return _descriptorRegistry;
+}
 
 void ParameterManager::reload()
 {
     _resolved.clear();
     Diagnostics::clear();
+    if (_resolver) {
+        _resolver->refresh();
+    }
 }
 
 std::string ParameterManager::replacePlaceholders(
@@ -465,7 +570,20 @@ std::optional<std::string> ParameterManager::expression(const std::string& name)
     return {};
 }
 
+std::optional<Value> ParameterManager::resolve(const std::string& name) const
+{
+    if (_resolver) {
+        return _resolver->resolve(name, this);
+    }
+    return resolve(name, ResolveContext {});
+}
+
 std::optional<Value> ParameterManager::resolve(const std::string& name, ResolveContext context) const
+{
+    return resolveFlat(name, std::move(context));
+}
+
+std::optional<Value> ParameterManager::resolveFlat(const std::string& name, ResolveContext context) const
 {
     Diagnostics::ResolutionScope scope(name);
 
@@ -520,6 +638,20 @@ std::optional<Value> ParameterManager::resolve(const std::string& name, ResolveC
         // above, should be able to let an exception escape resolve().
         Diagnostics::report("Failed to resolve style parameter '{}'", name);
         return std::nullopt;
+    }
+}
+
+std::optional<Value> ParameterManager::evaluateOrSubstitute(
+    const std::string& expression,
+    const ResolveContext& context
+) const
+{
+    try {
+        return evaluate(expression, context);
+    }
+    catch (const Base::Exception&) {
+        // Not an expression — treat it as a generic value.
+        return replacePlaceholders(expression, context);
     }
 }
 
