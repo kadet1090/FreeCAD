@@ -59,6 +59,7 @@ enum class StyleComponent : uint8_t
     DropdownList,   // QListView inside a QComboBox popup
     Tree,           // QTreeWidget, QTreeView
     TabBar,         // QTabBar
+    TabWidget,      // QTabWidget pane
     Header,         // QHeaderView sections
     Menu,           // QMenu popup: context menus, menu bar and tool button dropdowns
     MenuBar,        // QMenuBar

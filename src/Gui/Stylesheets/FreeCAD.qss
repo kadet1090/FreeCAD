@@ -493,60 +493,6 @@ QFrame[class="panel"] QPushButton {
   padding: 3px;
 }
 
-/* QTabWiget --------------------------------------------------------------
-
-https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qtabwidget-and-qtabbar
-
---------------------------------------------------------------------------- */
-QTabWidget {
-  padding: 2px;
-  border-radius: 3px;
-}
-
-QTabWidget:tab-bar {
-  background-color: transparent;
-}
-
-QTabWidget QWidget {}
-
-QTabWidget::pane {
-
-  /* Fixes double border inside pane with pyqt5 */
-
-  background-color: @PrimaryColor;
-  border-radius: 3px;
-  border: 1px solid @GeneralBorderColor;
-}
-
-QTabWidget::pane:selected {
-  background-color: @GeneralBackgroundHoverColor;
-  border: 1px solid @GeneralBorderColor;
-}
-
-QTabWidget::pane:selected {
-  border: 1px solid @GeneralBackgroundHoverColor;
-}
-
-QTabWidget::pane:top {
-  top: -1px;
-  border-top: 1px solid @GeneralBorderColor;
-}
-
-QTabWidget::pane:bottom {
-  bottom: -1px;
-  border-bottom: 1px solid @GeneralBorderColor;
-}
-
-QTabWidget::pane:left {
-  right: -1px;
-  border-right: 1px solid @GeneralBorderColor;
-}
-
-QTabWidget::pane:right {
-  left: -1px;
-  border-left: 1px solid @GeneralBorderColor;
-}
-
 /*==================================================================================================
 SKETCHER
 ==================================================================================================*/

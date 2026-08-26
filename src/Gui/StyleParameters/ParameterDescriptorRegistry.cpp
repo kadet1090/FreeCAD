@@ -649,6 +649,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
     }, StyleComponent::TabBar);
 
     registry.registerDescriptor({
+        .name     = "TabWidget",
+        .variants = {"Position", "State"},
+        .inherits = {},
+    }, StyleComponent::TabWidget);
+
+    registry.registerDescriptor({
         .name     = "Header",
         .variants = {"State"},
         .inherits = {},

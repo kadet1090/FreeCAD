@@ -745,6 +745,12 @@ protected:
         const QWidget* widget
     ) const;
 
+    void drawTabWidgetFrame(
+        QPainter* painter,
+        const QStyleOptionTabWidgetFrame* option,
+        const QWidget* widget
+    ) const;
+
     void drawTabBarBase(
         QPainter* painter,
         const QStyleOptionTabBarBase* option,

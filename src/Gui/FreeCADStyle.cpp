@@ -3476,6 +3476,56 @@ void FreeCADStyle::drawTabCloseButton(
     painter->restore();
 }
 
+void FreeCADStyle::drawTabWidgetFrame(
+    QPainter* painter,
+    const QStyleOptionTabWidgetFrame* option,
+    const QWidget* widget
+) const
+{
+    const Position position = tabPositionOf(option->shape);
+
+    // Draw the pane frame using design-system tokens.
+    StyleContext paneContext;
+    paneContext.component = StyleComponent::TabWidget;
+    paneContext.element = StyleComponentElement::Root;
+    bindWidget(paneContext, widget);
+    drawBoxBackground(painter, option->rect, resolveBoxStyle(paneContext));
+
+    // Draw the shadow strip at the attachment edge.
+    // Build context manually — contextOf() requires a QTabBar widget to produce the
+    // TabBar component; here the widget is QTabWidget.
+    StyleContext stripContext;
+    stripContext.component = StyleComponent::TabBar;
+    stripContext.element = StyleComponentElement::Base;
+    stripContext.variant.set(VariantSlot::Position, position);
+    const auto* tabWidget = qobject_cast<const QTabWidget*>(widget);
+    bindWidget(stripContext, tabWidget != nullptr ? tabWidget->tabBar() : nullptr);
+
+    const int stripHeight = resolve<int>(stripContext, StyleProperty::Height).value_or(0);
+    if (stripHeight == 0) {
+        return;
+    }
+
+    const QRect& rect = option->rect;
+    // clang-format off
+    const QRect stripRect = [&]() -> QRect {
+        switch (position) {
+            case Position::South: return {rect.left(), rect.bottom() + 1, rect.width(), stripHeight};
+            case Position::East:  return {rect.right() + 1, rect.top(), stripHeight, rect.height()};
+            case Position::West:  return {rect.left() - stripHeight, rect.top(), stripHeight, rect.height()};
+            default:              return {rect.left(), rect.top() - stripHeight, rect.width(), stripHeight};
+        }
+    }();
+    // clang-format on
+
+    BoxStyleDefinition stripStyle = resolveBoxStyle(stripContext);
+    // The pane box already draws the border; suppress the strip's own border to avoid doubling.
+    stripStyle.borderColor = std::nullopt;
+    stripStyle.borderThickness = std::nullopt;
+
+    drawBoxBackground(painter, stripRect, stripStyle);
+}
+
 void FreeCADStyle::drawTabBarBase(
     QPainter* painter,
     const QStyleOptionTabBarBase* option,
@@ -3768,6 +3818,13 @@ QRect FreeCADStyle::subElementRect(
     const QWidget* widget
 ) const
 {
+    if (element == SE_TabWidgetTabContents) {
+        const StyleContext context = contextOf(widget, option);
+        const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+        const QRect paneRect = QProxyStyle::subElementRect(SE_TabWidgetTabPane, option, widget);
+        return geometry.contentRect(paneRect);
+    }
+
     if (element == SE_ItemViewItemCheckIndicator || element == SE_ItemViewItemDecoration
         || element == SE_ItemViewItemText) {
         return itemViewSubElementRect(element, option, widget);
@@ -3904,6 +3961,13 @@ void FreeCADStyle::drawPrimitive(
     if (element == PE_IndicatorTabClose) {
         drawTabCloseButton(painter, option, widget);
         return;
+    }
+
+    if (element == PE_FrameTabWidget) {
+        if (const auto* frameOption = qstyleoption_cast<const QStyleOptionTabWidgetFrame*>(option)) {
+            drawTabWidgetFrame(painter, frameOption, widget);
+            return;
+        }
     }
 
     if (element == PE_FrameTabBarBase) {
@@ -4413,6 +4477,10 @@ StyleContext FreeCADStyle::contextOf(
             && ((option->state & QStyle::State_Raised) || (option->state & QStyle::State_MouseOver))) {
             context.state |= StyleState::Hovered;
         }
+    }
+    else if (qobject_cast<const QTabWidget*>(widget)) {
+        context.component = StyleComponent::TabWidget;
+        context.element = element;
     }
     else if (const auto* tabBar = qobject_cast<const QTabBar*>(widget)) {
         context.component = StyleComponent::TabBar;

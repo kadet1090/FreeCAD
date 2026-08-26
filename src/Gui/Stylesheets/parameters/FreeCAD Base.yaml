@@ -403,3 +403,8 @@ TabBarCloseButtonPressedBackground: "@Red.800"
 TabBarCloseButtonPressedIconColor: "@Background.050"
 
 TabBarCloseButtonDisabledIconColor: "@BaseDisabledTextColor"
+
+TabWidgetBorderColor: "@BaseBorderColor"
+TabWidgetBorderRadius: "border_radius(@BaseRadius.medium)"
+TabWidgetBorderThickness: "border_thickness(1px)"
+TabWidgetPadding: 0
