@@ -78,6 +78,10 @@ Gui--TaskView--TaskPanel QSint--ActionPanel {
   background-color: transparent;
 }
 
+Gui--Dialog--DlgPreferencesImp #sidebar {
+  background-color: @{@Background.200};
+}
+
 /* QToolButton ------------------------------------------------------------
 
 A tool button takes its font from the widget, not from the style, so the size
