@@ -241,6 +241,10 @@ ScrollBarThumbBorderRadius: "@BaseRadius.medium"
 ScrollBarThumbMargin: "padding(@Spacing.100)"
 ScrollBarThumbMinLength: 50px
 
+# The surface a task panel and a dialog sit on; read by the QSint content rule below,
+# which is stylesheet work QProxyStyle cannot reach.
+DialogBackground: "@Background.050"
+
 # The two halves of a split button are painted as separate boxes, so the token system zeroes
 # the corners where they meet and drops the trailing half's border there. FreeCADStyle needs
 # to know nothing about SplitButton for this to work.

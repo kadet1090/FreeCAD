@@ -69,7 +69,7 @@ Gui--PropertyEditor--PropertyEditor {
   qproperty-groupBackground: @{@Background.200}
 }
 MRichTextEdit[floating="true"] {
-  border: 1px solid @GeneralBorderColor;
+  border: 1px solid @BaseBorderColor;
   border-radius: 2px;
   padding: 1px;
 }
@@ -145,7 +145,7 @@ QScrollBar::handle:vertical {
 QFrame[class="panel"] {}
 QSint--ActionGroup {
 /* if not reset, it might create problems with QPushButtons and other elements */
-  border-radius: @InputFieldBorderRadius;
+  border-radius: @FormControlBorderRadius;
 }
 
 /* Separator line */
@@ -155,13 +155,13 @@ QSint--ActionGroup QFrame[height="1"],
 QSint--ActionGroup QFrame[width="1"],
 QSint--ActionGroup QFrame[width="1"],
 QSint--ActionGroup QFrame[width="1"] {
-  border-color: @GeneralBorderColor;
+  border-color: @BaseBorderColor;
 }
 
 /* Panel header */
 QSint--ActionGroup QFrame[class="header"] {
-  border: 1px solid @GeneralBorderColor;
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @ButtonTopBackgroundColor,stop:1 @ButtonBottomBackgroundColor );
+  border: 1px solid @BaseBorderColor;
+  background-color: @ButtonBackground;
   border-top-left-radius: 3px;
   border-top-right-radius: 3px;
   border-bottom-left-radius: 0px;
@@ -172,125 +172,16 @@ QSint--ActionGroup QToolButton[class="header"] {
   font-weight: bold;
   border-style: none;
 }
-QSint--ActionGroup QFrame[class="header"] QLabel[fold="false"] {
-  padding: 2px;
-  image: url(qss:@IconsLocationFolderName/arrow-down-lightgray.svg);
-}
-
-QSint--ActionGroup QFrame[class="header"] QLabel:hover[fold="false"] {
-  padding: 2px;
-  image: url(qss:@IconsLocationFolderName/arrow-down-@StylesheetIconsColor.svg);
-}
-
-QSint--ActionGroup QFrame[class="header"] QLabel[fold="true"] {
-  padding: 2px;
-  image: url(qss:@IconsLocationFolderName/arrow-up-lightgray.svg);
-}
-
-QSint--ActionGroup QFrame[class="header"] QLabel[fold="true"]:hover {
-  padding: 2px;
-  image: url(qss:@IconsLocationFolderName/arrow-up-@StylesheetIconsColor.svg);
-}
-
 QSint--ActionGroup QFrame[class="content"] {
-  background-color: @DialogBackgroundColor;/* Task Panel background color */
+  background-color: @DialogBackground;/* Task Panel background color */
 
-  border-bottom: 1px solid @GeneralBorderColor;
-  border-left: 1px solid @GeneralBorderColor;
-  border-right: 1px solid @GeneralBorderColor;
+  border-bottom: 1px solid @BaseBorderColor;
+  border-left: 1px solid @BaseBorderColor;
+  border-right: 1px solid @BaseBorderColor;
   border-top-left-radius: 0px;
   border-top-right-radius: 0px;
   border-bottom-left-radius: 3px;
   border-bottom-right-radius: 3px;
-}
-
-/* Fix for buttons with icons that showed cropped (still not happy with result) */
-QSint--ActionGroup QFrame[class="content"] > QWidget > QPushButton {
-  padding: 2px;/* bigger padding crops text and icons... */
-
-  border-radius: @InputFieldBorderRadius;
-}
-
-/* Fix for lists inside task panels */ /* sketcher constraints list */
-QSint--ActionGroup QFrame[class="content"] QTreeView,
-QSint--ActionGroup QFrame[class="content"] QListView,
-QSint--ActionGroup QFrame[class="content"] QTableView {
-  background-color: @PrimaryColor;
-}
-
-/* Fix for tables inside task panels, see https://github.com/FreeCAD/FreeCAD/issues/22957
-Reverted due to regression https://github.com/FreeCAD/FreeCAD/issues/24604
-QSint--ActionGroup QFrame[class="content"] QTableView {
-  min-height: 300px;
-} */
-
-/* found inside Part Design Workbench and "make a draft on a face" Task panel options */
-QSint--ActionGroup QFrame[class="content"] QToolButton {
-  text-align: center;
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @ButtonTopBackgroundColor,stop:1 @ButtonBottomBackgroundColor );
-  border: 1px solid @GeneralBorderColor;
-  padding: 1px 1px; /* different than regular QPushButton */
-  min-height: 16px; /* same as QTabBar QPushButton min-width */
-  border-radius: @InputFieldBorderRadius;
-}
-
-QSint--ActionGroup QFrame[class="content"] QToolButton:checked {
-  background-color: qlineargradient(x1:0, y1:1, x2:0, y2:0, stop:0 @CheckedButtonTopBackgroundColor, stop:1 @CheckedButtonBottomBackgroundColor);
-}
-
-/* hide the empty line between header and content */
-QSint--ActionGroup QFrame[class="separator"] {
-  min-height: 0;
-  max-height: 0;
-}
-
-/* QToolButtons with a menu found in Sketcher task panel*/
-QSint--ActionGroup QToolButton::menu-button {
-  border-left: 1px solid @GeneralBorderColor;
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
-
-  width: 19px;/* 16px width + 4px for border = 20px allocated above */
-  outline: none;
-  background-color: transparent;
-}
-
-QSint--ActionGroup QToolButton#settingsButton,
-QSint--ActionGroup QToolButton#filterButton,
-QSint--ActionGroup QToolButton#manualUpdate {
-  padding-right: 20px;/* make way for the popup button */}
-/* to give widget inside the menu same look as regular menu */
-QSint--ActionGroup QToolButton#filterButton QListWidget {
-  background-color: @PrimaryColor;
-  border: 1px solid @GeneralBorderColor;
-}
-
-QSint--ActionGroup QFrame[class="content"] QToolButton:hover{
-  background-color: @GeneralBackgroundHoverColor;
-}
-
-QSint--ActionGroup QFrame[class="content"] QToolButton:focus {
-  border: 1px solid  @AccentColor;
-}
-
-QSint--ActionGroup QFrame[class="content"] QToolButton:disabled {
-  background-color: @GeneralDisabledBackgroundColor;
-  color: @TextDisabledColor;
-  border: 1px solid @GeneralBorderColor;
-}
-
-QSint--ActionGroup QFrame[class="content"] QToolButton:disabled:checked {
-  border: 1px solid @GeneralBorderColor;
-  color: @TextDisabledColor;
-  outline: none;
-}
-
-QSint--ActionGroup QFrame[class="content"] QToolButton:pressed {
-  background-color: @GeneralBackgroundHoverColor;
-}
-
-QFrame[class="panel"] QPushButton {
-  padding: 3px;
 }
 
 /*==================================================================================================

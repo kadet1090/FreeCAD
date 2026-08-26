@@ -14,6 +14,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStyle>
+#include <QStyleOption>
 #include <QTimer>
 
 
@@ -101,6 +102,18 @@ bool TaskHeader::eventFilter(QObject *obj, QEvent *event)
       m_buttonOver = false;
       changeIcons();
       return true;
+
+    case QEvent::Paint:
+      if (myButton->pixmap().isNull()) {
+        QPainter painter(myButton);
+        QStyleOption option;
+        option.initFrom(myButton);
+        QStyle::PrimitiveElement primitive =
+            m_fold ? QStyle::PE_IndicatorArrowUp : QStyle::PE_IndicatorArrowDown;
+        myButton->style()->drawPrimitive(primitive, &option, &painter, myButton);
+        return true;
+      }
+      break;
 
     default:;
   }
