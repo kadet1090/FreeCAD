@@ -1187,6 +1187,7 @@ SET(Widget_CPP_SRCS
     FontScaledSVG.cpp
     SplitButton.cpp
     HighlightOverlay.cpp
+    GeometryHighlighter.cpp
 )
 if(WIN32)
     SET(Widget_CPP_SRCS
@@ -1221,6 +1222,8 @@ SET(Widget_HPP_SRCS
     FontScaledSVG.h
     SplitButton.h
     HighlightOverlay.h
+    GeometryHighlighter.h
+    GeometryReference.h
 )
 SET(Widget_SRCS
     ${Widget_CPP_SRCS}

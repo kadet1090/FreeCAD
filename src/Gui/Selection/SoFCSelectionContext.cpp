@@ -159,7 +159,10 @@ bool SoFCSelectionContextEx::setColors(
             tmp[-1] = it->second;
         }
         else {
-            int idx = std::atoi(it->first.c_str() + 4);
+            // Past this element's own prefix, not a fixed four characters: "Face" and
+            // "Edge" are four long but "Vertex" is six, and reading from the wrong offset
+            // yields 0, which the guard below then discards without a word.
+            int idx = std::atoi(it->first.c_str() + element.size());
             if (idx > 0) {
                 idx -= 1;
                 tmp[idx] = it->second;

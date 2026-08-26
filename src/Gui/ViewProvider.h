@@ -328,6 +328,29 @@ public:
      */
     virtual bool getDetailPath(const char* subname, SoFullPath* pPath, bool append, SoDetail*& det) const;
 
+    /// Sub-elements that bound @p subName — for a face, the edges around it.
+    /// Empty when the element has no boundary or the provider does not model one.
+    virtual std::vector<std::string> getBoundaryElements(const char* subName) const;
+
+    /// @p elementName, translated into the namespace the scene graph's shape nodes
+    /// recognize for per-element colouring — the plain Face/Edge/Vertex kind prefixes
+    /// they filter selection colours on. Identity by default. A provider whose element
+    /// names live in a different namespace (e.g. a prefix marking geometry that has no
+    /// direct counterpart in the rendered shape) overrides this so a highlight colour
+    /// keyed by @p elementName still reaches the node that draws it.
+    ///
+    /// A returned name that does not begin with "Face", "Edge" or "Vertex" is silently
+    /// invisible: no shape node's colour filter matches it, the colour is dropped with no
+    /// warning, and the highlight simply does not appear.
+    ///
+    /// Consulted only on the highlight path (View3DInventorSelection::addHighlightElements).
+    /// ViewProviderLink::applyColorsTo and the colour override in ApplicationPy.cpp still key
+    /// colours by the raw element name, so the same namespace mismatch is latent there too.
+    virtual std::string mapElementNameForColor(const std::string& elementName) const
+    {
+        return elementName;
+    }
+
     /** partial rendering setup
      *
      * @param subelements: a list of dot separated string refer to the sub element

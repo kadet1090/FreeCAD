@@ -230,6 +230,15 @@ HighlightOverlayBorderThickness: 2px
 HighlightOverlayBorderRadius: "@BaseRadius.medium"
 HighlightOverlayMargin: "@Spacing.100"
 
+# 3D-view geometry highlight. A face is see-through so the surface under it still reads;
+# its boundary stays solid so the outline stays crisp.
+GeometryHighlightHoveredFaceColor: "opacity(@Blue.400, 80%)"
+GeometryHighlightHoveredEdgeColor: "@Blue.500"
+GeometryHighlightHoveredPointColor: "@Blue.500"
+GeometryHighlightReferenceFaceColor: "opacity(@Blue.500, 30%)"
+GeometryHighlightReferenceEdgeColor: "@Blue.500"
+GeometryHighlightReferencePointColor: "@Blue.500"
+
 # A scroll bar's appearance lives in QSS pseudo-elements QProxyStyle cannot reach, so it is
 # the one component the style does not paint. These tokens are what its rules read.
 ScrollBarBackground: "@Colors.transparent"

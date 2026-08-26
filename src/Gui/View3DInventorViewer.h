@@ -590,6 +590,11 @@ public:
     void setDocument(Gui::Document* pcDocument);
     Gui::Document* getDocument();
 
+    View3DInventorSelection* getInventorSelection() const
+    {
+        return inventorSelection.get();
+    }
+
     virtual PyObject* getPyObject();
 
     bool getSceneBoundBox(SbBox3f& box) const;
