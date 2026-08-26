@@ -389,6 +389,31 @@ private Q_SLOTS:
         QVERIFY(!button.property("_fc_styleFontMask").isValid());
     }
 
+    // The preference used to call setFont() directly. It has to speak through the token system
+    // now, or the style's own pass would overwrite it on the next polish.
+    void test_aFontSizeOverrideBeatsTheComponentToken()  // NOLINT
+    {
+        QStyle* const previousStyle = QApplication::style();
+        previousStyle->setParent(nullptr);
+        const auto styleGuard = qScopeGuard([previousStyle]() {
+            QApplication::setStyle(previousStyle);
+        });
+
+        QApplication::setStyle(new Gui::FreeCADStyle);
+
+        QPushButton button;
+        Gui::FreeCADStyle::setStyleOverride(
+            &button,
+            QStringLiteral("ButtonFontSize"),
+            QStringLiteral("21px")
+        );
+
+        Gui::FreeCADStyle style;
+        style.polish(&button);
+
+        QCOMPARE(button.font().pixelSize(), 21);
+    }
+
     // The reload walk shipped flat once: only the top level and its immediate children picked
     // up a re-themed font, while anything nested deeper kept the stale one. A container inside
     // a top-level window, with the button one level below that, is the shallowest tree that bug

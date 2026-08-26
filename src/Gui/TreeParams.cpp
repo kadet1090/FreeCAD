@@ -23,6 +23,8 @@
 
 #include "Tree.h"
 
+#include <Gui/FreeCADStyle.h>
+
 /*[[[cog
 import TreeParams
 TreeParams.define()
@@ -1768,14 +1770,16 @@ void TreeParams::onIconSizeChanged()
 
 void TreeParams::onFontSizeChanged()
 {
-    int fontSize = TreeParams::getFontSize();
-    if (fontSize <= 0) {
-        return;
-    }
-    for (auto tree : TreeWidget::Instances) {
-        QFont font = tree->font();
-        font.setPointSize(std::max(8, fontSize));
-        tree->setFont(font);
+    const int fontSize = static_cast<int>(TreeParams::getFontSize());
+
+    for (auto* tree : TreeWidget::Instances) {
+        // An empty expression clears the override, which is what a preference of 0 means: no
+        // override, the theme's own TreeFontSize.
+        Gui::FreeCADStyle::setStyleOverride(
+            tree,
+            QStringLiteral("TreeFontSize"),
+            fontSize > 0 ? QStringLiteral("%1pt").arg(std::max(8, fontSize)) : QString()
+        );
     }
 }
 
