@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <initializer_list>
 #include <optional>
 #include <string_view>
@@ -177,6 +178,23 @@ public:
         std::optional<QMarginsF> borderThickness;
         CornerRadii borderRadius;  // default: all zero (sharp corners)
         std::optional<InnerShadow> innerShadow;
+    };
+
+    /// The edge on which a box meets the half of a split control next to it.
+    enum class SeamEdge : std::uint8_t
+    {
+        None,
+        Left,
+        Right,
+        Top,
+        Bottom,
+    };
+
+    /// Whether a box keeps its border on the seam, or leaves it to the half next to it.
+    enum class SeamBorder : std::uint8_t
+    {
+        Keep,
+        Drop,
     };
 
     /**
@@ -380,6 +398,19 @@ public:
 
     /// Resolves the appearance of the box @p context describes: background, border and radii.
     BoxStyleDefinition resolveBoxStyle(const StyleParameters::StyleContext& context) const;
+
+    /**
+     * @brief Resolves a box that abuts another one, and squares off the edge they share.
+     *
+     * The two halves of a split control are painted as separate boxes, so without this each
+     * would round its own corners at the join and both would draw a border there. The half
+     * that passes SeamBorder::Keep supplies the single rule between them.
+     */
+    BoxStyleDefinition seamedBoxStyle(
+        const StyleParameters::StyleContext& context,
+        SeamEdge seam,
+        SeamBorder border
+    ) const;
 
     /**
      * @brief Paints the box @p context describes into @p rect.

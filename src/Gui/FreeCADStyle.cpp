@@ -500,6 +500,57 @@ void FreeCADStyle::drawComponent(
     drawComponent(painter, rect, contextOf(widget, option));
 }
 
+FreeCADStyle::BoxStyleDefinition FreeCADStyle::seamedBoxStyle(
+    const StyleContext& context,
+    SeamEdge seam,
+    SeamBorder border
+) const
+{
+    BoxStyleDefinition style = resolveBoxStyle(context);
+
+    if (seam == SeamEdge::None) {
+        return style;
+    }
+
+    if (border == SeamBorder::Drop && style.borderThickness.has_value()) {
+        switch (seam) {
+            case SeamEdge::Left:
+                style.borderThickness->setLeft(0);
+                break;
+            case SeamEdge::Right:
+                style.borderThickness->setRight(0);
+                break;
+            case SeamEdge::Top:
+                style.borderThickness->setTop(0);
+                break;
+            case SeamEdge::Bottom:
+                style.borderThickness->setBottom(0);
+                break;
+            case SeamEdge::None:
+                break;
+        }
+    }
+
+    switch (seam) {
+        case SeamEdge::Left:
+            style.borderRadius.setLeft(0);
+            break;
+        case SeamEdge::Right:
+            style.borderRadius.setRight(0);
+            break;
+        case SeamEdge::Top:
+            style.borderRadius.setTop(0);
+            break;
+        case SeamEdge::Bottom:
+            style.borderRadius.setBottom(0);
+            break;
+        case SeamEdge::None:
+            break;
+    }
+
+    return style;
+}
+
 void FreeCADStyle::paintBox(
     QPainter* painter,
     const QRect& rect,
