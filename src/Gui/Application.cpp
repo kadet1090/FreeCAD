@@ -273,6 +273,10 @@ struct ApplicationP
             macroMngr = nullptr;
         }
 
+        // Built up front even where the application runs under another style: components ask
+        // for it to resolve tokens and paint boxes, not only to be the style in force.
+        freeCADStyle = new FreeCADStyle();
+        freeCADStyle->setParent(qApp);
         // Create the Theme Manager
         prefPackManager = new PreferencePackManager();
         // Create the Style Parameter Manager
@@ -290,6 +294,8 @@ struct ApplicationP
     /// Active document
     Gui::Document* activeDocument {nullptr};
     std::vector<Gui::Document*> editDocuments;
+
+    QPointer<FreeCADStyle> freeCADStyle;
 
     MacroManager* macroMngr;
     PreferencePackManager* prefPackManager;
@@ -526,6 +532,17 @@ void Application::initStyleParameterManager()
 
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(
         new StyleParameters::BuiltInParameterSource({.name = QT_TR_NOOP("Built-in Parameters")})
+    );
+
+    // todo: left for compatibility with older theme versions, to be removed before release
+    Base::registerServiceImplementation<StyleParameters::ParameterSource>(
+        new StyleParameters::UserParameterSource(
+            App::GetApplication().GetParameterGroupByPath(
+                "User parameter:BaseApp/Preferences/Themes/UserTokens"
+            ),
+            {.name = QT_TR_NOOP("Theme Parameters - Fallback"),
+             .options = StyleParameters::ParameterSourceOption::ReadOnly}
+        )
     );
 
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(designSystemParametersSource);
@@ -2293,6 +2310,20 @@ Gui::StyleParameters::ParameterManager* Application::styleParameterManager()
     return d->styleParameterManager;
 }
 
+Gui::FreeCADStyle* Application::freeCADStyle()
+{
+    // QApplication::setStyle takes ownership and deletes whatever style it replaces, so selecting
+    // any other style destroys this one out from under every caller here. Hold it weakly and build
+    // a fresh one on demand: callers reach for it to resolve tokens and paint boxes whether or not
+    // it is the style currently in force.
+    if (d->freeCADStyle.isNull()) {
+        d->freeCADStyle = new FreeCADStyle();
+        d->freeCADStyle->setParent(qApp);
+    }
+
+    return d->freeCADStyle;
+}
+
 
 //**************************************************************************
 // Init, Destruct and singleton
@@ -2947,9 +2978,9 @@ QString Application::replaceVariablesInQss(const QString& qssText)
 
 void Application::setStyle(const QString& name)
 {
-    const auto createStyleFromName = [](const QString& name) -> QStyle* {
+    const auto createStyleFromName = [this](const QString& name) -> QStyle* {
         if (name == QStringLiteral("FreeCAD")) {
-            return new FreeCADStyle();
+            return freeCADStyle();
         }
 
         if (name.compare(QStringLiteral("System"), Qt::CaseInsensitive) == 0) {
@@ -2964,11 +2995,19 @@ void Application::setStyle(const QString& name)
         return qobject_cast<FreeCADStyle*>(style) != nullptr;
     };
 
+    auto* style = createStyleFromName(name);
+
+    // setStyle deletes the style it replaces, so handing it the one already in force would
+    // destroy the object and then install the dangling pointer.
+    if (style != nullptr && style == qApp->style()) {
+        return;
+    }
+
     if (auto* current = qApp->style(); current && requiresEventFilter(current)) {
         qApp->removeEventFilter(current);
     }
 
-    if (auto* style = createStyleFromName(name)) {
+    if (style != nullptr) {
         qApp->setStyle(style);
 
         if (requiresEventFilter(style)) {

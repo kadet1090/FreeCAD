@@ -29,6 +29,7 @@
 
 #include <App/Application.h>
 
+#include "FreeCADStyle.h"
 #include "StyleParameters/ParameterManager.h"
 
 class QCloseEvent;
@@ -272,6 +273,10 @@ public:
 
     Gui::PreferencePackManager* prefPackManager();
     Gui::StyleParameters::ParameterManager* styleParameterManager();
+
+    /// The style, whether or not it is the one in force — components resolve tokens and paint
+    /// boxes through it directly. Never null; rebuilt if another style replaced and deleted it.
+    Gui::FreeCADStyle* freeCADStyle();
 
     /** @name Init, Destruct an Access methods */
     //@{

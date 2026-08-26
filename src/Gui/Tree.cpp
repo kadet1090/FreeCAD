@@ -56,10 +56,13 @@
 #include <App/SuppressibleExtension.h>
 
 #include "Tree.h"
+#include "Application.h"
 #include "BitmapFactory.h"
 #include "Command.h"
 #include "Document.h"
 #include "ExpressionCompleter.h"
+#include "FreeCADStyle.h"
+#include "IconManager.h"
 #include "Macro.h"
 #include "MainWindow.h"
 #include "MenuManager.h"
@@ -87,7 +90,6 @@ namespace sp = std::placeholders;
 
 std::unique_ptr<QPixmap> TreeWidget::documentPixmap;
 std::unique_ptr<QPixmap> TreeWidget::documentPartialPixmap;
-static QBrush _TreeItemBackground;
 std::set<TreeWidget*> TreeWidget::Instances;
 static TreeWidget* _LastSelectedTreeWidget;
 const int TreeWidget::DocumentType = 1000;
@@ -100,11 +102,6 @@ static bool isVisibilityIconEnabled()
     return TreeParams::getVisibilityIcon();
 }
 
-static bool isOnlyNameColumnDisplayed()
-{
-    return TreeParams::getHideInternalNames() && TreeParams::getHideColumn();
-}
-
 static bool isSelectionCheckBoxesEnabled()
 {
     return TreeParams::getCheckBoxesSelection();
@@ -112,19 +109,6 @@ static bool isSelectionCheckBoxesEnabled()
 
 void TreeParams::onItemBackgroundChanged()
 {
-    if (getItemBackground()) {
-        Base::Color color;
-        color.setPackedValue(getItemBackground());
-        QColor col;
-        col.setRedF(color.r);
-        col.setGreenF(color.g);
-        col.setBlueF(color.b);
-        col.setAlphaF(color.a);
-        _TreeItemBackground = QBrush(col);
-    }
-    else {
-        _TreeItemBackground = QBrush();
-    }
     refreshTreeViews();
 }
 
@@ -352,18 +336,6 @@ class TreeWidgetItemDelegate: public QStyledItemDelegate
 {
     typedef QStyledItemDelegate inherited;
 
-    // Beware, big scary hack incoming!
-    //
-    // This is artificial QTreeWidget that is not rendered and its sole goal is to be the source
-    // of style information that can be manipulated using QSS. From Qt6.5 tree branches also
-    // have rendered background using ::item sub-control. Whole row also gets background from
-    // the same sub-control. Only way to prevent this is to disable background of ::item,
-    // this however limits our ability to style tree items. As solution we create this widget
-    // that will be for painter to read information and draw proper backgrounds only when asked.
-    //
-    // More information: https://github.com/FreeCAD/FreeCAD/pull/13807
-    QTreeView* artificial;
-
     QRect calculateItemRect(const QStyleOptionViewItem& option) const;
 
 public:
@@ -390,36 +362,23 @@ public:
 
 TreeWidgetItemDelegate::TreeWidgetItemDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
-{
-    artificial = new QTreeView(qobject_cast<QWidget*>(parent));
-    artificial->setObjectName(QStringLiteral("DocumentTreeItems"));
-    artificial->setFixedSize(0, 0);  // ensure that it does not render
-}
+{}
 
 
 QRect TreeWidgetItemDelegate::calculateItemRect(const QStyleOptionViewItem& option) const
 {
-    auto tree = static_cast<TreeWidget*>(parent());
-    auto style = tree->style();
+    auto* tree = static_cast<TreeWidget*>(parent());
+    auto* fcStyle = static_cast<QStyle*>(Application::Instance->freeCADStyle());
+
+    // The style lays the cell out from the Item tokens, so ask it for the width that layout
+    // needs rather than re-deriving it here — the background box then hugs the content exactly.
+    const int tightWidth
+        = fcStyle->sizeFromContents(QStyle::CT_ItemViewItem, &option, QSize(), tree).width();
 
     QRect rect = option.rect;
-
-    const int margin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, &option, artificial) + 1;
-
-    // 2 margin for text, 2 margin for decoration (icon) = 4 times margin
-    int width = 4 * margin + option.fontMetrics.boundingRect(option.text).width()
-        + option.decorationSize.width() + TreeParams::getItemBackgroundPadding();
-
-    if (TreeParams::getCheckBoxesSelection()) {
-        // another 2 margin for checkbox
-        width += 2 * margin + style->pixelMetric(QStyle::PM_IndicatorWidth)
-            + style->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
+    if (tightWidth < rect.width()) {
+        rect.setWidth(tightWidth);
     }
-
-    if (width < rect.width()) {
-        rect.setWidth(width);
-    }
-
     return rect;
 }
 
@@ -432,44 +391,38 @@ void TreeWidgetItemDelegate::paint(
     QStyleOptionViewItem opt = option;
     initStyleOption(&opt, index);
 
-    auto tree = static_cast<TreeWidget*>(parent());
-    auto style = tree->style();
+    auto* tree = static_cast<TreeWidget*>(parent());
+    auto* fcStyle = Application::Instance->freeCADStyle();
 
-    // If only the first column is shown, we'll trim the color background when
-    // rendering as transparent overlay.
-    bool trimColumnSize = isOnlyNameColumnDisplayed();
+    // Only over a transparent surface does an item become a free-standing box hugging its own
+    // content; docked, the tree keeps the full-width row every other item view draws.
+    if (index.column() == 0 && FreeCADStyle::isTransparent(tree)) {
+        using namespace StyleParameters;
+        const StyleContext context = FreeCADStyle::contextOf(tree, &opt, StyleComponentElement::Item);
+        const FreeCADStyle::BoxGeometryDefinition geometry = fcStyle->resolveBoxGeometry(context);
 
-    if (index.column() == 0) {
-        if (tree->testAttribute(Qt::WA_NoSystemBackground)
-            && (trimColumnSize
-                || (opt.backgroundBrush.style() == Qt::NoBrush
-                    && _TreeItemBackground.style() != Qt::NoBrush))) {
-            QRect rect = calculateItemRect(option);
-
-            if (trimColumnSize && opt.backgroundBrush.style() == Qt::NoBrush) {
-                painter->fillRect(rect, _TreeItemBackground);
-            }
-            else if (!opt.state.testFlag(QStyle::State_Selected)) {
-                painter->fillRect(rect, _TreeItemBackground);
-            }
-        }
+        // borderRect removes margin from the tight rect, creating visual breathing room
+        // outside the painted background box without clipping content.
+        opt.rect = geometry.borderRect(calculateItemRect(opt));
+        opt.viewItemPosition = QStyleOptionViewItem::OnlyOne;
     }
-    style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, artificial);
+
+    static_cast<QStyle*>(fcStyle)->drawControl(QStyle::CE_ItemViewItem, &opt, painter, tree);
 }
 
 void TreeWidgetItemDelegate::initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const
 {
     inherited::initStyleOption(option, index);
 
-    auto tree = static_cast<TreeWidget*>(parent());
-    auto item = tree->itemFromIndex(index);
+    auto* tree = static_cast<TreeWidget*>(parent());
+    auto* item = tree->itemFromIndex(index);
 
     if (!item) {
         return;
     }
 
-    // Clear State_Enabled for invisible objects so QSS ::item:disabled rules can
-    // override the overlay stylesheet's blanket ::item { color } for text fading.
+    // Clear State_Enabled for invisible objects so FreeCADStyle can apply the
+    // disabled token (faded text) to items whose visibility is turned off.
     if (item->type() == TreeWidget::ObjectType) {
         if (auto* docItem = static_cast<DocumentObjectItem*>(item);
             docItem->object() && !docItem->isVisibleInTree()) {
@@ -478,27 +431,18 @@ void TreeWidgetItemDelegate::initStyleOption(QStyleOptionViewItem* option, const
     }
 
     option->textElideMode = Qt::ElideMiddle;
-    auto mousePos = option->widget->mapFromGlobal(QCursor::pos());
-    auto isHovered = option->rect.contains(mousePos);
-    if (!isHovered) {
+
+    const auto mousePos = option->widget->mapFromGlobal(QCursor::pos());
+    if (!option->rect.contains(mousePos)) {
         option->state &= ~QStyle::State_MouseOver;
     }
 
-    QSize size = option->icon.actualSize(QSize(0xffff, 0xffff));
-
-    if (size.height() > 0) {
-        option->decorationSize = QSize(
-            size.width() * TreeWidget::getIconSize() / size.height(),
-            TreeWidget::getIconSize()
-        );
-    }
-
-    if (isOnlyNameColumnDisplayed()) {
-        option->rect = calculateItemRect(*option);
-
-        // we need to extend this shape a bit, 3px on each side
-        // this value was obtained experimentally
-        option->rect.setWidth(option->rect.width() + 3 * 2);
+    // Reserve exactly what the icon will paint at the tree's icon height. QIcon never upscales
+    // a pixmap icon, so deriving the width from a larger variant's aspect ratio would leave
+    // dead space on both sides of it.
+    const QSize iconSize = option->icon.actualSize(QSize(0xffff, TreeWidget::getIconSize()));
+    if (!iconSize.isEmpty()) {
+        option->decorationSize = iconSize;
     }
 }
 
@@ -561,8 +505,16 @@ QWidget* TreeWidgetItemDelegate::createEditor(
 QSize TreeWidgetItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     QSize size = QStyledItemDelegate::sizeHint(option, index);
-    int spacing = std::max(0, static_cast<int>(TreeParams::getItemSpacing()));
-    size.setHeight(size.height() + spacing);
+
+    auto* tree = static_cast<TreeWidget*>(parent());
+    auto* fcStyle = Application::Instance->freeCADStyle();
+
+    using namespace StyleParameters;
+    const StyleContext context = FreeCADStyle::contextOf(tree, &option, StyleComponentElement::Item);
+    const FreeCADStyle::BoxGeometryDefinition geometry = fcStyle->resolveBoxGeometry(context);
+
+    // margin is the visual gap outside the painted background box — contributes to row height
+    size.setHeight(size.height() + static_cast<int>(geometry.margin.top() + geometry.margin.bottom()));
     return size;
 }
 // ---------------------------------------------------------------------------
@@ -582,6 +534,8 @@ TreeWidget::TreeWidget(const char* name, QWidget* parent)
     if (!_LastSelectedTreeWidget) {
         _LastSelectedTreeWidget = this;
     }
+
+    setProperty("component", "DocumentTree");
 
     this->setDragEnabled(true);
     this->setAcceptDrops(true);
@@ -6398,16 +6352,27 @@ void DocumentObjectItem::generateIcon(int currentStatus, QIcon::Mode mode, QIcon
 
     QPixmap pxOn, pxOff;
 
+    // Rasterise at the screen's pixel ratio: the plain QIcon::pixmap(int, int) overload renders
+    // at ratio 1 whatever the display is, and the tree then hands Qt a pixmap it can only stretch.
+    const qreal pixelRatio = getTree()->devicePixelRatioF();
+    const QSize iconSize(w, w);
+
     // if needed show small pixmap inside
     if (!px.isNull()) {
-        pxOff = BitmapFactory()
-                    .merge(icon_org.pixmap(w, w, mode, QIcon::Off), px, BitmapFactoryInst::TopRight);
-        pxOn = BitmapFactory()
-                   .merge(icon_org.pixmap(w, w, mode, QIcon::On), px, BitmapFactoryInst::TopRight);
+        pxOff = BitmapFactory().merge(
+            icon_org.pixmap(iconSize, pixelRatio, mode, QIcon::Off),
+            px,
+            BitmapFactoryInst::TopRight
+        );
+        pxOn = BitmapFactory().merge(
+            icon_org.pixmap(iconSize, pixelRatio, mode, QIcon::On),
+            px,
+            BitmapFactoryInst::TopRight
+        );
     }
     else {
-        pxOff = icon_org.pixmap(w, w, mode, QIcon::Off);
-        pxOn = icon_org.pixmap(w, w, mode, QIcon::On);
+        pxOff = icon_org.pixmap(iconSize, pixelRatio, mode, QIcon::Off);
+        pxOn = icon_org.pixmap(iconSize, pixelRatio, mode, QIcon::On);
     }
 
     setIconOverlays(currentStatus, pxOff);
@@ -6419,37 +6384,41 @@ void DocumentObjectItem::generateIcon(int currentStatus, QIcon::Mode mode, QIcon
 
 QIcon DocumentObjectItem::getVisibilityIcon(int currentStatus, QIcon& original_icon)
 {
-    static QPixmap pxVisible, pxInvisible;
-    if (pxVisible.isNull()) {
-        pxVisible = BitmapFactory().pixmap("TreeItemVisible");
-    }
-    if (pxInvisible.isNull()) {
-        pxInvisible = BitmapFactory().pixmap("TreeItemInvisible");
-    }
+    // Themed icons: IconManager recolours them from the current theme on every render, so they
+    // must not be cached as pixmaps here or they would survive a theme change unchanged.
+    static const QIcon visible = IconManager::instance().icon(
+        QStringLiteral(":/icons/tabler/outline/eye.svg")
+    );
+    static const QIcon invisible = IconManager::instance().icon(
+        QStringLiteral(":/icons/tabler/outline/eye-closed.svg")
+    );
 
     // Prepend the visibility pixmap to the final icon pixmaps and use these as the icon.
     QIcon new_icon;
     auto style = this->getTree()->style();
     int const spacing = style->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
-    for (auto state : {QIcon::On, QIcon::Off}) {
-        QPixmap px_org = original_icon.pixmap(0xFFFF, 0xFFFF, QIcon::Normal, state);
+    // Everything below is laid out in logical pixels and rasterised at the screen's ratio. Sizing
+    // the composite from the source pixmap's device dimensions instead would make it twice its
+    // intended size on a scaled display, and leave it a ratio-1 image for Qt to resample.
+    const qreal pixelRatio = this->getTree()->devicePixelRatioF();
 
-        QPixmap px(2 * px_org.width() + spacing, px_org.height());
+    for (auto state : {QIcon::On, QIcon::Off}) {
+        const QSize sourceSize = original_icon.actualSize(QSize(0xFFFF, 0xFFFF), QIcon::Normal, state);
+        const QPixmap px_org = original_icon.pixmap(sourceSize, pixelRatio, QIcon::Normal, state);
+
+        const QSize compositeSize(2 * sourceSize.width() + spacing, sourceSize.height());
+        QPixmap px(compositeSize * pixelRatio);
+        px.setDevicePixelRatio(pixelRatio);
         px.fill(Qt::transparent);
 
         QPainter pt;
         pt.begin(&px);
         pt.setPen(Qt::NoPen);
         if (object()->canToggleVisibility()) {
-            pt.drawPixmap(
-                0,
-                0,
-                px_org.width(),
-                px_org.height(),
-                (currentStatus & Status::Visible) ? pxVisible : pxInvisible
-            );
+            const QIcon& visibility = (currentStatus & Status::Visible) ? visible : invisible;
+            pt.drawPixmap(QRect(QPoint(), sourceSize), visibility.pixmap(sourceSize, pixelRatio));
         }
-        pt.drawPixmap(px_org.width() + spacing, 0, px_org.width(), px_org.height(), px_org);
+        pt.drawPixmap(QRect(QPoint(sourceSize.width() + spacing, 0), sourceSize), px_org);
         pt.end();
 
         new_icon.addPixmap(px, QIcon::Normal, state);

@@ -413,6 +413,24 @@ TreeItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.100)"
 TreeBranchBorderColor: "@BaseBorderColor"
 TreeBranchBorderThickness: 1px
 
+# The document tree paints each item as a free-standing box only over a transparent surface,
+# where a full-width row would put an opaque stripe across the 3D view. Docked, none of these
+# tokens resolve and the tree falls back through Tree → List to the ordinary item-view look.
+DocumentTreeRowTransparentBackground: "reset()"
+
+DocumentTreeItemTransparentBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Background.050, @Background.100)"
+DocumentTreeItemTransparentBorderRadius: "@BaseRadius.medium"
+DocumentTreeItemTransparentBorderThickness: 1px
+DocumentTreeItemTransparentBorderColor: "@BaseBorderColor"
+
+DocumentTreeItemTransparentPadding: "padding(horizontal: @Spacing.200, vertical: 3px)"
+DocumentTreeItemTransparentSpacing: "@Spacing.100"
+
+DocumentTreeItemTransparentHoveredBackgroundEffect: "effect(lighten: 0.05)"
+
+DocumentTreeItemTransparentSelectedBackground: "blend(@DocumentTreeItemTransparentBackground, @Accent.500, 20%)"
+DocumentTreeItemTransparentSelectedBorderColor: "blend(@DocumentTreeItemTransparentBorderColor, @Accent.500, 20%)"
+
 # The strip under the tabs, which the active tab's own edge joins.
 TabBarBaseHeight: 4px
 TabBarBaseOverlap: 4px
