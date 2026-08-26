@@ -54,6 +54,7 @@
 #include <Base/Console.h>
 #include <App/Application.h>
 #include "Application.h"
+#include "FreeCADStyle.h"
 #include "BitmapFactory.h"
 #include "Clipping.h"
 #include "ComboView.h"
@@ -1579,6 +1580,13 @@ void OverlayTabWidget::setOverlayMode(bool enable)
     refreshStyleSheet(this, stylesheet);
     setOverlayMode(this, option);
 
+    // The "transparent" property set above seeds this panel as a transparency root; walk the
+    // subtree so every child either adapts its painting or stops the chain where it paints a
+    // surface of its own.
+    if (auto* style = Application::Instance->freeCADStyle()) {
+        style->updateTransparency(this, false);
+    }
+
     _graphicsEffect->setEnabled(effectEnabled() && (enable || isTransparent()));
 
     if (_state == State::Hint && OverlayParams::getDockOverlayHintTabBar()) {
@@ -1823,6 +1831,13 @@ void OverlayTabWidget::addWidget(QDockWidget* dock, const QString& title)
         setRect(rect);
     }
 
+    // The dock joined this panel's subtree, so re-seed the panel's transparency root to reach
+    // it. Nothing on the drag-and-drop path does: the destination panel is the reveal target,
+    // which onTimer() excludes from every setOverlayMode() call it makes.
+    if (auto* style = Application::Instance->freeCADStyle()) {
+        style->updateTransparency(this, false);
+    }
+
     saveTabs();
 }
 
@@ -1865,6 +1880,13 @@ void OverlayTabWidget::removeWidget(QDockWidget* dock, QDockWidget* lastDock)
     dock->setFeatures(dock->features() | QDockWidget::DockWidgetFloatable);
 
     setOverlayMode(dock, OverlayOption::Disable);
+
+    // The dock is back on an opaque surface, so close the transparency root the overlay panel
+    // opened for it; nothing else clears the tags left on the subtree. The hardcoded surface
+    // is safe only because the dock always returns to MainWindow, which never goes transparent.
+    if (auto* style = Application::Instance->freeCADStyle()) {
+        style->updateTransparency(dock, false);
+    }
 
     saveTabs();
 }
