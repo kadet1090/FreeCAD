@@ -28,6 +28,7 @@
 #ifndef _PreComp_
 #include <QImage>
 #include <array>
+#include <algorithm>
 #include <map>
 #include <QPainter>
 #include <QPainterPath>
@@ -60,6 +61,7 @@
 #include "Application.h"
 #include "IconManager.h"
 #include "ThemeReloadEvent.h"
+#include "TaskView/TaskView.h"
 #include "Utilities.h"
 #include "FreeCADStyle.h"
 #include "StyleParameters/ColorEffect.h"
@@ -2536,6 +2538,13 @@ std::optional<QRect> FreeCADStyle::itemViewContentsRect(
         return {};
     }
 
+    // A combo popup's inset belongs to its container, which paints the popup's edge; Qt forces
+    // the view itself frameless, through QComboBoxPrivateContainer::setItemView() calling
+    // setFrameStyle(QFrame::NoFrame), so there is no frame here to inset.
+    if (widget->property(comboDropdownProperty).toBool()) {
+        return {};
+    }
+
     // The view paints its own edge from the same tokens (PE_Frame reaches drawComponent), so the
     // border is part of the inset here just as it is for a combo popup's container — contents
     // laid out inside the padding alone would paint over that edge.
@@ -2853,6 +2862,44 @@ void FreeCADStyle::constrainDropdown(QListView* listView, int chosenRow)
     // own border and padding — and nothing in Qt reconsiders a cache because a property changed.
     notifyStyleChange(listView);
     notifyStyleChange(container);
+
+    applyComboDropdownMaxHeight(listView);
+}
+
+void FreeCADStyle::applyComboDropdownMaxHeight(QListView* listView) const
+{
+    QWidget* container = listView->parentWidget();
+    if (!container) {
+        return;
+    }
+
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(listView));
+
+    // An absent MaxHeight — including one a theme cleared with reset() — means the dropdown is
+    // bounded only by Qt, which keeps it on screen and honours maxVisibleItems.
+    const int maxHeight = geometry.maxHeight.value_or(QWIDGETSIZE_MAX);
+    listView->setMaximumHeight(maxHeight);
+    container->setMaximumHeight(maxHeight);
+}
+
+void FreeCADStyle::restoreComboDropdownDefaults(QComboBox* comboBox)
+{
+    // Use findChildren instead of view() — calling view() lazily creates the container
+    // for a combo that was never opened.
+    for (auto* listView : comboBox->findChildren<QListView*>()) {
+        if (!listView->property(comboDropdownProperty).toBool()) {
+            continue;
+        }
+        listView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        listView->setMaximumHeight(QWIDGETSIZE_MAX);
+
+        QWidget* container = listView->parentWidget();
+        if (!container) {
+            continue;
+        }
+        container->setMaximumHeight(QWIDGETSIZE_MAX);
+        container->removeEventFilter(this);
+    }
 }
 
 FreeCADStyle::ComboPopupPlacement FreeCADStyle::resolveComboPopupPlacement(const QWidget* container) const
@@ -3376,6 +3423,15 @@ void FreeCADStyle::drawPrimitive(
         }
         drawComponent(painter, option->rect, widget, option);
         return;
+    }
+
+    if (element == PE_FrameFocusRect) {
+        // Fusion draws a semi-transparent rounded fill over a focused item view cell, which
+        // State_Item marks. The row's own highlight already says where the focus is, and the
+        // fill only tints it.
+        if (option->state & QStyle::State_Item) {
+            return;
+        }
     }
 
     if (element == PE_PanelItemViewRow) {
@@ -4251,6 +4307,16 @@ uint32_t FreeCADStyle::overrideSetOf(const QWidget* widget) const
 }
 
 
+static QComboBox* comboBoxOwning(QListView* listView)
+{
+    for (QWidget* ancestor = listView->parentWidget(); ancestor; ancestor = ancestor->parentWidget()) {
+        if (auto* comboBox = qobject_cast<QComboBox*>(ancestor)) {
+            return comboBox->view() == listView ? comboBox : nullptr;
+        }
+    }
+    return nullptr;
+}
+
 void FreeCADStyle::polish(QWidget* widget)
 {
     QProxyStyle::polish(widget);
@@ -4278,8 +4344,69 @@ void FreeCADStyle::polish(QWidget* widget)
         && transparencyBelow(widget->parentWidget());
     tagWidgetTransparency(widget, ownSurface(widget, inherited));
 
+    if (auto* itemView = qobject_cast<QAbstractItemView*>(widget)) {
+        itemView->setAttribute(Qt::WA_MouseTracking);
+    }
+
+    // QSint::ActionGroup fills itself with the palette's window brush, which would sit on top
+    // of the panel the style paints for a task box.
+    if (qobject_cast<TaskView::TaskBox*>(widget)) {
+        widget->setAutoFillBackground(false);
+    }
+
+    if (qobject_cast<QMdiSubWindow*>(widget)) {
+        // The subwindow is the surface its view is painted on, and a view paints only its own
+        // chrome - the start page, for one, leaves the area around its lists bare. An opaque
+        // fill here is what lets the backing store clip the subwindows stacked underneath;
+        // without it their last paint stays visible through every such gap.
+        widget->setAutoFillBackground(true);
+    }
+
+    if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(widget)) {
+        auto viewport = scrollArea->viewport();
+
+        if (!viewport) {
+            return;
+        }
+
+        // A QMdiArea is a scroll area whose viewport children are the subwindows themselves.
+        // Stripping their backgrounds the way a viewport's is stripped would leave every view
+        // in the workspace see-through, and the style paints no panel here to take their place.
+        if (qobject_cast<QMdiArea*>(scrollArea)) {
+            return;
+        }
+
+        scrollArea->removeEventFilter(this);
+        scrollArea->installEventFilter(this);
+
+        // The surface behind the rows is the view's own, painted from its tokens. Qt's default
+        // viewport fill would sit on top of it.
+        const auto disableDefaultBackground = [](QWidget* widget) {
+            widget->setAttribute(Qt::WA_NoSystemBackground);
+            widget->setAutoFillBackground(false);
+        };
+
+        disableDefaultBackground(viewport);
+        std::ranges::for_each(
+            viewport->findChildren<QWidget*>(Qt::FindDirectChildrenOnly),
+            disableDefaultBackground
+        );
+
+        updateScrollAreaMask(scrollArea);
+    }
+
     if (auto* comboBox = qobject_cast<QComboBox*>(widget)) {
         constrainComboDropdown(comboBox);
+    }
+
+    // A popup list that arrived after its combo box was polished, through setView() from a
+    // runtime slot, was never reached by the branch above, and nothing polishes the combo box
+    // again. Qt polishes a widget on its first show, and a popup list is shown before it is
+    // ever painted, whenever it was installed.
+    if (auto* listView = qobject_cast<QListView*>(widget)) {
+        if (QComboBox* comboBox = comboBoxOwning(listView)) {
+            constrainComboDropdown(comboBox);
+        }
     }
 }
 
@@ -4288,6 +4415,15 @@ void FreeCADStyle::unpolish(QWidget* widget)
     if (widget == nullptr) {
         QProxyStyle::unpolish(widget);
         return;
+    }
+
+    if (auto* comboBox = qobject_cast<QComboBox*>(widget)) {
+        restoreComboDropdownDefaults(comboBox);
+    }
+
+    if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(widget)) {
+        scrollArea->removeEventFilter(this);
+        scrollArea->clearMask();
     }
 
     // The id means nothing under another style, and leaving it behind would have that style's
@@ -4334,6 +4470,17 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
     if (event->type() == QEvent::Resize || event->type() == QEvent::Show) {
         if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(obj)) {
             updateScrollAreaMask(scrollArea);
+        }
+    }
+
+    // QAbstractScrollArea::paintEvent is an empty stub, so a scroll area that is not an item
+    // view never reaches CE_ShapedFrame and would go unpainted. An item view paints its own
+    // surface through PE_Frame in its paint event.
+    if (event->type() == QEvent::Paint) {
+        if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(obj);
+            scrollArea && !qobject_cast<QAbstractItemView*>(scrollArea)) {
+            QPainter painter(scrollArea);
+            drawComponent(&painter, scrollArea->rect(), contextOf(scrollArea, nullptr));
         }
     }
 

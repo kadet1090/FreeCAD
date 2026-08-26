@@ -45,6 +45,8 @@ setup_qt_test(StyleTransparency)
 setup_qt_test(FormControlSizing)
 setup_qt_test(MenuGeometry)
 setup_qt_test(CheckIndicator)
+setup_qt_test(ComboDropdown)
+setup_qt_test(MdiSurface)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main

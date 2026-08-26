@@ -311,6 +311,10 @@ DropdownListPadding: "@MenuPadding"
 # pointer State_Selected, which is what makes the base style reach for the palette's highlight
 # text colour. That colour is meant for a fully saturated fill and the hover tint is not one,
 # so the label is held at the ordinary text colour instead.
+# How tall a dropdown may grow. Cleared with reset(), it is bounded only by Qt, which keeps
+# it on screen and honours maxVisibleItems.
+DropdownListMaxHeight: "250px"
+
 # Where the popup opens:
 #   current - the current row lands on the combo box, the way a menu opens over its button
 #   below   - the popup's top edge meets the combo box's bottom edge

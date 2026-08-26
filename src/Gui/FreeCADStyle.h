@@ -556,6 +556,12 @@ public:
         const BoxGeometryDefinition& geometry
     ) const;
 
+    /// Caps a dropdown's height at the token the theme states, if it states one.
+    void applyComboDropdownMaxHeight(QListView* listView) const;
+
+    /// Restores what Qt would have done, for a combo box leaving this style.
+    void restoreComboDropdownDefaults(QComboBox* comboBox);
+
     /// Where a dropdown popup sits relative to the combo box it belongs to.
     enum class ComboPopupPlacementMode : std::uint8_t
     {
