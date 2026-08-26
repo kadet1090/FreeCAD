@@ -48,6 +48,7 @@ enum class StyleComponent : uint8_t
     None,
     PushButton,
     ToolButton,
+    ToolBar,        // QToolBar
     ToolBarButton,  // QToolButton in a QToolBar - semantically a different control
     COUNT
 };
@@ -63,6 +64,7 @@ enum class StyleComponent : uint8_t
 enum class StyleComponentElement : uint8_t
 {
     Root,  // Main component
+    Item,  // One item of the component
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
     COUNT,
 };

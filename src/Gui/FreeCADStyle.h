@@ -45,6 +45,7 @@
 #include <QPointer>
 #include <QProxyStyle>
 #include <QPushButton>
+#include <QToolBar>
 #include <QStyleOption>
 
 #include "StyleParameters/Insets.h"
@@ -574,6 +575,12 @@ protected:
         const QStyleOption* option,
         const QWidget* widget
     ) const;
+
+    /// The edge a toolbar is docked to, as a Position variant value.
+    static StyleParameters::Position toolbarPositionOf(const QToolBar* toolbar);
+
+    /// Draws a separator rule centred in @p rect, running along @p orientation.
+    void drawSeparatorLine(QPainter* painter, const QRect& rect, Qt::Orientation orientation) const;
 
     /// Draws an anti-aliased chevron pointing @p direction, filling @p rect.
     void drawChevronArrow(

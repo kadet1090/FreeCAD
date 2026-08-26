@@ -115,9 +115,24 @@ ToolButtonSmallMinWidth: "@FormControlSmallHeight"
 ToolButtonLinkPadding: "@Spacing.100"
 ToolButtonMenuWidth: 14px
 
+ToolBarItemSpacing: "@Spacing.075"
+ToolBarItemMargin: "@Spacing.050"
+
 # A toolbar decides how tall its buttons are, so the form-control height a tool button would
 # otherwise inherit is stopped here rather than overridden with a second number.
 ToolBarButtonHeight: "reset()"
+
+ToolBarBackground: "@Background.100"
+ToolBarBorderColor: "@BaseBorderColor"
+# Canonical North, i.e. the bottom edge; rotated for the other dock positions.
+ToolBarBorderThickness: "border_thickness(0px, bottom: 1px)"
+
+# A toolbar in the status bar or the menu bar corner blends into its host.
+ToolBarTransparentBackground: "reset()"
+ToolBarTransparentBorderColor: "reset()"
+
+SeparatorThickness: 1px
+SeparatorColor: "@BaseBorderColor"
 
 # The two halves of a split button are painted as separate boxes, so the token system zeroes
 # the corners where they meet and drops the trailing half's border there. FreeCADStyle needs

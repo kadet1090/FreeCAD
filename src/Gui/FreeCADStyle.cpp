@@ -34,6 +34,8 @@
 #include <QCoreApplication>
 #include <QPalette>
 #include <QPushButton>
+#include <QMenuBar>
+#include <QStatusBar>
 #include <QToolBar>
 #include <QToolButton>
 #include <QStyleOptionButton>
@@ -1314,6 +1316,53 @@ void FreeCADStyle::drawToolButtonLabel(
     painter->restore();
 }
 
+/*static*/ Position FreeCADStyle::toolbarPositionOf(const QToolBar* toolbar)
+{
+    const QWidget* ancestor = toolbar ? toolbar->parentWidget() : nullptr;
+    while (ancestor) {
+        if (const auto* mainWindow = qobject_cast<const QMainWindow*>(ancestor)) {
+            switch (mainWindow->toolBarArea(const_cast<QToolBar*>(toolbar))) {
+                case Qt::TopToolBarArea:
+                    return Position::North;
+                case Qt::BottomToolBarArea:
+                    return Position::South;
+                case Qt::RightToolBarArea:
+                    return Position::East;
+                case Qt::LeftToolBarArea:
+                    return Position::West;
+                default:
+                    return Position::North;
+            }
+        }
+        ancestor = ancestor->parentWidget();
+    }
+    return Position::North;
+}
+
+// ─── Context building ────────────────────────────────────────────────────────
+
+// The entry @p widget's dropdown currently holds, or nothing when nothing drives its selection.
+//
+// A combo box answers for its own popup and answers live, so its current index is read through
+// the tag rather than copied. Any other dropdown states the row once, when it is adopted.
+void FreeCADStyle::drawSeparatorLine(
+    QPainter* painter,
+    const QRect& rect,
+    Qt::Orientation orientation
+) const
+{
+    int thickness = 1;
+    if (const auto numeric = resolve<Numeric>("SeparatorThickness")) {
+        thickness = static_cast<int>(*numeric);
+    }
+    if (const auto color = resolve<Base::Color>("SeparatorColor")) {
+        const QRect lineRect = orientation == Qt::Horizontal
+            ? QRect(rect.left(), rect.center().y() - (thickness / 2), rect.width(), thickness)
+            : QRect(rect.center().x() - (thickness / 2), rect.top(), thickness, rect.height());
+        painter->fillRect(lineRect, color->asValue<QColor>());
+    }
+}
+
 std::optional<int> FreeCADStyle::resolvePixelMetric(
     PixelMetric metric,
     const QStyleOption* option,
@@ -1335,8 +1384,17 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         return resolve<int>(context, found->second);
     }
 
-    if (metric == PM_MenuButtonIndicator) {
-        return resolve<int>(contextOf(widget, option, StyleComponentElement::Menu), Width);
+    static const std::map<PixelMetric, std::pair<StyleComponentElement, StyleProperty>> elementMetrics = {
+        {PM_MenuButtonIndicator, {StyleComponentElement::Menu, Width}},
+        {PM_ToolBarItemMargin, {StyleComponentElement::Item, Margin}},
+        {PM_ToolBarItemSpacing, {StyleComponentElement::Item, Spacing}},
+        {PM_ToolBarFrameWidth, {StyleComponentElement::Root, FrameWidth}},
+        {PM_ToolBarIconSize, {StyleComponentElement::Root, IconSize}},
+    };
+
+    if (const auto found = elementMetrics.find(metric); found != elementMetrics.end()) {
+        const auto& [element, property] = found->second;
+        return resolve<int>(contextOf(widget, option, element), property);
     }
 
     return {};
@@ -1421,6 +1479,19 @@ void FreeCADStyle::drawPrimitive(
         return;
     }
 
+    if (element == PE_IndicatorToolBarSeparator) {
+        // In a horizontal toolbar the buttons are side by side, so the separator is a vertical
+        // line; in a vertical toolbar it is a horizontal one.
+        const bool toolbarIsHorizontal = option->state & QStyle::State_Horizontal;
+        drawSeparatorLine(
+            painter,
+            toolbarIsHorizontal ? option->rect.adjusted(0, 4, 0, -4)
+                                : option->rect.adjusted(4, 0, -4, 0),
+            toolbarIsHorizontal ? Qt::Vertical : Qt::Horizontal
+        );
+        return;
+    }
+
     if (element == PE_IndicatorArrowDown || element == PE_IndicatorArrowUp
         || element == PE_IndicatorArrowLeft || element == PE_IndicatorArrowRight) {
         // clang-format off
@@ -1450,6 +1521,29 @@ void FreeCADStyle::drawControl(
     const QWidget* widget
 ) const
 {
+    if (element == CE_ShapedFrame) {
+        if (const auto* frameOption = qstyleoption_cast<const QStyleOptionFrame*>(option)) {
+            const QFrame::Shape shape = frameOption->frameShape;
+
+            // A rule drawn as a frame is the same rule the style draws anywhere else, and it
+            // is stated once, in the separator tokens.
+            if (shape == QFrame::HLine || shape == QFrame::VLine) {
+                drawSeparatorLine(
+                    painter,
+                    option->rect,
+                    shape == QFrame::HLine ? Qt::Horizontal : Qt::Vertical
+                );
+                return;
+            }
+        }
+    }
+
+    if (element == CE_ToolBar) {
+        const StyleContext context = contextOf(widget, option);
+        drawBoxBackground(painter, option->rect, resolveBoxStyle(context));
+        return;
+    }
+
     if (element == CE_PushButton || element == CE_PushButtonBevel) {
         if (auto btnOpt = qstyleoption_cast<const QStyleOptionButton*>(option)) {
             // Flatness is a token variant here, so Qt must not also act on the feature flag
@@ -1674,6 +1768,20 @@ StyleContext FreeCADStyle::contextOf(
     }
     else if (qobject_cast<const QPushButton*>(widget)) {
         context.component = StyleComponent::PushButton;
+    }
+    else if (const auto* toolbar = qobject_cast<const QToolBar*>(widget)) {
+        context.component = StyleComponent::ToolBar;
+        context.element = element;
+        context.variant.set(VariantSlot::Position, toolbarPositionOf(toolbar));
+
+        // A toolbar hosted in the status bar or as a menu bar corner widget blends into its
+        // host surface, so the Transparent variant suppresses its background and border.
+        for (const QObject* ancestor = widget->parent(); ancestor; ancestor = ancestor->parent()) {
+            if (qobject_cast<const QStatusBar*>(ancestor) || qobject_cast<const QMenuBar*>(ancestor)) {
+                context.variant.set(VariantSlot::TransparencyMode, TransparencyMode::Transparent);
+                break;
+            }
+        }
     }
 
     // ButtonType, derived from the style option's features first, then from widget properties.

@@ -55,6 +55,7 @@ auto lookup(const Map& map, const typename Map::key_type& key) -> const typename
 
 // clang-format off
 const std::map<StyleComponentElement, std::string_view> elementNames = {
+    {StyleComponentElement::Item, "Item"},
     {StyleComponentElement::Menu, "Menu"},
 };
 // clang-format on
@@ -568,6 +569,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"ControlSize", "State"},
         .inherits = {"ToolButton", "Button", "FormControl"},
     }, StyleComponent::ToolBarButton);
+
+    registry.registerDescriptor({
+        .name     = "ToolBar",
+        .variants = {"Position", "State"},
+        .inherits = {},
+    }, StyleComponent::ToolBar);
     // clang-format on
 }
 

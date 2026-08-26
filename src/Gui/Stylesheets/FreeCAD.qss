@@ -515,6 +515,12 @@ QAbstractItemView QLineEdit {
   padding: 0 2px;
 }
 
+MRichTextEdit[floating="true"] {
+  border: 1px solid @GeneralBorderColor;
+  border-radius: 2px;
+  padding: 1px;
+}
+
 /* QToolButton ------------------------------------------------------------
 
 A tool button takes its font from the widget, not from the style, so the size
@@ -699,105 +705,6 @@ QPlainTextEdit:focus {
 
 QPlainTextEdit:selected {
   background-color: @GeneralBackgroundHoverColor;
-}
-
-/* QToolBar ---------------------------------------------------------------
-
-https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qtoolbar
-
---------------------------------------------------------------------------- */
-QToolBar {
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @GeneralBorderColor, stop:0.01 @PrimaryColor ,stop:0.97 @PrimaryColor , stop:1 @GeneralBorderColor);
-}
-
-/* fix background color for toolbars that are the on menubar. */
-
-QToolBar:only-one {
-  background-color: transparent;
-}
-
-QToolBar:horizontal {
-  padding-top: 3px;
-  padding-left: 3px;
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @GeneralBorderColor, stop:0.01 @PrimaryColor ,stop:0.97 @PrimaryColor , stop:1 @GeneralBorderColor);
-}
-
-QMenu QToolBar:horizontal {
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @GeneralBorderColor, stop:0.01 @PrimaryColor ,stop:0.97 @PrimaryColor , stop:1 @GeneralBorderColor);
-}
-
-/* fix background color for toolbars that are the on menubar. */
-QToolBar:only-one {
-  background-color: transparent;
-  border:0px;
-}
-
-QToolBar:vertical {
-  padding-top: 3px;
-  padding-left: 3px;
-  background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 @GeneralBorderColor, stop:0.02 @PrimaryColor ,stop:0.98 @PrimaryColor , stop:1 @GeneralBorderColor);
-}
-
-QToolBar:disabled {}
-
-QToolBar::handle:horizontal {
-  width: 8px;
-  image: url(qss:@IconsLocationFolderName/hmovetoolbar-lightgray.svg);
-}
-
-QToolBar::handle:vertical {
-  height: 8px;
-  image: url(qss:@IconsLocationFolderName/vmovetoolbar-lightgray.svg);
-}
-
-QToolBar::handle:horizontal:hover {
-  width: 8px;
-  image: url(qss:@IconsLocationFolderName/hmovetoolbar-@StylesheetIconsColor.svg);
-}
-
-QToolBar::handle:vertical:hover {
-  height: 8px;
-  image: url(qss:@IconsLocationFolderName/vmovetoolbar-@StylesheetIconsColor.svg);
-}
-
-QToolBar::separator:horizontal {
-  width: 1px;
-  margin: 5px;
-  background-color: @GeneralBorderColor;
-}
-
-QToolBar::separator:vertical {
-  height: 1px;
-  margin: 5px;
-  background-color: @GeneralBorderColor;
-}
-
-MRichTextEdit[floating="true"] {
-  border: 1px solid @GeneralBorderColor;
-  border-radius: 2px;
-  padding: 1px;
-}
-
-/*The "show more" button  (it can also be stylable with "QToolBarExtension"  icon is not working
-Qproperty works but breaks when you move the toolbar*/
-
-/* undo button */
-
-QToolBar[objectName="Edit"] > QToolButton {
-  padding-right:14px;
-}
-
-QToolBar[objectName="Edit"] > QToolButton::menu-arrow {
-  image: url(qss:@IconsLocationFolderName/arrow-down-lightgray.svg);
-  height: 13px;
-}
-
-QToolBar[objectName="Edit"] > QToolButton::menu-arrow:hover {
-  image: url(qss:@IconsLocationFolderName/arrow-down-@StylesheetIconsColor.svg);
-}
-
-QToolBar[objectName="Edit"] > QToolButton::menu-arrow:open {
-  image: url(qss:@IconsLocationFolderName/arrow-down-@StylesheetIconsColor.svg);
 }
 
 /* QAbstractSpinBox -------------------------------------------------------
