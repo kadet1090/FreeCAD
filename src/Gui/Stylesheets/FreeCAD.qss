@@ -909,87 +909,6 @@ QTextBrowser:disabled {
 
 QTextBrowser:hover, QTextBrowser:!hover, QTextBrowser:selected, QTextBrowser:pressed {}
 
-/* ------------------------------------------------------------------------ */
-/* BUTTONS ---------------------------------------------------------------- */
-/* ------------------------------------------------------------------------ */
-/* QPushButton ------------------------------------------------------------
-
-https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qpushbutton
-
---------------------------------------------------------------------------- */
-QPushButton {
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @ButtonTopBackgroundColor, stop:1 @ButtonBottomBackgroundColor);
-  border: 1px solid @ButtonBorderColor;
-  border-radius: @InputFieldBorderRadius;
-  padding: 3px 12px;
-  min-width: 80px; /* changed from 64px to fix issue  #24604 and align with setting from 1.0.x */
-}
-
-QPushButton:default {
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @DefaultButtonTopBackgroundColor, stop:1 @DefaultButtonBottomBackgroundColor);
-  border: 1px solid @DefaultButtonBorderColor;
-}
-
-QAbstractButton[flat="true"] {
-  background-color: transparent;
-  border: 1px solid transparent;
-}
-
-#CreateNewRow > QPushButton {
-  border-radius: @InputFieldBorderRadius;
-}
-
-Gui--FileChooser QPushButton {
-  min-width: 0;
-}
-
-QPushButton:disabled {
-  background-color: @GeneralDisabledBackgroundColor;
-  color: @TextDisabledColor;
-  border: 1px solid @ButtonBorderColor;
-}
-
-QPushButton:checked {
-  background-color: qlineargradient(x1:0, y1:1, x2:0, y2:0, stop:0 @CheckedButtonTopBackgroundColor, stop:1 @CheckedButtonBottomBackgroundColor);
-}
-
-QPushButton:focus, QAbstractButton[flat="true"]:focus {
-  border: 1px solid @AccentColor;
-}
-
-QPushButton:checked:disabled {
-  border: 1px solid @AccentColor;
-  color: @TextDisabledColor;
-  outline: none;
-}
-
-QPushButton:checked:selected {
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @ButtonTopBackgroundColor, stop:1 @ButtonBottomBackgroundColor);
-  border: 1px solid  @AccentColor;
-}
-
-QPushButton:hover {
-  background-color: @GeneralBackgroundHoverColor;
-}
-
-QAbstractButton[flat="true"]:hover {
-  border: 1px solid @ButtonBorderColor;
-}
-
-QPushButton:pressed, QAbstractButton[flat="true"]:pressed {
-  border: 1px solid  @GeneralBorderHoverColor;
-}
-
-QPushButton:selected, QAbstractButton[flat="true"]:selected {
-  border: 1px solid  @GeneralBorderHoverColor;
-}
-
-QPushButton::menu-indicator {
-  subcontrol-origin: padding;
-  subcontrol-position: bottom right;
-  bottom: 4px;
-}
-
 /* QToolButton ------------------------------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qtoolbutton
@@ -1132,19 +1051,6 @@ Gui--SplitButton QToolButton[splitRole="menu"] {
 Gui--SplitButton QToolButton::menu-indicator {
     image: none;
     border-image: none;
-}
-
-/* QCommandLinkButton -----------------------------------------------------
-
---------------------------------------------------------------------------- */
-QCommandLinkButton {
-  background-color: transparent;
-  border: 1px solid @GeneralBorderColor;
-  border-radius: @InputFieldBorderRadius;
-}
-QCommandLinkButton:disabled {
-  background-color: transparent;
-  color: @TextDisabledColor;
 }
 
 /* ------------------------------------------------------------------------ */

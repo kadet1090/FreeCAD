@@ -27,9 +27,12 @@
 
 #ifndef _PreComp_
 #include <QImage>
+#include <map>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPalette>
+#include <QPushButton>
+#include <QStyleOptionButton>
 #include <QStyleOption>
 #include <QWidget>
 #endif
@@ -608,6 +611,19 @@ namespace
 {
 
 // QIcon::Mode from option state; AutoRaise plus hover is what a flat button reports.
+bool isFlat(const QWidget* widget, const QStyleOption* option)
+{
+    if (const auto* buttonOption = qstyleoption_cast<const QStyleOptionButton*>(option)) {
+        if (buttonOption->features & QStyleOptionButton::Flat) {
+            return true;
+        }
+    }
+    if (const auto* button = qobject_cast<const QPushButton*>(widget)) {
+        return button->isFlat();
+    }
+    return widget && widget->property("flat").toBool();
+}
+
 QIcon::Mode iconModeOf(const QStyleOption* option)
 {
     if (!(option->state & QStyle::State_Enabled)) {
@@ -676,6 +692,201 @@ QPixmap FreeCADStyle::renderStyledIcon(
         context,
         option->palette
     );
+}
+
+std::optional<int> FreeCADStyle::resolvePixelMetric(
+    PixelMetric metric,
+    const QStyleOption* option,
+    const QWidget* widget
+) const
+{
+    using enum StyleProperty;
+
+    const StyleContext context = contextOf(widget, option);
+
+    // Qt asks for whichever of these suits the widget it is sizing an icon for; both answer
+    // from the same token, so a component states its icon size once.
+    static const std::map<PixelMetric, StyleProperty> metrics = {
+        {PM_SmallIconSize, IconSize},
+        {PM_ButtonIconSize, IconSize},
+    };
+
+    if (const auto found = metrics.find(metric); found != metrics.end()) {
+        return resolve<int>(context, found->second);
+    }
+
+    return {};
+}
+
+int FreeCADStyle::pixelMetric(PixelMetric metric, const QStyleOption* option, const QWidget* widget) const
+{
+    if (const auto value = resolvePixelMetric(metric, option, widget)) {
+        return *value;
+    }
+    return QProxyStyle::pixelMetric(metric, option, widget);
+}
+
+QSize FreeCADStyle::sizeFromContents(
+    ContentsType type,
+    const QStyleOption* option,
+    const QSize& size,
+    const QWidget* widget
+) const
+{
+    if (type == CT_PushButton) {
+        const auto* btnOption = qstyleoption_cast<const QStyleOptionButton*>(option);
+        const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
+        QSize contentSize = size;
+        if (btnOption && !btnOption->icon.isNull() && !btnOption->text.isEmpty()) {
+            contentSize.rwidth() += geometry.iconGapDelta();
+        }
+        return geometry.sizeFromContents(contentSize);
+    }
+
+    return QProxyStyle::sizeFromContents(type, option, size, widget);
+}
+
+void FreeCADStyle::drawPrimitive(
+    PrimitiveElement element,
+    const QStyleOption* option,
+    QPainter* painter,
+    const QWidget* widget
+) const
+{
+    if (element == PE_PanelButtonCommand) {
+        drawComponent(painter, option->rect, widget, option);
+        return;
+    }
+
+    QProxyStyle::drawPrimitive(element, option, painter, widget);
+}
+
+void FreeCADStyle::drawControl(
+    ControlElement element,
+    const QStyleOption* option,
+    QPainter* painter,
+    const QWidget* widget
+) const
+{
+    if (element == CE_PushButton || element == CE_PushButtonBevel) {
+        if (auto btnOpt = qstyleoption_cast<const QStyleOptionButton*>(option)) {
+            // Flatness is a token variant here, so Qt must not also act on the feature flag
+            // and skip the panel this style is about to paint.
+            QStyleOptionButton modified = *btnOpt;
+            modified.features &= ~QStyleOptionButton::Flat;
+            QProxyStyle::drawControl(element, &modified, painter, widget);
+            return;
+        }
+    }
+
+    if (element == CE_PushButtonLabel) {
+        if (const auto* btnOption = qstyleoption_cast<const QStyleOptionButton*>(option)) {
+            drawPushButtonLabel(painter, btnOption, widget);
+            return;
+        }
+    }
+
+    QProxyStyle::drawControl(element, option, painter, widget);
+}
+
+void FreeCADStyle::drawPushButtonLabel(
+    QPainter* painter,
+    const QStyleOptionButton* option,
+    const QWidget* widget
+) const
+{
+    const StyleContext context = contextOf(widget, option);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+
+    // option->rect at this point is SE_PushButtonContents from Fusion (inset by its own frame
+    // width), which doesn't reflect our token-based padding. Use widget->rect() — the true
+    // button rect — as the base, then apply token padding to derive the content area.
+    // This is consistent with CT_PushButton in sizeFromContents, which also computes the total
+    // size as content + token padding (not Fusion's frame).
+    const QRect buttonRect = widget ? widget->rect() : option->rect;
+    const QRect contentRect = geometry.contentRect(buttonRect);
+
+    // For icon-only or text-only, delegate to parent with the token-padded content rect.
+    // The parent centers the content within this rect; press-state shift is left to the parent.
+    if (option->icon.isNull() || option->text.isEmpty()) {
+        QStyleOptionButton adjustedOption = *option;
+        adjustedOption.rect = contentRect;
+        QProxyStyle::drawControl(CE_PushButtonLabel, &adjustedOption, painter, widget);
+        return;
+    }
+
+    // Icon + text: custom layout with token icon spacing.
+    const QRect shiftedContentRect = applyButtonShift(contentRect, option, widget);
+    const int iconSpacing = geometry.iconSpacing;
+
+    const QPixmap pixmap = renderStyledIcon(
+        painter,
+        option->icon,
+        shiftedContentRect.size().boundedTo(option->iconSize),
+        option,
+        context
+    );
+    const QSize pixmapSize = pixmap.size() / painter->device()->devicePixelRatio();
+
+    // Center the icon+text group horizontally in the content rect.
+    const int textWidth = option->fontMetrics.horizontalAdvance(option->text);
+    const int groupWidth = pixmapSize.width() + iconSpacing + textWidth;
+    const int groupLeft = shiftedContentRect.left() + (shiftedContentRect.width() - groupWidth) / 2;
+
+    const int textLeft = groupLeft + pixmapSize.width() + iconSpacing;
+    const QRect iconRect(
+        groupLeft,
+        shiftedContentRect.top() + (shiftedContentRect.height() - pixmapSize.height()) / 2,
+        pixmapSize.width(),
+        pixmapSize.height()
+    );
+    const QRect textRect(
+        textLeft,
+        shiftedContentRect.top(),
+        shiftedContentRect.right() - textLeft,
+        shiftedContentRect.height()
+    );
+
+    const int textFlags = mnemonicTextFlags(option, widget) | Qt::AlignVCenter | Qt::AlignLeft;
+
+    painter->save();
+    proxy()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, pixmap);
+    proxy()->drawItemText(
+        painter,
+        QStyle::visualRect(option->direction, shiftedContentRect, textRect),
+        textFlags,
+        option->palette,
+        option->state & State_Enabled,
+        option->text,
+        QPalette::ButtonText
+    );
+    painter->restore();
+}
+
+int FreeCADStyle::mnemonicTextFlags(const QStyleOption* option, const QWidget* widget) const
+{
+    int flags = Qt::TextShowMnemonic;
+    if (!proxy()->styleHint(SH_UnderlineShortcut, option, widget)) {
+        flags |= Qt::TextHideMnemonic;
+    }
+    return flags;
+}
+
+QRect FreeCADStyle::applyButtonShift(
+    const QRect& rect,
+    const QStyleOption* option,
+    const QWidget* widget
+) const
+{
+    if (!(option->state & (State_Sunken | State_On))) {
+        return rect;
+    }
+    QRect shifted = rect;
+    shifted.translate(
+        proxy()->pixelMetric(PM_ButtonShiftHorizontal, option, widget),
+        proxy()->pixelMetric(PM_ButtonShiftVertical, option, widget)
+    );
+    return shifted;
 }
 
 void FreeCADStyle::polish(QPalette& palette)
@@ -768,6 +979,44 @@ StyleContext FreeCADStyle::contextOf(
     StyleContext context;
     context.element = element;
 
+    if (qobject_cast<const QPushButton*>(widget)) {
+        context.component = StyleComponent::PushButton;
+    }
+
+    // ButtonType, derived from the style option's features first, then from widget properties.
+    const auto* buttonOption = qstyleoption_cast<const QStyleOptionButton*>(option);
+    if (buttonOption && (buttonOption->features & QStyleOptionButton::DefaultButton)) {
+        context.variant.set(VariantSlot::ButtonType, ButtonType::Primary);
+    }
+    else if (isFlat(widget, option)) {
+        context.variant.set(VariantSlot::ButtonType, ButtonType::Link);
+    }
+
+    // An explicit "buttonType" property overrides the above.
+    if (widget) {
+        const QString buttonType = widget->property("buttonType").toString();
+        if (buttonType == u"primary") {
+            context.variant.set(VariantSlot::ButtonType, ButtonType::Primary);
+        }
+        else if (buttonType == u"link") {
+            context.variant.set(VariantSlot::ButtonType, ButtonType::Link);
+        }
+    }
+
+    // ControlSize, derived from the "controlSize" widget property.
+    if (widget) {
+        const QString sizeName = widget->property("controlSize").toString();
+        if (sizeName == u"internal") {
+            context.variant.set(VariantSlot::ControlSize, ControlSize::Internal);
+        }
+        else if (sizeName == u"small") {
+            context.variant.set(VariantSlot::ControlSize, ControlSize::Small);
+        }
+        else if (sizeName == u"big") {
+            context.variant.set(VariantSlot::ControlSize, ControlSize::Big);
+        }
+    }
+
     // Component override — derived from the "component" widget property.
     // For unrecognised widget types the name is resolved to a StyleComponent enum value
     // when possible (e.g. QFrame[component="List"] → StyleComponent::List). For recognised
@@ -790,6 +1039,14 @@ StyleContext FreeCADStyle::contextOf(
     if (option) {
         if (!(option->state & QStyle::State_Enabled)) {
             context.state |= StyleState::Disabled;
+        }
+
+        // State_Sunken means "is being pressed" for a button, but "has a sunken frame" for an
+        // input widget, which sets it permanently. Only button-like components map it to
+        // Pressed, so an input's Focused state is not masked by it.
+        const bool isButton = context.component == StyleComponent::PushButton;
+        if (isButton && (option->state & QStyle::State_Sunken)) {
+            context.state |= StyleState::Pressed;
         }
         if (option->state & QStyle::State_MouseOver) {
             context.state |= StyleState::Hovered;
@@ -863,14 +1120,5 @@ void FreeCADStyle::clearTokenCache()
 
 bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 {
-    // This is a hacky fix for https://github.com/FreeCAD/FreeCAD/issues/23607
-    // Basically after widget is shown or polished we enforce it's minimum size to at least cover
-    // the minimum size hint - something that QSS ignores if min-width is specified
-    if (event->type() == QEvent::Polish || event->type() == QEvent::Show) {
-        if (auto* btn = qobject_cast<QPushButton*>(obj)) {
-            btn->setMinimumWidth(std::max(btn->minimumSizeHint().width(), btn->minimumWidth()));
-        }
-    }
-
     return QObject::eventFilter(obj, event);
 }

@@ -64,6 +64,13 @@ Background:
 
 BaseTextColor: "@Contrast.400"
 
+# A button stands off a dark surface by being lighter than it, so it is built from the Neutral
+# scale directly rather than from the Background steps the light theme reads.
+ButtonBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Neutral.300, @Neutral.400)"
+
+# On a dark surface, hover has to brighten a border rather than darken it.
+BaseHoveredBorderColorEffect: "effect(lighten: 0.08)"
+
 SketcherConflictingConstraintsColor: "#fc6c6c"
 SketcherEmptySketchColor: "#ffffff"
 SketcherFullyConstrainedColor: "#8cff5b"

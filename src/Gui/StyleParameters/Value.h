@@ -536,7 +536,7 @@ std::optional<T> valueAs(const std::optional<Value>& value)
 }
 
 template<typename T>
-    requires(!HasTryFrom<T>)
+    requires(!HasTryFrom<T>) && (!std::is_arithmetic_v<T>)
 std::optional<T> valueAs(const std::optional<Value>& value)
 {
     if (!value) {
@@ -544,6 +544,17 @@ std::optional<T> valueAs(const std::optional<Value>& value)
     }
     const T* held = value->tryGet<T>();
     return held ? std::optional<T>(*held) : std::nullopt;
+}
+
+/// A token asked for as a plain number answers from its Numeric, dropping the unit.
+template<typename T>
+    requires std::is_arithmetic_v<T>
+std::optional<T> valueAs(const std::optional<Value>& value)
+{
+    if (const auto numeric = valueAs<Numeric>(value)) {
+        return static_cast<T>(*numeric);
+    }
+    return std::nullopt;
 }
 
 }  // namespace Gui::StyleParameters

@@ -505,7 +505,23 @@ void registerBuiltinVariants(ParameterDescriptorRegistry& registry)
 
 void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
 {
+    // clang-format off
     registerBuiltinVariants(registry);
+
+    // Virtual bases (no StyleComponent mapping).
+    registry.registerDescriptor({
+        .name     = "FormControl",
+        .variants = {"ControlSize", "State"},
+        .inherits = {},
+    });
+
+    // Concrete components mapped to StyleComponent enum values.
+    registry.registerDescriptor({
+        .name     = "Button",
+        .variants = {"ButtonType", "ControlSize", "State"},
+        .inherits = {"FormControl"},
+    }, StyleComponent::PushButton);
+    // clang-format on
 }
 
 }  // namespace Gui::StyleParameters

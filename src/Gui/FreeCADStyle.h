@@ -329,6 +329,30 @@ public:
         QStyleHintReturn* returnData
     ) const override;
 
+    int pixelMetric(PixelMetric metric, const QStyleOption* option, const QWidget* widget)
+        const override;
+
+    QSize sizeFromContents(
+        ContentsType type,
+        const QStyleOption* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const override;
+
+    void drawPrimitive(
+        PrimitiveElement element,
+        const QStyleOption* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const override;
+
+    void drawControl(
+        ControlElement element,
+        const QStyleOption* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const override;
+
     /**
      * @brief Builds a StyleContext from a widget and its current style option.
      *
@@ -443,6 +467,38 @@ protected:
         const QWidget* widget,
         const QStyleOption* option = nullptr
     ) const;
+
+    /**
+     * @brief Answers @p metric from a token, or nothing when no token describes it.
+     *
+     * Split out from pixelMetric() so a metric this style does not own falls through to the
+     * base style rather than being answered with a fabricated value.
+     */
+    std::optional<int> resolvePixelMetric(
+        PixelMetric metric,
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const;
+
+    void drawPushButtonLabel(
+        QPainter* painter,
+        const QStyleOptionButton* option,
+        const QWidget* widget
+    ) const;
+
+    /**
+     * @brief Returns Qt::TextShowMnemonic, optionally OR'd with Qt::TextHideMnemonic.
+     *
+     * Queries SH_UnderlineShortcut so every label painter respects the same style hint.
+     */
+    int mnemonicTextFlags(const QStyleOption* option, const QWidget* widget) const;
+
+    /**
+     * @brief Shifts @p rect by PM_ButtonShift{Horizontal,Vertical} when sunken or checked.
+     *
+     * Returns @p rect unchanged when the option state has neither State_Sunken nor State_On.
+     */
+    QRect applyButtonShift(const QRect& rect, const QStyleOption* option, const QWidget* widget) const;
 
     /**
      * @brief Resolves the icon colour for @p context.

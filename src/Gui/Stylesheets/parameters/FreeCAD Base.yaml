@@ -33,3 +33,60 @@ BaseShadingMidlight: "@Neutral.200"
 BaseShadingMid: "@Neutral.400"
 BaseShadingDark: "@Neutral.600"
 BaseShadingShadow: "@Neutral.800"
+
+BaseBorderColor: "@Neutral.400"
+
+FormControlSmallHeight: 24px
+FormControlHeight: 26px
+FormControlBigHeight: 30px
+
+FormControlIconSpacing: "@Spacing.150"
+
+FormControlPadding: "padding(horizontal: @Spacing.100, vertical: @Spacing.075)"
+FormControlBorderThickness: 1px
+FormControlBorderRadius: "@BaseRadius.medium"
+FormControlBorderColor: "@BaseBorderColor"
+FormControlTextColor: "@BaseTextColor"
+
+ButtonBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Background.100, @Background.200)"
+ButtonMinWidth: 100px
+ButtonPadding: "padding(horizontal: @Spacing.300, vertical: @Spacing.100)"
+
+ButtonIconSpacing: "@FormControlIconSpacing"
+ButtonIconSize: 16px
+ButtonContentBox: "content_box((width: @ButtonMinWidth, height: @FormControlHeight), @ButtonPadding, @FormControlBorderThickness)"
+
+ButtonFocusedBorderColor: "@Accent.600"
+ButtonPrimaryFocusedBorderColor: "@ButtonFocusedBorderColor"
+
+ButtonTextColor: "@BaseTextColor"
+ButtonBorderColor: "@BaseBorderColor"
+
+ButtonHoveredBackgroundEffect: "effect(lighten: 0.035)"
+ButtonPressedBackgroundEffect: "effect(darken: 0.04)"
+ButtonCheckedBackgroundEffect: "effect(darken: 0.03)"
+
+ButtonPressedInnerShadow: "inner_shadow(color: rgba(0, 0, 0, 50), y: 2px, blur: 6px)"
+
+ButtonCheckedInnerShadow: "@ButtonPressedInnerShadow"
+
+ButtonDisabledBackground: "@BaseDisabledBackground"
+ButtonDisabledTextColor: "@BaseDisabledTextColor"
+ButtonDisabledBorderColor: "@BaseBorderColor"
+
+ButtonPrimaryBackground: "blend(@ButtonBackground, @Accent.500, 15%)"
+ButtonPrimaryBorderColor: "blend(@ButtonBorderColor, @Accent.500, 25%)"
+
+ButtonLinkBackground: "@Colors.transparent"
+ButtonLinkBorderColor: "@Colors.transparent"
+
+ButtonLinkHoveredBackground: "@Background.100"
+ButtonLinkHoveredBorderColor: "@BaseBorderColor"
+
+ButtonLinkPressedBackground: "@Background.200"
+ButtonLinkPressedBorderColor: "@BaseBorderColor"
+ButtonLinkPressedInnerShadow: "@ButtonPressedInnerShadow"
+
+ButtonLinkCheckedBackground: "@Background.150"
+ButtonLinkCheckedBorderColor: "@BaseBorderColor"
+ButtonLinkCheckedInnerShadow: "@ButtonCheckedInnerShadow"
