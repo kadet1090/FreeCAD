@@ -40,7 +40,9 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QStyleOptionButton>
+#include <QStyleOptionFrame>
 #include <QStyleOptionMenuItem>
+#include <QStyleOptionSpinBox>
 #include <QStyleOptionToolButton>
 #include <QStyleOption>
 #include <QWidget>
@@ -1394,6 +1396,96 @@ void FreeCADStyle::drawMenuBarItem(
     painter->restore();
 }
 
+void FreeCADStyle::drawSpinBox(
+    const QStyleOptionSpinBox* option,
+    QPainter* painter,
+    const QWidget* widget
+) const
+{
+    if (option->frame && (option->subControls & SC_SpinBoxFrame)) {
+        const QRect frameRect = proxy()->subControlRect(CC_SpinBox, option, SC_SpinBoxFrame, widget);
+        drawComponent(painter, frameRect, widget, option);
+    }
+
+    // Draw spin button arrows on a transparent background (Breeze-style: no
+    // separate button fill). We do not delegate to the base style at all — it
+    // would re-draw its own frame and button backgrounds on top of ours.
+    if (option->buttonSymbols != QAbstractSpinBox::NoButtons) {
+        const bool isPlusMinus = option->buttonSymbols == QAbstractSpinBox::PlusMinus;
+
+        const auto drawSpinButton = [&](SubControl subControl,
+                                        PrimitiveElement arrowIndicator,
+                                        PrimitiveElement plusMinusIndicator) {
+            if (!(option->subControls & subControl)) {
+                return;
+            }
+            QStyleOptionSpinBox buttonOption = *option;
+            buttonOption.rect = proxy()->subControlRect(CC_SpinBox, option, subControl, widget);
+            // Clear the sunken flag unless this specific button is active.
+            if (!(option->activeSubControls & subControl)) {
+                buttonOption.state &= ~State_Sunken;
+            }
+            proxy()->drawPrimitive(
+                isPlusMinus ? plusMinusIndicator : arrowIndicator,
+                &buttonOption,
+                painter,
+                widget
+            );
+        };
+
+        drawSpinButton(SC_SpinBoxUp, PE_IndicatorArrowUp, PE_IndicatorSpinPlus);
+        drawSpinButton(SC_SpinBoxDown, PE_IndicatorArrowDown, PE_IndicatorSpinMinus);
+    }
+}
+
+QRect FreeCADStyle::spinBoxSubControlRect(
+    const QStyleOptionSpinBox* option,
+    SubControl subControl,
+    const QWidget* widget
+) const
+{
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
+    const QRect outerRect = option->rect;
+    const QSize preferredSize = sizeFromContents(CT_SpinBox, option, {}, widget);
+    const QRect contentRect = geometry.contentRect(outerRect, preferredSize);
+
+    // Borrow the button width from the base style; only the position changes.
+    const bool hasButtons = option->buttonSymbols != QAbstractSpinBox::NoButtons;
+    const QSize buttonSize = hasButtons
+        ? QProxyStyle::subControlRect(CC_SpinBox, option, SC_SpinBoxUp, widget).size()
+        : QSize {};
+
+    const int buttonLeft = contentRect.right() - buttonSize.width();
+    const int editRight = hasButtons ? buttonLeft - 1 : contentRect.right();
+    const int centerY = contentRect.center().y();
+
+    switch (subControl) {
+        case SC_SpinBoxFrame:
+            return outerRect;
+        case SC_SpinBoxEditField:
+            return {
+                contentRect.left(),
+                contentRect.top(),
+                editRight - contentRect.left() + 1,
+                contentRect.height()
+            };
+
+        case SC_SpinBoxUp:
+        case SC_SpinBoxDown: {
+            if (!hasButtons) {
+                return {};
+            }
+
+            const auto buttonTop = subControl == SC_SpinBoxUp ? centerY - buttonSize.height()
+                                                              : centerY;
+
+            return {buttonLeft, buttonTop + 1, buttonSize.width(), buttonSize.height()};
+        }
+        default:
+            return QProxyStyle::subControlRect(CC_SpinBox, option, subControl, widget);
+    }
+}
+
 std::optional<int> FreeCADStyle::resolvePixelMetric(
     PixelMetric metric,
     const QStyleOption* option,
@@ -1429,6 +1521,14 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         return resolve<int>(contextOf(widget, option, element), property);
     }
 
+    // A spin box computes its whole inset from tokens, so the frame widths some platforms
+    // add on top of it would only inflate the control.
+    if (metric == PM_SpinBoxFrameWidth || metric == PM_DefaultFrameWidth) {
+        if (qobject_cast<const QAbstractSpinBox*>(widget)) {
+            return 0;
+        }
+    }
+
     return {};
 }
 
@@ -1457,7 +1557,7 @@ QSize FreeCADStyle::sizeFromContents(
         return geometry.sizeFromContents(contentSize);
     }
 
-    if (type == CT_LineEdit) {
+    if (type == CT_LineEdit || type == CT_SpinBox) {
         const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
         return geometry.sizeFromContents(QProxyStyle::sizeFromContents(type, option, size, widget));
     }
@@ -1486,6 +1586,12 @@ QRect FreeCADStyle::subElementRect(
 ) const
 {
     if (element == SE_LineEditContents) {
+        // Same lineWidth == 0 rule as PE_PanelLineEdit: the spin box manages the edit field's
+        // rect, so the padding must not be taken off it a second time.
+        if (const auto* frameOption = qstyleoption_cast<const QStyleOptionFrame*>(option);
+            frameOption && frameOption->lineWidth == 0) {
+            return QProxyStyle::subElementRect(element, option, widget);
+        }
         const StyleContext context = contextOf(widget, option);
         const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
         return geometry.contentRect(option->rect);
@@ -1501,6 +1607,12 @@ QRect FreeCADStyle::subControlRect(
     const QWidget* widget
 ) const
 {
+    if (complexControl == CC_SpinBox) {
+        if (const auto* opt = qstyleoption_cast<const QStyleOptionSpinBox*>(option)) {
+            return spinBoxSubControlRect(opt, subControl, widget);
+        }
+    }
+
     if (complexControl == CC_ToolButton) {
         if (const auto* opt = qstyleoption_cast<const QStyleOptionToolButton*>(option)) {
             return toolButtonSubControlRect(opt, subControl, widget);
@@ -1517,6 +1629,13 @@ void FreeCADStyle::drawComplexControl(
     const QWidget* widget
 ) const
 {
+    if (control == CC_SpinBox) {
+        if (const auto* opt = qstyleoption_cast<const QStyleOptionSpinBox*>(option)) {
+            drawSpinBox(opt, painter, widget);
+            return;
+        }
+    }
+
     if (control == CC_ToolButton) {
         if (const auto* opt = qstyleoption_cast<const QStyleOptionToolButton*>(option)) {
             drawToolButton(opt, painter, widget);
@@ -1540,6 +1659,13 @@ void FreeCADStyle::drawPrimitive(
     }
 
     if (element == PE_PanelLineEdit) {
+        // Qt sets lineWidth = 0 on the inner QLineEdit of a QAbstractSpinBox, through
+        // setFrame(false). The spin box's own frame was already drawn by CC_SpinBox, so
+        // painting this panel would cover it with the palette colour.
+        if (const auto* frameOption = qstyleoption_cast<const QStyleOptionFrame*>(option);
+            frameOption && frameOption->lineWidth == 0) {
+            return;
+        }
         drawComponent(painter, option->rect, widget, option);
         return;
     }
@@ -1850,7 +1976,7 @@ StyleContext FreeCADStyle::contextOf(
     else if (qobject_cast<const QPushButton*>(widget)) {
         context.component = StyleComponent::PushButton;
     }
-    else if (qobject_cast<const QLineEdit*>(widget)) {
+    else if (qobject_cast<const QLineEdit*>(widget) || qobject_cast<const QAbstractSpinBox*>(widget)) {
         context.component = StyleComponent::LineEdit;
     }
     else if (qobject_cast<const QTextEdit*>(widget) || qobject_cast<const QPlainTextEdit*>(widget)) {
@@ -1960,6 +2086,16 @@ StyleContext FreeCADStyle::contextOf(
         }
         if (option->state & QStyle::State_HasFocus) {
             context.state |= StyleState::Focused;
+        }
+    }
+
+    // A QAbstractSpinBox gives keyboard focus to an inner QLineEdit, so its own hasFocus()
+    // is false and State_HasFocus is absent from its option. Read the inner edit instead.
+    if (qobject_cast<const QAbstractSpinBox*>(widget)) {
+        if (const QLineEdit* innerEdit = widget->findChild<QLineEdit*>()) {
+            if (innerEdit->hasFocus()) {
+                context.state |= StyleState::Focused;
+            }
         }
     }
 

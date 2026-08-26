@@ -176,6 +176,73 @@ private Q_SLOTS:
 
         QCOMPARE(paddedWidth - unpaddedWidth, 2 * paddingPerSide);
     }
+
+    // The size hint and the content rect are two halves of one contract: a control resized to
+    // the hint the style produced for a given content must still have room for that content.
+    // The content rect always has the padding taken out of it, so the hint has to put it in —
+    // deriving the hint from the base style alone reserves only the base style's frame, leaving
+    // every form control short by the full padding and clipping its text.
+    void test_aSpinBoxSizedToItsHintCanShowItsContent()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        // The QStyle interface is what the widgets themselves go through.
+        QStyle& style = freecadStyle;
+        QSpinBox spin;
+        style.polish(&spin);
+
+        QStyleOptionSpinBox option;
+        option.initFrom(&spin);
+        option.frame = true;
+        option.subControls = QStyle::SC_SpinBoxFrame | QStyle::SC_SpinBoxEditField
+            | QStyle::SC_SpinBoxUp | QStyle::SC_SpinBoxDown;
+        option.buttonSymbols = QAbstractSpinBox::UpDownArrows;
+
+        option.rect = QRect(
+            QPoint(),
+            style.sizeFromContents(QStyle::CT_SpinBox, &option, contentSize(), &spin)
+        );
+        const QRect editField
+            = style.subControlRect(QStyle::CC_SpinBox, &option, QStyle::SC_SpinBoxEditField, &spin);
+
+        QVERIFY2(
+            editField.width() >= contentWidth,
+            qPrintable(QStringLiteral("edit field %1px, content needs %2px")
+                           .arg(editField.width())
+                           .arg(contentWidth))
+        );
+    }
+
+    // A spin box with no buttons — the sketcher's on-view parameter editor — sizes itself to
+    // exactly its text, so it has no slack to absorb a shortfall.
+    void test_aButtonlessSpinBoxSizedToItsHintCanShowItsContent()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        // The QStyle interface is what the widgets themselves go through.
+        QStyle& style = freecadStyle;
+        QSpinBox spin;
+        spin.setButtonSymbols(QAbstractSpinBox::NoButtons);
+        style.polish(&spin);
+
+        QStyleOptionSpinBox option;
+        option.initFrom(&spin);
+        option.frame = true;
+        option.subControls = QStyle::SC_SpinBoxFrame | QStyle::SC_SpinBoxEditField;
+        option.buttonSymbols = QAbstractSpinBox::NoButtons;
+
+        option.rect = QRect(
+            QPoint(),
+            style.sizeFromContents(QStyle::CT_SpinBox, &option, contentSize(), &spin)
+        );
+        const QRect editField
+            = style.subControlRect(QStyle::CC_SpinBox, &option, QStyle::SC_SpinBoxEditField, &spin);
+
+        QVERIFY2(
+            editField.width() >= contentWidth,
+            qPrintable(QStringLiteral("edit field %1px, content needs %2px")
+                           .arg(editField.width())
+                           .arg(contentWidth))
+        );
+    }
 };
 
 QTEST_MAIN(TestFormControlSizing)

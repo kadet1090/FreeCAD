@@ -593,6 +593,18 @@ protected:
     /// Insets a text edit's content by its padding token, through the document's own margin.
     void applyTextEditDocumentPadding(QWidget* widget, QTextDocument* document) const;
 
+    void drawSpinBox(
+        const QStyleOptionSpinBox* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const;
+
+    QRect spinBoxSubControlRect(
+        const QStyleOptionSpinBox* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const;
+
     /// Draws an anti-aliased chevron pointing @p direction, filling @p rect.
     void drawChevronArrow(
         QPainter* painter,
