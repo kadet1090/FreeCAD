@@ -24,19 +24,35 @@
 #pragma once
 
 #include <Base/Persistence.h>
+#include <FCGlobal.h>
 #include <QUrl>
 
 class QImage;
+class SbBox3f;
+class SoOrthographicCamera;
 
 namespace Gui
 {
 class View3DInventorViewer;
 
-class Thumbnail: public Base::Persistence
+class GuiExport Thumbnail: public Base::Persistence
 {
 public:
+    /// How much larger the frame is than the content it holds, so a fitted model does not
+    /// touch the image edge.
+    static constexpr float fitMargin = 1.1F;
+
     Thumbnail(int s = 128);
     ~Thumbnail() override;
+
+    FC_DISABLE_COPY_MOVE(Thumbnail)
+
+    /** Position and size @p camera so @p box fills a frame of the given aspect ratio, seen
+     * from the camera's current orientation. Leaves the camera untouched for an empty box, or
+     * for one that projects to a single point.
+     * @param aspect frame width divided by frame height; must be greater than zero.
+     */
+    static void fitToBox(SoOrthographicCamera& camera, const SbBox3f& box, float aspect);
 
     void setViewer(View3DInventorViewer*);
     void setSize(int);
@@ -59,6 +75,7 @@ private:
     QUrl uri;
     View3DInventorViewer* viewer {nullptr};
     int size;
+    SoOrthographicCamera* camera {nullptr};
 };
 
 }  // namespace Gui

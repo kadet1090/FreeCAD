@@ -22,6 +22,7 @@ add_executable(Gui_tests_run
         StyleParameters/ColorShadingTest.cpp
         InputHintTest.cpp
         SelectionTest.cpp
+        ThumbnailCamera.cpp
 )
 
 # Qt tests

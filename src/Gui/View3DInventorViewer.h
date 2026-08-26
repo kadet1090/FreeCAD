@@ -243,6 +243,13 @@ public:
         QColor background;
         RenderIntent intent = RenderIntent::RasterCapture;
         bool includeViewerLighting = true;
+        /// Render through this camera rather than the viewer's own, leaving the viewer's own
+        /// neither read nor modified. Must arrive already referenced: the capture root refs it
+        /// for the duration of the render and unrefs it afterwards.
+        SoCamera* camera = nullptr;
+        /// Carry real per-pixel alpha in the result instead of colour-keying an opaque render.
+        /// Cleaner edges, at the cost of the sorted-transparency workaround the keying path uses.
+        bool trueAlpha = false;
     };
 
     /** Render the scene into a new image using the requested capture policy. */
@@ -640,7 +647,10 @@ private:
     void recoverFromRenderMemoryException();
     void renderDelayedAnnotations(SoGLRenderAction* glra);
     void renderGLActionScene(const QColor& backgroundColor, SoGLRenderAction* glra);
-    bool renderToFramebuffer(QOpenGLFramebufferObject*, bool includeViewerLighting = true);
+    bool renderToFramebuffer(QOpenGLFramebufferObject*, const RenderImageOptions& options);
+    /// Assemble a scene root that renders the given options' camera over the geometry alone.
+    /// Returns an unreferenced node: the caller owns it and must ref it before use.
+    SoSeparator* buildCaptureRoot(const RenderImageOptions& options) const;
     void setCursorRepresentation(int mode);
     void aboutToDestroyGLContext();
     void createStandardCursors();
