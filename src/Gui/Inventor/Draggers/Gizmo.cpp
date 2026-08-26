@@ -742,6 +742,9 @@ GizmoContainer::GizmoContainer()
     auto pickStyle = SO_GET_ANY_PART(this, "pickStyle", SoPickStyle);
     pickStyle->style = SoPickStyle::SHAPE_ON_TOP;
 
+    auto annotation = SO_GET_ANY_PART(this, "annotation", So3DAnnotation);
+    annotation->layer = static_cast<int>(AnnotationLayer::Handle);
+
     auto toggleSwitch = SO_GET_ANY_PART(this, "toggleSwitch", SoToggleSwitch);
     toggleSwitch->on.connectFrom(&visible);
 

@@ -2224,6 +2224,7 @@ void View3DInventorViewer::setAxisCross(bool on)
             axisCrossKit->axisLength = axisCrossLength;
 
             auto annotation = new So3DAnnotation();
+            annotation->layer = static_cast<int>(AnnotationLayer::Handle);
             annotation->addChild(axisCrossKit);
 
             axisGroup = new SoSkipBoundingGroup;
@@ -3229,6 +3230,10 @@ bool View3DInventorViewer::renderToFramebuffer(
         this->drawAxisCross();
     }
 
+    // This capture path draws no overlay, so the annotations it collected along the way
+    // have no consumer. Release them before the local action goes away with them.
+    SoDelayedAnnotationsElement::discardDelayedPaths(gl.getState());
+
     return true;
 }
 
@@ -3343,28 +3348,12 @@ void View3DInventorViewer::renderDelayedAnnotations(SoGLRenderAction* glra)
         return;
     }
 
-    class ScopedAnnotationRender
-    {
-    public:
-        ScopedAnnotationRender()
-        {
-            So3DAnnotation::render = true;
-        }
-
-        ~ScopedAnnotationRender()
-        {
-            So3DAnnotation::render = false;
-        }
-    } annotationRender;
-
+    // Scoped so that the flag is restored even if the replay throws; leaving it set
+    // would make every later frame draw annotations inline, without any layering.
+    Base::StateLocker annotationRender(So3DAnnotation::render, true);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    if (Gui::Selection().isClarifySelectionActive()) {
-        Gui::SoDelayedAnnotationsElement::processDelayedPathsWithPriority(state, glra);
-    }
-    else {
-        glra->apply(Gui::SoDelayedAnnotationsElement::getDelayedPaths(state));
-    }
+    Gui::SoDelayedAnnotationsElement::processDelayedPathsWithPriority(state, glra);
 }
 
 void View3DInventorViewer::renderGLActionScene(const QColor& backgroundColor, SoGLRenderAction* glra)

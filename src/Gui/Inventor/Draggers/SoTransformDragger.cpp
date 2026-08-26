@@ -57,6 +57,7 @@
 #include "SoRotationDragger.h"
 #include "Utilities.h"
 
+#include <Gui/Inventor/So3DAnnotation.h>
 #include <Gui/SoLabelNodes.h>
 
 
@@ -248,6 +249,9 @@ SoTransformDragger::SoTransformDragger()
     SO_KIT_ADD_FIELD(zAxisLabel, ("Z"));
 
     SO_KIT_INIT_INSTANCE();
+
+    auto annotation = SO_GET_ANY_PART(this, "annotation", So3DAnnotation);
+    annotation->layer = static_cast<int>(AnnotationLayer::Handle);
 
     // Colors
     setAxisColors(
