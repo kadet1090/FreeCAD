@@ -2267,6 +2267,26 @@ int FreeCADStyle::leadingRowGap(const QStyleOption* option, const QWidget* widge
     return resolveBoxGeometry(itemContext).spacing;
 }
 
+bool FreeCADStyle::isLeadingCell(const QStyleOptionViewItem* vopt)
+{
+    return vopt->viewItemPosition == QStyleOptionViewItem::Beginning
+        || vopt->viewItemPosition == QStyleOptionViewItem::OnlyOne
+        || vopt->viewItemPosition == QStyleOptionViewItem::Invalid;
+}
+
+void FreeCADStyle::reachToLeadingEdge(QRect& rect, const QStyleOptionViewItem* vopt, const QWidget* widget)
+{
+    if (vopt->direction != Qt::RightToLeft) {
+        rect.setLeft(0);
+        return;
+    }
+
+    const auto* view = qobject_cast<const QAbstractItemView*>(widget);
+    if (view != nullptr && view->viewport() != nullptr) {
+        rect.setRight(view->viewport()->width() - 1);
+    }
+}
+
 void FreeCADStyle::drawItemViewRow(
     QPainter* painter,
     const QStyleOptionViewItem* vopt,
@@ -2305,7 +2325,24 @@ void FreeCADStyle::drawItemViewRow(
     QRect rowRect = vopt->rect;
     rowRect.adjust(0, itemGeometry.spacing, 0, 0);
 
+    // A view indents its leading cell past whatever precedes it - a tree's branch column, a
+    // container's own padding - and that strip belongs to no cell, so it would stay
+    // unhighlighted. The leading cell reaches back over it. Only backwards: nothing paints
+    // there after this call, whereas a fill running the other way would be buried by the next
+    // column's surface.
+    const bool coversLeadingGutter = layer == RowLayer::Interaction && isLeadingCell(vopt);
+    if (coversLeadingGutter) {
+        reachToLeadingEdge(rowRect, vopt, widget);
+    }
+
+    // Qt clips to the cell before calling PE_PanelItemViewItem, which the reach past its
+    // leading edge has to escape.
+    painter->save();
+    if (coversLeadingGutter) {
+        painter->setClipRect(rowRect, Qt::ReplaceClip);
+    }
     paintBox(painter, rowRect, rowContext);
+    painter->restore();
 }
 
 bool FreeCADStyle::ownsItemViewLayout(const QStyleOptionViewItem* option, const QWidget* widget) const

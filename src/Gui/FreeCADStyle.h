@@ -756,6 +756,12 @@ protected:
     /// The inter-row gap the rows of this view each reserve above themselves.
     int leadingRowGap(const QStyleOption* option, const QWidget* widget) const;
 
+    /// Whether a cell is the one nearest its view's leading edge.
+    static bool isLeadingCell(const QStyleOptionViewItem* vopt);
+
+    /// Grows a leading cell's rect over the gutter that precedes it.
+    static void reachToLeadingEdge(QRect& rect, const QStyleOptionViewItem* vopt, const QWidget* widget);
+
     void drawItemViewRow(
         QPainter* painter,
         const QStyleOptionViewItem* vopt,
