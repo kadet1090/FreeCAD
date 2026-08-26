@@ -658,6 +658,12 @@ protected:
     static void forEachChildWidget(QWidget* widget, const std::function<void(QWidget*)>& visit);
 
 private:
+    /// @p context with its Position reset to North, for resolving a geometric token that is
+    /// stated once and rotated to wherever the component actually attaches.
+    static StyleParameters::StyleContext withNorthPosition(
+        const StyleParameters::StyleContext& context
+    );
+
     /// Attaches @p widget to @p context, so resolution can consult what the widget declares.
     static void bindWidget(StyleParameters::StyleContext& context, const QWidget* widget);
 

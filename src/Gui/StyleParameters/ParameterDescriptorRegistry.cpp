@@ -79,6 +79,11 @@ const std::map<VariantSlot, std::map<uint8_t, std::string_view>> variantSlotName
         {static_cast<uint8_t>(ControlSize::Small),    "Small"},
         {static_cast<uint8_t>(ControlSize::Big),      "Big"},
     }},
+    {VariantSlot::Position, {
+        {static_cast<uint8_t>(Position::East),  "East"},
+        {static_cast<uint8_t>(Position::South), "South"},
+        {static_cast<uint8_t>(Position::West),  "West"},
+    }},
 };
 // clang-format on
 
@@ -168,6 +173,7 @@ constexpr auto statePriorityOrder = std::to_array({
 constexpr std::array<std::string_view, size_t(VariantSlot::COUNT)> variantSlotDisplayNames = {
     "ButtonType",  // VariantSlot::ButtonType
     "ControlSize", // VariantSlot::ControlSize
+    "Position",    // VariantSlot::Position
 };
 // clang-format on
 

@@ -96,6 +96,22 @@ enum class ControlSize : uint8_t
 };
 
 /**
+ * @brief Edge position: the edge at which a component attaches.
+ *
+ * North (0) is canonical. Geometric tokens are resolved with North and rotated to the
+ * actual position; visual tokens are resolved with the actual position so per-position
+ * colour overrides (e.g. TabBarTabSouthBackground) work naturally.
+ */
+enum class Position : uint8_t
+{
+    North = 0,  // canonical; maps to "" in token names (default variant)
+    East,       // "East"
+    South,      // "South"
+    West,       // "West"
+    COUNT
+};
+
+/**
  * @brief Interaction state bitmask — multiple flags may be active simultaneously.
  *
  * Token resolution expands active flags into a fallback prefix list in priority
@@ -121,6 +137,7 @@ enum class VariantSlot : uint8_t
 {
     ButtonType,
     ControlSize,
+    Position,
     COUNT
 };
 

@@ -27,6 +27,7 @@
 
 #ifndef _PreComp_
 #include <QImage>
+#include <array>
 #include <map>
 #include <QPainter>
 #include <QPainterPath>
@@ -504,6 +505,90 @@ void FreeCADStyle::drawComponent(
     drawComponent(painter, rect, contextOf(widget, option));
 }
 
+namespace
+{
+
+/**
+ * @brief Applies the standard 4-way edge rotation to an array of values.
+ *
+ * Canonical (North) order: (left/topLeft, top/topRight, right/bottomRight, bottom/bottomLeft).
+ * South swaps opposite pairs; East/West rotate by one step in either direction.
+ */
+template<typename T>
+std::array<T, 4> rotate4(std::array<T, 4> values, Position position)
+{
+    // The array has known size - bounds are guaranteed
+    // NOLINTBEGIN(*-pro-bounds-avoid-unchecked-container-access)
+    // clang-format off
+    switch (position) {
+        case Position::South: return {values[2], values[3], values[0], values[1]};
+        case Position::East:  return {values[3], values[0], values[1], values[2]};
+        case Position::West:  return {values[1], values[2], values[3], values[0]};
+        default:              return values;
+    }
+    // clang-format on
+    // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
+}
+
+/** @brief Rotates canonical (North) margins to the given position. */
+QMarginsF rotated(const QMarginsF& margins, Position position)
+{
+    const auto [left, top, right, bottom] = rotate4(
+        std::to_array({margins.left(), margins.top(), margins.right(), margins.bottom()}),
+        position
+    );
+    return {left, top, right, bottom};
+}
+// clang-format on
+
+// ─── Color effect helpers ─────────────────────────────────────────────────────
+/** @brief Rotates canonical (North) corner radii to the given position. */
+FreeCADStyle::CornerRadii rotated(const FreeCADStyle::CornerRadii& corners, Position position)
+{
+    const auto [topLeft, topRight, bottomRight, bottomLeft] = rotate4(
+        std::to_array({corners.topLeft, corners.topRight, corners.bottomRight, corners.bottomLeft}),
+        position
+    );
+    return {.topLeft = topLeft, .topRight = topRight, .bottomRight = bottomRight, .bottomLeft = bottomLeft};
+}
+
+/**
+ * @brief Rotates a canonical (North, top→bottom) linear gradient brush to the given position.
+ *
+ * Point transform: North=(px,py), South=(px,1-py), East=(1-py,px), West=(py,1-px).
+ * Non-linear-gradient brushes are returned unchanged.
+ */
+// clang-format off
+QBrush rotated(const QBrush& brush, Position position)
+{
+    if (position == Position::North) {
+        return brush;
+    }
+    const QGradient* gradient = brush.gradient();
+    if (!gradient || gradient->type() != QGradient::LinearGradient) {
+        return brush;
+    }
+    const auto* linear = static_cast<const QLinearGradient*>(gradient);
+    const auto rotatePoint = [position](const QPointF& pointF) -> QPointF {
+        switch (position) {
+            case Position::South: return {pointF.x(),       1.0 - pointF.y()};
+            case Position::East:  return {1.0 - pointF.y(), pointF.x()      };
+            case Position::West:  return {pointF.y(),       1.0 - pointF.x()};
+            default:              return pointF;
+        }
+    };
+
+    QLinearGradient result(rotatePoint(linear->start()), rotatePoint(linear->finalStop()));
+    result.setStops(linear->stops());
+    result.setCoordinateMode(linear->coordinateMode());
+    result.setSpread(linear->spread());
+
+    return result;
+}
+
+
+}  // namespace
+
 FreeCADStyle::BoxStyleDefinition FreeCADStyle::seamedBoxStyle(
     const StyleContext& context,
     SeamEdge seam,
@@ -627,16 +712,22 @@ FreeCADStyle::BoxStyleDefinition FreeCADStyle::resolveBoxStyle(const StyleContex
         return *cached;
     }
 
+    const auto position = static_cast<Position>(context.variant.get(VariantSlot::Position));
+    const StyleContext northContext = withNorthPosition(context);
+
     BoxStyleDefinition result;
 
-    if (const auto background = resolve(context, StyleProperty::Background)) {
-        result.background = Base::convertTo<QBrush>(*background);
+    // Geometric tokens are stated once at the canonical North and rotated to where the
+    // component actually attaches. rotated(x, North) is the identity, so this is safe to run
+    // for every component, not only the ones that move.
+    if (const auto background = resolve(northContext, StyleProperty::Background)) {
+        result.background = rotated(Base::convertTo<QBrush>(*background), position);
     }
-    if (const auto borderRadius = resolve<Corners>(context, StyleProperty::BorderRadius)) {
-        result.borderRadius = Base::convertTo<CornerRadii>(*borderRadius);
+    if (const auto borderRadius = resolve<Corners>(northContext, StyleProperty::BorderRadius)) {
+        result.borderRadius = rotated(Base::convertTo<CornerRadii>(*borderRadius), position);
     }
-    if (const auto borderThickness = resolve<Insets>(context, StyleProperty::BorderThickness)) {
-        result.borderThickness = Base::convertTo<QMarginsF>(*borderThickness);
+    if (const auto borderThickness = resolve<Insets>(northContext, StyleProperty::BorderThickness)) {
+        result.borderThickness = rotated(Base::convertTo<QMarginsF>(*borderThickness), position);
     }
     if (const auto borderColors = resolve<BorderColors>(context, StyleProperty::BorderColor)) {
         result.borderColor = Base::convertTo<BorderColorsPerSide>(*borderColors);
@@ -647,7 +738,8 @@ FreeCADStyle::BoxStyleDefinition FreeCADStyle::resolveBoxStyle(const StyleContex
         result.innerShadow = Base::convertTo<InnerShadow>(*innerShadow);
     }
 
-    if (const auto effect = resolve<ColorEffect>(context, StyleProperty::BackgroundEffect)) {
+    // BackgroundEffect follows Background, so it resolves from North too.
+    if (const auto effect = resolve<ColorEffect>(northContext, StyleProperty::BackgroundEffect)) {
         result.background = applyEffectToBrush(result.background, *effect);
     }
 
@@ -1806,6 +1898,13 @@ void FreeCADStyle::unpolish(QWidget* widget)
     storeOverrideSet(widget, StyleParameters::OverrideRegistry::emptyId);
 
     QProxyStyle::unpolish(widget);
+}
+
+StyleContext FreeCADStyle::withNorthPosition(const StyleContext& context)
+{
+    StyleContext north = context;
+    north.variant.set(VariantSlot::Position, Position::North);
+    return north;
 }
 
 void FreeCADStyle::clearTokenCache()
