@@ -91,6 +91,11 @@ struct GuiExport Numeric
 
     Numeric operator/(const Numeric& rhs) const;
     Numeric operator*(const Numeric& rhs) const;
+
+    bool operator==(const Numeric& rhs) const
+    {
+        return value == rhs.value && unit == rhs.unit;
+    }
     /// @}
 
     /**
@@ -101,6 +106,31 @@ struct GuiExport Numeric
      * dropping the unit.
      */
     std::optional<double> asFraction() const;
+
+    /**
+     * @name Conversion operators
+     *
+     * Explicit conversions to common numeric types. These allow the use of static_cast<T>
+     * to extract the raw value when the unit has already been accounted for.
+     * @{
+     */
+    explicit operator double() const
+    {
+        return value;
+    }
+    explicit operator float() const
+    {
+        return static_cast<float>(value);
+    }
+    explicit operator int() const
+    {
+        return static_cast<int>(value);
+    }
+    explicit operator long() const
+    {
+        return static_cast<long>(value);
+    }
+    /// @}
 
 private:
     void ensureEqualUnits(const Numeric& rhs) const;
