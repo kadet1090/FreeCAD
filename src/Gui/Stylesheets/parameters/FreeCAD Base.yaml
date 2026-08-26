@@ -215,6 +215,11 @@ TooltipTextColor: "@BaseTextColor"
 BaseTooltipBackground: "@TooltipBackground"
 BaseTooltipTextColor: "@TooltipTextColor"
 
+# The report output fills a dock of its own rather than sitting as a field among others, so it
+# drops the frame and fill every other text edit carries and takes the dock's surface instead.
+ReportOutputBackground: "reset()"
+ReportOutputBorderColor: "reset()"
+
 # A scroll bar's appearance lives in QSS pseudo-elements QProxyStyle cannot reach, so it is
 # the one component the style does not paint. These tokens are what its rules read.
 ScrollBarBackground: "@Colors.transparent"

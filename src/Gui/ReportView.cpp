@@ -440,6 +440,8 @@ ReportOutput::ReportOutput(QWidget* parent)
     , gotoEnd(false)
     , blockStart(true)
 {
+    setProperty("component", "ReportOutput");
+
     bLog = false;
     reportHl = new ReportHighlighter(this);
 
