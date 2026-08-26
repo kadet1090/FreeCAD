@@ -1495,7 +1495,8 @@ StyleContext FreeCADStyle::contextOf(
     context.element = element;
 
     if (qobject_cast<const QToolButton*>(widget)) {
-        context.component = StyleComponent::ToolButton;
+        const bool isInToolBar = qobject_cast<const QToolBar*>(widget->parent());
+        context.component = isInToolBar ? StyleComponent::ToolBarButton : StyleComponent::ToolButton;
     }
     else if (qobject_cast<const QPushButton*>(widget)) {
         context.component = StyleComponent::PushButton;
@@ -1563,7 +1564,8 @@ StyleContext FreeCADStyle::contextOf(
         // input widget, which sets it permanently. Only button-like components map it to
         // Pressed, so an input's Focused state is not masked by it.
         const bool isButton = context.component == StyleComponent::PushButton
-            || context.component == StyleComponent::ToolButton;
+            || context.component == StyleComponent::ToolButton
+            || context.component == StyleComponent::ToolBarButton;
         if (isButton && (option->state & QStyle::State_Sunken)) {
             context.state |= StyleState::Pressed;
         }

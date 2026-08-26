@@ -528,6 +528,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"ControlSize", "State"},
         .inherits = {"Button", "FormControl"},
     }, StyleComponent::ToolButton);
+
+    registry.registerDescriptor({
+        .name     = "ToolBarButton",
+        .variants = {"ControlSize", "State"},
+        .inherits = {"ToolButton", "Button", "FormControl"},
+    }, StyleComponent::ToolBarButton);
     // clang-format on
 }
 

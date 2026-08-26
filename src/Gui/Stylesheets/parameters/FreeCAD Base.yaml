@@ -114,3 +114,7 @@ ToolButtonSmallMinWidth: "@FormControlSmallHeight"
 # and the button reads slightly wide.
 ToolButtonLinkPadding: "@Spacing.100"
 ToolButtonMenuWidth: 14px
+
+# A toolbar decides how tall its buttons are, so the form-control height a tool button would
+# otherwise inherit is stopped here rather than overridden with a second number.
+ToolBarButtonHeight: "reset()"

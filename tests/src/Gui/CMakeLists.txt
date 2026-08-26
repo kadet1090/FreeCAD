@@ -36,6 +36,7 @@ add_dependencies(Gui_tests_run Stylesheets_data)
 setup_qt_test(ObjectSelection)
 setup_qt_test(QuantitySpinBox)
 setup_qt_test(PushButtonStyle)
+setup_qt_test(ToolButtonStyle)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main
