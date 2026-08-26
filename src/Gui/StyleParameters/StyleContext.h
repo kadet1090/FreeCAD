@@ -48,24 +48,25 @@ enum class StyleComponent : uint8_t
     None,
     PushButton,
     ToolButton,
-    ToolBar,        // QToolBar
-    Select,         // QComboBox that is not editable; inherits Button
-    ComboBox,       // QComboBox that is editable; inherits LineEdit
-    LineEdit,       // QLineEdit and the edit frame of a QAbstractSpinBox
-    TextEdit,       // QPlainTextEdit, QTextEdit and derivatives
-    CheckBox,       // QCheckBox indicator
-    RadioButton,    // QRadioButton indicator
-    List,           // QListWidget, QListView and other item views
-    DropdownList,   // QListView inside a QComboBox popup
-    Tree,           // QTreeWidget, QTreeView
-    TabBar,         // QTabBar
-    TabWidget,      // QTabWidget pane
-    Header,         // QHeaderView sections
-    Menu,           // QMenu popup: context menus, menu bar and tool button dropdowns
-    MenuBar,        // QMenuBar
-    ToolBarButton,  // QToolButton in a QToolBar - semantically a different control
-    GroupBox,       // QGroupBox frame and title
-    Tooltip,        // QTipLabel and Gui::NotificationLabel: the surface behind tip text
+    ToolBar,         // QToolBar
+    Select,          // QComboBox that is not editable; inherits Button
+    ComboBox,        // QComboBox that is editable; inherits LineEdit
+    LineEdit,        // QLineEdit and the edit frame of a QAbstractSpinBox
+    TextEdit,        // QPlainTextEdit, QTextEdit and derivatives
+    CheckBox,        // QCheckBox indicator
+    RadioButton,     // QRadioButton indicator
+    List,            // QListWidget, QListView and other item views
+    DropdownList,    // QListView inside a QComboBox popup
+    Tree,            // QTreeWidget, QTreeView
+    TabBar,          // QTabBar
+    TabWidget,       // QTabWidget pane
+    Header,          // QHeaderView sections
+    Menu,            // QMenu popup: context menus, menu bar and tool button dropdowns
+    MenuBar,         // QMenuBar
+    ToolBarButton,   // QToolButton in a QToolBar - semantically a different control
+    GroupBox,        // QGroupBox frame and title
+    InternalButton,  // Flat action button painted inside a custom composite widget
+    Tooltip,         // QTipLabel and Gui::NotificationLabel: the surface behind tip text
     COUNT
 };
 

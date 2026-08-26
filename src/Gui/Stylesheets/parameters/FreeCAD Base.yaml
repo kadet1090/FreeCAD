@@ -38,6 +38,7 @@ BaseBorderColor: "@Neutral.400"
 BaseHoveredBorderColorEffect: "effect(darken: 0.08)"
 
 FormControlSmallHeight: 24px
+FormControlInternalHeight: 22px
 FormControlHeight: 26px
 FormControlBigHeight: 30px
 
@@ -115,6 +116,31 @@ ToolButtonSmallMinWidth: "@FormControlSmallHeight"
 # and the button reads slightly wide.
 ToolButtonLinkPadding: "@Spacing.100"
 ToolButtonMenuWidth: 14px
+
+# ── Internal Button ───────────────────────────────────────────────────────────
+# Flat action button used inside custom composite widgets (e.g. the geometry selector's
+# change / remove controls). FreeCADStyle paints it directly on the child widget so it looks
+# the same under any application QStyle. Deliberately simplified: transparent at rest, a solid
+# fill only while hovered or pressed, no gradient and no border. Because it inherits
+# FormControl rather than Button it has none of Button's hover/pressed effects — the fill
+# comes solely from the explicit state backgrounds below. Height and min-width are reset so
+# its compact padding drives the size.
+InternalButtonBackground: "@Colors.transparent"
+InternalButtonBorderColor: "@Colors.transparent"
+InternalButtonBorderThickness: 0px
+InternalButtonBorderRadius: "@BaseRadius.medium"
+InternalButtonPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050)"
+InternalButtonHeight: "reset()"
+InternalButtonMinWidth: "reset()"
+
+InternalButtonHoveredBackground: "@Background.150"
+InternalButtonPressedBackground: "@Background.200"
+
+# What the Internal control size means for an ordinary button, so a QToolButton can carry it
+# without becoming an InternalButton.
+ButtonInternalPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.050)"
+ToolButtonInternalPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050)"
+ToolButtonInternalMinWidth: "reset()"
 
 ToolBarItemSpacing: "@Spacing.075"
 ToolBarItemMargin: "@Spacing.050"
