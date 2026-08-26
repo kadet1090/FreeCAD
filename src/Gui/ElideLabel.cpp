@@ -39,18 +39,26 @@ void ElideLabel::paintEvent(QPaintEvent* event)
     painter.setPen(palette().color(QPalette::WindowText));
     painter.setFont(font());
 
-    constexpr int padding = 4;
     QFontMetrics fm(painter.fontMetrics());
 
-    int availableWidth = width() - padding * 2;
+    int availableWidth = width() - m_textInset * 2;
     if (availableWidth < 0) {
         return;
     }
 
     QString elidedText = fm.elidedText(text(), Qt::ElideRight, availableWidth);
 
-    QRect textRect = rect().adjusted(padding, 0, -padding, 0);
+    QRect textRect = rect().adjusted(m_textInset, 0, -m_textInset, 0);
     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, elidedText);
+}
+
+void ElideLabel::setTextInset(int inset)
+{
+    if (m_textInset == inset) {
+        return;
+    }
+    m_textInset = inset;
+    update();
 }
 
 QSize ElideLabel::sizeHint() const

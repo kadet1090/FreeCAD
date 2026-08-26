@@ -327,6 +327,14 @@
         <file>zoom-out.svg</file>
         <file>zoom-selection.svg</file>
         <file>tabler/outline/package-import.svg</file>
+        <file>tabler/outline/check.svg</file>
+        <file>tabler/outline/plus.svg</file>
+        <file>tabler/outline/replace.svg</file>
+        <file>tabler/outline/trash.svg</file>
+        <file>tabler/outline/adjustments-check.svg</file>
+        <file>tabler/outline/eye-off.svg</file>
+        <file>tabler/outline/refresh.svg</file>
+        <file>tabler/outline/settings.svg</file>
         <file>tabler/outline/adjustments.svg</file>
         <file>tabler/outline/eye.svg</file>
         <file>tabler/outline/eye-closed.svg</file>

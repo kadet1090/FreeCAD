@@ -601,6 +601,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .inherits = {"ToolButton", "Button", "FormControl"},
     }, StyleComponent::ToolBarButton);
 
+    registry.registerDescriptor({
+        .name     = "GeometrySelector",
+        .variants = {"ControlSize", "State", "RowType"},
+        .inherits = {"List"},
+    }, StyleComponent::GeometrySelector);
+
     // Simplified, solid-filled action button for custom composite widgets. It
     // inherits FormControl directly (not Button) so it carries none of Button's
     // gradient background or hover/pressed effects.

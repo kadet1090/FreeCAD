@@ -1190,6 +1190,8 @@ SET(Widget_CPP_SRCS
     GeometryHighlighter.cpp
     GeometrySelection.cpp
     GeometrySelectionGate.cpp
+    GeometrySelectorWidget.cpp
+    GeometrySelectorPopup.cpp
 )
 if(WIN32)
     SET(Widget_CPP_SRCS
@@ -1228,6 +1230,8 @@ SET(Widget_HPP_SRCS
     GeometryReference.h
     GeometrySelection.h
     GeometrySelectionGate.h
+    GeometrySelectorWidget.h
+    GeometrySelectorPopup.h
 )
 SET(Widget_SRCS
     ${Widget_CPP_SRCS}

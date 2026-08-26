@@ -117,6 +117,15 @@ ToolButtonSmallMinWidth: "@FormControlSmallHeight"
 ToolButtonLinkPadding: "@Spacing.100"
 ToolButtonMenuWidth: 14px
 
+# ── GeometrySelector ─────────────────────────────────────────────────────────
+# Composite selection field (Gui::GeometrySelectorWidget) rendered as a list but sized like a
+# form control, so it never stands shorter than the line edits and spin boxes beside it in a
+# task form.
+GeometrySelectorMinHeight: "@FormControlHeight"
+GeometrySelectorPadding: "padding(@Spacing.050)"
+GeometrySelectorItemSpacing: "@Spacing.050"
+GeometrySelectorItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050)"
+
 # ── Internal Button ───────────────────────────────────────────────────────────
 # Flat action button used inside custom composite widgets (e.g. the geometry selector's
 # change / remove controls). FreeCADStyle paints it directly on the child widget so it looks
