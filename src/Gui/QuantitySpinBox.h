@@ -165,6 +165,9 @@ public:
 
     /// This is a helper function to determine the size this widget requires to fully display the text
     QSize sizeForText(const QString&) const;
+
+    /// Width the inner editor keeps for itself around the text, which no glyph may occupy.
+    int editorTextInset() const;
     QSize sizeHint() const override;
     bool event(QEvent* event) override;
 
@@ -206,9 +209,6 @@ private:
     QString getUserString(const Base::Quantity& val) const;
 
     QSize sizeHintForDigits(int digits) const;
-
-    /// What the editor reserves around its text: its own margins plus the caret's width.
-    int editorTextInset() const;
     int getMaxStrLength(int digits) const;
 
 Q_SIGNALS:

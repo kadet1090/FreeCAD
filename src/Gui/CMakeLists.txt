@@ -1428,6 +1428,7 @@ SET(FreeCADGui_SRCS
     ManualAlignment.h
     StartupProcess.h
     StatusBarLabel.h
+    StyleParameters.h
     TransactionObject.h
     ToolHandler.h
     StyleParameters/Value.h

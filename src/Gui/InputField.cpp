@@ -84,20 +84,20 @@ InputField::InputField(QWidget* parent)
     else {
         setFocusPolicy(Qt::StrongFocus);
     }
-    iconLabel = new ExpressionLabel(this);
-    iconLabel->setCursor(Qt::ArrowCursor);
+    iconLabel = new ExpressionButton(this);
     QFontMetrics fm(font());
     int iconSize = fm.height();
     QPixmap pixmap = getValidationIcon(":/icons/button_invalid.svg", QSize(iconSize, iconSize));
-    iconLabel->setPixmap(pixmap);
+    iconLabel->setIcon(QIcon(pixmap));
+    iconLabel->setIconSize(QSize(iconSize, iconSize));
     iconLabel->hide();
     connect(this, &QLineEdit::textChanged, this, &InputField::updateIconLabel);
 
-    // Set Margins
-    // vertical margin, such that `,` won't be clipped to a `.` and similar font descents. Relevant
-    // on some OSX versions horizontal margin, such that text will not be behind `fx` icon
+    // vertical margin, such that `,` won't be clipped to a `.` and similar font descents.
+    // Relevant on some OSX versions.
     int margin = getMargin();
-    setTextMargins(margin, margin, margin + iconSize, margin);
+    setTextMargins(margin, margin, margin, margin);
+    reserveIconSpace(this);
 
     this->setContextMenuPolicy(Qt::DefaultContextMenu);
 
@@ -106,11 +106,7 @@ InputField::InputField(QWidget* parent)
 
 int InputField::getMargin()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-    return style()->pixelMetric(QStyle::PM_LineEditIconMargin, nullptr, this) / 2;
-#else
-    return style()->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, this);
-#endif
+    return iconMargin(this);
 }
 
 InputField::~InputField() = default;
@@ -203,8 +199,7 @@ void InputField::notifyValueChanged()
 
 void InputField::resizeEvent(QResizeEvent* /*event*/)
 {
-    QSize iconSize = iconLabel->sizeHint();
-    iconLabel->move(width() - (iconSize.width() + 2 * getMargin()), (height() - iconSize.height()) / 2);
+    positionIcon(this);
 }
 
 void InputField::updateIconLabel(const QString& text)

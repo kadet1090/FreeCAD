@@ -143,6 +143,17 @@ WbToolBarFrameWidth: 0px
 # a smaller icon than a tool button elsewhere.
 PanelButtonIconSize: 12px
 
+# A namespace set on the expression button inside a quantity field, so it resolves ahead of the
+# ToolButton chain. It is a fixed square that sits inside the line edit's frame, so it carries
+# no padding of its own, and it marks a bound expression by staying checked.
+ExpressionButtonBackground: "@ButtonBackground"
+ExpressionButtonBorderColor: "@ButtonBorderColor"
+
+ExpressionButtonCheckedBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Accent.700, @Accent.800)"
+ExpressionButtonCheckedBorderColor: "@Accent.900"
+ExpressionButtonCheckedIconColor: "@Background.050"
+ExpressionButtonPadding: "0px"
+
 SeparatorThickness: 1px
 SeparatorColor: "@BaseBorderColor"
 

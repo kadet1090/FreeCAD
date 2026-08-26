@@ -22,51 +22,64 @@
 
 #pragma once
 
-#include <QLabel>
-#include <QMouseEvent>
-#include <QLineEdit>
+#include <QToolButton>
 
-class ExpressionLabel: public QLabel
+#include <Gui/Application.h>
+#include <Gui/StyleParameters.h>
+
+class ExpressionButton: public QToolButton
 {
     Q_OBJECT
 public:
-    ExpressionLabel(QWidget* parent)
-        : QLabel(parent)
-    {}
+    explicit ExpressionButton(QWidget* parent)
+        : QToolButton(parent)
+    {
+        using namespace Gui::StyleParameters;
+
+        setAutoRaise(true);
+        setCheckable(true);
+        setFocusPolicy(Qt::NoFocus);
+        setProperty("component", "ExpressionButton");
+
+        // The parameter's own default stands in where there is no Gui application to ask,
+        // which is every headless context a quantity field is built in.
+        const Numeric size = Gui::Application::Instance != nullptr
+            ? Gui::Application::Instance->styleParameterManager()->resolve(ExpressionButtonSize)
+            : ExpressionButtonSize.defaultValue;
+
+        setFixedSize(static_cast<int>(size), static_cast<int>(size));
+    }
 
     void setExpressionText(const QString& text)
     {
         if (text.isEmpty()) {
-            this->setToolTip(genericExpressionEditorTooltip);
+            setToolTip(genericExpressionEditorTooltip);
         }
         else {
-            this->setToolTip(expressionEditorTooltipPrefix + text);
+            setToolTip(expressionEditorTooltipPrefix + text);
         }
     }
 
-    void show()
+    void setNormalIcon(const QIcon& icon)
     {
-        if (auto parentLineEdit = qobject_cast<QLineEdit*>(parent())) {
-            // horizontal margin, so text will not be behind the icon
-            QMargins margins = parentLineEdit->contentsMargins();
-            margins.setRight(2 * margins.right() + sizeHint().width());
-            parentLineEdit->setContentsMargins(margins);
-        }
-        QLabel::show();
+        normalIcon_ = icon;
+        setIcon(icon);
+    }
+
+    void restoreNormalIcon()
+    {
+        setIcon(normalIcon_);
     }
 
 protected:
-    void mouseReleaseEvent(QMouseEvent* event) override
-    {
-        if (rect().contains(event->pos())) {
-            Q_EMIT clicked();
-        }
-    }
-
-Q_SIGNALS:
-    void clicked();
+    // Prevent Qt from auto-toggling the checked state on click.
+    // The checked state is driven exclusively by the expression binding
+    // via setChecked(), so clicking must not change it on its own.
+    void nextCheckState() override
+    {}
 
 private:
+    QIcon normalIcon_;
     const QString genericExpressionEditorTooltip = tr("Enter expression… (=)");
     const QString expressionEditorTooltipPrefix = tr("Expression:") + QStringLiteral(" ");
 };

@@ -30,7 +30,7 @@
     <number>3</number>
    </property>
    <property name="sizeConstraint">
-    <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
+    <enum>QLayout::SizeConstraint::SetMinimumSize</enum>
    </property>
    <property name="margin" stdset="0">
     <number>0</number>
@@ -75,12 +75,6 @@
          </property>
          <property name="autoFillBackground">
           <bool>true</bool>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Shadow::Raised</enum>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <property name="spacing">
@@ -322,7 +316,7 @@ The property of this object will refer to the property of the Variable Set.</str
      <item>
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>

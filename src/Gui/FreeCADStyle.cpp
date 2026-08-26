@@ -64,6 +64,7 @@
 
 #include "Application.h"
 #include "IconManager.h"
+#include "QuantitySpinBox_p.h"
 #include "ThemeReloadEvent.h"
 #include "TaskView/TaskView.h"
 #include "Utilities.h"
@@ -5304,6 +5305,15 @@ void FreeCADStyle::polish(QWidget* widget)
         // fill here is what lets the backing store clip the subwindows stacked underneath;
         // without it their last paint stays visible through every such gap.
         widget->setAutoFillBackground(true);
+    }
+
+    // The bound-expression marker has to be recoloured with the theme, and an icon set in a .ui
+    // file or a constructor never is. This is the only place in polish() that names a widget
+    // class, and that is why.
+    if (auto* expressionButton = qobject_cast<ExpressionButton*>(widget)) {
+        expressionButton->setNormalIcon(
+            IconManager::instance().icon(QStringLiteral(":/icons/bound-expression-symbol.svg"))
+        );
     }
 
     // Qt takes a tooltip's font from QApplication::font("QTipLabel"), never from the style, so

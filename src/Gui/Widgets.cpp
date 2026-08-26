@@ -1572,7 +1572,7 @@ ExpLineEdit::ExpLineEdit(QWidget* parent, bool expressionOnly)
 {
     makeLabel(this);
 
-    QObject::connect(iconLabel, &ExpressionLabel::clicked, this, &ExpLineEdit::openFormulaDialog);
+    QObject::connect(iconLabel, &QAbstractButton::clicked, this, &ExpLineEdit::openFormulaDialog);
     if (expressionOnly) {
         QMetaObject::invokeMethod(
             this,
@@ -1611,9 +1611,7 @@ void ExpLineEdit::bind(const ObjectIdentifier& _path)
 
     ExpressionBinding::bind(_path);
 
-    int frameWidth = style()->pixelMetric(QStyle::PM_SpinBoxFrameWidth);
-    setStyleSheet(QStringLiteral("QLineEdit { padding-right: %1px } ")
-                      .arg(iconLabel->sizeHint().width() + frameWidth + 1));
+    reserveIconSpace(this);
 
     iconLabel->show();
 }
@@ -1641,7 +1639,8 @@ void ExpLineEdit::onChange()
         std::unique_ptr<Expression> result(getExpression()->eval());
         setText(QString::fromStdString(anyToString(result->getValueAsAny())));
         setReadOnly(true);
-        iconLabel->setPixmap(getIcon(":/icons/bound-expression.svg", QSize(iconHeight, iconHeight)));
+        iconLabel->restoreNormalIcon();
+        iconLabel->setChecked(true);
 
         QPalette p(palette());
         p.setColor(QPalette::Text, Qt::lightGray);
@@ -1650,9 +1649,9 @@ void ExpLineEdit::onChange()
     }
     else {
         setReadOnly(false);
-        iconLabel->setPixmap(
-            getIcon(":/icons/bound-expression-unset.svg", QSize(iconHeight, iconHeight))
-        );
+        iconLabel->restoreNormalIcon();
+        iconLabel->setChecked(false);
+
         QPalette p(palette());
         p.setColor(QPalette::Active, QPalette::Text, defaultPalette.color(QPalette::Text));
         setPalette(p);
@@ -1664,16 +1663,13 @@ void ExpLineEdit::resizeEvent(QResizeEvent* event)
 {
     QLineEdit::resizeEvent(event);
 
-    int frameWidth = style()->pixelMetric(QStyle::PM_SpinBoxFrameWidth);
-
-    QSize sz = iconLabel->sizeHint();
-    iconLabel->move(rect().right() - frameWidth - sz.width(), rect().center().y() - sz.height() / 2);
+    positionIcon(this);
 
     try {
         if (isBound() && getExpression()) {
             setReadOnly(true);
-            QPixmap pixmap = getIcon(":/icons/bound-expression.svg", QSize(iconHeight, iconHeight));
-            iconLabel->setPixmap(pixmap);
+            iconLabel->restoreNormalIcon();
+            iconLabel->setChecked(true);
 
             QPalette p(palette());
             p.setColor(QPalette::Text, Qt::lightGray);
@@ -1682,9 +1678,8 @@ void ExpLineEdit::resizeEvent(QResizeEvent* event)
         }
         else {
             setReadOnly(false);
-            QPixmap pixmap
-                = getIcon(":/icons/bound-expression-unset.svg", QSize(iconHeight, iconHeight));
-            iconLabel->setPixmap(pixmap);
+            iconLabel->restoreNormalIcon();
+            iconLabel->setChecked(false);
 
             QPalette p(palette());
             p.setColor(QPalette::Active, QPalette::Text, defaultPalette.color(QPalette::Text));

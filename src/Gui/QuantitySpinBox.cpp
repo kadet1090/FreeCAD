@@ -350,7 +350,7 @@ void QuantitySpinBox::showIcon()
     addIconSpace(true);
 
     adjustSize();
-    iconLabel->show();
+    ExpressionSpinBox::showIcon();
 }
 
 QString QuantitySpinBox::boundToName() const
