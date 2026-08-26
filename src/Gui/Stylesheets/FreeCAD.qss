@@ -1039,35 +1039,6 @@ QFrame[class="panel"] QPushButton {
   padding: 3px;
 }
 
-/* QLineEdit --------------------------------------------------------------
-
-https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qlineedit
-
---------------------------------------------------------------------------- */
-QLineEdit, QTextEdit, QPlainTextEdit {
-  background-color: @TextEditFieldBackgroundColor;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  padding-left: 4px;
-  padding-right: 4px;
-  border-style: solid;
-  border: 1px solid @GeneralBorderColor;
-  border-radius: @InputFieldBorderRadius;
-}
-
-QLineEdit:disabled, QTextEdit:disabled, QPlainTextEdit:disabled {
-  background-color: @GeneralDisabledBackgroundColor;
-  color @TextDisabledColor;
-}
-
-QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
-  border: 1px solid @AccentColor;
-}
-
-QLineEdit:selected, QTextEdit:selected, QPlainTextEdit:selected {
-  background-color: @GeneralBackgroundHoverColor;
-}
-
 /* QTabWiget --------------------------------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qtabwidget-and-qtabbar

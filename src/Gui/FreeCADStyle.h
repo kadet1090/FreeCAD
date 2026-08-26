@@ -361,6 +361,12 @@ public:
         const QWidget* widget
     ) const override;
 
+    QRect subElementRect(
+        SubElement element,
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const override;
+
     void drawPrimitive(
         PrimitiveElement element,
         const QStyleOption* option,

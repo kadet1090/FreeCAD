@@ -42,6 +42,7 @@ setup_qt_test(ToolButtonStyle)
 setup_qt_test(StyleOverrides)
 setup_qt_test(ShapedFrame)
 setup_qt_test(StyleTransparency)
+setup_qt_test(FormControlSizing)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main

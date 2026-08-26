@@ -35,6 +35,7 @@ BaseShadingDark: "@Neutral.600"
 BaseShadingShadow: "@Neutral.800"
 
 BaseBorderColor: "@Neutral.400"
+BaseHoveredBorderColorEffect: "effect(darken: 0.08)"
 
 FormControlSmallHeight: 24px
 FormControlHeight: 26px
@@ -162,3 +163,17 @@ MenuBarItemPressedInnerShadow: "@ButtonPressedInnerShadow"
 MenuBarItemPressedTextColor: "@BaseTextColor"
 
 MenuBarItemDisabledTextColor: "@BaseDisabledTextColor"
+
+LineEditBackground: "@Background.000"
+LineEditBorderColor: "@FormControlBorderColor"
+LineEditBorderRadius: "@FormControlBorderRadius"
+LineEditBorderThickness: "@FormControlBorderThickness"
+LineEditPadding: "@FormControlPadding"
+LineEditHeight: "@FormControlHeight"
+LineEditSmallHeight: "@FormControlSmallHeight"
+
+LineEditFocusedBorderColor: "@Accent.500"
+LineEditHoveredBorderColorEffect: "@BaseHoveredBorderColorEffect"
+
+LineEditDisabledBackground: "@BaseDisabledBackground"
+LineEditDisabledTextColor: "@BaseDisabledTextColor"

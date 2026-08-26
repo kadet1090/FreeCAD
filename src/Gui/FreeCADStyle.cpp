@@ -1457,6 +1457,11 @@ QSize FreeCADStyle::sizeFromContents(
         return geometry.sizeFromContents(contentSize);
     }
 
+    if (type == CT_LineEdit) {
+        const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
+        return geometry.sizeFromContents(QProxyStyle::sizeFromContents(type, option, size, widget));
+    }
+
     if (type == CT_MenuBarItem) {
         const BoxGeometryDefinition geometry = resolveBoxGeometry(
             contextOf(widget, option, StyleComponentElement::Item)
@@ -1472,6 +1477,21 @@ QSize FreeCADStyle::sizeFromContents(
     }
 
     return QProxyStyle::sizeFromContents(type, option, size, widget);
+}
+
+QRect FreeCADStyle::subElementRect(
+    SubElement element,
+    const QStyleOption* option,
+    const QWidget* widget
+) const
+{
+    if (element == SE_LineEditContents) {
+        const StyleContext context = contextOf(widget, option);
+        const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+        return geometry.contentRect(option->rect);
+    }
+
+    return QProxyStyle::subElementRect(element, option, widget);
 }
 
 QRect FreeCADStyle::subControlRect(
@@ -1515,6 +1535,11 @@ void FreeCADStyle::drawPrimitive(
 ) const
 {
     if (element == PE_PanelButtonCommand) {
+        drawComponent(painter, option->rect, widget, option);
+        return;
+    }
+
+    if (element == PE_PanelLineEdit) {
         drawComponent(painter, option->rect, widget, option);
         return;
     }
@@ -1824,6 +1849,9 @@ StyleContext FreeCADStyle::contextOf(
     }
     else if (qobject_cast<const QPushButton*>(widget)) {
         context.component = StyleComponent::PushButton;
+    }
+    else if (qobject_cast<const QLineEdit*>(widget)) {
+        context.component = StyleComponent::LineEdit;
     }
     else if (qobject_cast<const QMenuBar*>(widget)) {
         context.component = StyleComponent::MenuBar;

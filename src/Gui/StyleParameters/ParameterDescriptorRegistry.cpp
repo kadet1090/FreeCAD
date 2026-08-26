@@ -581,6 +581,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"State"},
         .inherits = {},
     }, StyleComponent::MenuBar);
+
+    registry.registerDescriptor({
+        .name     = "LineEdit",
+        .variants = {"ControlSize", "State"},
+        .inherits = {"FormControl"},
+    }, StyleComponent::LineEdit);
     // clang-format on
 }
 
