@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include <QApplication>
+#include <QImage>
+#include <QTabBar>
+#include <QTabWidget>
 #include <QCursor>
 #include <QEvent>
 #include <QTest>
@@ -115,6 +118,22 @@ private:
     static qreal paddingOf(const QWidget* widget)
     {
         return style()->resolveBoxGeometry(Gui::FreeCADStyle::contextOf(widget)).padding.left();
+    }
+
+    /// How much of @p rect @p canvas paints in @p colour. A tab's fill shares its rect with a
+    /// label and whatever inset the shape takes, so it can only be asserted as a presence or an
+    /// absence — never as the colour of any one pixel picked in advance.
+    static int pixelsOfColour(const QImage& canvas, const QRect& rect, const QColor& colour)
+    {
+        int found = 0;
+        for (int y = rect.top(); y <= rect.bottom(); ++y) {
+            for (int x = rect.left(); x <= rect.right(); ++x) {
+                if (canvas.rect().contains(x, y) && canvas.pixelColor(x, y) == colour) {
+                    ++found;
+                }
+            }
+        }
+        return found;
     }
 
     /// A panel whose Background comes from TestPanelBackground → TestPaneBackground.
@@ -584,6 +603,85 @@ private Q_SLOTS:
 
         QVERIFY(widget.observedAStyleChange);
         QCOMPARE(widget.backgroundDuringLastStyleChange, QColor(0x77, 0x88, 0x99));
+    }
+
+    // The shape the property editor relies on: a declaration on the container reaches the tab
+    // bar nested two levels below it, through a token the tab bar's own token references.
+    void test_aTabBarPicksUpTheContainerDeclaration()  // NOLINT
+    {
+        QWidget container;
+        auto* tabs = new QTabWidget(&container);
+        tabs->addTab(new QWidget, QStringLiteral("Data"));
+
+        QTabBar* tabBar = tabs->tabBar();
+        style()->polish(tabBar);
+        const QColor before
+            = style()->resolveBoxStyle(Gui::FreeCADStyle::contextOf(tabBar)).background.color();
+
+        Gui::FreeCADStyle::setStyleOverride(
+            &container,
+            QStringLiteral("TestPaneBackground"),
+            QStringLiteral("#445566")
+        );
+
+        const QColor after
+            = style()->resolveBoxStyle(Gui::FreeCADStyle::contextOf(tabBar)).background.color();
+
+        QVERIFY(before != after);
+        QCOMPARE(after, QColor(0x44, 0x55, 0x66));
+    }
+
+    // QTabBar marks its active tab with State_Selected, and contextOf() has to translate that
+    // into StyleState::Selected. Nothing that builds a StyleContext by hand can see whether it
+    // does: such a test pins the theme's spelling, not the style's translation of Qt's flag.
+    // Reverting the branch to Checked leaves every by-name suite green while the active tab
+    // resolves a prefix no theme defines, losing both its fill and its border and rendering as
+    // an ordinary inactive tab. Only a rendered tab bar closes that.
+    void test_theActiveTabPaintsTheSelectedBackground()  // NOLINT
+    {
+        QTabWidget tabs;
+        tabs.addTab(new QWidget, QStringLiteral("First"));
+        tabs.addTab(new QWidget, QStringLiteral("Second"));
+        tabs.addTab(new QWidget, QStringLiteral("Third"));
+        tabs.setCurrentIndex(2);
+
+        QTabBar* tabBar = tabs.tabBar();
+        style()->polish(tabBar);
+        tabs.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&tabs));
+
+        const QRect activeTab = tabBar->tabRect(2);
+        const QRect restingTab = tabBar->tabRect(0);
+
+        // contextOf() takes tab hover from QCursor::pos() rather than the option, because Qt
+        // tracks it through WA_Hover and an internal hover index it does not always propagate.
+        // Hover outranks selection, so an active tab sitting under wherever the cursor maps
+        // would resolve the hovered prefix and this would be measuring the wrong state.
+        QVERIFY2(
+            !activeTab.contains(tabBar->mapFromGlobal(QCursor::pos())),
+            "the cursor maps inside the active tab, so it resolves Hovered rather than Selected"
+        );
+
+        QImage canvas(tabBar->size(), QImage::Format_ARGB32);
+        canvas.fill(Qt::magenta);
+        tabBar->render(&canvas);
+
+        const QColor selectedFill(0x00, 0xff, 0xff);
+        const QColor restingFill(0x10, 0x10, 0x10);
+
+        QVERIFY2(
+            pixelsOfColour(canvas, activeTab, selectedFill) > 0,
+            "the active tab was not filled from TabBarTabSelectedBackground"
+        );
+
+        // The claim is about the active tab alone, so an inactive one has to keep the plain
+        // fill — otherwise the assertion above could be satisfied by every tab painting alike.
+        QCOMPARE(pixelsOfColour(canvas, activeTab, restingFill), 0);
+        QVERIFY2(
+            pixelsOfColour(canvas, restingTab, restingFill) > 0,
+            "the inactive tab was not filled from TabBarTabBackground"
+        );
+        QCOMPARE(pixelsOfColour(canvas, restingTab, selectedFill), 0);
     }
 };
 

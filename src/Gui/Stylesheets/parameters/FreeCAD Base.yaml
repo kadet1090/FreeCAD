@@ -408,3 +408,25 @@ TabWidgetBorderColor: "@BaseBorderColor"
 TabWidgetBorderRadius: "border_radius(@BaseRadius.medium)"
 TabWidgetBorderThickness: "border_thickness(1px)"
 TabWidgetPadding: 0
+
+# Over a see-through surface a tab is a pill rather than a folder joined to a pane: the tabs
+# stand apart, the base strip fades, and the pane loses the edge it would otherwise share.
+TabBarTabTransparentSpacing: "@Spacing.150"
+TabBarTabTransparentBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Background.050, @Background.100)"
+TabBarTabTransparentBorderRadius: "@BaseRadius.medium"
+TabBarTabTransparentBorderColor: "@BaseBorderColor"
+TabBarTabTransparentBorderThickness: 1px
+TabBarTabTransparentPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.100)"
+TabBarTabTransparentHoveredBackgroundEffect: "effect(lighten: 0.05)"
+TabBarTabTransparentSelectedBackground: "blend(@TabBarTabTransparentBackground, @Accent.500, 20%)"
+TabBarTabTransparentSelectedBorderColor: "blend(@TabBarTabTransparentBorderColor, @Accent.500, 20%)"
+
+TabBarBaseTransparentBackground: "reset()"
+TabBarBaseTransparentBorderColor: "reset()"
+TabBarBaseTransparentHeight: 0px
+TabBarBaseTransparentOverlap: 0px
+
+TabWidgetTransparentBackground: "reset()"
+TabWidgetTransparentBorderColor: "reset()"
+TabWidgetTransparentBorderThickness: 0px
+TabWidgetTransparentPadding: "padding(bottom: @TabBarTabTransparentSpacing)"
