@@ -51,6 +51,7 @@
 #include "StyleParameters/Insets.h"
 #include "StyleParameters/ParameterDescriptorRegistry.h"
 #include "StyleParameters/ParameterManager.h"
+#include "StyleParameters/StyleOverrides.h"
 
 // Qt exports its blur but does not declare it in any public header, and there is no public
 // equivalent. The declaration has to match QtWidgets' own, namespace included.
@@ -568,10 +569,11 @@ void FreeCADStyle::paintBox(
 
 FreeCADStyle::BoxGeometryDefinition FreeCADStyle::resolveBoxGeometry(const StyleContext& context) const
 {
+    const uint32_t bin = overrideSetOf(context.widget);
     const uint64_t key = context.cacheKey();
 
-    if (const auto cached = boxGeometryCache.find(key); cached != boxGeometryCache.end()) {
-        return cached->second;
+    if (const auto* cached = boxGeometryCache.find(bin, key)) {
+        return *cached;
     }
 
     BoxGeometryDefinition result;
@@ -612,16 +614,17 @@ FreeCADStyle::BoxGeometryDefinition FreeCADStyle::resolveBoxGeometry(const Style
         result.iconSpacing = static_cast<int>(*spacing);
     }
 
-    boxGeometryCache[key] = result;
+    boxGeometryCache.store(bin, key, result);
     return result;
 }
 
 FreeCADStyle::BoxStyleDefinition FreeCADStyle::resolveBoxStyle(const StyleContext& context) const
 {
+    const uint32_t bin = overrideSetOf(context.widget);
     const uint64_t key = context.cacheKey();
 
-    if (const auto cached = boxStyleCache.find(key); cached != boxStyleCache.end()) {
-        return cached->second;
+    if (const auto* cached = boxStyleCache.find(bin, key)) {
+        return *cached;
     }
 
     BoxStyleDefinition result;
@@ -657,7 +660,7 @@ FreeCADStyle::BoxStyleDefinition FreeCADStyle::resolveBoxStyle(const StyleContex
         }
     }
 
-    boxStyleCache[key] = result;
+    boxStyleCache.store(bin, key, result);
     return result;
 }
 
@@ -1607,10 +1610,11 @@ std::optional<Value> FreeCADStyle::resolve(std::initializer_list<std::string_vie
 
 std::optional<Value> FreeCADStyle::resolve(const StyleContext& context, StyleProperty property) const
 {
+    const uint32_t bin = overrideSetOf(context.widget);
     const uint64_t key = context.cacheKey(property);
 
-    if (const auto cached = tokenCache.find(key); cached != tokenCache.end()) {
-        return cached->second;
+    if (const auto* cached = tokenCache.find(bin, key)) {
+        return *cached;
     }
 
     auto* manager = Application::Instance->styleParameterManager();
@@ -1621,7 +1625,10 @@ std::optional<Value> FreeCADStyle::resolve(const StyleContext& context, StylePro
     for (const std::string& prefix : manager->descriptorRegistry().buildPrefixes(context)) {
         // Use the flat resolver per prefix: the prefix list IS the inheritance
         // walk, so name-based chain synthesis must not run here.
-        result = manager->resolve(prefix + propertySuffix, StyleParameters::ParameterManager::ResolveContext {});
+        result = manager->resolve(
+            prefix + propertySuffix,
+            StyleParameters::ResolveContext {.visited = {}, .overrides = bin}
+        );
         if (!result) {
             continue;
         }
@@ -1632,8 +1639,173 @@ std::optional<Value> FreeCADStyle::resolve(const StyleContext& context, StylePro
         break;
     }
 
-    tokenCache[key] = result;
+    tokenCache.store(bin, key, result);
     return result;
+}
+
+StyleParameters::OverrideSet FreeCADStyle::declaredOverrides(const QWidget* widget)
+{
+    StyleParameters::OverrideSet declared;
+
+    const std::string_view prefix {overridePropertyPrefix};
+
+    for (const QByteArray& propertyName : widget->dynamicPropertyNames()) {
+        const std::string_view name {
+            propertyName.constData(),
+            static_cast<size_t>(propertyName.size()),
+        };
+
+        if (!name.starts_with(prefix) || name.size() == prefix.size()) {
+            continue;
+        }
+
+        const QVariant value = widget->property(propertyName.constData());
+        if (value.typeId() != QMetaType::QString) {
+            continue;
+        }
+
+        declared.emplace(std::string(name.substr(prefix.size())), value.toString().toStdString());
+    }
+
+    return declared;
+}
+
+uint32_t FreeCADStyle::computeOverrideSet(const QWidget* widget)
+{
+    // A polish can happen without a Gui::Application behind it: a bare QApplication::setStyle()
+    // in a test, or an embedding. Fail soft rather than dereferencing a null instance.
+    if (Application::Instance == nullptr) {
+        return StyleParameters::OverrideRegistry::emptyId;
+    }
+
+    StyleParameters::OverrideSet merged;
+
+    for (const QWidget* ancestor = widget; ancestor != nullptr; ancestor = ancestor->parentWidget()) {
+        // try_emplace keeps what is already there, so the nearest declaration of a name wins.
+        for (auto&& [name, expression] : declaredOverrides(ancestor)) {
+            merged.try_emplace(name, std::move(expression));
+        }
+
+        // A window is its own surface: its own declarations count, but it does not inherit
+        // from whatever it happens to be parented to for lifetime management.
+        if (ancestor->isWindow()) {
+            break;
+        }
+    }
+
+    return Application::Instance->styleParameterManager()->overrideRegistry().intern(merged);
+}
+
+void FreeCADStyle::storeOverrideSet(QWidget* widget, uint32_t set) const
+{
+    // QObject::setProperty() allocates the object's dynamic-property storage on first use, even
+    // when it is only clearing a property that was never set — so only write when there is
+    // something to record or an existing property to clear, or every widget with no overrides
+    // would pay that allocation anyway. An invalid QVariant removes the property.
+    const bool hasStoredSet = widget->dynamicPropertyNames().contains(overrideSetProperty);
+    if (set != StyleParameters::OverrideRegistry::emptyId || hasStoredSet) {
+        widget->setProperty(
+            overrideSetProperty,
+            set == StyleParameters::OverrideRegistry::emptyId ? QVariant {} : QVariant {set}
+        );
+    }
+
+    // Seeded rather than cleared: this function already knows the correct (widget, set) pair,
+    // so priming the memo with it directly saves the very next overrideSetOf() call the
+    // QObject::property() lookup the memo exists to avoid.
+    overrideMemoWidget = widget;
+    overrideMemoSet = set;
+}
+
+void FreeCADStyle::setStyleOverride(QWidget* widget, const QString& name, const QString& expression)
+{
+    if (widget == nullptr) {
+        return;
+    }
+
+    const QString propertyName = QString::fromLatin1(overridePropertyPrefix) + name;
+    widget->setProperty(propertyName.toLatin1().constData(), expression);
+
+    refreshStyleOverrides(widget);
+}
+
+void FreeCADStyle::refreshStyleOverrides(QWidget* widget)
+{
+    if (widget == nullptr) {
+        return;
+    }
+
+    // Nothing to recompute when this widget is not ours to style; the declaration stays on the
+    // widget and is picked up if a FreeCADStyle polishes it later.
+    if (const auto* style = qobject_cast<const FreeCADStyle*>(widget->style())) {
+        style->recomputeOverrideSets(widget);
+    }
+}
+
+void FreeCADStyle::recomputeOverrideSets(QWidget* widget) const
+{
+    storeOverrideSet(widget, computeOverrideSet(widget));
+
+    forEachChildWidget(widget, [this](QWidget* childWidget) { recomputeOverrideSets(childWidget); });
+}
+
+void FreeCADStyle::forEachChildWidget(QWidget* widget, const std::function<void(QWidget*)>& visit)
+{
+    // Copy first: callers invoke handlers (StyleChange, DynamicPropertyChange, ...) synchronously
+    // while recursing, and in-tree handlers may add or remove siblings — e.g. DlgToolbarsImp
+    // repopulates a tree on StyleChange — which would invalidate a live QObjectList mid-iteration.
+    const QObjectList children = widget->children();
+    for (QObject* child : children) {
+        if (auto* childWidget = qobject_cast<QWidget*>(child)) {
+            visit(childWidget);
+        }
+    }
+}
+
+uint32_t FreeCADStyle::overrideSetOf(const QWidget* widget) const
+{
+    if (widget == nullptr) {
+        return StyleParameters::OverrideRegistry::emptyId;
+    }
+
+    if (overrideMemoWidget.data() == widget) {
+        return overrideMemoSet;
+    }
+
+    overrideMemoWidget = widget;
+    overrideMemoSet = widget->property(overrideSetProperty).toUInt();
+
+    return overrideMemoSet;
+}
+
+
+void FreeCADStyle::polish(QWidget* widget)
+{
+    QProxyStyle::polish(widget);
+
+    if (widget == nullptr) {
+        return;
+    }
+
+    // Overrides are inherited down the widget tree. computeOverrideSet() walks up from this
+    // widget rather than seeding from the parent's stored id, so a widget polished before its
+    // parent still lands on the right set. Only this widget is tagged here: QWidget::
+    // ensurePolished() already walks descendants and polishes each in turn.
+    storeOverrideSet(widget, computeOverrideSet(widget));
+}
+
+void FreeCADStyle::unpolish(QWidget* widget)
+{
+    if (widget == nullptr) {
+        QProxyStyle::unpolish(widget);
+        return;
+    }
+
+    // The id means nothing under another style, and leaving it behind would have that style's
+    // widget resolve against a set it never asked for.
+    storeOverrideSet(widget, StyleParameters::OverrideRegistry::emptyId);
+
+    QProxyStyle::unpolish(widget);
 }
 
 void FreeCADStyle::clearTokenCache()

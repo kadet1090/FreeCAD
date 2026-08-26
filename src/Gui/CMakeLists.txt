@@ -1378,6 +1378,7 @@ SET(FreeCADGui_CPP_SRCS
     StyleParameters/ColorShading.cpp
     StyleParameters/ParameterDescriptorRegistry.cpp
     StyleParameters/StyleContext.cpp
+    StyleParameters/StyleOverrides.cpp
     StyleParameters/StyleParameterResolver.cpp
 )
 SET(FreeCADGui_SRCS
@@ -1437,6 +1438,7 @@ SET(FreeCADGui_SRCS
     StyleParameters/ColorShading.h
     StyleParameters/ParameterDescriptorRegistry.h
     StyleParameters/StyleContext.h
+    StyleParameters/StyleOverrides.h
     StyleParameters/StyleParameterResolver.h
 )
 

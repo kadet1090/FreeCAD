@@ -430,6 +430,16 @@ ParameterManager::ParameterManager()
     populateBuiltinDescriptors(_descriptorRegistry);
 }
 
+OverrideRegistry& ParameterManager::overrideRegistry()
+{
+    return _overrideRegistry;
+}
+
+const OverrideRegistry& ParameterManager::overrideRegistry() const
+{
+    return _overrideRegistry;
+}
+
 void ParameterManager::setResolver(StyleParameterResolver* resolver)
 {
     _resolver = resolver;
@@ -448,6 +458,7 @@ const ParameterDescriptorRegistry& ParameterManager::descriptorRegistry() const
 void ParameterManager::reload()
 {
     _resolved.clear();
+    _overrideResolved.clear();
     Diagnostics::clear();
     if (_resolver) {
         _resolver->refresh();
@@ -584,6 +595,10 @@ std::optional<Value> ParameterManager::resolve(const std::string& name) const
 
 std::optional<Value> ParameterManager::resolve(const std::string& name, ResolveContext context) const
 {
+    if (context.overrides != OverrideRegistry::emptyId) {
+        return resolveOverridden(name, std::move(context));
+    }
+
     return resolveFlat(name, std::move(context));
 }
 
@@ -645,6 +660,50 @@ std::optional<Value> ParameterManager::resolveFlat(const std::string& name, Reso
     }
 }
 
+std::optional<Value> ParameterManager::resolveOverridden(
+    const std::string& name,
+    ResolveContext context
+) const
+{
+    auto& cache = _overrideResolved[context.overrides];
+    if (const auto cached = cache.find(name); cached != cache.end()) {
+        return cached->second;
+    }
+
+    const OverrideSet& overrideSet = _overrideRegistry.get(context.overrides);
+    const auto declared = overrideSet.find(name);
+    const bool overridden = declared != overrideSet.end();
+
+    std::optional<std::string> source;
+    if (overridden) {
+        source = declared->second;
+    }
+    else if (const auto maybeParameter = this->parameter(name)) {
+        source = maybeParameter->value;
+    }
+
+    if (!source) {
+        cache[name] = std::nullopt;
+        return std::nullopt;
+    }
+
+    // The overridden path never reaches resolveFlat, so it needs its own cycle guard. Checked
+    // after the source lookup so the ordering matches resolveFlat's, and left uncached because
+    // the fallback describes this resolution attempt rather than the token's settled value.
+    if (context.visited.contains(name)) {
+        Diagnostics::report("The style parameter '{}' contains a circular reference", name);
+        return expression(name);
+    }
+
+    context.visited.insert(name);
+    const std::optional<Value> result = overridden ? evaluateOverride(name, *source, context)
+                                                   : evaluateOrSubstitute(*source, context);
+    context.visited.erase(name);
+
+    cache[name] = result;
+    return result;
+}
+
 std::optional<Value> ParameterManager::evaluateOrSubstitute(
     const std::string& expression,
     const ResolveContext& context
@@ -658,6 +717,33 @@ std::optional<Value> ParameterManager::evaluateOrSubstitute(
         return replacePlaceholders(expression, context);
     }
 }
+
+std::optional<Value> ParameterManager::evaluateOverride(
+    const std::string& name,
+    const std::string& expression,
+    const ResolveContext& context
+) const
+{
+    try {
+        return evaluate(expression, context);
+    }
+    catch (const Base::Exception& exception) {
+        Base::Console().warning(
+            "The style override for '%s' could not be evaluated (%s); ignoring it.\n",
+            name,
+            exception.what()
+        );
+    }
+
+    // Substituting placeholders here — what an ordinary parameter falls back to — would put a
+    // literal string where the caller expects a brush. Fall back to the theme instead.
+    if (const auto maybeParameter = this->parameter(name)) {
+        return evaluateOrSubstitute(maybeParameter->value, context);
+    }
+
+    return std::nullopt;
+}
+
 
 Value ParameterManager::evaluate(const std::string& expression, ResolveContext context) const
 {

@@ -26,6 +26,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <initializer_list>
 #include <optional>
 #include <string_view>
@@ -41,12 +42,14 @@
 #include <QMarginsF>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPointer>
 #include <QProxyStyle>
 #include <QPushButton>
 #include <QStyleOption>
 
 #include "StyleParameters/Insets.h"
 #include "StyleParameters/StyleContext.h"
+#include "StyleParameters/StyleOverrides.h"
 #include "StyleParameters/Value.h"
 
 namespace Gui
@@ -406,6 +409,37 @@ public:
      */
     void clearTokenCache();
 
+    void polish(QWidget* widget) override;
+    void unpolish(QWidget* widget) override;
+
+    /**
+     * @brief Declares a style override on @p widget and re-derives it and its descendants.
+     *
+     * @p name is a token name without the property prefix, e.g. "CurrentPaneBackground";
+     * @p expression is written in the same language the theme files use. The override applies
+     * to @p widget and everything below it, and a nearer declaration of the same name wins.
+     *
+     * Setting the dynamic property directly works too, but only takes effect the next time the
+     * widget is polished; use this, or refreshStyleOverrides(), for a change made afterwards.
+     */
+    static void setStyleOverride(QWidget* widget, const QString& name, const QString& expression);
+
+    /// Re-derives the override set of @p widget and its descendants after a declaration changed.
+    static void refreshStyleOverrides(QWidget* widget);
+
+    // clang-format off
+    /// Prefix of a property declaring an override, e.g. "fcStyleCurrentPaneBackground"
+    /// overrides the CurrentPaneBackground token.
+    static constexpr const char* overridePropertyPrefix = "fcStyle";
+
+    /// Where the resolved override-set id is cached on the widget. Deliberately outside
+    /// overridePropertyPrefix: under it, the collection walk would read this back as an
+    /// override named "OverrideSet". Style-owned: storeOverrideSet() is its sole writer, and
+    /// overrideSetOf()'s memo is only sound because of that, so never set it from outside.
+    static constexpr const char* overrideSetProperty    = "fcOverrideSet";
+    // clang-format on
+
+
     /// Resolves the geometry of the box @p context describes: padding, margin and the
     /// dimension constraints that decide how big it may be.
     BoxGeometryDefinition resolveBoxGeometry(const StyleParameters::StyleContext& context) const;
@@ -606,16 +640,70 @@ protected:
         const StyleParameters::StyleContext& context
     ) const;
 
+    /// The overrides @p widget declares itself, with the property prefix stripped.
+    static StyleParameters::OverrideSet declaredOverrides(const QWidget* widget);
+
+    /// Interns the overrides in effect for @p widget: its own, plus every ancestor's up to
+    /// the window it sits in.
+    static uint32_t computeOverrideSet(const QWidget* widget);
+
+    /// Records @p set on @p widget, where overrideSetOf() reads it back.
+    void storeOverrideSet(QWidget* widget, uint32_t set) const;
+
+    void recomputeOverrideSets(QWidget* widget) const;
+
+    /// The override set @p widget resolves against, or the empty id when it declares none.
+    uint32_t overrideSetOf(const QWidget* widget) const;
+
+    static void forEachChildWidget(QWidget* widget, const std::function<void(QWidget*)>& visit);
+
 private:
     /// Attaches @p widget to @p context, so resolution can consult what the widget declares.
     static void bindWidget(StyleParameters::StyleContext& context, const QWidget* widget);
 
-    mutable std::unordered_map<uint64_t, std::optional<StyleParameters::Value>> tokenCache;
+    // StyleContextCache<T> holds one map per override-set id, so two widgets with different
+    // overrides never read each other's entries while widgets sharing a set share a bin.
+    // Bin 0 is "no overrides". Every operation is const so const draw methods can use them.
+    template<typename T>
+    class StyleContextCache
+    {
+        using Bin = std::unordered_map<uint64_t, T>;
 
-    // Aggregate caches for resolveBoxStyle() and resolveBoxGeometry(), keyed by the
-    // context-only key (property bits left zero).
-    mutable std::unordered_map<uint64_t, BoxStyleDefinition> boxStyleCache;
-    mutable std::unordered_map<uint64_t, BoxGeometryDefinition> boxGeometryCache;
+        mutable std::unordered_map<uint32_t, Bin> bins;
+
+    public:
+        const T* find(uint32_t bin, uint64_t key) const
+        {
+            const auto foundBin = bins.find(bin);
+            if (foundBin == bins.end()) {
+                return nullptr;
+            }
+
+            const auto found = foundBin->second.find(key);
+            return found != foundBin->second.end() ? &found->second : nullptr;
+        }
+
+        void store(uint32_t bin, uint64_t key, T value) const
+        {
+            bins[bin].emplace(key, std::move(value));
+        }
+
+        void clear()
+        {
+            bins.clear();
+        }
+    };
+
+    mutable StyleContextCache<std::optional<StyleParameters::Value>> tokenCache;
+    mutable StyleContextCache<BoxStyleDefinition> boxStyleCache;
+    mutable StyleContextCache<BoxGeometryDefinition> boxGeometryCache;
+
+    // Single-entry memo for overrideSetOf(). resolveBoxStyle() and resolveBoxGeometry() each
+    // resolve a dozen tokens from one context, and QObject::property() scans the widget class's
+    // static property table on every call. QPointer clears itself when the widget dies, so a
+    // stale pointer can never be compared against a new widget at the same address.
+    mutable QPointer<const QWidget> overrideMemoWidget;
+    mutable uint32_t overrideMemoSet = StyleParameters::OverrideRegistry::emptyId;
 };
 
 }  // namespace Gui

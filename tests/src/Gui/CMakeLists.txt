@@ -23,6 +23,7 @@ add_executable(Gui_tests_run
         StyleParameters/ColorEffectTest.cpp
         StyleParameters/StyleContextTest.cpp
         StyleParameters/ShippedThemeTest.cpp
+        StyleParameters/StyleOverridesTest.cpp
         InputHintTest.cpp
         SelectionTest.cpp
         ThumbnailCamera.cpp
@@ -37,6 +38,7 @@ setup_qt_test(ObjectSelection)
 setup_qt_test(QuantitySpinBox)
 setup_qt_test(PushButtonStyle)
 setup_qt_test(ToolButtonStyle)
+setup_qt_test(StyleOverrides)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main

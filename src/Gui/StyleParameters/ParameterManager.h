@@ -34,6 +34,7 @@
 #include <Base/Parameter.h>
 
 #include "ParameterDescriptorRegistry.h"
+#include "StyleOverrides.h"
 #include "StyleParameterResolver.h"
 #include "Value.h"
 
@@ -370,6 +371,27 @@ private:
  * - Caching resolved values for performance
  * - Handling circular references
  */
+/**
+ * @brief Resolution context threaded through parameter lookups.
+ *
+ * Tracks which names are currently mid-resolution, to catch circular references, and names
+ * the override set in effect.
+ */
+struct ResolveContext
+{
+    /// Names of parameters currently being resolved.
+    std::set<std::string> visited;
+
+    /**
+     * @brief Which override set is in effect, as an id from ParameterManager::overrideRegistry().
+     *
+     * Zero selects the plain resolution path and its process-wide cache. Any other value
+     * resolves against that set and caches separately, so one widget's overrides never
+     * decide another widget's colours.
+     */
+    uint32_t overrides = OverrideRegistry::emptyId;
+};
+
 class GuiExport ParameterManager
 {
     std::list<ParameterSource*> _sources;
@@ -377,17 +399,28 @@ class GuiExport ParameterManager
 
     StyleParameterResolver* _resolver = nullptr;
     ParameterDescriptorRegistry _descriptorRegistry;
+    OverrideRegistry _overrideRegistry;
+
+    /// Resolution cache for overridden contexts, one map per override set id. Kept apart from
+    /// _resolved so an overridden value can never escape into the shared cache.
+    mutable std::map<uint32_t, std::map<std::string, std::optional<Value>>> _overrideResolved;
 
 public:
-    struct ResolveContext
-    {
-        /// Names of parameters currently being resolved.
-        std::set<std::string> visited;
-    };
+    // ResolveContext is declared at namespace scope rather than nested here, and re-exposed
+    // under its original name by this alias: a nested aggregate whose own member has a default
+    // member initializer cannot be used as a default argument value elsewhere in the same
+    // enclosing class, and several such defaults exist below. Do not move it back in here.
+    using ResolveContext = Gui::StyleParameters::ResolveContext;
 
 private:
     std::optional<Value> resolveFlat(const std::string& name, ResolveContext context) const;
+    std::optional<Value> resolveOverridden(const std::string& name, ResolveContext context) const;
     std::optional<Value> evaluateOrSubstitute(
+        const std::string& expression,
+        const ResolveContext& context
+    ) const;
+    std::optional<Value> evaluateOverride(
+        const std::string& name,
         const std::string& expression,
         const ResolveContext& context
     ) const;
@@ -408,6 +441,10 @@ public:
 
     /// Access the descriptor registry that defines component chains and variant dimensions.
     ParameterDescriptorRegistry& descriptorRegistry();
+
+    /// The registry that hands out ids for widget-declared override sets.
+    OverrideRegistry& overrideRegistry();
+    const OverrideRegistry& overrideRegistry() const;
     const ParameterDescriptorRegistry& descriptorRegistry() const;
 
     /// Access the registry that deduplicates per-widget override sets into ids.
