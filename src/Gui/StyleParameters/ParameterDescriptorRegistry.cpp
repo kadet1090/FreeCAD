@@ -57,6 +57,8 @@ auto lookup(const Map& map, const typename Map::key_type& key) -> const typename
 const std::map<StyleComponentElement, std::string_view> elementNames = {
     {StyleComponentElement::Item, "Item"},
     {StyleComponentElement::Row, "Row"},
+    {StyleComponentElement::Indicator, "Indicator"},
+    {StyleComponentElement::IconIndicator, "IconIndicator"},
     {StyleComponentElement::Menu, "Menu"},
     {StyleComponentElement::Arrow, "Arrow"},
 };
@@ -89,6 +91,9 @@ const std::map<VariantSlot, std::map<uint8_t, std::string_view>> variantSlotName
     }},
     {VariantSlot::RowType, {
         {static_cast<uint8_t>(RowType::Alternate), "Alternate"},
+    }},
+    {VariantSlot::CheckType, {
+        {static_cast<uint8_t>(CheckType::Exclusive), "Exclusive"},
     }},
     {VariantSlot::TransparencyMode, {
         {static_cast<uint8_t>(TransparencyMode::Transparent), "Transparent"},
@@ -184,6 +189,7 @@ constexpr std::array<std::string_view, size_t(VariantSlot::COUNT)> variantSlotDi
     "ControlSize", // VariantSlot::ControlSize
     "Position",    // VariantSlot::Position
     "RowType",     // VariantSlot::RowType
+    "CheckType",   // VariantSlot::CheckType
     "TransparencyMode", // VariantSlot::TransparencyMode
 };
 // clang-format on
@@ -630,7 +636,7 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
     // List's values instead, which leaves menus independently tunable.
     registry.registerDescriptor({
         .name     = "Menu",
-        .variants = {"State"},
+        .variants = {"CheckType", "State"},
         .inherits = {},
     }, StyleComponent::Menu);
 

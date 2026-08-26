@@ -270,3 +270,14 @@ CheckBoxPressedInnerShadow: "inner_shadow(color: rgba(0, 0, 0, 50), y: 1px, blur
 
 # A radio button is a check box with a different radius, which is all it states of its own.
 RadioButtonBorderRadius: "border_radius(50%)"
+
+# The state box behind a checkable item's icon. Its padding sets the leading column's width
+# and the row's content height, both of which every row in the menu must agree on.
+MenuIconIndicatorPadding: "padding(@Spacing.050)"
+MenuIconIndicatorMargin: "padding(-@Spacing.025)"
+MenuIconIndicatorBorderRadius: "@BaseRadius.medium"
+MenuIconIndicatorBorderThickness: "@FormControlBorderThickness"
+
+MenuIconIndicatorCheckedBackground: "@ButtonLinkPressedBackground"
+MenuIconIndicatorCheckedBorderColor: "@ButtonLinkPressedBorderColor"
+MenuIconIndicatorCheckedInnerShadow: "@ButtonLinkPressedInnerShadow"

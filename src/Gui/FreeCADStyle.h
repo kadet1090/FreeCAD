@@ -765,6 +765,8 @@ protected:
     /// Where each part of a menu item sits inside its row.
     struct MenuItemLayout
     {
+        QRect indicator;
+        QRect iconIndicator;
         QRect icon;
         QRect text;
         QRect arrow;
@@ -807,6 +809,19 @@ protected:
 
     void drawMenuItem(
         QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
+    void drawMenuItemIndicator(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget,
+        const QRect& rect
+    ) const;
+
+    /// The inset the state box behind a checkable item's icon adds around it.
+    QMargins menuIconIndicatorPadding(
         const QStyleOptionMenuItem* option,
         const QWidget* widget
     ) const;

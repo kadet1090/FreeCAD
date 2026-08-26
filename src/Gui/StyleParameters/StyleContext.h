@@ -77,6 +77,7 @@ enum class StyleComponentElement : uint8_t
     Item,  // One item of the component
     Row,   // One row of the component, spanning its full width
     Indicator, // Check or radio glyph belonging to the component
+    IconIndicator, // State box drawn behind a checkable menu item's icon
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
     Arrow, // Submenu arrow of a menu item
     COUNT,
@@ -161,6 +162,20 @@ enum class TransparencyMode : uint8_t
 };
 
 /**
+ * @brief Whether a checkable menu item belongs to an exclusive group.
+ *
+ * Mirrors QStyleOptionMenuItem::checkType. No theme states a value for it, so an exclusive
+ * item looks exactly like a non-exclusive one; the slot exists so a theme can give the two
+ * different shapes - a round well for a group, a square one for a checkbox.
+ */
+enum class CheckType : uint8_t
+{
+    Default,
+    Exclusive,
+    COUNT
+};
+
+/**
  * @brief Row parity variant for item-view components.
  *
  * Set to Alternate when QStyleOptionViewItem::Alternate is active so that alternate-row
@@ -184,6 +199,7 @@ enum class VariantSlot : uint8_t
     ControlSize,
     Position,
     RowType,           // Alternate row parity for item-view components
+    CheckType,         // Exclusive (radio) vs non-exclusive check state on a menu item
     TransparencyMode,  // Applies to every component, so it is declared last
     COUNT
 };

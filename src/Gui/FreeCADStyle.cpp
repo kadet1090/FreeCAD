@@ -1489,6 +1489,55 @@ void FreeCADStyle::drawSeparatorLine(
     }
 }
 
+void FreeCADStyle::drawMenuItemIndicator(
+    QPainter* painter,
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget,
+    const QRect& rect
+) const
+{
+    if (option->checkType == QStyleOptionMenuItem::NotCheckable) {
+        return;
+    }
+
+    // Going through drawPrimitive rather than painting a bespoke glyph means a checkable menu
+    // item resolves against the same CheckBox and RadioButton tokens as every other one.
+    QStyleOptionButton indicatorOption;
+    indicatorOption.rect = rect;
+    indicatorOption.palette = option->palette;
+    indicatorOption.direction = option->direction;
+    indicatorOption.state = option->state & ~(State_On | State_Off | State_Sunken);
+    indicatorOption.state |= option->checked ? State_On : State_Off;
+
+    const PrimitiveElement primitive = option->checkType == QStyleOptionMenuItem::Exclusive
+        ? PE_IndicatorRadioButton
+        : PE_IndicatorCheckBox;
+
+    proxy()->drawPrimitive(primitive, &indicatorOption, painter, widget);
+}
+
+QMargins FreeCADStyle::menuIconIndicatorPadding(
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget
+) const
+{
+    // menuHasCheckableItems is menu-wide, so this answer is the same for every row: a menu with
+    // nothing to check can never show the box, and reserving its padding there would indent every
+    // label for a decoration that never arrives.
+    if (!option->menuHasCheckableItems) {
+        return {};
+    }
+
+    // Deliberately menu-wide: this padding sets the leading column's width and the row's content
+    // height, both of which every row in the menu must agree on. State and CheckType are
+    // neutralised here so the answer cannot vary row to row — colour, radius and inner shadow
+    // stay fully state- and variant-sensitive through paintBox()'s own context.
+    StyleContext context = contextOf(widget, option, StyleComponentElement::IconIndicator);
+    context.state = StyleState::Normal;
+    context.variant.set(VariantSlot::CheckType, CheckType::Default);
+    return resolveBoxGeometry(context).padding.toMargins();
+}
+
 void FreeCADStyle::drawMenuItemIcon(
     QPainter* painter,
     const QStyleOptionMenuItem* option,
@@ -1496,7 +1545,20 @@ void FreeCADStyle::drawMenuItemIcon(
     const MenuItemLayout& layout
 ) const
 {
-    const StyleContext iconContext = contextOf(widget, option, StyleComponentElement::Item);
+    StyleContext iconContext = contextOf(widget, option, StyleComponentElement::Item);
+
+    if (!layout.iconIndicator.isNull()) {
+        const StyleContext indicatorContext
+            = contextOf(widget, option, StyleComponentElement::IconIndicator);
+        paintBox(painter, layout.iconIndicator, indicatorContext);
+
+        // Elements do not chain, so the box's namespace cannot reach the item's disabled and
+        // hovered colours. With no icon colour of its own the icon keeps following the item,
+        // which is what carries them; a box that states one is asking to override exactly that.
+        if (resolve<Base::Color>(indicatorContext, StyleProperty::IconColor).has_value()) {
+            iconContext = indicatorContext;
+        }
+    }
 
     const QPixmap pixmap
         = renderStyledIcon(painter, option->icon, layout.icon.size(), option, iconContext);
@@ -1568,6 +1630,10 @@ void FreeCADStyle::drawMenuItem(
     const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
 
     paintBox(painter, menuItemBoxRect(option->rect, geometry), itemContext);
+
+    if (!layout->indicator.isNull()) {
+        drawMenuItemIndicator(painter, option, widget, layout->indicator);
+    }
 
     if (!layout->icon.isNull()) {
         drawMenuItemIcon(painter, option, widget, *layout);
@@ -1656,13 +1722,28 @@ FreeCADStyle::MenuItemColumns FreeCADStyle::menuItemColumns(
 
     MenuItemColumns columns;
 
-    // One leading slot, as wide as the widest occupant any row in this menu can have, so
-    // labels stay aligned down the menu.
+    // The icon and the check glyph share one leading slot: a row shows its icon when it has
+    // one and its check glyph otherwise, so reserving a column for each would indent every
+    // label past a slot that is empty on most rows. A checkable row with an icon keeps both by
+    // wearing its state as a box behind that icon, which is why the icon's share of the column
+    // includes that box's padding. Both flags below are menu-wide, so the column is as wide as
+    // the widest occupant any row can have and labels stay aligned.
     //
     // maxIconWidth is Qt's hardcoded PM_SmallIconSize + 4, so only its zero / non-zero answer
     // is used - "does this menu have icons". The column itself is MenuIconSize.
+    int leading = 0;
     if (option->maxIconWidth > 0) {
-        columns.leading = menuIconSize(widget, option) + gap;
+        const QMargins indicatorPadding = menuIconIndicatorPadding(option, widget);
+        leading = std::max(
+            leading,
+            menuIconSize(widget, option) + indicatorPadding.left() + indicatorPadding.right()
+        );
+    }
+    if (option->menuHasCheckableItems) {
+        leading = std::max(leading, proxy()->pixelMetric(PM_IndicatorWidth, option, widget));
+    }
+    if (leading > 0) {
+        columns.leading = leading + gap;
     }
 
     // Reserved per item rather than menu-wide: labels are left-aligned, so the arrow column
@@ -1694,7 +1775,14 @@ QSize FreeCADStyle::menuItemSizeFromContents(const QStyleOptionMenuItem* option,
 
     int contentHeight = metrics.height();
     if (option->maxIconWidth > 0) {
-        contentHeight = qMax(contentHeight, menuIconSize(widget, option));
+        const QMargins indicatorPadding = menuIconIndicatorPadding(option, widget);
+        contentHeight = qMax(
+            contentHeight,
+            menuIconSize(widget, option) + indicatorPadding.top() + indicatorPadding.bottom()
+        );
+    }
+    if (option->menuHasCheckableItems) {
+        contentHeight = qMax(contentHeight, proxy()->pixelMetric(PM_IndicatorHeight, option, widget));
     }
 
     QSize size = geometry.marginBox({textWidth + columns.total(), contentHeight});
@@ -1738,9 +1826,26 @@ std::optional<FreeCADStyle::MenuItemLayout> FreeCADStyle::menuItemLayout(
     if (columns.leading > 0) {
         const QRect column = columnAt(left, columns.leading - geometry.iconSpacing);
 
+        // The icon takes the slot whenever the row has one: it is how a command is found,
+        // while the check state is what gets read once it has been found. A checkable row
+        // keeps both by wearing its state as a box behind the icon. Only a checkable row with
+        // no icon still needs the glyph - there is nothing for a box to sit behind.
         if (!option->icon.isNull()) {
             const int extent = menuIconSize(widget, option);
             layout.icon = centredIn(column, {extent, extent});
+
+            if (option->checkType != QStyleOptionMenuItem::NotCheckable) {
+                layout.iconIndicator = layout.icon.marginsAdded(
+                    menuIconIndicatorPadding(option, widget)
+                );
+            }
+        }
+        else if (option->checkType != QStyleOptionMenuItem::NotCheckable) {
+            const QSize size(
+                proxy()->pixelMetric(PM_IndicatorWidth, option, widget),
+                proxy()->pixelMetric(PM_IndicatorHeight, option, widget)
+            );
+            layout.indicator = centredIn(column, size);
         }
 
         left += columns.leading;
@@ -1755,6 +1860,8 @@ std::optional<FreeCADStyle::MenuItemLayout> FreeCADStyle::menuItemLayout(
     layout.text = QRect(QPoint(left, content.top()), QPoint(right, content.bottom()));
 
     if (option->direction == Qt::RightToLeft) {
+        layout.indicator = visualRect(option->direction, content, layout.indicator);
+        layout.iconIndicator = visualRect(option->direction, content, layout.iconIndicator);
         layout.icon = visualRect(option->direction, content, layout.icon);
         layout.text = visualRect(option->direction, content, layout.text);
         layout.arrow = visualRect(option->direction, content, layout.arrow);
@@ -3100,6 +3207,17 @@ StyleContext FreeCADStyle::contextOf(
         }
         if (option && (option->state & QStyle::State_Sunken)) {
             context.state |= StyleState::Pressed;
+        }
+
+        // A menu never sets State_On, so a checkable item's Checked state has to come from
+        // the option instead.
+        if (const auto* menuOption = qstyleoption_cast<const QStyleOptionMenuItem*>(option)) {
+            if (menuOption->checked) {
+                context.state |= StyleState::Checked;
+            }
+            if (menuOption->checkType == QStyleOptionMenuItem::Exclusive) {
+                context.variant.set(VariantSlot::CheckType, CheckType::Exclusive);
+            }
         }
     }
     else if (qobject_cast<const QMenuBar*>(widget)) {

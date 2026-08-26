@@ -105,6 +105,7 @@ uint64_t StyleContext::cacheKey() const
             static_cast<uint64_t>(ControlSize::COUNT),
             static_cast<uint64_t>(Position::COUNT),
             static_cast<uint64_t>(RowType::COUNT),
+            static_cast<uint64_t>(CheckType::COUNT),
             static_cast<uint64_t>(TransparencyMode::COUNT),
         }) <= (uint64_t {1} << variantSlotBitWidth),
         "A variant dimension no longer fits in its slot of the variant field"
