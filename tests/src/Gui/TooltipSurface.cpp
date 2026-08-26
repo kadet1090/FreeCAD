@@ -60,6 +60,7 @@ public:
                     {.name = "TooltipPadding", .value = "7px"},
                     {.name = "TooltipFontSize", .value = "17px"},
                     {.name = "TooltipFontWeight", .value = "700"},
+                    {.name = "TooltipFontFamily", .value = "'Fixture Tip Sans'"},
 
                     // Only these two on the Notification namespace. Everything else a
                     // notification resolves has to come from Tooltip*, which is what makes
@@ -179,6 +180,7 @@ private Q_SLOTS:
 
         QCOMPARE(label->font().pixelSize(), tooltipFontSize);
         QCOMPARE(static_cast<int>(label->font().weight()), tooltipFontWeight);
+        QCOMPARE(label->font().families(), QStringList({QStringLiteral("Fixture Tip Sans")}));
     }
 
     // The property has to be on the label NotificationBox builds. A test that tags its own

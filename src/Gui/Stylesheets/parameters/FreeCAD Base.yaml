@@ -234,7 +234,7 @@ GroupBoxTitleTextColor: "@Contrast.500"
 # silently collapse to its left edge.
 #
 # There is no TooltipFontSize by default — a tooltip keeps the application font until a theme
-# states otherwise. FreeCADStyle::polish() applies the token wherever one is stated.
+# states otherwise, resolved by the same general font pass every other component goes through.
 TooltipBackground: "@MenuBackground"
 TooltipBorderColor: "@MenuBorderColor"
 TooltipBorderThickness: "@MenuBorderThickness"
