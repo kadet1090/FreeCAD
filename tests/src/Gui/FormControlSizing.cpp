@@ -281,6 +281,40 @@ private Q_SLOTS:
                            .arg(textWidth))
         );
     }
+
+    // Padding wider than the fixture's: the base style's arrow allowance is roomier than the
+    // arrow we actually draw, and that incidental slack is enough to hide a small shortfall.
+    void test_aComboBoxSizedToItsHintCanShowItsContent()  // NOLINT
+    {
+        const auto restore
+            = overrideToken("FormControlPadding", "padding(horizontal: 24px, vertical: 6px)");
+
+        Gui::FreeCADStyle freecadStyle;
+        // The QStyle interface is what the widgets themselves go through.
+        QStyle& style = freecadStyle;
+        QComboBox combo;
+        style.polish(&combo);
+
+        QStyleOptionComboBox option;
+        option.initFrom(&combo);
+        option.frame = true;
+        option.subControls = QStyle::SC_ComboBoxFrame | QStyle::SC_ComboBoxEditField
+            | QStyle::SC_ComboBoxArrow;
+
+        option.rect = QRect(
+            QPoint(),
+            style.sizeFromContents(QStyle::CT_ComboBox, &option, contentSize(), &combo)
+        );
+        const QRect editField
+            = style.subControlRect(QStyle::CC_ComboBox, &option, QStyle::SC_ComboBoxEditField, &combo);
+
+        QVERIFY2(
+            editField.width() >= contentWidth,
+            qPrintable(QStringLiteral("edit field %1px, content needs %2px")
+                           .arg(editField.width())
+                           .arg(contentWidth))
+        );
+    }
 };
 
 QTEST_MAIN(TestFormControlSizing)

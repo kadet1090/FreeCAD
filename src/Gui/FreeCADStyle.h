@@ -346,15 +346,15 @@ public:
 
     void polish(QPalette& palette) override;
 
+    int pixelMetric(PixelMetric metric, const QStyleOption* option, const QWidget* widget)
+        const override;
+
     int styleHint(
         StyleHint hint,
         const QStyleOption* option,
         const QWidget* widget,
         QStyleHintReturn* returnData
     ) const override;
-
-    int pixelMetric(PixelMetric metric, const QStyleOption* option, const QWidget* widget)
-        const override;
 
     QSize sizeFromContents(
         ContentsType type,
@@ -592,6 +592,24 @@ protected:
 
     /// Insets a text edit's content by its padding token, through the document's own margin.
     void applyTextEditDocumentPadding(QWidget* widget, QTextDocument* document) const;
+
+    void drawComboBox(
+        const QStyleOptionComboBox* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const;
+
+    void drawComboBoxLabel(
+        QPainter* painter,
+        const QStyleOptionComboBox* option,
+        const QWidget* widget
+    ) const;
+
+    QRect comboBoxSubControlRect(
+        const QStyleOptionComboBox* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const;
 
     void drawSpinBox(
         const QStyleOptionSpinBox* option,

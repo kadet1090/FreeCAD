@@ -40,6 +40,7 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QStyleOptionButton>
+#include <QStyleOptionComboBox>
 #include <QStyleOptionFrame>
 #include <QStyleOptionMenuItem>
 #include <QStyleOptionSpinBox>
@@ -1396,6 +1397,121 @@ void FreeCADStyle::drawMenuBarItem(
     painter->restore();
 }
 
+void FreeCADStyle::drawComboBox(
+    const QStyleOptionComboBox* option,
+    QPainter* painter,
+    const QWidget* widget
+) const
+{
+    drawComponent(painter, option->rect, widget, option);
+
+    // QComboBox::paintEvent draws CE_ComboBoxLabel separately; it uses our
+    // subControlRect(SC_ComboBoxEditField) for the text area.
+    if (option->subControls & SC_ComboBoxArrow) {
+        QStyleOptionComboBox arrowOption = *option;
+        arrowOption.rect = proxy()->subControlRect(CC_ComboBox, option, SC_ComboBoxArrow, widget);
+        proxy()->drawPrimitive(PE_IndicatorArrowDown, &arrowOption, painter, widget);
+    }
+}
+
+QRect FreeCADStyle::comboBoxSubControlRect(
+    const QStyleOptionComboBox* option,
+    SubControl subControl,
+    const QWidget* widget
+) const
+{
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
+    const QRect outerRect = option->rect;
+    const QRect contentRect = geometry.contentRect(outerRect);
+    const int arrowWidth = proxy()->pixelMetric(PM_MenuButtonIndicator, option, widget);
+
+    const int arrowLeft = contentRect.right() - arrowWidth + 1;
+    const int editRight = arrowLeft - 1;
+
+    switch (subControl) {
+        case SC_ComboBoxFrame:
+            return outerRect;
+        case SC_ComboBoxEditField:
+            return {
+                contentRect.left(),
+                contentRect.top(),
+                editRight - contentRect.left() + 1,
+                contentRect.height()
+            };
+        case SC_ComboBoxArrow:
+            return {arrowLeft, contentRect.top(), arrowWidth, contentRect.height()};
+        default:
+            return QProxyStyle::subControlRect(CC_ComboBox, option, subControl, widget);
+    }
+}
+
+void FreeCADStyle::drawComboBoxLabel(
+    QPainter* painter,
+    const QStyleOptionComboBox* option,
+    const QWidget* widget
+) const
+{
+    // For editable combos, the text is drawn by the embedded QLineEdit and the
+    // icon–QLineEdit gap is hardcoded inside QComboBoxPrivate::updateLineEditGeometry()
+    // (not overridable from a style), so delegate unchanged.
+    if (option->editable) {
+        QProxyStyle::drawControl(CE_ComboBoxLabel, option, painter, widget);
+        return;
+    }
+
+    const QRect editFieldRect
+        = proxy()->subControlRect(CC_ComboBox, option, SC_ComboBoxEditField, widget);
+
+    // Icon-only or text-only: delegate to parent unchanged — Qt's CE_ComboBoxLabel
+    // calls subControlRect(SC_ComboBoxEditField) internally, so it already uses our
+    // overridden rect.  Replacing option->rect here would cause double-padding.
+    if (option->currentIcon.isNull() || option->currentText.isEmpty()) {
+        QProxyStyle::drawControl(CE_ComboBoxLabel, option, painter, widget);
+        return;
+    }
+
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
+    const int iconSpacing = geometry.iconSpacing;
+
+    const QIcon::Mode iconMode = (option->state & State_Enabled) ? QIcon::Normal : QIcon::Disabled;
+    const QPixmap pixmap = option->currentIcon.pixmap(
+        editFieldRect.size().boundedTo(option->iconSize),
+        painter->device()->devicePixelRatio(),
+        iconMode,
+        QIcon::Off
+    );
+    const QSize pixmapSize = pixmap.size() / painter->device()->devicePixelRatio();
+
+    const QRect iconRect(
+        editFieldRect.left(),
+        editFieldRect.top() + (editFieldRect.height() - pixmapSize.height()) / 2,
+        pixmapSize.width(),
+        pixmapSize.height()
+    );
+    const QRect textRect(
+        editFieldRect.left() + pixmapSize.width() + iconSpacing,
+        editFieldRect.top(),
+        editFieldRect.width() - pixmapSize.width() - iconSpacing,
+        editFieldRect.height()
+    );
+
+    const int textFlags = mnemonicTextFlags(option, widget) | Qt::AlignVCenter | Qt::AlignLeft;
+
+    painter->save();
+    painter->setClipRect(editFieldRect);
+    proxy()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, pixmap);
+    proxy()->drawItemText(
+        painter,
+        QStyle::visualRect(option->direction, editFieldRect, textRect),
+        textFlags,
+        option->palette,
+        option->state & State_Enabled,
+        option->currentText,
+        QPalette::ButtonText
+    );
+    painter->restore();
+}
+
 void FreeCADStyle::drawSpinBox(
     const QStyleOptionSpinBox* option,
     QPainter* painter,
@@ -1540,6 +1656,31 @@ int FreeCADStyle::pixelMetric(PixelMetric metric, const QStyleOption* option, co
     return QProxyStyle::pixelMetric(metric, option, widget);
 }
 
+int FreeCADStyle::styleHint(
+    StyleHint hint,
+    const QStyleOption* option,
+    const QWidget* widget,
+    QStyleHintReturn* returnData
+) const
+{
+    // A dialog's buttons are labelled, and the platform's stock icons for them are drawn from
+    // a different icon set than everything else in the window. Declining the hint keeps a
+    // button box reading as a row of words.
+    if (hint == SH_DialogButtonBox_ButtonsHaveIcons) {
+        return 0;
+    }
+
+    if (hint == SH_ComboBox_Popup) {
+        // Qt's menu-style popup sizes and paints every row through CT_MenuItem / CE_MenuItem
+        // with the combo box as the widget, a different path from the item-view theming the
+        // dropdown's own tokens describe. Declining leaves the popup on the item-view route,
+        // so one set of tokens owns its whole appearance.
+        return 0;
+    }
+
+    return QProxyStyle::styleHint(hint, option, widget, returnData);
+}
+
 QSize FreeCADStyle::sizeFromContents(
     ContentsType type,
     const QStyleOption* option,
@@ -1555,6 +1696,19 @@ QSize FreeCADStyle::sizeFromContents(
             contentSize.rwidth() += geometry.iconGapDelta();
         }
         return geometry.sizeFromContents(contentSize);
+    }
+
+    if (type == CT_ComboBox) {
+        const auto* comboOption = qstyleoption_cast<const QStyleOptionComboBox*>(option);
+        const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
+        QSize result = QProxyStyle::sizeFromContents(type, option, size, widget);
+        // QComboBox::sizeHint bakes iconSize.width() + Qt's own icon gap into the content size
+        // it passes here when the current item has an icon. Replace that gap with the token
+        // value, matching the layout drawComboBoxLabel uses.
+        if (comboOption && !comboOption->currentIcon.isNull()) {
+            result.rwidth() += geometry.iconGapDelta();
+        }
+        return geometry.sizeFromContents(result);
     }
 
     if (type == CT_LineEdit || type == CT_SpinBox) {
@@ -1607,6 +1761,12 @@ QRect FreeCADStyle::subControlRect(
     const QWidget* widget
 ) const
 {
+    if (complexControl == CC_ComboBox) {
+        if (const auto* opt = qstyleoption_cast<const QStyleOptionComboBox*>(option)) {
+            return comboBoxSubControlRect(opt, subControl, widget);
+        }
+    }
+
     if (complexControl == CC_SpinBox) {
         if (const auto* opt = qstyleoption_cast<const QStyleOptionSpinBox*>(option)) {
             return spinBoxSubControlRect(opt, subControl, widget);
@@ -1629,6 +1789,13 @@ void FreeCADStyle::drawComplexControl(
     const QWidget* widget
 ) const
 {
+    if (control == CC_ComboBox) {
+        if (const auto* opt = qstyleoption_cast<const QStyleOptionComboBox*>(option)) {
+            drawComboBox(opt, painter, widget);
+            return;
+        }
+    }
+
     if (control == CC_SpinBox) {
         if (const auto* opt = qstyleoption_cast<const QStyleOptionSpinBox*>(option)) {
             drawSpinBox(opt, painter, widget);
@@ -1765,6 +1932,13 @@ void FreeCADStyle::drawControl(
     if (element == CE_PushButtonLabel) {
         if (const auto* btnOption = qstyleoption_cast<const QStyleOptionButton*>(option)) {
             drawPushButtonLabel(painter, btnOption, widget);
+            return;
+        }
+    }
+
+    if (element == CE_ComboBoxLabel) {
+        if (const auto* comboOption = qstyleoption_cast<const QStyleOptionComboBox*>(option)) {
+            drawComboBoxLabel(painter, comboOption, widget);
             return;
         }
     }
@@ -1942,23 +2116,6 @@ void FreeCADStyle::polish(QPalette& palette)
     setDisabled(QPalette::HighlightedText, "BaseDisabledTextColor");
 }
 
-int FreeCADStyle::styleHint(
-    StyleHint hint,
-    const QStyleOption* option,
-    const QWidget* widget,
-    QStyleHintReturn* returnData
-) const
-{
-    // A dialog's buttons are labelled, and the platform's stock icons for them are drawn from
-    // a different icon set than everything else in the window. Declining the hint keeps a
-    // button box reading as a row of words.
-    if (hint == SH_DialogButtonBox_ButtonsHaveIcons) {
-        return 0;
-    }
-
-    return QProxyStyle::styleHint(hint, option, widget, returnData);
-}
-
 
 StyleContext FreeCADStyle::contextOf(
     const QWidget* widget,
@@ -1978,6 +2135,10 @@ StyleContext FreeCADStyle::contextOf(
     }
     else if (qobject_cast<const QLineEdit*>(widget) || qobject_cast<const QAbstractSpinBox*>(widget)) {
         context.component = StyleComponent::LineEdit;
+    }
+    else if (const auto* comboBox = qobject_cast<const QComboBox*>(widget)) {
+        context.component = comboBox->isEditable() ? StyleComponent::ComboBox
+                                                   : StyleComponent::Select;
     }
     else if (qobject_cast<const QTextEdit*>(widget) || qobject_cast<const QPlainTextEdit*>(widget)) {
         context.component = StyleComponent::TextEdit;
@@ -2074,7 +2235,8 @@ StyleContext FreeCADStyle::contextOf(
         // Pressed, so an input's Focused state is not masked by it.
         const bool isButton = context.component == StyleComponent::PushButton
             || context.component == StyleComponent::ToolButton
-            || context.component == StyleComponent::ToolBarButton;
+            || context.component == StyleComponent::ToolBarButton
+            || context.component == StyleComponent::Select;
         if (isButton && (option->state & QStyle::State_Sunken)) {
             context.state |= StyleState::Pressed;
         }
@@ -2086,6 +2248,17 @@ StyleContext FreeCADStyle::contextOf(
         }
         if (option->state & QStyle::State_HasFocus) {
             context.state |= StyleState::Focused;
+        }
+    }
+
+    // An editable QComboBox delegates keyboard focus to its inner QLineEdit, the same way a
+    // spin box does.
+    if (const auto* comboBox = qobject_cast<const QComboBox*>(widget);
+        comboBox && comboBox->isEditable()) {
+        if (const QLineEdit* lineEdit = comboBox->lineEdit()) {
+            if (lineEdit->hasFocus()) {
+                context.state |= StyleState::Focused;
+            }
         }
     }
 

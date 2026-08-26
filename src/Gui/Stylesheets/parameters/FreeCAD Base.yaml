@@ -179,3 +179,7 @@ LineEditDisabledBackground: "@BaseDisabledBackground"
 LineEditDisabledTextColor: "@BaseDisabledTextColor"
 
 TextEditPadding: "padding(@FormControlPadding.left)"
+
+SelectPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.100)"
+SelectSmallPadding: "@FormControlPadding"
+SelectBigPadding: "@FormControlPadding"

@@ -593,6 +593,18 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"ControlSize", "State"},
         .inherits = {"LineEdit", "FormControl"},
     }, StyleComponent::TextEdit);
+
+    registry.registerDescriptor({
+        .name     = "Select",
+        .variants = {"ControlSize", "State"},
+        .inherits = {"Button", "FormControl"},
+    }, StyleComponent::Select);
+
+    registry.registerDescriptor({
+        .name     = "ComboBox",
+        .variants = {"ControlSize", "State"},
+        .inherits = {"LineEdit", "FormControl"},
+    }, StyleComponent::ComboBox);
     // clang-format on
 }
 
