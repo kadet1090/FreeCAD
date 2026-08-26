@@ -1535,9 +1535,10 @@ QRect FreeCADStyle::drawMenuSectionLabel(
     const StyleContext context = contextOf(widget, option, StyleComponentElement::Separator);
     const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
     const QRect content = geometry.contentRect(option->rect);
+    const QFont sectionFont = resolveFont(context, option->font);
 
     painter->save();
-    painter->setFont(option->font);
+    painter->setFont(sectionFont);
     if (const auto color = resolve<Base::Color>(context, StyleProperty::TextColor)) {
         painter->setPen(color->asValue<QColor>());
     }
@@ -1549,7 +1550,7 @@ QRect FreeCADStyle::drawMenuSectionLabel(
     painter->restore();
 
     // The rule takes what the label leaves, so a section reads as a titled divider.
-    const QFontMetrics metrics(option->font);
+    const QFontMetrics metrics(sectionFont);
     const int labelWidth = metrics.horizontalAdvance(option->text) + geometry.iconSpacing;
 
     QRect remaining = ruleRect;
@@ -1613,8 +1614,18 @@ QSize FreeCADStyle::menuSeparatorSizeFromContents(
         return {margins.width(), qMax(margins.height(), height)};
     }
 
-    const QFontMetrics metrics(option->font);
-    return geometry.marginBox({metrics.horizontalAdvance(option->text), metrics.height()});
+    const QFontMetrics metrics(resolveFont(context, option->font));
+
+    // MenuSeparatorHeight fixes a bare rule's row height, but a section's own font can need
+    // more room than that; letting geometry.height override it here would clip the label
+    // instead of just leaving a rule's worth of floor under it.
+    BoxGeometryDefinition labelGeometry = geometry;
+    labelGeometry.height.reset();
+    QSize size = labelGeometry.marginBox({metrics.horizontalAdvance(option->text), metrics.height()});
+    if (geometry.height) {
+        size.setHeight(qMax(size.height(), geometry.marginBox({0, 0}).height()));
+    }
+    return size;
 }
 
 void FreeCADStyle::drawMenuItemIndicator(
@@ -1743,6 +1754,7 @@ void FreeCADStyle::drawMenuItemText(
     const QString shortcut = menuItemShortcut(option->text);
     if (!shortcut.isEmpty() && !layout.shortcut.isNull()) {
         const StyleContext shortcutContext = contextOf(widget, option, StyleComponentElement::Shortcut);
+        painter->setFont(resolveFont(shortcutContext, option->font));
         if (const auto color = resolve<Base::Color>(shortcutContext, StyleProperty::TextColor)) {
             painter->setPen(color->asValue<QColor>());
         }
@@ -1931,6 +1943,18 @@ FreeCADStyle::MenuItemColumns FreeCADStyle::menuItemColumns(
     return columns;
 }
 
+int FreeCADStyle::menuShortcutColumnWidth(const QStyleOptionMenuItem* option, const QWidget* widget) const
+{
+    const QString shortcut = menuItemShortcut(option->text);
+    if (shortcut.isEmpty()) {
+        return option->reservedShortcutWidth;
+    }
+
+    const StyleContext shortcutContext = contextOf(widget, option, StyleComponentElement::Shortcut);
+    const QFontMetrics shortcutMetrics(resolveFont(shortcutContext, option->font));
+    return std::max(option->reservedShortcutWidth, shortcutMetrics.horizontalAdvance(shortcut));
+}
+
 QSize FreeCADStyle::menuItemSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const
 {
     if (option->menuItemType == QStyleOptionMenuItem::Separator) {
@@ -1963,7 +1987,33 @@ QSize FreeCADStyle::menuItemSizeFromContents(const QStyleOptionMenuItem* option,
         contentHeight = qMax(contentHeight, proxy()->pixelMetric(PM_IndicatorHeight, option, widget));
     }
 
+    const QString shortcut = menuItemShortcut(option->text);
+    std::optional<QFontMetrics> shortcutMetrics;
+    if (!shortcut.isEmpty()) {
+        const StyleContext shortcutContext = contextOf(widget, option, StyleComponentElement::Shortcut);
+        shortcutMetrics.emplace(resolveFont(shortcutContext, option->font));
+
+        // A shortcut font taller than the item's own would land in a row this style never
+        // sized for it, the same clipping the width charge below exists to avoid.
+        contentHeight = qMax(contentHeight, shortcutMetrics->height());
+    }
+
     QSize size = geometry.marginBox({textWidth + columns.total(), contentHeight});
+
+    // Qt reserves the shortcut column itself, measured with the menu's own font, and adds it to
+    // every item after this returns. Charging the difference between this item's shortcut font
+    // and the menu's own is the only way a wider shortcut font can avoid clipping — the menu's
+    // font, not this item's, because that is what Qt actually measured the reservation with;
+    // option->reservedShortcutWidth is not yet the final menu-wide value at this point, so it
+    // cannot be used here the way menuShortcutColumnWidth() uses it for the layout below.
+    if (shortcutMetrics) {
+        const QFontMetrics menuFontMetrics(widget != nullptr ? widget->font() : QApplication::font());
+        size.rwidth() += std::max(
+            0,
+            shortcutMetrics->horizontalAdvance(shortcut) - menuFontMetrics.horizontalAdvance(shortcut)
+        );
+    }
+
     size.rheight() += geometry.spacing;
     return size;
 }
@@ -2036,13 +2086,15 @@ std::optional<FreeCADStyle::MenuItemLayout> FreeCADStyle::menuItemLayout(
     }
 
     // Qt reports the accelerator column width it measured menu-wide; a style can neither
-    // change that measurement nor move the column, only put a gap in front of it.
+    // change that measurement nor move the column, only widen this item's own share of it
+    // when its shortcut font needs more room than Qt's menu-font measurement gave it.
     if (option->reservedShortcutWidth > 0) {
+        const int shortcutWidth = menuShortcutColumnWidth(option, widget);
         layout.shortcut = QRect(
-            QPoint(right + 1 - option->reservedShortcutWidth, content.top()),
+            QPoint(right + 1 - shortcutWidth, content.top()),
             QPoint(right, content.bottom())
         );
-        right -= option->reservedShortcutWidth + columns.shortcutGap;
+        right -= shortcutWidth + columns.shortcutGap;
     }
 
     layout.text = QRect(QPoint(left, content.top()), QPoint(right, content.bottom()));

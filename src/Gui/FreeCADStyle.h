@@ -1040,6 +1040,14 @@ protected:
 
     MenuItemColumns menuItemColumns(const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
+    /// The width of this item's shortcut column at paint time: never narrower than what Qt
+    /// has already reserved menu-wide (option->reservedShortcutWidth, final by this point),
+    /// and wide enough for this item's own shortcut text in whatever font the Shortcut
+    /// element resolves. Only meaningful once reservedShortcutWidth is authoritative, so
+    /// menuItemLayout() uses it for layout.shortcut; menuItemSizeFromContents() runs before
+    /// that value is settled and charges its own width difference instead.
+    int menuShortcutColumnWidth(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
     QSize menuItemSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
     void drawMenuItem(QPainter* painter, const QStyleOptionMenuItem* option, const QWidget* widget) const;

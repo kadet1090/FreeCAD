@@ -1019,9 +1019,12 @@ private Q_SLOTS:
         painter.end();
 
         // The rule sits on the vertical centre, inset horizontally by MenuSeparatorMargin.
-        QCOMPARE(canvas.pixelColor(60, separatorHeight / 2), QColor(QStringLiteral("#00ff00")));
+        // QRect::center()'s row, (height - 1) / 2, not a plain height / 2 — they only happen
+        // to agree here because separatorHeight is odd; see
+        // test_sectionHeaderKeepsItsLabelClearOfTheRule.
+        QCOMPARE(canvas.pixelColor(60, (separatorHeight - 1) / 2), QColor(QStringLiteral("#00ff00")));
         // Outside the margin it stays clear.
-        QCOMPARE(canvas.pixelColor(0, separatorHeight / 2), QColor(Qt::magenta));
+        QCOMPARE(canvas.pixelColor(0, (separatorHeight - 1) / 2), QColor(Qt::magenta));
     }
 
     // A section is a separator carrying text. The rule fills what the label leaves, so the row
@@ -1047,9 +1050,11 @@ private Q_SLOTS:
         style.drawControl(QStyle::CE_MenuItem, &option, &painter, &menu);
         painter.end();
 
-        // Far right is past the label, so the rule is there.
+        // Far right is past the label, so the rule is there. Sampled at QRect::center()'s row
+        // rather than a plain height/2: for an even height they differ by one pixel, and the
+        // rule is only ever one pixel thick.
         QCOMPARE(
-            canvas.pixelColor(option.rect.width() - 6, option.rect.height() / 2),
+            canvas.pixelColor(option.rect.width() - 6, (option.rect.height() - 1) / 2),
             QColor(QStringLiteral("#00ff00"))
         );
     }
@@ -1073,6 +1078,97 @@ private Q_SLOTS:
 
         // The label is the same in both, so the whole delta is the gap — never the 77px.
         QCOMPARE(shortcutWidth - base, shortcutSpacing);
+    }
+
+    // A section label is measured entirely by this style, so its token font decides its height.
+    void test_theSectionLabelIsSizedForItsTokenFont()  // NOLINT
+    {
+        const auto guard = overrideToken("MenuSeparatorFontSize", "24px");
+
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QMenu menu;
+
+        QStyleOptionMenuItem option = plainItem(menu);
+        option.menuItemType = QStyleOptionMenuItem::Separator;
+        option.text = QStringLiteral("Section");
+
+        const QSize size = style.sizeFromContents(QStyle::CT_MenuItem, &option, QSize(), &menu);
+
+        QFont sectionFont = option.font;
+        sectionFont.setPixelSize(24);
+
+        QVERIFY(size.height() >= QFontMetrics(sectionFont).height());
+    }
+
+    // Qt reserves the shortcut column with the menu's own font and adds it after this style has
+    // sized the item, so a wider shortcut font can only be paid for here.
+    void test_aWiderShortcutFontWidensTheItem()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QMenu menu;
+
+        QStyleOptionMenuItem option = plainItem(menu);
+        option.text = QStringLiteral("Save\tCtrl+S");
+
+        const QSize plain = style.sizeFromContents(QStyle::CT_MenuItem, &option, QSize(), &menu);
+
+        const auto guard = overrideToken("MenuShortcutFontSize", "30px");
+        Gui::FreeCADStyle reloadedFreecadStyle;
+        QStyle& reloaded = reloadedFreecadStyle;
+        const QSize widened = reloaded.sizeFromContents(QStyle::CT_MenuItem, &option, QSize(), &menu);
+
+        QVERIFY(widened.width() > plain.width());
+    }
+
+    // The width charge in menuItemSizeFromContents only widens the row; it does not move where
+    // the shortcut is painted. layout.shortcut has to widen on its own too, or a wider shortcut
+    // font still clips against Qt's own, menu-font-measured reservation.
+    void test_aWiderShortcutFontWidensItsOwnColumnRect()  // NOLINT
+    {
+        const auto guard = overrideToken("MenuShortcutFontSize", "30px");
+
+        ProbeStyle probeStyle;
+        QStyle& style = probeStyle;
+        QMenu menu;
+
+        QStyleOptionMenuItem option = plainItem(menu);
+        option.text = QStringLiteral("Save\tCtrl+S");
+        // What Qt itself would have reserved, measuring with its own (the menu's) font.
+        option.reservedShortcutWidth
+            = QFontMetrics(option.font).horizontalAdvance(QStringLiteral("Ctrl+S"));
+        option.rect
+            = QRect(QPoint(), style.sizeFromContents(QStyle::CT_MenuItem, &option, QSize(), &menu));
+
+        const auto layout = probeStyle.menuItemLayout(&option, &menu);
+        QVERIFY(layout.has_value());
+
+        QFont shortcutFont = option.font;
+        shortcutFont.setPixelSize(30);
+        QVERIFY(
+            layout->shortcut.width()
+            >= QFontMetrics(shortcutFont).horizontalAdvance(QStringLiteral("Ctrl+S"))
+        );
+    }
+
+    // The label-height fix for section headers has a sibling here: a shortcut font taller than
+    // the item's own must not land in a row this style only sized for the item's own font.
+    void test_aTallerShortcutFontGrowsTheRowHeight()  // NOLINT
+    {
+        QMenu menu;
+
+        QStyleOptionMenuItem option = plainItem(menu);
+        option.text = QStringLiteral("Save\tCtrl+S");
+
+        const auto guard = overrideToken("MenuShortcutFontSize", "40px");
+        Gui::FreeCADStyle reloadedFreecadStyle;
+        QStyle& reloaded = reloadedFreecadStyle;
+        const QSize size = reloaded.sizeFromContents(QStyle::CT_MenuItem, &option, QSize(), &menu);
+
+        QFont shortcutFont = option.font;
+        shortcutFont.setPixelSize(40);
+        QVERIFY(size.height() >= QFontMetrics(shortcutFont).height());
     }
 };
 
