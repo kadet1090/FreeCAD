@@ -243,6 +243,44 @@ private Q_SLOTS:
                            .arg(contentWidth))
         );
     }
+
+    // The sketcher's on-view parameter editor asks to be exactly as wide as its own text, so it
+    // has no slack anywhere to fall back on, and what matters is the width left *inside* the
+    // inner editor: the line edit keeps margins of its own and a column for the cursor, and the
+    // text has to fit in what remains.
+    void test_anAdjustableQuantitySpinBoxFitsItsUnitSuffix()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+
+        Gui::QuantitySpinBox spin;
+        spin.setButtonSymbols(QAbstractSpinBox::NoButtons);
+        spin.setAutoAdjustWidth(true);
+        spin.setMaxExpectedDigits(16);
+        spin.setStyle(&freecadStyle);
+        style.polish(&spin);
+        spin.setValue(Base::Quantity(41.36, Base::Unit::Length));
+
+        spin.resize(spin.sizeHint());
+        spin.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&spin));
+
+        auto* editor = spin.findChild<QLineEdit*>();
+        const QString text = editor->text();
+        const QMargins textMargins = editor->textMargins();
+        const int cursorWidth = style.pixelMetric(QStyle::PM_TextCursorWidth, nullptr, editor);
+        const int usableWidth = editor->width() - textMargins.left() - textMargins.right()
+            - cursorWidth;
+        const int textWidth = spin.fontMetrics().horizontalAdvance(text);
+
+        QVERIFY2(
+            usableWidth >= textWidth,
+            qPrintable(QStringLiteral("%1px usable inside the editor, \"%2\" needs %3px")
+                           .arg(usableWidth)
+                           .arg(text)
+                           .arg(textWidth))
+        );
+    }
 };
 
 QTEST_MAIN(TestFormControlSizing)

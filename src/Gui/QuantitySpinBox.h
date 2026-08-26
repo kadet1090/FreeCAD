@@ -206,6 +206,9 @@ private:
     QString getUserString(const Base::Quantity& val) const;
 
     QSize sizeHintForDigits(int digits) const;
+
+    /// What the editor reserves around its text: its own margins plus the caret's width.
+    int editorTextInset() const;
     int getMaxStrLength(int digits) const;
 
 Q_SIGNALS:

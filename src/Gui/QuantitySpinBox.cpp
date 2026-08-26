@@ -1003,13 +1003,22 @@ void QuantitySpinBox::stepBy(int steps)
     selectNumber();
 }
 
+int QuantitySpinBox::editorTextInset() const
+{
+    const QLineEdit* editor = lineEdit();
+    const QMargins textMargins = editor->textMargins();
+
+    return textMargins.left() + textMargins.right()
+        + style()->pixelMetric(QStyle::PM_TextCursorWidth, nullptr, editor);
+}
+
 QSize QuantitySpinBox::sizeForText(const QString& txt) const
 {
     const QFontMetrics fm(fontMetrics());
     int h = lineEdit()->sizeHint().height();
     int w = QtTools::horizontalAdvance(fm, txt);
 
-    w += 2;  // cursor blinking space
+    w += editorTextInset();
     w += iconHeight;
 
     QStyleOptionSpinBox opt;
@@ -1047,7 +1056,13 @@ QSize QuantitySpinBox::sizeHintForDigits(int digits) const
 
     const QFontMetrics fm(fontMetrics());
     int w = qMax(0, QtTools::horizontalAdvance(fm, longestString));
-    w += 4;  // cursor blinking space
+    if (d->adjustableWidth) {
+        // A run of digits stands in badly for the text actually shown: a unit suffix like "mm"
+        // is wider than the digits it replaces. A box sized to fit exactly what it displays has
+        // nowhere to absorb the difference, so measure the real thing.
+        w = qMax(w, QtTools::horizontalAdvance(fm, lineEdit()->text()));
+    }
+    w += editorTextInset();
     if (d->addIconSpace) {
         w += iconHeight;
     }
