@@ -69,8 +69,8 @@ protected:
     void getBoundingBox(SoGetBoundingBoxAction* action) override;
 
 private:
-    using SelContext = Gui::SoFCSelectionContext;
-    using SelContextPtr = Gui::SoFCSelectionContextPtr;
+    using SelContext = Gui::SoFCSelectionContextEx;
+    using SelContextPtr = Gui::SoFCSelectionContextExPtr;
     void renderHighlight(SoGLRenderAction* action, SelContextPtr);
     void renderSelection(SoGLRenderAction* action, SelContextPtr, bool push = true);
 

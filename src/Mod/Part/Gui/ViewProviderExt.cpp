@@ -22,6 +22,10 @@
  *                                                                         *
  ***************************************************************************/
 
+#include <algorithm>
+#include <set>
+#include <string>
+
 #include <Bnd_Box.hxx>
 #include <BRep_Tool.hxx>
 #include <BRepTools.hxx>
@@ -92,7 +96,6 @@
 #include "SoBrepFaceSet.h"
 #include "SoBrepPointSet.h"
 #include "TaskFaceAppearances.h"
-
 
 FC_LOG_LEVEL_INIT("Part", true, true)
 
@@ -455,6 +458,18 @@ void ViewProviderPartExt::onChanged(const App::Property* prop)
     ViewProviderGeometryObject::onChanged(prop);
 }
 
+void ViewProviderPartExt::onTemporaryVisibilityChanged(bool visible)
+{
+    // A shape recomputed while hidden has no visual yet - updateData() defers building one
+    // until the object is shown - so a reveal that only moved the mode switch would put an
+    // empty node in front of the user.
+    if (visible && VisualTouched) {
+        updateVisual();
+    }
+
+    ViewProviderGeometryObject::onTemporaryVisibilityChanged(visible);
+}
+
 bool ViewProviderPartExt::allowOverride(const App::DocumentObject&) const
 {
     // Many derived view providers still uses static_cast to get object
@@ -592,7 +607,7 @@ std::string ViewProviderPartExt::getElement(const SoDetail* detail) const
     return str.str();
 }
 
-SoDetail* ViewProviderPartExt::getDetail(const char* subelement) const
+SoDetail* ViewProviderPartExt::makeShapeDetail(const char* subelement, int pointStartIndex)
 {
     // 1. Try standard string parsing (FaceN, EdgeN...)
     auto type = Part::TopoShape::getElementTypeAndIndex(subelement);
@@ -612,13 +627,16 @@ SoDetail* ViewProviderPartExt::getDetail(const char* subelement) const
     }
     else if (element == "Vertex") {
         SoPointDetail* detail = new SoPointDetail();
-        static_cast<SoPointDetail*>(detail)->setCoordinateIndex(
-            index + nodeset->startIndex.getValue() - 1
-        );
+        detail->setCoordinateIndex(index + pointStartIndex - 1);
         return detail;
     }
 
     return nullptr;
+}
+
+SoDetail* ViewProviderPartExt::getDetail(const char* subelement) const
+{
+    return makeShapeDetail(subelement, nodeset->startIndex.getValue());
 }
 
 std::vector<Base::Vector3d> ViewProviderPartExt::getModelPoints(const SoPickedPoint* pp) const
@@ -668,6 +686,69 @@ std::vector<Base::Vector3d> ViewProviderPartExt::getModelPoints(const SoPickedPo
 
 std::vector<Base::Vector3d> ViewProviderPartExt::getSelectionShape(const char* /*Element*/) const
 {
+    return {};
+}
+
+std::vector<std::string> ViewProviderPartExt::boundaryEdgeNames(
+    const TopoDS_Shape& face,
+    const TopoDS_Shape& owner,
+    std::string_view prefix
+)
+{
+    if (face.IsNull() || owner.IsNull() || face.ShapeType() != TopAbs_FACE) {
+        return {};
+    }
+
+    TopTools_IndexedMapOfShape edgeMap;
+    TopExp::MapShapes(owner, TopAbs_EDGE, edgeMap);
+
+    std::vector<std::string> names;
+    for (TopExp_Explorer explorer(face, TopAbs_EDGE); explorer.More(); explorer.Next()) {
+        const int index = edgeMap.FindIndex(explorer.Current());
+        if (index <= 0) {
+            continue;
+        }
+
+        std::string name = std::string(prefix) + "Edge" + std::to_string(index);
+        if (std::ranges::find(names, name) == names.end()) {
+            names.push_back(std::move(name));
+        }
+    }
+
+    return names;
+}
+
+std::vector<std::string> ViewProviderPartExt::getBoundaryElements(const char* subName) const
+{
+    if (!subName || !subName[0]) {
+        return {};
+    }
+
+    try {
+        // The rendered shape is the namespace getDetailPath() resolves against. The
+        // face is looked up as one of its own sub-elements - rather than through a
+        // second, independent getTopoShape() call - so both share the same TopoDS_Shape
+        // instance: sub-shape identity (TShape + Location) then holds by construction,
+        // which is what boundaryEdgeNames()'s edge lookup relies on. Going through
+        // getSubTopoShape() is also what resolves an element name this class does not
+        // itself model - a sketch's InternalFace, say - exactly as a plain Face, since
+        // it is the same resolution the object's own sub-element handling uses.
+        const Part::TopoShape rendered = getRenderedShape();
+        if (rendered.isNull()) {
+            return {};
+        }
+
+        const Part::TopoShape element = rendered.getSubTopoShape(subName, /*silent=*/true);
+        if (element.isNull() || element.getShape().ShapeType() != TopAbs_FACE) {
+            return {};
+        }
+
+        return boundaryEdgeNames(element.getShape(), rendered.getShape(), {});
+    }
+    catch (const Base::Exception&) {
+    }
+    catch (const Standard_Failure&) {
+    }
     return {};
 }
 

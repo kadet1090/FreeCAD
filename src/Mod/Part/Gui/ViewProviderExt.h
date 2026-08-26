@@ -28,6 +28,7 @@
 
 
 #include <map>
+#include <string_view>
 
 #include <App/PropertyUnits.h>
 #include <Gui/ViewProviderGeometryObject.h>
@@ -126,6 +127,8 @@ public:
     std::vector<Base::Vector3d> getModelPoints(const SoPickedPoint*) const override;
     /// return the highlight lines for a given element or the whole shape
     std::vector<Base::Vector3d> getSelectionShape(const char* Element) const override;
+    /// For a face, its bounding edges; empty for any other kind of sub-element.
+    std::vector<std::string> getBoundaryElements(const char* subName) const override;
     //@}
 
     virtual Part::TopoShape getRenderedShape() const
@@ -201,6 +204,20 @@ public:
     );
 
 protected:
+    /// The Coin detail naming @p subelement of a shape whose vertex coordinates
+    /// begin at @p pointStartIndex. Null when @p subelement names no sub-element.
+    static SoDetail* makeShapeDetail(const char* subelement, int pointStartIndex);
+
+    /// Names the edges bounding @p face in @p owner's edge index namespace, each
+    /// name carrying @p prefix. @p owner must be the shape whose namespace this
+    /// provider's getDetailPath() resolves against, so that the names round-trip.
+    static std::vector<std::string> boundaryEdgeNames(
+        const TopoDS_Shape& face,
+        const TopoDS_Shape& owner,
+        std::string_view prefix
+    );
+
+protected:
     bool setEdit(int ModNum) override;
     void unsetEdit(int ModNum) override;
     //@}
@@ -208,6 +225,7 @@ protected:
 protected:
     /// get called by the container whenever a property has been changed
     void onChanged(const App::Property* prop) override;
+    void onTemporaryVisibilityChanged(bool visible) override;
     bool loadParameter();
     void updateVisual();
     void handleChangedPropertyName(
