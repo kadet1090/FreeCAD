@@ -8,6 +8,7 @@
 #include <QScopeGuard>
 #include <QTabBar>
 #include <QTest>
+#include <QToolButton>
 #include <QWidget>
 
 #include "src/App/InitApplication.h"
@@ -59,6 +60,7 @@ public:
                     {.name = "ButtonFontFamily", .value = "'Fixture Sans, Fixture Fallback'"},
                     {.name = "ButtonFontStyle", .value = "italic"},
                     {.name = "ButtonPrimaryFontWeight", .value = "900"},
+                    {.name = "ButtonSmallFontSize", .value = "9px"},
                     {.name = "LineEditFontSize", .value = "11pt"},
                     {.name = "ListFontSize", .value = "1.5em"},
                     {.name = "TreeFontSize", .value = "2rem"},
@@ -248,6 +250,20 @@ private Q_SLOTS:
 
         QCOMPARE(button.font().pixelSize(), buttonPixelSize);
         QCOMPARE(static_cast<int>(button.font().weight()), buttonWeight);
+    }
+
+    // ButtonSmall* reached a tool button through a QSS attribute selector. It has to arrive
+    // through the ControlSize variant now, or deleting the QSS silently drops it.
+    void test_theSmallControlSizeVariantReachesAToolButtonFont()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+
+        QToolButton button;
+        button.setProperty("controlSize", QStringLiteral("small"));
+
+        style.polish(&button);
+
+        QCOMPARE(button.font().pixelSize(), 9);
     }
 
     // A theme that stops stating a token has to give the widget its own font back. Without

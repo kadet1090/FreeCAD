@@ -51,23 +51,6 @@ Gui--Dialog--DlgPreferencesImp #sidebar {
   background-color: @{@Background.200};
 }
 
-/* QToolButton ------------------------------------------------------------
-
-A tool button takes its font from the widget, not from the style, so the size
-and weight the design system asks of it can only be stated here.
-
---------------------------------------------------------------------------- */
-
-QToolButton {
-  font-size: @ButtonFontSize;
-  font-weight: @ButtonFontWeight;
-}
-
-QToolButton[controlSize="small"] {
-  font-size: @ButtonSmallFontSize;
-  font-weight: @ButtonSmallFontWeight;
-}
-
 /* QScrollBar -------------------------------------------------------------
 
 A scroll bar's appearance lives entirely in pseudo-elements, which QProxyStyle

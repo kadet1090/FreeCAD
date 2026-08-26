@@ -57,9 +57,6 @@ ButtonPadding: "padding(horizontal: @Spacing.300, vertical: @Spacing.100)"
 ButtonIconSpacing: "@FormControlIconSpacing"
 ButtonIconSize: 16px
 
-# Read by the QSS below rather than by resolveFont: Qt gives a tool button its font
-# before the style is consulted, so the label is already measured by the time a
-# FontSize token could reach it.
 ButtonFontSize: 12px
 ButtonFontWeight: 500
 ButtonSmallFontSize: 11px
