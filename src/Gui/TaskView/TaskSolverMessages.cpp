@@ -32,6 +32,8 @@
 #include "TaskSolverMessages.h"
 #include "ui_TaskSolverMessages.h"
 
+#include <IconManager.h>
+
 
 using namespace Gui;
 using namespace Gui::TaskView;
@@ -94,6 +96,11 @@ TaskSolverMessages::TaskSolverMessages(const QPixmap& icon, const QString& title
     );
 
     ui->labelStatusLink->setLaunchExternal(false);
+
+    ui->settingsButton->setIcon(
+        Gui::IconManager::instance().icon(":/icons/tabler/outline/adjustments.svg")
+    );
+    ui->manualUpdate->setIcon(Gui::IconManager::instance().icon(":/icons/tabler/outline/refresh.svg"));
 
     createSettingsButtonActions();
 }
