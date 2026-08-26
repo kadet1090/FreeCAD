@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Inter, -apple-system, sans-serif;
+  font-size: 12px;
+  color: #333;
+  background: #fff;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+h2 { font-size: 13px; font-weight: 600; color: #111; }
+
+/* ── Theme list ── */
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 6px;
+}
+
+#themeList { display: flex; flex-direction: column; gap: 6px; }
+
+.theme-row {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.theme-row input[type="text"] {
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+}
+.theme-row input[type="text"]:focus { border-color: #18a0fb; outline: none; }
+
+.file-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-label {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #999;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  user-select: none;
+}
+.file-label.has-file { color: #333; border-color: #18a0fb; }
+
+.btn-sm {
+  padding: 4px 9px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background: #f5f5f5;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-sm:hover { background: #ebebeb; }
+
+.btn-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background: #f5f5f5;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  flex-shrink: 0;
+}
+.btn-remove:hover { background: #ffe0e0; border-color: #f5a0a0; color: #c00; }
+
+input[type="file"] { display: none; }
+
+#addTheme {
+  align-self: flex-start;
+  padding: 5px 10px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  background: none;
+  font-size: 11px;
+  color: #666;
+  cursor: pointer;
+}
+#addTheme:hover { border-color: #18a0fb; color: #18a0fb; }
+
+/* ── Operations ── */
+
+.ops { display: flex; gap: 12px; }
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox-row input { cursor: pointer; }
+
+/* ── Action ── */
+
+#syncBtn {
+  width: 100%;
+  padding: 9px;
+  background: #18a0fb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#syncBtn:hover { background: #0d8ee0; }
+#syncBtn:disabled { opacity: .45; cursor: default; }
+
+#status {
+  font-size: 11px;
+  color: #666;
+  min-height: 15px;
+  line-height: 1.5;
+}
+#status.error   { color: #d93025; }
+#status.success { color: #1a7f37; }
+</style>
+</head>
+<body>
+
+<h2>FreeCAD Token Sync</h2>
+
+<!-- Theme file list -->
+<div>
+  <div class="section-label">Themes</div>
+  <div id="themeList"></div>
+  <button id="addTheme">+ Add theme</button>
+</div>
+
+<!-- Operations -->
+<div>
+  <div class="section-label">Sync</div>
+  <div class="ops">
+    <label class="checkbox-row">
+      <input type="checkbox" id="opVars" checked>
+      Variables
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" id="opStyles" checked>
+      Color styles
+    </label>
+  </div>
+</div>
+
+<!-- Action -->
+<button id="syncBtn" disabled>Sync to Figma</button>
+<div id="status"></div>
+
+<script>
+var themes = [];   // [{name, file}]
+var rowCounter = 0;
+
+function createThemeRow(defaultName) {
+  var id = rowCounter++;
+  var row = document.createElement("div");
+  row.className = "theme-row";
+  row.dataset.id = id;
+
+  // Mode name input
+  var nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.placeholder = "Mode name";
+  nameInput.value = defaultName || "";
+  nameInput.addEventListener("input", function() {
+    var theme = getTheme(id);
+    if (theme) theme.name = nameInput.value;
+  });
+
+  // File picker
+  var fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".json";
+
+  var fileLabel = document.createElement("div");
+  fileLabel.className = "file-label";
+  fileLabel.textContent = "Choose tokens JSON…";
+
+  var browseBtn = document.createElement("button");
+  browseBtn.className = "btn-sm";
+  browseBtn.textContent = "Browse";
+  browseBtn.addEventListener("click", function() { fileInput.click(); });
+  fileLabel.addEventListener("click", function() { fileInput.click(); });
+
+  fileInput.addEventListener("change", function() {
+    var file = fileInput.files[0];
+    var theme = getTheme(id);
+    if (theme && file) {
+      theme.file = file;
+      fileLabel.textContent = file.name;
+      fileLabel.classList.add("has-file");
+    }
+    updateSyncBtn();
+  });
+
+  var filePick = document.createElement("div");
+  filePick.className = "file-pick";
+  filePick.appendChild(fileLabel);
+  filePick.appendChild(browseBtn);
+  filePick.appendChild(fileInput);
+
+  // Remove button
+  var removeBtn = document.createElement("button");
+  removeBtn.className = "btn-remove";
+  removeBtn.title = "Remove";
+  removeBtn.textContent = "×";
+  removeBtn.addEventListener("click", function() {
+    row.remove();
+    themes = themes.filter(function(t) { return t.id !== id; });
+    updateSyncBtn();
+    updateRemoveButtons();
+  });
+
+  row.appendChild(nameInput);
+  row.appendChild(filePick);
+  row.appendChild(removeBtn);
+
+  themes.push({ id: id, name: defaultName || "", file: null });
+  return row;
+}
+
+function getTheme(id) {
+  for (var i = 0; i < themes.length; i++) {
+    if (themes[i].id === id) return themes[i];
+  }
+  return null;
+}
+
+function updateRemoveButtons() {
+  var rows = document.querySelectorAll(".theme-row");
+  rows.forEach(function(row) {
+    var btn = row.querySelector(".btn-remove");
+    // Always allow removal — user manages their own list
+    btn.style.visibility = rows.length <= 1 ? "hidden" : "visible";
+  });
+}
+
+function updateSyncBtn() {
+  var hasFile = themes.some(function(t) { return t.file; });
+  document.getElementById("syncBtn").disabled = !hasFile;
+}
+
+// Bootstrap with two rows
+var list = document.getElementById("themeList");
+list.appendChild(createThemeRow("Light"));
+list.appendChild(createThemeRow("Dark"));
+updateRemoveButtons();
+
+document.getElementById("addTheme").addEventListener("click", function() {
+  list.appendChild(createThemeRow(""));
+  updateRemoveButtons();
+});
+
+// ── Sync ──────────────────────────────────────────────────────────────────────
+
+var status = document.getElementById("status");
+var syncBtn = document.getElementById("syncBtn");
+
+function readJson(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try { resolve(JSON.parse(e.target.result)); }
+      catch (err) { reject(new Error("Invalid JSON in " + file.name + ": " + err.message)); }
+    };
+    reader.onerror = function() { reject(new Error("Could not read " + file.name)); };
+    reader.readAsText(file);
+  });
+}
+
+syncBtn.addEventListener("click", async function() {
+  status.className = "";
+  status.textContent = "Reading files…";
+  syncBtn.disabled = true;
+
+  var doVars   = document.getElementById("opVars").checked;
+  var doStyles = document.getElementById("opStyles").checked;
+
+  if (!doVars && !doStyles) {
+    status.className = "error";
+    status.textContent = "Select at least one operation.";
+    syncBtn.disabled = false;
+    return;
+  }
+
+  try {
+    var activeThemes = themes.filter(function(t) { return t.file; });
+    if (!activeThemes.length) {
+      status.textContent = "Add at least one theme file.";
+      syncBtn.disabled = false;
+      return;
+    }
+
+    var readThemes = await Promise.all(activeThemes.map(async function(t) {
+      return { name: t.name || "Theme", tokens: await readJson(t.file) };
+    }));
+
+    status.textContent = "Syncing…";
+    parent.postMessage({
+      pluginMessage: {
+        type: "sync",
+        operations: { variables: doVars, styles: doStyles },
+        themes: readThemes,
+      }
+    }, "*");
+  } catch (err) {
+    status.className = "error";
+    status.textContent = err.message;
+    syncBtn.disabled = false;
+  }
+});
+
+window.onmessage = function(event) {
+  var msg = event.data.pluginMessage;
+  if (!msg) return;
+  if (msg.type === "progress") {
+    status.className = "";
+    status.textContent = msg.message;
+  } else if (msg.type === "done") {
+    status.className = "success";
+    status.textContent = msg.message;
+    syncBtn.disabled = false;
+  } else if (msg.type === "error") {
+    status.className = "error";
+    status.textContent = msg.message;
+    syncBtn.disabled = false;
+  }
+};
+</script>
+</body>
+</html>
