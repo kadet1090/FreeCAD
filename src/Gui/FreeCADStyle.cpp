@@ -33,7 +33,11 @@
 #include <QPainterPath>
 #include <QApplication>
 #include <QCoreApplication>
+#include <QChildEvent>
 #include <QMouseEvent>
+#include <QScreen>
+#include <QScrollBar>
+#include <QTimer>
 #include <QPointer>
 #include <QPalette>
 #include <QPushButton>
@@ -2814,6 +2818,192 @@ void FreeCADStyle::constrainDropdown(QListView* listView, int chosenRow)
     notifyStyleChange(container);
 }
 
+FreeCADStyle::ComboPopupPlacement FreeCADStyle::resolveComboPopupPlacement(const QWidget* container) const
+{
+    const StyleContext context = contextOf(container, nullptr, StyleComponentElement::Root);
+
+    ComboPopupPlacement placement;
+    placement.offset = resolve<int>(context, StyleProperty::PlacementOffset).value_or(0);
+
+    const auto mode = resolve<std::string>(context, StyleProperty::Placement);
+    if (mode && *mode == "below") {
+        placement.mode = ComboPopupPlacementMode::Below;
+    }
+
+    return placement;
+}
+
+QListView* FreeCADStyle::comboPopupListView(const QWidget* container)
+{
+    for (auto* view : container->findChildren<QListView*>()) {
+        if (view->property(comboDropdownProperty).toBool()) {
+            return view;
+        }
+    }
+    return nullptr;
+}
+
+void FreeCADStyle::widenComboPopupForScrollBar(QWidget* container)
+{
+    const QListView* view = comboPopupListView(container);
+    if (!view) {
+        return;
+    }
+
+    const QScrollBar* verticalBar = view->verticalScrollBar();
+    if (verticalBar && verticalBar->isVisible()) {
+        container->resize(container->width() + verticalBar->width(), container->height());
+    }
+}
+
+void FreeCADStyle::snapComboPopupToWholeRows(QWidget* container)
+{
+    QListView* view = comboPopupListView(container);
+    if (!view || view->verticalScrollMode() != QAbstractItemView::ScrollPerItem) {
+        return;
+    }
+
+    // A popup showing all of its rows has no surface to give back, and the pitch below is not a
+    // safe thing to measure it against: rows share a pitch only where the style sizes them, and
+    // Qt sizes a separator inside QComboBoxDelegate::sizeHint() as QSize(pm, pm) from
+    // PM_DefaultFrameWidth, never reaching CT_ItemViewItem. A popup holding one is not a whole
+    // number of pitches tall even though it fits, and trimming it would clip its last row.
+    const QScrollBar* verticalBar = view->verticalScrollBar();
+    if (verticalBar && verticalBar->maximum() <= 0) {
+        return;
+    }
+
+    // The cap that bounds a capped popup's height is an arbitrary number of pixels, not a whole
+    // number of rows, so the viewport it produces generally has one row straddling its bottom
+    // edge. Trim by however much of that row shows, rather than by a remainder of an assumed
+    // pitch: rows share a pitch only where this style sizes them, and a separator is sized from
+    // its own token — or, in a QComboBox, by QComboBoxDelegate from PM_DefaultFrameWidth.
+    const int bottom = view->viewport()->height() - 1;
+    const QModelIndex straddling = view->indexAt({0, bottom});
+    if (!straddling.isValid()) {
+        return;
+    }
+
+    // straddling's rect contains (0, bottom) by construction of indexAt(), so rowRect.top() can
+    // never exceed bottom and shown is always at least 1 — nothing left to guard against there.
+    const QRect rowRect = view->visualRect(straddling);
+    const int shown = view->viewport()->height() - rowRect.top();
+    if (shown < rowRect.height()) {
+        container->resize(container->width(), container->height() - shown);
+    }
+}
+
+int FreeCADStyle::comboPopupCurrentRowOffset(const QWidget* container)
+{
+    const QListView* view = comboPopupListView(container);
+    if (!view || !view->currentIndex().isValid()) {
+        return 0;
+    }
+
+    // Ask the widget hierarchy where the row is rather than reassembling the answer from the
+    // container's margins: anything Qt puts between the two — a scroller button above the view,
+    // a frame on the view itself — is then accounted for by construction.
+    const QPoint rowTopLeft = view->visualRect(view->currentIndex()).topLeft();
+    return view->viewport()->mapTo(container, rowTopLeft).y();
+}
+
+void FreeCADStyle::correctComboPopupPlacement(QWidget* container)
+{
+    QWidget* comboBox = container->parentWidget();
+    if (!comboBox) {
+        return;
+    }
+
+    widenComboPopupForScrollBar(container);
+
+    // Before the placement is worked out, because it and the screen clamp below both read the
+    // container's height. test_theTrimPrecedesTheScreenClamp covers the other order.
+    snapComboPopupToWholeRows(container);
+
+    const ComboPopupPlacement placement = resolveComboPopupPlacement(container);
+    const QPoint comboTopLeft = comboBox->mapToGlobal(QPoint {});
+
+    int targetTop = placement.mode == ComboPopupPlacementMode::Below
+        ? comboTopLeft.y() + comboBox->height()
+        : comboTopLeft.y() - comboPopupCurrentRowOffset(container);
+    targetTop += placement.offset;
+
+    // The clamp outranks the placement: a popup that cannot both align and stay on screen stays
+    // on screen. Qt's own menu-style path makes the same trade.
+    //
+    // A combo box whose top-left lands in dead space — between monitors of unequal height, say —
+    // belongs to no screen, and leaving it unclamped is the one outcome worse than clamping it to
+    // the wrong one.
+    const QScreen* screen = QGuiApplication::screenAt(comboTopLeft);
+    if (!screen) {
+        screen = QGuiApplication::primaryScreen();
+    }
+
+    if (screen) {
+        const QRect available = screen->availableGeometry();
+        targetTop = std::min(targetTop, available.bottom() + 1 - container->height());
+        targetTop = std::max(targetTop, available.top());
+    }
+
+    const int delta = targetTop - container->mapToGlobal(QPoint {}).y();
+    if (delta != 0) {
+        container->move(container->pos() + QPoint(0, delta));
+    }
+}
+
+void FreeCADStyle::constrainReplacedComboDropdown(QObject* obj, QChildEvent* event)
+{
+    if (!obj->property(comboContainerProperty).toBool()) {
+        return;
+    }
+
+    auto* container = qobject_cast<QWidget*>(obj);
+    if (!container) {
+        return;
+    }
+
+    auto* comboBox = qobject_cast<QComboBox*>(container->parentWidget());
+    if (!comboBox) {
+        return;
+    }
+
+    // A popup container also acquires scroller buttons and the view's own internals. Only the
+    // widget the combo box now calls its view is the one the dropdown metrics belong on.
+    if (comboBox->view() != event->child()) {
+        return;
+    }
+
+    constrainComboDropdown(comboBox);
+}
+
+void FreeCADStyle::scheduleComboPopupCorrection(QObject* obj)
+{
+    if (obj->property(comboContainerProperty).toBool()) {
+        QPointer<QWidget> containerGuard = qobject_cast<QWidget*>(obj);
+        // Defer so Qt finishes its own screen-edge clamping first.
+        QTimer::singleShot(0, [this, containerGuard]() {
+            if (containerGuard && containerGuard->isVisible()) {
+                correctComboPopupPlacement(containerGuard);
+            }
+        });
+    }
+}
+
+// ─── Directional rotation helpers ────────────────────────────────────────────
+
+void FreeCADStyle::scheduleItemViewRelayout(QWidget* widget)
+{
+    auto* itemView = qobject_cast<QAbstractItemView*>(widget);
+    if (!itemView) {
+        return;
+    }
+
+    // scheduleDelayedItemsLayout() is protected, but doItemsLayout() is a public slot. Queue it
+    // rather than calling it: this runs from a theme reload, which can land mid-paint, and
+    // laying a view out again from inside its own paint is a re-entrancy hazard.
+    QMetaObject::invokeMethod(itemView, "doItemsLayout", Qt::QueuedConnection);
+}
+
 std::optional<int> FreeCADStyle::resolvePixelMetric(
     PixelMetric metric,
     const QStyleOption* option,
@@ -4096,6 +4286,14 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 {
     repaintPressedDropdownRow(obj, event);
 
+    if (event->type() == QEvent::Show) {
+        scheduleComboPopupCorrection(obj);
+    }
+
+    if (event->type() == QEvent::ChildAdded) {
+        constrainReplacedComboDropdown(obj, static_cast<QChildEvent*>(event));
+    }
+
     if (event->type() == QEvent::Resize || event->type() == QEvent::Show) {
         if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(obj)) {
             updateScrollAreaMask(scrollArea);
@@ -4131,6 +4329,9 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
         }
 
         for (QWidget* widget : QApplication::allWidgets()) {
+            // A repaint does not reconsider row geometry, and the tokens a row is measured
+            // from may well be what the reload changed.
+            scheduleItemViewRelayout(widget);
             widget->update();
         }
 

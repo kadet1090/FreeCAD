@@ -56,6 +56,7 @@
 #include "StyleParameters/StyleOverrides.h"
 #include "StyleParameters/Value.h"
 
+class QChildEvent;
 class QListView;
 class QTextDocument;
 
@@ -554,6 +555,52 @@ public:
         const QWidget* widget,
         const BoxGeometryDefinition& geometry
     ) const;
+
+    /// Where a dropdown popup sits relative to the combo box it belongs to.
+    enum class ComboPopupPlacementMode : std::uint8_t
+    {
+        /// The current row lands on the combo box, the way a menu opens over its button.
+        OverCurrent,
+        /// The popup's top edge meets the combo box's bottom edge.
+        Below,
+    };
+
+    struct ComboPopupPlacement
+    {
+        ComboPopupPlacementMode mode = ComboPopupPlacementMode::OverCurrent;
+        /// Applied after the mode has been honoured; positive moves the popup down.
+        int offset = 0;
+    };
+
+    /**
+     * @brief The placement the theme asks for, for the popup @p container holds.
+     *
+     * An unrecognised or absent mode means OverCurrent, so a theme that says nothing about
+     * placement still gets the menu-style behaviour the dropdowns are designed around.
+     */
+    ComboPopupPlacement resolveComboPopupPlacement(const QWidget* container) const;
+
+    /// The tagged dropdown list inside a popup container, or nullptr if it holds none.
+    static QListView* comboPopupListView(const QWidget* container);
+
+    /// Widens the popup when a scroll bar appeared after Qt had settled its width.
+    static void widenComboPopupForScrollBar(QWidget* container);
+
+    /// Trims the popup so it shows whole rows rather than a sliver of one.
+    static void snapComboPopupToWholeRows(QWidget* container);
+
+    /// How far the current row sits from the top of the popup.
+    static int comboPopupCurrentRowOffset(const QWidget* container);
+
+    /// Puts the popup where the theme asks for it, once Qt has finished placing it.
+    void correctComboPopupPlacement(QWidget* container);
+
+    void constrainReplacedComboDropdown(QObject* obj, QChildEvent* event);
+
+    void scheduleComboPopupCorrection(QObject* obj);
+
+    /// Asks @p widget to lay its rows out again, for a change no repaint would pick up.
+    static void scheduleItemViewRelayout(QWidget* widget);
 
     /// The rect a combo popup's container lays its list out in.
     std::optional<QRect> comboPopupContentsRect(

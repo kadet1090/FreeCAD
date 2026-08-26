@@ -311,6 +311,15 @@ DropdownListPadding: "@MenuPadding"
 # pointer State_Selected, which is what makes the base style reach for the palette's highlight
 # text colour. That colour is meant for a fully saturated fill and the hover tint is not one,
 # so the label is held at the ordinary text colour instead.
+# Where the popup opens:
+#   current - the current row lands on the combo box, the way a menu opens over its button
+#   below   - the popup's top edge meets the combo box's bottom edge
+# An unrecognised value falls back to current. The screen-edge clamp outranks both: a long
+# popup near the bottom of the screen stays on screen rather than staying aligned.
+DropdownListPlacement: "current"
+# Applied after placement, in either mode. Positive moves the popup down.
+DropdownListPlacementOffset: 0px
+
 DropdownListItemPadding: "@MenuItemPadding"
 DropdownListItemIconSpacing: "@MenuItemIconSpacing"
 DropdownListItemSpacing: "@MenuItemSpacing"
