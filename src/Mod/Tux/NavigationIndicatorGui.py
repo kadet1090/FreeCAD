@@ -38,7 +38,7 @@ def translate(context, text):
     return QtGui.QApplication.translate(context, text, None)
 
 
-class IndicatorButton(QtGui.QPushButton):
+class IndicatorButton(QtGui.QToolButton):
     """Detect language change events."""
 
     def __init__(self, parent=None):
@@ -664,7 +664,9 @@ def retranslateUi():
 
 
 indicator = IndicatorButton(statusBar)
-indicator.setFlat(True)
+indicator.setAutoRaise(True)
+indicator.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+indicator.setPopupMode(IndicatorButton.InstantPopup)
 indicator.adjustSize()
 indicator.setObjectName("NavigationIndicator")
 text = QtGui.QApplication.translate(

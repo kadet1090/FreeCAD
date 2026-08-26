@@ -676,6 +676,7 @@ protected:
 
         QHBoxLayout* layout = new QHBoxLayout(notificationsWidget);
         notificationsWidget->setLayout(layout);
+        layout->setContentsMargins({});
 
         tableWidget = new QTreeWidget(parent);
         tableWidget->setColumnCount(3);
@@ -887,11 +888,12 @@ void NotificationArea::ParameterObserver::OnChange(Base::Subject<const char*>& r
 /************************* Notification Area *****************************************/
 
 NotificationArea::NotificationArea(QWidget* parent)
-    : QPushButton(parent)
+    : QToolButton(parent)
 {
-    // QPushButton appearance
     setText(QString::number(0));
-    setFlat(true);
+    setAutoRaise(true);
+    setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    setPopupMode(InstantPopup);
 
     // Initialisation of pImpl structure
     pImp = std::make_unique<NotificationAreaP>();
@@ -1024,7 +1026,8 @@ void NotificationArea::mousePressEvent(QMouseEvent* e)
 
         menu.exec(this->mapToGlobal(e->pos()));
     }
-    QPushButton::mousePressEvent(e);
+
+    QToolButton::mousePressEvent(e);
 }
 
 bool NotificationArea::areDeveloperWarningsActive() const
@@ -1317,9 +1320,9 @@ void NotificationArea::slotRestoreFinished(const App::Document&)
 void NotificationArea::setIcon(TrayIcon trayIcon)
 {
     if (trayIcon == TrayIcon::Normal) {
-        QPushButton::setIcon(ResourceManager::NotificationAreaIcon());
+        QToolButton::setIcon(ResourceManager::NotificationAreaIcon());
     }
     else if (trayIcon == TrayIcon::MissedNotifications) {
-        QPushButton::setIcon(ResourceManager::notificationAreaMissedNotificationsIcon());
+        QToolButton::setIcon(ResourceManager::notificationAreaMissedNotificationsIcon());
     }
 }

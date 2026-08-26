@@ -43,6 +43,7 @@
 #include <QLineEdit>
 #include <QMenuBar>
 #include <QPushButton>
+#include <QToolButton>
 #include <QRadioButton>
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
@@ -1184,7 +1185,8 @@ FileChooser::FileChooser(QWidget* parent)
     connect(lineEdit, &QLineEdit::textChanged, this, &FileChooser::fileNameChanged);
     connect(lineEdit, &QLineEdit::editingFinished, this, &FileChooser::editingFinished);
 
-    button = new QPushButton(QStringLiteral("…"), this);
+    button = new QToolButton(this);
+    button->setText(QStringLiteral("…"));
 
 #if defined(Q_OS_MACOS)
     button->setAttribute(Qt::WA_LayoutUsesWidgetRect);  // layout size from QMacStyle was not correct
@@ -1193,7 +1195,7 @@ FileChooser::FileChooser(QWidget* parent)
     layout->addWidget(lineEdit, 1);
     layout->addWidget(button, -1);
 
-    connect(button, &QPushButton::clicked, this, &FileChooser::chooseFile);
+    connect(button, &QToolButton::clicked, this, &FileChooser::chooseFile);
 
     setFocusProxy(lineEdit);
 }

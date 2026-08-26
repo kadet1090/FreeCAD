@@ -1054,32 +1054,31 @@ LabelButton::LabelButton(QWidget* parent)
 
     label = new QLabel(this);
     label->setAutoFillBackground(true);
+    // A label reports its whole text as its minimum width, so in a cell too narrow for it the
+    // layout has to take the shortfall out of both children — and the button, whose content is
+    // one glyph, loses it entirely and renders as an empty frame. Let the label absorb all of it.
+    label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     layout->addWidget(label);
 
-    button = new QPushButton(QStringLiteral("…"), this);
+    button = new QToolButton(this);
+    button->setText(QStringLiteral("…"));
 #if defined(Q_OS_MACOS)
     button->setAttribute(Qt::WA_LayoutUsesWidgetRect);  // layout size from QMacStyle was not correct
 #endif
     layout->addWidget(button);
 
-    connect(button, &QPushButton::clicked, this, &LabelButton::browse);
-    connect(button, &QPushButton::clicked, this, &LabelButton::buttonClicked);
+    connect(button, &QToolButton::clicked, this, &LabelButton::browse);
+    connect(button, &QToolButton::clicked, this, &LabelButton::buttonClicked);
 }
 
 LabelButton::~LabelButton() = default;
-
-void LabelButton::resizeEvent(QResizeEvent* e)
-{
-    button->setFixedWidth(e->size().height());
-    button->setFixedHeight(e->size().height());
-}
 
 QLabel* LabelButton::getLabel() const
 {
     return label;
 }
 
-QPushButton* LabelButton::getButton() const
+QToolButton* LabelButton::getButton() const
 {
     return button;
 }
@@ -1471,24 +1470,19 @@ LabelEditor::LabelEditor(QWidget* parent)
 
     connect(lineEdit, &QLineEdit::textChanged, this, &LabelEditor::validateText);
 
-    button = new QPushButton(QStringLiteral("…"), this);
+    button = new QToolButton(this);
+    button->setText(QStringLiteral("…"));
 #if defined(Q_OS_MACOS)
     button->setAttribute(Qt::WA_LayoutUsesWidgetRect);  // layout size from QMacStyle was not correct
 #endif
     layout->addWidget(button);
 
-    connect(button, &QPushButton::clicked, this, &LabelEditor::changeText);
+    connect(button, &QToolButton::clicked, this, &LabelEditor::changeText);
 
     setFocusProxy(lineEdit);
 }
 
 LabelEditor::~LabelEditor() = default;
-
-void LabelEditor::resizeEvent(QResizeEvent* e)
-{
-    button->setFixedWidth(e->size().height());
-    button->setFixedHeight(e->size().height());
-}
 
 QString LabelEditor::text() const
 {

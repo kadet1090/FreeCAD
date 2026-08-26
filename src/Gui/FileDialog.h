@@ -36,6 +36,7 @@ class QGroupBox;
 class QHBoxLayout;
 class QLineEdit;
 class QSpacerItem;
+class QToolButton;
 
 namespace Gui
 {
@@ -312,7 +313,7 @@ private:
     QLineEdit* lineEdit;
     QCompleter* completer;
     QFileSystemModel* fs_model;
-    QPushButton* button;
+    QToolButton* button;
     Mode md;
     AcceptMode accMode;
     QString _filter;

@@ -28,6 +28,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QPushButton>
+#include <QToolButton>
 #include <QItemEditorFactory>
 #include <vector>
 
@@ -650,7 +651,6 @@ public Q_SLOTS:
 
 protected:
     virtual void showValue(const QVariant& data);
-    void resizeEvent(QResizeEvent*) override;
 
 Q_SIGNALS:
     void buttonClick();
@@ -659,7 +659,7 @@ Q_SIGNALS:
 protected:
     QVariant variant;
     QLineEdit* lineEdit;
-    QPushButton* button;
+    QToolButton* button;
 };
 
 class VectorListWidget: public PropertyEditorWidget
@@ -1361,9 +1361,6 @@ public:
     void updatePropertyLink();
     QVariant propertyLink() const;
 
-protected:
-    void resizeEvent(QResizeEvent*) override;
-
 protected Q_SLOTS:
     void onLinkActivated(const QString&);
     void onEditClicked();
@@ -1374,7 +1371,7 @@ Q_SIGNALS:
 
 private:
     QLabel* label;
-    QPushButton* editButton;
+    QToolButton* editButton;
     QVariant link;
     App::DocumentObjectT objProp;
 

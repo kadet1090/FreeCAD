@@ -189,18 +189,18 @@ private:
  *  - Provide a popup menu allowing user to change the used unit schema (and update if changed
  * elsewhere)
  */
-class DimensionWidget: public QPushButton, WindowParameter
+class DimensionWidget: public QToolButton, WindowParameter
 {
     Q_OBJECT
 
 public:
     explicit DimensionWidget(QWidget* parent)
-        : QPushButton(parent)
+        : QToolButton(parent)
         , WindowParameter("Units")
     {
-        setFlat(true);
+        setAutoRaise(true);
+        setPopupMode(InstantPopup);
         setText(qApp->translate("Gui::MainWindow", "Dimension"));
-        setMinimumWidth(120);
         //: A context menu action used to show or hide the unit system chooser in the status bar
         setWindowTitle(qApp->translate("Gui::MainWindow", "Unit System"));
         // Visibility is owned and persisted by MainWindow's status-bar registry.
@@ -254,7 +254,7 @@ public:
             retranslateUi();
         }
         else {
-            QPushButton::changeEvent(event);
+            QToolButton::changeEvent(event);
         }
     }
 
@@ -447,7 +447,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f)
 #ifndef HAS_QTBUG_129596
     d->mdiArea->setActivationOrder(QMdiArea::ActivationHistoryOrder);
 #endif
-    d->mdiArea->setBackground(QBrush(QColor(160, 160, 160)));
     setCentralWidget(d->mdiArea);
 
     statusBar()->setObjectName(QStringLiteral("statusBar"));
