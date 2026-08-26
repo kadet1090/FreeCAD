@@ -813,6 +813,37 @@ protected:
         const QWidget* widget
     ) const;
 
+    /**
+     * @brief Draws an addSection() header's label and returns the band left for the rule.
+     *
+     * A section header is a separator carrying text, so the rule runs beside the label
+     * rather than through it.
+     */
+    QRect drawMenuSectionLabel(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget,
+        const QRect& content
+    ) const;
+
+    void drawMenuSeparator(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
+    /// Draws a separator rule centred in @p band, from the Separator element's tokens.
+    void drawSeparatorRule(
+        QPainter* painter,
+        const StyleParameters::StyleContext& context,
+        const QRect& band
+    ) const;
+
+    QSize menuSeparatorSizeFromContents(
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
     void drawMenuItemIndicator(
         QPainter* painter,
         const QStyleOptionMenuItem* option,

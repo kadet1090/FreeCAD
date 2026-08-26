@@ -1489,6 +1489,98 @@ void FreeCADStyle::drawSeparatorLine(
     }
 }
 
+QRect FreeCADStyle::drawMenuSectionLabel(
+    QPainter* painter,
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget,
+    const QRect& ruleRect
+) const
+{
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Separator);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+    const QRect content = geometry.contentRect(option->rect);
+
+    painter->save();
+    painter->setFont(option->font);
+    if (const auto color = resolve<Base::Color>(context, StyleProperty::TextColor)) {
+        painter->setPen(color->asValue<QColor>());
+    }
+    painter->drawText(
+        content,
+        visualAlignment(option->direction, Qt::AlignLeft) | Qt::AlignVCenter | Qt::TextSingleLine,
+        option->text
+    );
+    painter->restore();
+
+    // The rule takes what the label leaves, so a section reads as a titled divider.
+    const QFontMetrics metrics(option->font);
+    const int labelWidth = metrics.horizontalAdvance(option->text) + geometry.iconSpacing;
+
+    QRect remaining = ruleRect;
+    if (option->direction == Qt::RightToLeft) {
+        remaining.setRight(content.right() - labelWidth);
+    }
+    else {
+        remaining.setLeft(content.left() + labelWidth);
+    }
+    return remaining;
+}
+
+void FreeCADStyle::drawMenuSeparator(
+    QPainter* painter,
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget
+) const
+{
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Separator);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+
+    QRect ruleRect = geometry.borderRect(option->rect);
+
+    if (!option->text.isEmpty()) {
+        ruleRect = drawMenuSectionLabel(painter, option, widget, ruleRect);
+    }
+
+    drawSeparatorRule(painter, context, ruleRect);
+}
+
+void FreeCADStyle::drawSeparatorRule(
+    QPainter* painter,
+    const StyleContext& context,
+    const QRect& ruleRect
+) const
+{
+    const BoxStyleDefinition boxStyle = resolveBoxStyle(context);
+
+    const int thickness = static_cast<int>(boxStyle.borderThickness.value_or(QMarginsF()).top());
+    const auto color = resolve<Base::Color>(context, StyleProperty::BorderColor);
+    if (thickness <= 0 || !color || ruleRect.width() <= 0) {
+        return;
+    }
+
+    const QRect line(ruleRect.left(), ruleRect.center().y() - (thickness / 2), ruleRect.width(), thickness);
+    painter->fillRect(line, color->asValue<QColor>());
+}
+
+QSize FreeCADStyle::menuSeparatorSizeFromContents(
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget
+) const
+{
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Separator);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+
+    // A plain rule contributes no width of its own, so it never widens the menu.
+    if (option->text.isEmpty()) {
+        const int height = resolve<int>(context, StyleProperty::Height).value_or(0);
+        const QSize margins = geometry.marginBox({0, 0});
+        return {margins.width(), qMax(margins.height(), height)};
+    }
+
+    const QFontMetrics metrics(option->font);
+    return geometry.marginBox({metrics.horizontalAdvance(option->text), metrics.height()});
+}
+
 void FreeCADStyle::drawMenuItemIndicator(
     QPainter* painter,
     const QStyleOptionMenuItem* option,
@@ -1621,6 +1713,11 @@ void FreeCADStyle::drawMenuItem(
     const QWidget* widget
 ) const
 {
+    if (option->menuItemType == QStyleOptionMenuItem::Separator) {
+        drawMenuSeparator(painter, option, widget);
+        return;
+    }
+
     const auto layout = menuItemLayout(option, widget);
     if (!layout) {
         return;
@@ -1698,9 +1795,12 @@ bool FreeCADStyle::ownsMenuItem(const QStyleOptionMenuItem* option, const QWidge
         case QStyleOptionMenuItem::Normal:
         case QStyleOptionMenuItem::DefaultItem:
         case QStyleOptionMenuItem::SubMenu:
+        case QStyleOptionMenuItem::Separator:
             return true;
         default:
-            // Separators, scrollers and tear-off handles keep Qt's own painting for now.
+            // Scrollers and tear-off handles keep Qt's own painting. Neither is reachable in
+            // FreeCAD today: nothing enables tear-off, and SH_Menu_Scrollable is false, so an
+            // over-tall menu wraps into columns rather than scrolling.
             return false;
     }
 }
@@ -1759,6 +1859,10 @@ FreeCADStyle::MenuItemColumns FreeCADStyle::menuItemColumns(
 
 QSize FreeCADStyle::menuItemSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const
 {
+    if (option->menuItemType == QStyleOptionMenuItem::Separator) {
+        return menuSeparatorSizeFromContents(option, widget);
+    }
+
     const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
     const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
     const MenuItemColumns columns = menuItemColumns(option, widget);
@@ -1795,7 +1899,7 @@ std::optional<FreeCADStyle::MenuItemLayout> FreeCADStyle::menuItemLayout(
     const QWidget* widget
 ) const
 {
-    if (!ownsMenuItem(option, widget)) {
+    if (!ownsMenuItem(option, widget) || option->menuItemType == QStyleOptionMenuItem::Separator) {
         return {};
     }
 

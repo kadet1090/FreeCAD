@@ -79,6 +79,7 @@ enum class StyleComponentElement : uint8_t
     Indicator, // Check or radio glyph belonging to the component
     IconIndicator, // State box drawn behind a checkable menu item's icon
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
+    Separator, // Separator rule, and the label of an addSection() header, inside a menu
     Arrow, // Submenu arrow of a menu item
     COUNT,
 };

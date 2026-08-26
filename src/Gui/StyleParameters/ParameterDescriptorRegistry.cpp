@@ -60,6 +60,7 @@ const std::map<StyleComponentElement, std::string_view> elementNames = {
     {StyleComponentElement::Indicator, "Indicator"},
     {StyleComponentElement::IconIndicator, "IconIndicator"},
     {StyleComponentElement::Menu, "Menu"},
+    {StyleComponentElement::Separator, "Separator"},
     {StyleComponentElement::Arrow, "Arrow"},
 };
 // clang-format on

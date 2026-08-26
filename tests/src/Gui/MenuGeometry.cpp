@@ -980,6 +980,77 @@ private Q_SLOTS:
         // case above.
         QVERIFY(layout->iconIndicator.left() > layout->text.left());
     }
+
+    void test_plainSeparatorUsesItsOwnHeight()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QMenu menu;
+
+        QStyleOptionMenuItem option = plainItem(menu);
+        option.menuItemType = QStyleOptionMenuItem::Separator;
+        option.text = QString();
+
+        // Qt seeds separators at {2,2}; the style replaces that outright.
+        QCOMPARE(
+            style.sizeFromContents(QStyle::CT_MenuItem, &option, QSize(2, 2), &menu).height(),
+            separatorHeight
+        );
+    }
+
+    void test_plainSeparatorPaintsItsRule()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QMenu menu;
+
+        QStyleOptionMenuItem option = plainItem(menu);
+        option.menuItemType = QStyleOptionMenuItem::Separator;
+        option.text = QString();
+        option.rect = QRect(0, 0, 120, separatorHeight);
+
+        QImage canvas(option.rect.size(), QImage::Format_ARGB32);
+        canvas.fill(Qt::magenta);
+
+        QPainter painter(&canvas);
+        style.drawControl(QStyle::CE_MenuItem, &option, &painter, &menu);
+        painter.end();
+
+        // The rule sits on the vertical centre, inset horizontally by MenuSeparatorMargin.
+        QCOMPARE(canvas.pixelColor(60, separatorHeight / 2), QColor(QStringLiteral("#00ff00")));
+        // Outside the margin it stays clear.
+        QCOMPARE(canvas.pixelColor(0, separatorHeight / 2), QColor(Qt::magenta));
+    }
+
+    // A section is a separator carrying text. The rule fills what the label leaves, so the row
+    // reads as a titled divider rather than a label floating on its own.
+    void test_sectionHeaderKeepsItsLabelClearOfTheRule()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QMenu menu;
+
+        QStyleOptionMenuItem option = plainItem(menu);
+        option.menuItemType = QStyleOptionMenuItem::Separator;
+        option.text = QStringLiteral("Visibility");
+
+        const QSize hint = style.sizeFromContents(QStyle::CT_MenuItem, &option, QSize(2, 2), &menu);
+        // Wider than the hint, so there is room left over for the rule.
+        option.rect = QRect(0, 0, hint.width() + 80, hint.height());
+
+        QImage canvas(option.rect.size(), QImage::Format_ARGB32);
+        canvas.fill(Qt::magenta);
+
+        QPainter painter(&canvas);
+        style.drawControl(QStyle::CE_MenuItem, &option, &painter, &menu);
+        painter.end();
+
+        // Far right is past the label, so the rule is there.
+        QCOMPARE(
+            canvas.pixelColor(option.rect.width() - 6, option.rect.height() / 2),
+            QColor(QStringLiteral("#00ff00"))
+        );
+    }
 };
 
 QTEST_MAIN(TestMenuGeometry)
