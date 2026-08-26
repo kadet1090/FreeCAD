@@ -25,6 +25,8 @@
 #include <Precision.hxx>
 
 
+#include <Gui/GeometrySelection.h>
+#include <Gui/GeometrySelectorWidget.h>
 #include <Mod/PartDesign/App/FeaturePocket.h>
 
 #include "ui_TaskPadPocketParameters.h"
@@ -122,9 +124,8 @@ void TaskPocketParameters::onModeChanged(int index, Side side)
             // Also note: Because of the code at the beginning of Pocket::execute() which is used
             // to detect broken legacy parts, we must set the length to zero here!
             sideCtrl.Type->setValue("UpToFace");
-            if (sideCtrl.lineFaceName->text().isEmpty()) {
-                sideCtrl.buttonFace->setChecked(true);
-                handleLineFaceNameClick(sideCtrl.lineFaceName);  // sets placeholder text
+            if (sideCtrl.faceSelector->selection()->references().empty()) {
+                sideCtrl.faceSelector->selection()->startSelecting();
             }
             break;
         case Mode::ToShape:

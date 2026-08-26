@@ -17,13 +17,23 @@
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0">
+      <widget class="QLabel" name="sidesLabel_2">
+       <property name="text">
+        <string>Profile</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="Gui::GeometrySelectorWidget" name="profileGeometrySelector"/>
+     </item>
+     <item row="1" column="0">
       <widget class="QLabel" name="labelStart">
        <property name="text">
         <string>Start</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="1" column="1">
       <widget class="QComboBox" name="startMode">
        <item>
         <property name="text">
@@ -42,7 +52,7 @@
        </item>
       </widget>
      </item>
-     <item row="1" column="0" rowspan="2">
+     <item row="2" column="0" rowspan="2">
       <widget class="QLabel" name="labelStartReference">
        <property name="text">
         <string>Reference</string>
@@ -52,7 +62,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
+     <item row="2" column="1">
       <widget class="QLineEdit" name="lineStartReference">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
@@ -65,7 +75,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="3" column="1">
       <widget class="QPushButton" name="buttonStartReference">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
@@ -81,14 +91,14 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
+     <item row="4" column="0">
       <widget class="QLabel" name="labelStartOffset">
        <property name="text">
         <string>Offset</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
+     <item row="4" column="1">
       <widget class="Gui::PrefQuantitySpinBox" name="startOffsetEdit" native="true">
        <property name="keyboardTracking" stdset="0">
         <bool>false</bool>
@@ -98,17 +108,17 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
+     <item row="5" column="0">
       <widget class="QLabel" name="sidesLabel">
        <property name="text">
         <string>Direction</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="5" column="1">
       <widget class="QComboBox" name="sidesMode"/>
      </item>
-     <item row="5" column="0" colspan="2">
+     <item row="6" column="0" colspan="2">
       <layout class="QHBoxLayout" name="side1Layout">
        <property name="leftMargin">
         <number>0</number>
@@ -144,14 +154,14 @@
        </item>
       </layout>
      </item>
-     <item row="6" column="0">
+     <item row="7" column="0">
       <widget class="QLabel" name="textLabel1">
        <property name="text">
         <string>Type</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
+     <item row="7" column="1">
       <widget class="QComboBox" name="changeMode">
        <item>
         <property name="text">
@@ -160,14 +170,14 @@
        </item>
       </widget>
      </item>
-     <item row="7" column="0">
+     <item row="8" column="0">
       <widget class="QLabel" name="labelLength">
        <property name="text">
         <string>Length</string>
        </property>
       </widget>
      </item>
-     <item row="7" column="1">
+     <item row="8" column="1">
       <widget class="Gui::PrefQuantitySpinBox" name="lengthEdit" native="true">
        <property name="keyboardTracking" stdset="0">
         <bool>false</bool>
@@ -177,14 +187,14 @@
        </property>
       </widget>
      </item>
-     <item row="8" column="0">
+     <item row="12" column="0">
       <widget class="QLabel" name="labelOffset">
        <property name="text">
         <string>Offset to face</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="12" column="1">
       <widget class="Gui::PrefQuantitySpinBox" name="offsetEdit" native="true">
        <property name="keyboardTracking" stdset="0">
         <bool>false</bool>
@@ -194,7 +204,7 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="0">
+     <item row="10" column="0">
       <widget class="QLabel" name="labelTaperAngle">
        <property name="toolTip">
         <string>Angle to taper the extrusion</string>
@@ -204,7 +214,7 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
+     <item row="10" column="1">
       <widget class="Gui::PrefQuantitySpinBox" name="taperEdit" native="true">
        <property name="keyboardTracking" stdset="0">
         <bool>false</bool>
@@ -214,7 +224,7 @@
        </property>
       </widget>
      </item>
-     <item row="10" column="0" colspan="2">
+     <item row="11" column="0" colspan="2">
       <widget class="QFrame" name="upToShapeList">
        <property name="frameShadow">
         <enum>QFrame::Plain</enum>
@@ -316,34 +326,17 @@
        </layout>
       </widget>
      </item>
-     <item row="11" column="0" colspan="2">
-      <layout class="QGridLayout" name="gridLayout_5">
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="lineFaceName">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QToolButton" name="buttonFace">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>22</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Select Face</string>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
+     <item row="9" column="0">
+      <widget class="QLabel" name="labelFace">
+       <property name="text">
+        <string>Face</string>
+       </property>
+      </widget>
      </item>
-     <item row="12" column="0" colspan="2">
+     <item row="9" column="1">
+      <widget class="Gui::GeometrySelectorWidget" name="faceGeometrySelector" native="true"/>
+     </item>
+     <item row="13" column="0" colspan="2">
       <layout class="QHBoxLayout" name="verticalLayout_221">
        <property name="leftMargin">
         <number>0</number>
@@ -379,24 +372,24 @@
        </item>
       </layout>
      </item>
-     <item row="13" column="0">
+     <item row="14" column="0">
       <widget class="QLabel" name="typeLabel2">
        <property name="text">
         <string>Type</string>
        </property>
       </widget>
      </item>
-     <item row="13" column="1">
+     <item row="14" column="1">
       <widget class="QComboBox" name="changeMode2"/>
      </item>
-     <item row="14" column="0">
+     <item row="15" column="0">
       <widget class="QLabel" name="labelLength2">
        <property name="text">
         <string>Length</string>
        </property>
       </widget>
      </item>
-     <item row="14" column="1">
+     <item row="15" column="1">
       <widget class="Gui::PrefQuantitySpinBox" name="lengthEdit2" native="true">
        <property name="keyboardTracking" stdset="0">
         <bool>false</bool>
@@ -406,14 +399,14 @@
        </property>
       </widget>
      </item>
-     <item row="15" column="0">
+     <item row="25" column="0">
       <widget class="QLabel" name="labelOffset2">
        <property name="text">
         <string>Offset to face</string>
        </property>
       </widget>
      </item>
-     <item row="15" column="1">
+     <item row="25" column="1">
       <widget class="Gui::PrefQuantitySpinBox" name="offsetEdit2" native="true">
        <property name="keyboardTracking" stdset="0">
         <bool>false</bool>
@@ -423,7 +416,7 @@
        </property>
       </widget>
      </item>
-     <item row="16" column="0">
+     <item row="17" column="0">
       <widget class="QLabel" name="labelTaperAngle2">
        <property name="toolTip">
         <string>Angle to taper the extrusion</string>
@@ -433,7 +426,7 @@
        </property>
       </widget>
      </item>
-     <item row="16" column="1">
+     <item row="17" column="1">
       <widget class="Gui::PrefQuantitySpinBox" name="taperEdit2" native="true">
        <property name="keyboardTracking" stdset="0">
         <bool>false</bool>
@@ -443,7 +436,7 @@
        </property>
       </widget>
      </item>
-     <item row="17" column="0" colspan="2">
+     <item row="18" column="0" colspan="2">
       <widget class="QFrame" name="upToShapeList2">
        <property name="frameShadow">
         <enum>QFrame::Plain</enum>
@@ -545,32 +538,15 @@
        </layout>
       </widget>
      </item>
-     <item row="24" column="0" colspan="2">
-      <layout class="QGridLayout" name="gridLayout_52">
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="lineFaceName2">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QToolButton" name="buttonFace2">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>22</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Select Face</string>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
+     <item row="16" column="0">
+      <widget class="QLabel" name="labelFace2">
+       <property name="text">
+        <string>Face</string>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="1">
+      <widget class="Gui::GeometrySelectorWidget" name="faceGeometrySelector2" native="true"/>
      </item>
     </layout>
    </item>
@@ -767,6 +743,11 @@ the sketch plane's normal vector will be used</string>
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>Gui::GeometrySelectorWidget</class>
+   <extends>QWidget</extends>
+   <header>Gui/GeometrySelectorWidget.h</header>
+  </customwidget>
   <customwidget>
    <class>Gui::QuantitySpinBox</class>
    <extends>QWidget</extends>

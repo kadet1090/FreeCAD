@@ -54,6 +54,7 @@ namespace Gui
 class LinearGizmo;
 class RotationalGizmo;
 class GizmoContainer;
+class GeometrySelectorWidget;
 }  // namespace Gui
 
 namespace PartDesign
@@ -117,7 +118,6 @@ public:
     enum SelectionMode
     {
         None,
-        SelectFace,
         SelectStartReference,
         SelectShape,
         SelectShapeFaces,
@@ -157,8 +157,8 @@ protected:
         Gui::PrefQuantitySpinBox* lengthEdit = nullptr;
         Gui::PrefQuantitySpinBox* offsetEdit = nullptr;
         Gui::PrefQuantitySpinBox* taperEdit = nullptr;
-        QLineEdit* lineFaceName = nullptr;
-        QToolButton* buttonFace = nullptr;
+        QLabel* labelFace = nullptr;
+        Gui::GeometrySelectorWidget* faceSelector = nullptr;
         QLineEdit* lineShapeName = nullptr;
         QToolButton* buttonShape = nullptr;
         QListWidget* listWidgetReferences = nullptr;
@@ -205,10 +205,7 @@ private:
     void onStartOffsetChanged(double len);
     void onOffsetChanged(double len, Side side);
     void onTaperChanged(double angle, Side side);
-    void onSelectFaceToggle(bool checked, Side side);
     void onSelectStartReferenceToggle(bool checked);
-
-    void onFaceName(const QString& text, Side side);
     void onAllFacesToggled(bool checked, Side side);
     void onSelectShapeToggle(bool checked, Side side);
     void onSelectShapeFacesToggle(bool checked, Side side);
@@ -241,40 +238,38 @@ protected:
     int getMode() const;
     int getMode2() const;
     int getSidesMode() const;
-    QString getFaceName(QLineEdit*) const;
     void onSelectionChanged(const Gui::SelectionChanges& msg) override;
     void translateSidesList(int index);
     virtual void translateModeList(QComboBox* box, int index);
     virtual void updateUI(Side side);
     void updateDirectionEdits();
     void setDirectionMode(int index);
-    void handleLineFaceNameClick(QLineEdit*);
-    void handleLineFaceNameNo(QLineEdit*);
+    /// Recomputes and refreshes every profile-dependent part of the UI (direction
+    /// combo, direction edits and draggers). Call after the Profile is changed.
+    void onProfileChanged();
 
 private:
     void setupSideDialog(SideController& side);
+    void setupFaceSelector(SideController& side);
 
     void selectedReferenceAxis(const Gui::SelectionChanges& msg);
-    void selectedFace(const Gui::SelectionChanges& msg, SideController& side);
     void selectedStartReference(const Gui::SelectionChanges& msg);
     void selectedShape(const Gui::SelectionChanges& msg, SideController& side);
     void selectedShapeFace(const Gui::SelectionChanges& msg, SideController& side);
 
     void tryRecomputeFeature();
-    void translateFaceName(QLineEdit*);
     void connectSlots();
     bool hasProfileFace(PartDesign::ProfileBased*) const;
-    void clearFaceName(QLineEdit*);
 
     void updateShapeName(QLineEdit*, App::PropertyLinkSubList&);
     void updateShapeFaces(QListWidget* list, App::PropertyLinkSubList& prop);
 
     std::vector<std::string> getShapeFaces(App::PropertyLinkSubList& prop);
 
-    void changeFaceName(QLineEdit* lineEdit, const QString& text);
-
     void createSideControllers();
     void updateStartUI();
+    /// The start reference formatted for a macro, or "None" when nothing is picked.
+    QString getFaceName(QLineEdit* lineEdit) const;
     void updateStartReferenceName();
 
     std::unique_ptr<Gui::GizmoContainer> gizmoContainer;

@@ -157,8 +157,14 @@ void TaskLoftParameters::updateUI()
     // see https://forum.freecad.org/viewtopic.php?f=3&t=63252
     auto loft = getObject<PartDesign::Loft>();
     if (loft) {
-        auto view = getViewObject();
-        view->makeTemporaryVisible(!loft->Sections.getValues().empty());
+        // Held rather than toggled, so the reveal survives repeated updates and is given
+        // back when the panel closes, whatever closed it.
+        if (loft->Sections.getValues().empty()) {
+            visibility.reset();
+        }
+        else if (!visibility.active()) {
+            visibility = Gui::TemporaryVisibility(getViewObject());
+        }
     }
 }
 

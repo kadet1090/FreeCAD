@@ -49,6 +49,7 @@
 #include <Mod/Part/App/Tools.h>
 #include "Mod/Part/App/TopoShapeOpCode.h"
 #include <Mod/Part/App/PartFeature.h>
+#include <Mod/Part/App/Part2DObject.h>
 
 #include "FeatureExtrude.h"
 
@@ -140,8 +141,85 @@ bool FeatureExtrude::hasTaperedAngle() const
         || fabs(TaperAngle2.getValue()) > Base::toRadians(Precision::Angular());
 }
 
+void FeatureExtrude::keepReferenceAxisWithProfile()
+{
+    // A "Sketch normal"-style ReferenceAxis points at the profile sketch's own
+    // virtual axis (N_/V_/H_Axis, Axis<n>). When the profile is swapped, that
+    // reference is left pointing at the previous sketch, where the virtual axis
+    // can no longer be resolved and getAxis() throws. Re-point it at the new
+    // profile so the extrude keeps a valid direction. Edge- or datum-based axes
+    // still resolve against their original object, so they are left untouched.
+    App::DocumentObject* axisObject = ReferenceAxis.getValue();
+    App::DocumentObject* profile = Profile.getValue();
+    if (!axisObject || axisObject == profile || !axisObject->isDerivedFrom<Part::Part2DObject>()) {
+        return;
+    }
+
+    const std::vector<std::string>& subs = ReferenceAxis.getSubValues();
+    const bool isSketchVirtualAxis = !subs.empty()
+        && (subs[0] == "N_Axis" || subs[0] == "V_Axis" || subs[0] == "H_Axis"
+            || subs[0].compare(0, 4, "Axis") == 0);
+    if (!isSketchVirtualAxis) {
+        return;
+    }
+
+    if (profile && profile->isDerivedFrom<Part::Part2DObject>()) {
+        ReferenceAxis.setValue(profile, subs);
+    }
+    else {
+        // The new profile is not a sketch (e.g. a face): fall back to the
+        // profile normal by clearing the reference axis.
+        ReferenceAxis.setValue(nullptr, std::vector<std::string>());
+    }
+}
+
+void FeatureExtrude::onBeforeChange(const App::Property* prop)
+{
+    if (prop == &Profile) {
+        // Capture the outgoing profile so onChanged can re-show it once the swap completes
+        // and it turns out to be unused.
+        previousProfile = Profile.getValue();
+    }
+    ProfileBased::onBeforeChange(prop);
+}
+
+void FeatureExtrude::showDetachedPreviousProfile()
+{
+    App::DocumentObject* previous = previousProfile;
+    previousProfile = nullptr;
+
+    // Only act on a genuine swap away from a real object; an unchanged or previously empty
+    // profile leaves nothing to reveal.
+    if (!previous || previous == Profile.getValue()) {
+        return;
+    }
+
+    // Leave it hidden while it still serves as another feature's profile.
+    if (isProfileConsumedElsewhere(previous)) {
+        return;
+    }
+
+    previous->Visibility.setValue(true);
+}
+
+bool FeatureExtrude::isProfileConsumedElsewhere(App::DocumentObject* profile) const
+{
+    if (!profile) {
+        return false;
+    }
+    return std::ranges::any_of(profile->getInList(), [this, profile](App::DocumentObject* consumer) {
+        auto* profileBased = dynamic_cast<ProfileBased*>(consumer);
+        return consumer != this && profileBased && profileBased->Profile.getValue() == profile;
+    });
+}
+
 void FeatureExtrude::onChanged(const App::Property* prop)
 {
+    if (!isRestoring() && prop == &Profile) {
+        keepReferenceAxisWithProfile();
+        showDetachedPreviousProfile();
+    }
+
     if (prop == &Midplane && !isRestoring() && !migratingDeprecatedProperties) {
         // Deprecation notice: Midplane property is deprecated and has been replaced by SideType in
         // FreeCAD 1.1 when FeatureExtrude was refactored.
