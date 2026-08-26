@@ -34,6 +34,8 @@
 
 #include <QBrush>
 #include <QColor>
+#include <QIcon>
+#include <QPixmap>
 #include <QEvent>
 #include <QMarginsF>
 #include <QPainter>
@@ -440,6 +442,35 @@ protected:
         const QRect& rect,
         const QWidget* widget,
         const QStyleOption* option = nullptr
+    ) const;
+
+    /**
+     * @brief Resolves the icon colour for @p context.
+     *
+     * Tries the IconColor token, then TextColor, then falls back to palette.buttonText().
+     */
+    QColor resolveIconColor(const StyleParameters::StyleContext& context, const QPalette& palette) const;
+
+    /**
+     * @brief Renders @p icon through IconManager in the colour @p context resolves to.
+     */
+    QPixmap renderStyledIcon(
+        QPainter* painter,
+        const QIcon& icon,
+        const QSize& maxSize,
+        QIcon::Mode mode,
+        QIcon::State state,
+        const StyleParameters::StyleContext& context,
+        const QPalette& palette
+    ) const;
+
+    /// Convenience overload: derives mode, state and palette from @p option.
+    QPixmap renderStyledIcon(
+        QPainter* painter,
+        const QIcon& icon,
+        const QSize& maxSize,
+        const QStyleOption* option,
+        const StyleParameters::StyleContext& context
     ) const;
 
 private:

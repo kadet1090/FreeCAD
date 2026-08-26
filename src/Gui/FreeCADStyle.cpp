@@ -35,6 +35,7 @@
 #endif
 
 #include "Application.h"
+#include "IconManager.h"
 #include "Utilities.h"
 #include "FreeCADStyle.h"
 #include "StyleParameters/ColorEffect.h"
@@ -601,6 +602,80 @@ FreeCADStyle::BoxStyleDefinition FreeCADStyle::resolveBoxStyle(const StyleContex
 
     boxStyleCache[key] = result;
     return result;
+}
+
+namespace
+{
+
+// QIcon::Mode from option state; AutoRaise plus hover is what a flat button reports.
+QIcon::Mode iconModeOf(const QStyleOption* option)
+{
+    if (!(option->state & QStyle::State_Enabled)) {
+        return QIcon::Disabled;
+    }
+    if ((option->state & QStyle::State_MouseOver) && (option->state & QStyle::State_AutoRaise)) {
+        return QIcon::Active;
+    }
+    return QIcon::Normal;
+}
+
+QIcon::State iconStateOf(const QStyleOption* option)
+{
+    return (option->state & QStyle::State_On) ? QIcon::On : QIcon::Off;
+}
+
+}  // namespace
+
+QColor FreeCADStyle::resolveIconColor(const StyleContext& context, const QPalette& palette) const
+{
+    if (const auto color = resolve<Base::Color>(context, StyleProperty::IconColor)) {
+        return color->asValue<QColor>();
+    }
+    if (const auto color = resolve<Base::Color>(context, StyleProperty::TextColor)) {
+        return color->asValue<QColor>();
+    }
+    return palette.buttonText().color();
+}
+
+QPixmap FreeCADStyle::renderStyledIcon(
+    QPainter* painter,
+    const QIcon& icon,
+    const QSize& maxSize,
+    QIcon::Mode mode,
+    QIcon::State state,
+    const StyleContext& context,
+    const QPalette& palette
+) const
+{
+    return IconManager::instance().render(
+        icon,
+        {
+            .size = maxSize,
+            .dpr = painter->device()->devicePixelRatio(),
+            .color = resolveIconColor(context, palette),
+            .mode = mode,
+            .state = state,
+        }
+    );
+}
+
+QPixmap FreeCADStyle::renderStyledIcon(
+    QPainter* painter,
+    const QIcon& icon,
+    const QSize& maxSize,
+    const QStyleOption* option,
+    const StyleContext& context
+) const
+{
+    return renderStyledIcon(
+        painter,
+        icon,
+        maxSize,
+        iconModeOf(option),
+        iconStateOf(option),
+        context,
+        option->palette
+    );
 }
 
 void FreeCADStyle::polish(QPalette& palette)
