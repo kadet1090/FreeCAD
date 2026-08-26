@@ -44,6 +44,7 @@ setup_qt_test(ShapedFrame)
 setup_qt_test(StyleTransparency)
 setup_qt_test(FormControlSizing)
 setup_qt_test(MenuGeometry)
+setup_qt_test(CheckIndicator)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main

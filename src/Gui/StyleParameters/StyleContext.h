@@ -53,6 +53,8 @@ enum class StyleComponent : uint8_t
     ComboBox,       // QComboBox that is editable; inherits LineEdit
     LineEdit,       // QLineEdit and the edit frame of a QAbstractSpinBox
     TextEdit,       // QPlainTextEdit, QTextEdit and derivatives
+    CheckBox,       // QCheckBox indicator
+    RadioButton,    // QRadioButton indicator
     List,           // QListWidget, QListView and other item views
     Header,         // QHeaderView sections
     Menu,           // QMenu popup: context menus, menu bar and tool button dropdowns
@@ -74,6 +76,7 @@ enum class StyleComponentElement : uint8_t
     Root,  // Main component
     Item,  // One item of the component
     Row,   // One row of the component, spanning its full width
+    Indicator, // Check or radio glyph belonging to the component
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
     Arrow, // Submenu arrow of a menu item
     COUNT,

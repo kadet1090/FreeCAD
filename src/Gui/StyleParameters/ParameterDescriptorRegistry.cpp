@@ -633,6 +633,18 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"State"},
         .inherits = {},
     }, StyleComponent::Menu);
+
+    registry.registerDescriptor({
+        .name     = "CheckBox",
+        .variants = {"ControlSize", "State"},
+        .inherits = {"FormControl"},
+    }, StyleComponent::CheckBox);
+
+    registry.registerDescriptor({
+        .name     = "RadioButton",
+        .variants = {"ControlSize", "State"},
+        .inherits = {"CheckBox", "FormControl"},
+    }, StyleComponent::RadioButton);
     // clang-format on
 }
 

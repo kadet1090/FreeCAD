@@ -247,3 +247,26 @@ MenuItemDisabledTextColor: "@ListDisabledTextColor"
 MenuItemMinWidth: 240px
 
 MenuArrowWidth: 10px
+
+CheckBoxWidth: 14px
+CheckBoxHeight: "@CheckBoxWidth"
+CheckBoxSpacing: "@Spacing.150"
+
+CheckBoxSmallWidth: 12px
+CheckBoxSmallHeight: "@CheckBoxSmallWidth"
+
+CheckBoxBackground: "@Background.000"
+CheckBoxBorderRadius: "@BaseRadius.medium"
+CheckBoxPadding: "padding(@Spacing.100)"
+CheckBoxTickColor: "@BaseTextColor"
+
+CheckBoxFocusedBorderColor: "@Accent.500"
+CheckBoxHoveredBorderColorEffect: "@BaseHoveredBorderColorEffect"
+
+CheckBoxDisabledBackground: "@BaseDisabledBackground"
+CheckBoxDisabledTickColor: "@BaseDisabledTextColor"
+
+CheckBoxPressedInnerShadow: "inner_shadow(color: rgba(0, 0, 0, 50), y: 1px, blur: 4px)"
+
+# A radio button is a check box with a different radius, which is all it states of its own.
+RadioButtonBorderRadius: "border_radius(50%)"

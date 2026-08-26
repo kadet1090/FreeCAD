@@ -709,6 +709,27 @@ protected:
     /// Clips a scroll area to its own rounded corners, so rows cannot paint over them.
     void updateScrollAreaMask(QAbstractScrollArea* scrollArea) const;
 
+    void drawRadioButtonDot(
+        QPainter* painter,
+        const QRect& rect,
+        const StyleParameters::StyleContext& context,
+        const QPalette& palette
+    ) const;
+
+    void drawCheckMark(
+        QPainter* painter,
+        const QRect& rect,
+        const StyleParameters::StyleContext& context,
+        const QPalette& palette
+    ) const;
+
+    void drawIndeterminateMark(
+        QPainter* painter,
+        const QRect& rect,
+        const StyleParameters::StyleContext& context,
+        const QPalette& palette
+    ) const;
+
     /// Draws an anti-aliased chevron pointing @p direction, filling @p rect.
     void drawChevronArrow(
         QPainter* painter,

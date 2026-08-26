@@ -980,6 +980,97 @@ QPixmap FreeCADStyle::renderStyledIcon(
     );
 }
 
+void FreeCADStyle::drawRadioButtonDot(
+    QPainter* painter,
+    const QRect& rect,
+    const StyleContext& context,
+    const QPalette& palette
+) const
+{
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(Qt::NoPen);
+
+    constexpr qreal dotPaddingRatio = 0.2;  // fallback: fraction of indicator width
+    qreal padding = static_cast<qreal>(rect.width()) * dotPaddingRatio;
+    if (const auto paddings = resolve<Insets>(context, StyleProperty::Padding)) {
+        padding = paddings->left().value;
+    }
+
+    painter->setBrush(resolveIconColor(context, palette));
+    painter->drawEllipse(QRectF(rect).adjusted(padding, padding, -padding, -padding));
+    painter->restore();
+}
+
+void FreeCADStyle::drawCheckMark(
+    QPainter* painter,
+    const QRect& rect,
+    const StyleContext& context,
+    const QPalette& palette
+) const
+{
+    constexpr qreal checkPaddingRatio = 0.2;    // fallback: fraction of box width
+    constexpr qreal checkPenWidthRatio = 0.15;  // stroke width as fraction of inner rect width
+    constexpr qreal checkMinPenWidth = 1.5;     // minimum stroke width in pixels
+
+    qreal padding = static_cast<qreal>(rect.width()) * checkPaddingRatio;
+    if (const auto paddings = resolve<Insets>(context, StyleProperty::Padding)) {
+        padding = paddings->left().value;
+    }
+
+    const QRectF innerRect = QRectF(rect).adjusted(padding, padding, -padding, -padding);
+    const qreal penWidth = qMax(checkMinPenWidth, innerRect.width() * checkPenWidthRatio);
+
+    // Proportional anchor points for the check mark path (relative to inner rect).
+    constexpr qreal checkMidY = 0.5;   // vertical mid-point of the left arm
+    constexpr qreal checkKneeX = 0.4;  // horizontal position of the knee (valley)
+
+    QPainterPath checkPath;
+    checkPath.moveTo(innerRect.left(), innerRect.top() + (innerRect.height() * checkMidY));
+    checkPath.lineTo(innerRect.left() + (innerRect.width() * checkKneeX), innerRect.bottom());
+    checkPath.lineTo(innerRect.right(), innerRect.top());
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(Qt::NoPen);
+    painter->strokePath(
+        checkPath,
+        QPen(resolveIconColor(context, palette), penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
+    );
+    painter->restore();
+}
+
+void FreeCADStyle::drawIndeterminateMark(
+    QPainter* painter,
+    const QRect& rect,
+    const StyleContext& context,
+    const QPalette& palette
+) const
+{
+    constexpr qreal checkPaddingRatio = 0.2;    // fallback: fraction of box width
+    constexpr qreal checkPenWidthRatio = 0.15;  // stroke width as fraction of inner rect width
+    constexpr qreal checkMinPenWidth = 1.5;     // minimum stroke width in pixels
+
+    qreal padding = static_cast<qreal>(rect.width()) * checkPaddingRatio;
+    if (const auto paddings = resolve<Insets>(context, StyleProperty::Padding)) {
+        padding = paddings->left().value;
+    }
+
+    const QRectF innerRect = QRectF(rect).adjusted(padding, padding, -padding, -padding);
+    const qreal penWidth = qMax(checkMinPenWidth, innerRect.width() * checkPenWidthRatio);
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(Qt::NoPen);
+    painter->setPen(QPen(resolveIconColor(context, palette), penWidth, Qt::SolidLine, Qt::RoundCap));
+    painter->drawLine(
+        QPointF(innerRect.left(), innerRect.center().y()),
+        QPointF(innerRect.right(), innerRect.center().y())
+    );
+    painter->restore();
+}
+
+
 void FreeCADStyle::drawChevronArrow(
     QPainter* painter,
     const QRect& rect,
@@ -2239,6 +2330,12 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         // and never for PM_SmallIconSize, and Fusion hardcodes it, so leaving it out pins
         // every list row's icon to 24 whatever the theme says.
         {PM_ListViewIconSize, {StyleComponentElement::Root, IconSize}},
+        {PM_ExclusiveIndicatorWidth, {StyleComponentElement::Indicator, Width}},
+        {PM_ExclusiveIndicatorHeight, {StyleComponentElement::Indicator, Height}},
+        {PM_IndicatorWidth, {StyleComponentElement::Indicator, Width}},
+        {PM_IndicatorHeight, {StyleComponentElement::Indicator, Height}},
+        {PM_CheckBoxLabelSpacing, {StyleComponentElement::Indicator, Spacing}},
+        {PM_RadioButtonLabelSpacing, {StyleComponentElement::Indicator, Spacing}},
     };
 
     if (const auto found = elementMetrics.find(metric); found != elementMetrics.end()) {
@@ -2576,6 +2673,35 @@ void FreeCADStyle::drawPrimitive(
         drawComponent(painter, option->rect, widget, option);
         return;
     }
+
+    if (element == PE_IndicatorRadioButton) {
+        StyleContext context = contextOf(widget, option, StyleComponentElement::Indicator);
+
+        // contextOf() only sees that this is an indicator and maps a bare one to CheckBox, so
+        // an exclusive menu item — whose widget is the QMenu, not a QRadioButton — would come
+        // out square. The primitive is the authority on which glyph this is, and RadioButton
+        // inherits CheckBox, so anything the theme states only once is still picked up.
+        context.component = StyleComponent::RadioButton;
+
+        drawBoxBackground(painter, option->rect, resolveBoxStyle(context));
+        if (option->state & QStyle::State_On) {
+            drawRadioButtonDot(painter, option->rect, context, option->palette);
+        }
+        return;
+    }
+
+    if (element == PE_IndicatorCheckBox) {
+        const StyleContext context = contextOf(widget, option, StyleComponentElement::Indicator);
+        drawBoxBackground(painter, option->rect, resolveBoxStyle(context));
+        if (option->state & QStyle::State_On) {
+            drawCheckMark(painter, option->rect, context, option->palette);
+        }
+        else if (option->state & QStyle::State_NoChange) {
+            drawIndeterminateMark(painter, option->rect, context, option->palette);
+        }
+        return;
+    }
+
 
     if (element == PE_IndicatorToolBarSeparator) {
         // In a horizontal toolbar the buttons are side by side, so the separator is a vertical
@@ -2941,6 +3067,19 @@ StyleContext FreeCADStyle::contextOf(
     else if (qobject_cast<const QTextEdit*>(widget) || qobject_cast<const QPlainTextEdit*>(widget)) {
         context.component = StyleComponent::TextEdit;
     }
+    else if (qobject_cast<const QRadioButton*>(widget)) {
+        context.component = StyleComponent::RadioButton;
+        context.element = StyleComponentElement::Root;
+    }
+    else if (qobject_cast<const QCheckBox*>(widget) || element == StyleComponentElement::Indicator) {
+        context.component = StyleComponent::CheckBox;
+
+        // For these two the indicator is the whole component, so it has no sub-element of its
+        // own: a caller asking for the Indicator of a check box is asking for the check box.
+        // Left as an element it would want CheckBoxIndicator* tokens for what the theme
+        // sensibly calls CheckBox*.
+        context.element = StyleComponentElement::Root;
+    }
     else if (qobject_cast<const QHeaderView*>(widget)) {
         context.component = StyleComponent::Header;
         context.element = element;
@@ -3030,7 +3169,16 @@ StyleContext FreeCADStyle::contextOf(
     // For unrecognised widget types the name is resolved to a StyleComponent enum value
     // when possible (e.g. QFrame[component="List"] → StyleComponent::List). For recognised
     // widget types the name becomes a prefix override (e.g. "DocumentTree" on a QTreeView).
-    if (widget) {
+    //
+    // The property names what the widget itself is, so it does not apply to an indicator the
+    // style paints on the widget's behalf for a different component — a check indicator inside
+    // an item view belongs to CheckBox, and letting the host's name win would rank the host's
+    // own box tokens above the indicator's.
+    const bool indicatorOfAnotherComponent = element == StyleComponentElement::Indicator
+        && qobject_cast<const QCheckBox*>(widget) == nullptr
+        && qobject_cast<const QRadioButton*>(widget) == nullptr;
+
+    if (widget && !indicatorOfAnotherComponent) {
         const std::string overrideName = widget->property("component").toString().toStdString();
         if (!overrideName.empty()) {
             auto* manager = Application::Instance->styleParameterManager();
@@ -3061,6 +3209,8 @@ StyleContext FreeCADStyle::contextOf(
             // State_Sunken, which is why the views themselves are not on this list: every
             // scroll area takes QFrame::Sunken as its default shadow and would read as
             // pressed for as long as it exists.
+            || context.component == StyleComponent::CheckBox
+            || context.component == StyleComponent::RadioButton
             || context.component == StyleComponent::Header;
         if (isButton && (option->state & QStyle::State_Sunken)) {
             context.state |= StyleState::Pressed;
