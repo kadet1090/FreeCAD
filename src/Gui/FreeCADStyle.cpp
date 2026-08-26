@@ -883,6 +883,26 @@ bool isFlat(const QWidget* widget, const QStyleOption* option)
 }
 
 /**
+ * @brief Whether @p widget is the default button, i.e. the Primary variant.
+ *
+ * Qt sets the option feature from the same flag while painting, so the two agree whenever both
+ * exist. The widget fallback is what polish() needs: it applies a widget's font with no option
+ * to read, and without this a default button could never resolve its Primary tokens.
+ */
+bool isDefaultButton(const QWidget* widget, const QStyleOption* option)
+{
+    if (const auto* buttonOption = qstyleoption_cast<const QStyleOptionButton*>(option)) {
+        if (buttonOption->features & QStyleOptionButton::DefaultButton) {
+            return true;
+        }
+    }
+    if (const auto* button = qobject_cast<const QPushButton*>(widget)) {
+        return button->isDefault();
+    }
+    return false;
+}
+
+/**
  * @brief Returns the orientation of the nearest ancestor QToolBar, or nullopt if the widget is
  *        not inside a toolbar.
  */
@@ -4798,6 +4818,71 @@ QFont FreeCADStyle::resolveFont(const StyleContext& context, const QFont& base) 
     return resolveTokenFont(context, base).resolve(base);
 }
 
+QFont FreeCADStyle::untouchedFont(const QWidget* widget)
+{
+    const QVariant storedMask = widget->property(styleFontMaskProperty);
+    if (!storedMask.isValid()) {
+        return widget->font();
+    }
+
+    // Qt's Tampered<QFont>::reverted(), qstylesheetstyle_p.h:163-179 - mask off what the style
+    // set, resolve the saved font back in, union the masks. Qt's own line discards the result
+    // of resolve(); assigning it is what actually restores the values. Whatever the widget was
+    // given between two passes survives, because it is what is left once the style's own
+    // attributes are removed.
+    QFont saved = widget->property(styleFontBaseProperty).value<QFont>();
+    QFont current = widget->font();
+    const auto mask = storedMask.value<quint32>();
+
+    saved.setResolveMask(saved.resolveMask() & mask);
+    current.setResolveMask(current.resolveMask() & ~mask);
+    current = current.resolve(saved);
+    current.setResolveMask(current.resolveMask() | saved.resolveMask());
+
+    return current;
+}
+
+void FreeCADStyle::applyWidgetFont(QWidget* widget) const
+{
+    if (widget == nullptr) {
+        return;
+    }
+
+    // When a widget owns no attributes of its own, untouchedFont() hands back the stored base
+    // snapshot wholesale, so an em size here can scale off an application font that predates a
+    // later QApplication::setFont() plus a theme reload. If that ever bites (nothing in src/
+    // calls QApplication::setFont() any more), scale em off QApplication::font() instead
+    // whenever base's resolve mask carries no size — which also makes em and rem coincide at
+    // widget level, exactly as the spec says they do.
+    const QFont base = untouchedFont(widget);
+    const QFont token = resolveTokenFont(contextOf(widget), base);
+
+    if (token.resolveMask() == 0) {
+        if (widget->property(styleFontMaskProperty).isValid()) {
+            widget->setFont(base);
+            widget->setProperty(styleFontBaseProperty, {});
+            widget->setProperty(styleFontMaskProperty, {});
+        }
+        return;
+    }
+
+    widget->setProperty(styleFontBaseProperty, base);
+    widget->setProperty(styleFontMaskProperty, token.resolveMask());
+
+    // The union is what keeps an attribute the widget set for itself: passing the token font
+    // alone would drop every attribute outside its mask back to the inherited value.
+    QFont applied = token.resolve(base);
+    applied.setResolveMask(base.resolveMask() | token.resolveMask());
+    widget->setFont(applied);
+}
+
+void FreeCADStyle::applyWidgetFonts(QWidget* widget) const
+{
+    applyWidgetFont(widget);
+
+    forEachChildWidget(widget, [this](QWidget* child) { applyWidgetFonts(child); });
+}
+
 StyleContext FreeCADStyle::contextOf(
     const QWidget* widget,
     const QStyleOption* option,
@@ -4970,9 +5055,8 @@ StyleContext FreeCADStyle::contextOf(
         }
     }
 
-    // ButtonType, derived from the style option's features first, then from widget properties.
-    const auto* buttonOption = qstyleoption_cast<const QStyleOptionButton*>(option);
-    if (buttonOption && (buttonOption->features & QStyleOptionButton::DefaultButton)) {
+    // ButtonType, derived from the style option's features first, then from the widget itself.
+    if (isDefaultButton(widget, option)) {
         context.variant.set(VariantSlot::ButtonType, ButtonType::Primary);
     }
     else if (isFlat(widget, option)) {
@@ -5379,12 +5463,10 @@ void FreeCADStyle::polish(QWidget* widget)
         );
     }
 
-    // Qt takes a tooltip's font from QApplication::font("QTipLabel"), never from the style, so
-    // a FontSize token can only reach the label here. QTipLabel calls ensurePolished() from its
-    // constructor before it measures itself, so the font lands before the tip is sized.
-    if (isTooltipLabel(widget)) {
-        widget->setFont(resolveFont(contextOf(widget), widget->font()));
-    }
+    // Qt takes a widget's font from itself, never from the style, so a font token can only
+    // reach it here. QTipLabel calls ensurePolished() from its constructor before it measures
+    // itself, so the font lands before a tip is sized.
+    applyWidgetFont(widget);
 
     if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(widget)) {
         auto viewport = scrollArea->viewport();
@@ -5452,6 +5534,12 @@ void FreeCADStyle::unpolish(QWidget* widget)
     if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(widget)) {
         scrollArea->removeEventFilter(this);
         scrollArea->clearMask();
+    }
+
+    if (widget->property(styleFontMaskProperty).isValid()) {
+        widget->setFont(untouchedFont(widget));
+        widget->setProperty(styleFontBaseProperty, {});
+        widget->setProperty(styleFontMaskProperty, {});
     }
 
     // The id means nothing under another style, and leaving it behind would have that style's
@@ -5547,6 +5635,11 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
         for (const QPointer<QWidget>& topLevel : topLevels) {
             if (!topLevel.isNull()) {
                 updateTransparency(topLevel, false);
+            }
+            // Re-checked: updateTransparency() above can itself destroy other top-level
+            // widgets in this same list via a synchronous StyleChange handler.
+            if (!topLevel.isNull()) {
+                applyWidgetFonts(topLevel);
             }
         }
 

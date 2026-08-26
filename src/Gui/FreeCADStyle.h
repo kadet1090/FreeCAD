@@ -492,6 +492,18 @@ public:
     QFont resolveTokenFont(const StyleParameters::StyleContext& context, const QFont& base) const;
 
     /**
+     * @brief Gives @p widget the font its component's tokens ask for.
+     *
+     * Idempotent: what a previous application put there is taken back first, so a widget can be
+     * polished any number of times and a theme that stops stating a token gives the widget its
+     * own font back.
+     */
+    void applyWidgetFont(QWidget* widget) const;
+
+    /// The font @p widget would carry had the style never applied one to it.
+    static QFont untouchedFont(const QWidget* widget);
+
+    /**
      * @brief The font @p base takes on under @p context.
      *
      * Where a token does not resolve the corresponding property of @p base is kept, so a caller
@@ -1168,6 +1180,10 @@ protected:
 
     void recomputeOverrideSets(QWidget* widget) const;
 
+    /// Re-applies applyWidgetFont() to @p widget and every descendant, for a theme reload that
+    /// changes what a component's font tokens resolve to.
+    void applyWidgetFonts(QWidget* widget) const;
+
     /// The override set @p widget resolves against, or the empty id when it declares none.
     uint32_t overrideSetOf(const QWidget* widget) const;
 
@@ -1179,6 +1195,10 @@ protected:
     static constexpr const char* transparencyProperty          = "_fc_transparent";
     /// What a widget sets to declare its own surface, opening a transparency root.
     static constexpr const char* transparencyOverrideProperty  = "transparent";
+    /// The font the widget had before applyWidgetFont() touched it. Style-owned.
+    static constexpr const char* styleFontBaseProperty         = "_fc_styleFontBase";
+    /// The resolveMask() of the token font applyWidgetFont() applied. Style-owned.
+    static constexpr const char* styleFontMaskProperty         = "_fc_styleFontMask";
     // clang-format on
 
     /// Whether the surface behind @p widget is see-through, as its own tokens describe it.
