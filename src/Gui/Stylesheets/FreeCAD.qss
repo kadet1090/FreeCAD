@@ -21,37 +21,6 @@ INSTALLATION WHEN NECESSARY
 6) Restart FreeCAD to apply the changes.
 ============================================================================================================
 
-FOLLOWING CODES ARE CHANGED IN THE SETTINGS:
-@PrimaryColor
-@AccentColor
-@GeneralAlternateBackgroundColor
-@GeneralBackgroundColor
-@GeneralBorderColor
-@GeneralDisabledBackgroundColor
-@GeneralGridLinesColor
-@3DViewBackgroundRefColor
-@ButtonBottomBackgroundColor
-@ButtonTopBackgroundColor
-@GroupboxBackgroundColor
-@GroupboxBorderColor
-@StylesheetIconsColor
-@IconsLocationFolderName
-@MenuBackgroundColor
-@SketcherConflictingConstraintsColor
-@SketcherEmptySketchColor
-@SketcherFullyConstrainedColor
-@SketcherMalformedConstraintsColor
-@SketcherPartiallyRedundantConstraintsColor
-@SketcherRedundantConstraintsColor
-@SketcherSolverFailedColor
-@SketcherUnderConstrainedColor
-@TabbarBackgroundColor
-@TextDisabledColor
-@TextEditFieldBackgroundColor
-@TextForegroundColor
-@TextUrlColor
-@ToolbarButtonsPadding
-
 ------------------------------------------------------------------------------------------------------
 
   See Qt documentation:
