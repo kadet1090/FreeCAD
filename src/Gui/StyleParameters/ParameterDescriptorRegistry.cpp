@@ -627,6 +627,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
     }, StyleComponent::List);
 
     registry.registerDescriptor({
+        .name     = "DropdownList",
+        .variants = {"RowType", "State"},
+        .inherits = {"List"},
+    }, StyleComponent::DropdownList);
+
+    registry.registerDescriptor({
         .name     = "Header",
         .variants = {"State"},
         .inherits = {},

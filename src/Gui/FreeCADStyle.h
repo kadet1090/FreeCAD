@@ -46,6 +46,7 @@
 #include <QProxyStyle>
 #include <QPushButton>
 #include <QAbstractScrollArea>
+#include <QComboBox>
 #include <QStyleOptionHeader>
 #include <QToolBar>
 #include <QStyleOption>
@@ -55,6 +56,7 @@
 #include "StyleParameters/StyleOverrides.h"
 #include "StyleParameters/Value.h"
 
+class QListView;
 class QTextDocument;
 
 namespace Gui
@@ -501,6 +503,62 @@ public:
         QPainter* painter,
         const QRect& rect,
         const StyleParameters::StyleContext& context
+    ) const;
+
+    // clang-format off
+    /// Tags the QListView Qt built for a combo box popup.
+    static constexpr const char* comboDropdownProperty  = "_fc_comboDropdown";
+    /// Tags the frame Qt puts around that list, which paints the popup's own surface.
+    static constexpr const char* comboContainerProperty = "_fc_comboContainer";
+    /// Carries the combo box a popup belongs to, so its rows can read its current index.
+    static constexpr const char* comboBoxProperty       = "_fc_comboBox";
+    /// The row a popup's owner has chosen, for a dropdown with no combo box behind it.
+    static constexpr const char* chosenRowProperty      = "_fc_chosenRow";
+    // clang-format on
+
+    /// The row this dropdown's owner has chosen, or nothing when nothing drives its selection.
+    static std::optional<int> chosenDropdownRow(const QWidget* widget);
+
+    static void applyDropdownSelectionState(
+        StyleParameters::StyleContext& context,
+        const QStyleOption* option,
+        const QWidget* widget
+    );
+
+    static void applyDropdownPressedState(
+        StyleParameters::StyleContext& context,
+        const QStyleOption* option
+    );
+
+    static void repaintPressedDropdownRow(QObject* viewport, const QEvent* event);
+
+    /// Adopts the list Qt built for @p comboBox as a themed dropdown.
+    void constrainComboDropdown(QComboBox* comboBox);
+
+    /// Adopts @p listView as a dropdown whose selection is driven from outside it.
+    void constrainDropdown(QListView* listView, int chosenRow = -1);
+
+    static bool isSeparatorIndex(const QModelIndex& index);
+
+    /// The context a dropdown separator row resolves against, or nothing when @p option is
+    /// not one.
+    static std::optional<StyleParameters::StyleContext> dropdownSeparatorContext(
+        const QStyleOption* option,
+        const QWidget* widget
+    );
+
+    QSize dropdownSeparatorSizeFromContents(const StyleParameters::StyleContext& context) const;
+
+    QRect dropdownSeparatorRuleBand(
+        const QStyleOption* option,
+        const QWidget* widget,
+        const BoxGeometryDefinition& geometry
+    ) const;
+
+    /// The rect a combo popup's container lays its list out in.
+    std::optional<QRect> comboPopupContentsRect(
+        const QStyleOption* option,
+        const QWidget* widget
     ) const;
 
 protected:
@@ -971,6 +1029,7 @@ protected:
     uint32_t overrideSetOf(const QWidget* widget) const;
 
     static void forEachChildWidget(QWidget* widget, const std::function<void(QWidget*)>& visit);
+
 
     // clang-format off
     /// Where the propagated transparency tag is recorded. Style-owned.

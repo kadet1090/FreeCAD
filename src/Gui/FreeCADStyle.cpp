@@ -33,6 +33,8 @@
 #include <QPainterPath>
 #include <QApplication>
 #include <QCoreApplication>
+#include <QMouseEvent>
+#include <QPointer>
 #include <QPalette>
 #include <QPushButton>
 #include <QMenu>
@@ -2426,6 +2428,12 @@ QSize FreeCADStyle::itemViewItemSizeFromContents(
     const QWidget* widget
 ) const
 {
+    // Before the row context is built: a separator is not a cell, and none of the icon, label
+    // or inter-row-gap arithmetic below describes one.
+    if (const auto separator = dropdownSeparatorContext(option, widget)) {
+        return dropdownSeparatorSizeFromContents(*separator);
+    }
+
     const StyleContext context = contextOf(widget, option, StyleComponentElement::Item);
     if (context.element != StyleComponentElement::Item) {
         return QProxyStyle::sizeFromContents(CT_ItemViewItem, option, size, widget);
@@ -2516,6 +2524,13 @@ void FreeCADStyle::updateScrollAreaMask(QAbstractScrollArea* scrollArea) const
         return;
     }
 
+    // A combo popup's edge is painted by the container around the list, not by the list
+    // itself, which sits inset from it. Clipping the list would round a widget whose corners
+    // are not the popup's, and leave the visible edge square.
+    if (scrollArea->property(comboDropdownProperty).toBool()) {
+        return;
+    }
+
     const StyleContext context = contextOf(scrollArea, nullptr);
     const BoxStyleDefinition boxStyle = resolveBoxStyle(context);
 
@@ -2543,6 +2558,262 @@ void FreeCADStyle::updateScrollAreaMask(QAbstractScrollArea* scrollArea) const
 // The parent chain only says where to look. A QListView that merely sits inside a combo box is
 // not its popup — an editable combo's completer builds one of those — so the combo box is
 // returned only when it names this very view as its own.
+std::optional<int> FreeCADStyle::chosenDropdownRow(const QWidget* widget)
+{
+    const QVariant tagged = widget->property(comboBoxProperty);
+    if (const QComboBox* comboBox = tagged.value<QPointer<QComboBox>>()) {
+        return comboBox->currentIndex();
+    }
+
+    const QVariant chosenRow = widget->property(chosenRowProperty);
+    if (chosenRow.isValid()) {
+        return chosenRow.toInt();
+    }
+
+    return {};
+}
+
+// A combo popup's selection is the combo's own current index. Qt repurposes the view's
+// selection as a cursor — it follows the pointer and the arrow keys — so State_Selected is
+// folded into Hovered and the chosen entry is identified separately instead.
+//
+// The chosen entry is exempt from that fold. Qt makes it the view's current row the instant
+// the popup opens, so it arrives carrying State_Selected before anything has been navigated;
+// folding it would show the value as merely hovered on every freshly opened dropdown, which
+// is precisely when the owner opens one to see what is set. The exemption costs it nothing
+// under the pointer: State_MouseOver is mapped to Hovered by the generic state block that
+// runs before this, and Hovered outranks Selected.
+void FreeCADStyle::applyDropdownSelectionState(
+    StyleContext& context,
+    const QStyleOption* option,
+    const QWidget* widget
+)
+{
+    const std::optional<int> chosenRow = chosenDropdownRow(widget);
+    if (!chosenRow) {
+        return;  // nothing drives this view's selection, so it means what it says
+    }
+
+    const auto* viewItemOption = qstyleoption_cast<const QStyleOptionViewItem*>(option);
+    if (!viewItemOption || !viewItemOption->index.isValid()) {
+        return;
+    }
+
+    // Here the view's selection is a cursor: it follows the pointer and the arrow keys. Clear
+    // the mark the generic item-view rule just granted, so only the chosen entry carries it.
+    context.state.setFlag(StyleState::Selected, false);
+
+    if (viewItemOption->index.row() == *chosenRow) {
+        context.state |= StyleState::Selected;
+    }
+    else if (option->state & QStyle::State_Selected) {
+        context.state |= StyleState::Hovered;
+    }
+}
+
+// Qt never says a row is being pressed. State_Sunken — the flag every other component's Pressed
+// state is read from — reaches no QStyleOptionViewItem: across Qt's item views only QHeaderView
+// sets it, and then on a section. So the press is read off the pointer instead, and a row holds
+// it for exactly as long as the pointer rests on it with the button down. That is also what the
+// release will act on, so the row that looks pressed is always the row that would be chosen.
+//
+// Added to the hover rather than put in its place: the fallback chain emits every active state
+// in priority order, so a pressed row still resolves the hovered fill underneath and a
+// PressedBackgroundEffect deepens that rather than landing on nothing.
+void FreeCADStyle::applyDropdownPressedState(StyleContext& context, const QStyleOption* option)
+{
+    // View items only. The view's own frame and the popup container resolve as DropdownList too,
+    // and a button held anywhere over the popup would otherwise press the whole surface.
+    if (qstyleoption_cast<const QStyleOptionViewItem*>(option) == nullptr) {
+        return;
+    }
+
+    if (!context.state.testFlag(StyleState::Hovered)) {
+        return;
+    }
+
+    if (QGuiApplication::mouseButtons() & Qt::LeftButton) {
+        context.state |= StyleState::Pressed;
+    }
+}
+
+// Neither half of a press repaints on its own. The hovered row does not change, and a dropdown
+// has already made the row under the pointer current and selected by the time the button goes
+// down, so the view and the selection model both have nothing to update. Left to them, the
+// pressed fill would appear only once something unrelated repainted the row.
+void FreeCADStyle::repaintPressedDropdownRow(QObject* viewport, const QEvent* event)
+{
+    if (event->type() != QEvent::MouseButtonPress && event->type() != QEvent::MouseButtonRelease) {
+        return;
+    }
+
+    if (static_cast<const QMouseEvent*>(event)->button() != Qt::LeftButton) {
+        return;
+    }
+
+    // The filter this arrives through is installed on many widgets; only a dropdown's viewport
+    // has rows whose appearance the button changes.
+    auto* view = qobject_cast<QListView*>(viewport->parent());
+    if (view == nullptr || !view->property(comboDropdownProperty).toBool()) {
+        return;
+    }
+
+    view->viewport()->update();
+}
+
+bool FreeCADStyle::isSeparatorIndex(const QModelIndex& index)
+{
+    return index.data(Qt::AccessibleDescriptionRole).toString() == QLatin1String("separator");
+}
+
+std::optional<StyleContext> FreeCADStyle::dropdownSeparatorContext(
+    const QStyleOption* option,
+    const QWidget* widget
+)
+{
+    const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option);
+    if (vopt == nullptr || !isSeparatorIndex(vopt->index)) {
+        return std::nullopt;
+    }
+
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Separator);
+    // The component check is load-bearing: contextOf() only resolves DropdownList for the
+    // widgets whose popup rows this style actually lays out. The element check is defensive
+    // rather than reachable today — every branch that sets DropdownList also assigns element
+    // unconditionally — kept in case that stops being true later.
+    if (context.component != StyleComponent::DropdownList
+        || context.element != StyleComponentElement::Separator) {
+        return std::nullopt;
+    }
+    return context;
+}
+
+QSize FreeCADStyle::dropdownSeparatorSizeFromContents(const StyleContext& context) const
+{
+    // resolveBoxGeometry() already resolves Height into geometry.height, which constrain()
+    // applies before the margin is added — a second, separate Height lookup here would only
+    // ever agree with it, never override it.
+    return resolveBoxGeometry(context).marginBox({0, 0});
+}
+
+QRect FreeCADStyle::dropdownSeparatorRuleBand(
+    const QStyleOption* option,
+    const QWidget* widget,
+    const BoxGeometryDefinition& geometry
+) const
+{
+    // The Item element, not the Separator one: dropdownSeparatorSizeFromContents() deliberately
+    // does not add this gap to the separator's own size (it isn't a row like the others), so it
+    // has to be looked up again here through the context that does carry it.
+    const int trailingGap
+        = resolveBoxGeometry(contextOf(widget, option, StyleComponentElement::Item)).spacing;
+
+    QRect band = geometry.borderRect(option->rect);
+    band.setHeight(band.height() + trailingGap);
+    return band;
+}
+
+std::optional<QRect> FreeCADStyle::comboPopupContentsRect(
+    const QStyleOption* option,
+    const QWidget* widget
+) const
+{
+    if (option == nullptr || widget == nullptr || !widget->property(comboContainerProperty).toBool()) {
+        return {};
+    }
+
+    // QFrame turns this rect into the container's contents margins, which is the only inset
+    // between the popup edge and the list inside it. Deriving it from the surface's own border
+    // and padding is what gives the popup the same breathing room a menu has.
+    const StyleContext context = contextOf(widget, option);
+    const QMargins border = resolveBoxStyle(context).borderThickness.value_or(QMarginsF()).toMargins();
+    const QMargins padding = resolveBoxGeometry(context).padding.toMargins();
+
+    // The popup's rows carry a leading gap like any other item view's, the first one included,
+    // so the padding at the top gives that first gap back and the first row still sits at
+    // exactly border + padding.
+    const int top = border.top()
+        + paddingLessLeadingGap(padding.top(), leadingRowGap(option, widget));
+
+    return option->rect.marginsRemoved(QMargins(
+        border.left() + padding.left(),
+        top,
+        border.right() + padding.right(),
+        border.bottom() + padding.bottom()
+    ));
+}
+
+void FreeCADStyle::constrainComboDropdown(QComboBox* comboBox)
+{
+    auto* listView = qobject_cast<QListView*>(comboBox->view());
+    if (!listView) {
+        return;
+    }
+
+    // The popup's rows are painted with the view as the widget, but the selection they should
+    // show belongs to the combo box. Carry it here rather than walking the parent chain, which
+    // changes when the container is reparented at show time. A QPointer so the tag reads back as
+    // null if the combo box ever outlives its view, instead of resting on their ownership order.
+    listView->setProperty(comboBoxProperty, QVariant::fromValue(QPointer<QComboBox>(comboBox)));
+
+    // The popup list belongs to Qt, so a caller that needs its own dropdown metrics names the
+    // component on the combo box and it is carried over here. The list then resolves against
+    // that prefix ahead of DropdownList, which is how one dropdown takes a height of its own.
+    const QVariant component = comboBox->property("dropdownComponent");
+    if (component.isValid()) {
+        listView->setProperty("component", component);
+        // The surface and edge belong to the container, so it answers to the same name as the
+        // list it holds — otherwise a named dropdown could restyle its rows but not the popup
+        // around them.
+        if (QWidget* container = listView->parentWidget()) {
+            container->setProperty("component", component);
+        }
+    }
+
+    constrainDropdown(listView);
+}
+
+void FreeCADStyle::constrainDropdown(QListView* listView, int chosenRow)
+{
+    if (!listView) {
+        return;
+    }
+
+    listView->setProperty(comboDropdownProperty, true);
+    listView->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    // On the viewport, not the view: mouse events are delivered to the viewport, and a filter on
+    // the scroll area around it never sees them. QObject::installEventFilter drops an earlier
+    // registration of the same filter, so re-adopting a view does not stack them up.
+    if (QWidget* viewport = listView->viewport()) {
+        viewport->installEventFilter(this);
+    }
+
+    // Written even for -1, and even when a previous adoption already tagged this view. The tag's
+    // presence is what says the view's own selection is a cursor rather than a choice, so a
+    // dropdown holding nothing has to state that too — a combo box with no current index answers
+    // -1 the same way. An absent tag is then only ever a view that was never adopted.
+    listView->setProperty(chosenRowProperty, chosenRow);
+
+    QWidget* container = listView->parentWidget();
+    if (!container) {
+        return;
+    }
+
+    // Guard against double-installation on re-polish (e.g. theme change).
+    if (!container->property(comboContainerProperty).toBool()) {
+        container->setProperty(comboContainerProperty, true);
+        container->installEventFilter(this);
+    }
+
+    // Both widgets were created before, or by, the caller, and whatever metrics they cached they
+    // cached while resolving as plain widgets. The tags just applied change those metrics — the
+    // view's rows take the DropdownList pitch, the container insets its contents by the popup's
+    // own border and padding — and nothing in Qt reconsiders a cache because a property changed.
+    notifyStyleChange(listView);
+    notifyStyleChange(container);
+}
+
 std::optional<int> FreeCADStyle::resolvePixelMetric(
     PixelMetric metric,
     const QStyleOption* option,
@@ -2762,6 +3033,9 @@ QRect FreeCADStyle::subElementRect(
     }
 
     if (element == SE_ShapedFrameContents) {
+        if (const auto contents = comboPopupContentsRect(option, widget)) {
+            return *contents;
+        }
         if (const auto contents = itemViewContentsRect(option, widget)) {
             return *contents;
         }
@@ -3039,6 +3313,12 @@ void FreeCADStyle::drawControl(
     }
 
     if (element == CE_ItemViewItem) {
+        if (const auto separator = dropdownSeparatorContext(option, widget)) {
+            const BoxGeometryDefinition geometry = resolveBoxGeometry(*separator);
+            drawSeparatorRule(painter, *separator, dropdownSeparatorRuleBand(option, widget, geometry));
+            return;
+        }
+
         if (const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option)) {
             // Patch HighlightedText so the base style's own item painting uses the token
             // colour for a selected row rather than the palette's near-white default.
@@ -3333,6 +3613,20 @@ StyleContext FreeCADStyle::contextOf(
         context.component = StyleComponent::Header;
         context.element = element;
     }
+    else if (qobject_cast<const QListView*>(widget)) {
+        // polish() tags the QComboBox's own list so this does not depend on Qt's internal
+        // parent chain, which changes when the container is reparented at show time.
+        const bool isDropdown = widget->property(comboDropdownProperty).toBool();
+        context.component = isDropdown ? StyleComponent::DropdownList : StyleComponent::List;
+        context.element = element;
+    }
+    else if (widget != nullptr && widget->property(comboContainerProperty).toBool()) {
+        // The popup container is a plain frame around the list, and it is what paints the
+        // popup's surface and edge. It resolves as the dropdown it holds, so one block of
+        // tokens describes the whole popup.
+        context.component = StyleComponent::DropdownList;
+        context.element = element;
+    }
     else if (qobject_cast<const QAbstractItemView*>(widget)) {
         context.component = StyleComponent::List;
         context.element = element;
@@ -3483,9 +3777,16 @@ StyleContext FreeCADStyle::contextOf(
         }
         // In an item view State_Selected marks a persistent selection, unlike a menu's, which
         // follows the cursor.
-        if (context.component == StyleComponent::List
-            && (option->state & QStyle::State_Selected)) {
+        const bool isItemView = context.component == StyleComponent::List
+            || context.component == StyleComponent::DropdownList;
+        if (isItemView && (option->state & QStyle::State_Selected)) {
             context.state |= StyleState::Selected;
+        }
+        if (context.component == StyleComponent::DropdownList) {
+            applyDropdownSelectionState(context, option, widget);
+            // After the selection handling, which is what settles whether this row counts as
+            // hovered: a dropdown's State_Selected is a cursor, and the fold happens there.
+            applyDropdownPressedState(context, option);
         }
         if (option->state & QStyle::State_HasFocus) {
             context.state |= StyleState::Focused;
@@ -3749,6 +4050,10 @@ void FreeCADStyle::polish(QWidget* widget)
     const bool inherited = canInheritTransparency(widget)
         && transparencyBelow(widget->parentWidget());
     tagWidgetTransparency(widget, ownSurface(widget, inherited));
+
+    if (auto* comboBox = qobject_cast<QComboBox*>(widget)) {
+        constrainComboDropdown(comboBox);
+    }
 }
 
 void FreeCADStyle::unpolish(QWidget* widget)
@@ -3789,6 +4094,8 @@ void FreeCADStyle::applyTextEditDocumentPadding(QWidget* widget, QTextDocument* 
 
 bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 {
+    repaintPressedDropdownRow(obj, event);
+
     if (event->type() == QEvent::Resize || event->type() == QEvent::Show) {
         if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(obj)) {
             updateScrollAreaMask(scrollArea);

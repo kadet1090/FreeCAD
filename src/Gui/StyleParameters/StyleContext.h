@@ -56,6 +56,7 @@ enum class StyleComponent : uint8_t
     CheckBox,       // QCheckBox indicator
     RadioButton,    // QRadioButton indicator
     List,           // QListWidget, QListView and other item views
+    DropdownList,   // QListView inside a QComboBox popup
     Header,         // QHeaderView sections
     Menu,           // QMenu popup: context menus, menu bar and tool button dropdowns
     MenuBar,        // QMenuBar

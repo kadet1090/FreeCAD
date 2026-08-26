@@ -299,3 +299,40 @@ MenuIconIndicatorBorderThickness: "@FormControlBorderThickness"
 MenuIconIndicatorCheckedBackground: "@ButtonLinkPressedBackground"
 MenuIconIndicatorCheckedBorderColor: "@ButtonLinkPressedBorderColor"
 MenuIconIndicatorCheckedInnerShadow: "@ButtonLinkPressedInnerShadow"
+
+# The container around the list is a QFrame, and its frame is the popup's edge.
+DropdownListBackground: "@MenuBackground"
+DropdownListBorderColor: "@MenuBorderColor"
+DropdownListBorderThickness: "@MenuBorderThickness"
+DropdownListBorderRadius: "@MenuBorderRadius"
+DropdownListPadding: "@MenuPadding"
+
+# The highlighted row here is the hovered one, not the selected one: Qt marks the row under the
+# pointer State_Selected, which is what makes the base style reach for the palette's highlight
+# text colour. That colour is meant for a fully saturated fill and the hover tint is not one,
+# so the label is held at the ordinary text colour instead.
+DropdownListItemPadding: "@MenuItemPadding"
+DropdownListItemIconSpacing: "@MenuItemIconSpacing"
+DropdownListItemSpacing: "@MenuItemSpacing"
+DropdownListItemHoveredTextColor: "@BaseTextColor"
+# Without this alias, PM_SmallIconSize finds nothing on the DropdownList -> List chain and falls
+# through to the platform theme, so a row's icon takes whatever size the desktop happens to use.
+DropdownListIconSize: "@MenuIconSize"
+
+# Two different rows can carry a highlight: hover follows the pointer, while selection marks the
+# entry the combo box currently holds and stays put as the pointer moves. A row that is both
+# resolves the hovered fill, since Hovered outranks Selected.
+DropdownListRowBorderRadius: "@MenuItemBorderRadius"
+DropdownListRowHoveredBackground: "@MenuItemHoveredBackground"
+DropdownListRowSelectedBackground: "@Background.100"
+DropdownListRowPressedBackgroundEffect: "@ButtonPressedBackgroundEffect"
+
+# The rule between groups of dropdown rows. The height is the band the rule is centred in,
+# extended by the next row's leading gap so the rule centres between rows rather than within its
+# own band. That split only comes out even when Height + ItemSpacing - SeparatorThickness is
+# even; with the even spacing scale and an odd thickness, Height must be odd, hence the +1px the
+# scale itself cannot express.
+DropdownListSeparatorHeight: "@Spacing.100 + 1px"
+DropdownListSeparatorMargin: "padding(horizontal: @Spacing.100)"
+DropdownListSeparatorBorderColor: "@SeparatorColor"
+DropdownListSeparatorBorderThickness: "@SeparatorThickness"
