@@ -47,6 +47,7 @@ enum class StyleComponent : uint8_t
 {
     None,
     PushButton,
+    ToolButton,
     COUNT
 };
 
@@ -61,6 +62,7 @@ enum class StyleComponent : uint8_t
 enum class StyleComponentElement : uint8_t
 {
     Root,  // Main component
+    Menu,  // Dropdown strip of a MenuButtonPopup tool button
     COUNT,
 };
 

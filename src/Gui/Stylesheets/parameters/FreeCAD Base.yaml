@@ -54,6 +54,14 @@ ButtonPadding: "padding(horizontal: @Spacing.300, vertical: @Spacing.100)"
 
 ButtonIconSpacing: "@FormControlIconSpacing"
 ButtonIconSize: 16px
+
+# Read by the QSS below rather than by resolveFont: Qt gives a tool button its font
+# before the style is consulted, so the label is already measured by the time a
+# FontSize token could reach it.
+ButtonFontSize: 12px
+ButtonFontWeight: 500
+ButtonSmallFontSize: 11px
+ButtonSmallFontWeight: 500
 ButtonContentBox: "content_box((width: @ButtonMinWidth, height: @FormControlHeight), @ButtonPadding, @FormControlBorderThickness)"
 
 ButtonFocusedBorderColor: "@Accent.600"
@@ -90,3 +98,19 @@ ButtonLinkPressedInnerShadow: "@ButtonPressedInnerShadow"
 ButtonLinkCheckedBackground: "@Background.150"
 ButtonLinkCheckedBorderColor: "@BaseBorderColor"
 ButtonLinkCheckedInnerShadow: "@ButtonCheckedInnerShadow"
+
+ToolButtonPadding: "padding(@Spacing.150)"
+ToolButtonSmallPadding: "padding(@Spacing.100)"
+
+# A tool button is at least as wide as it is tall, so an icon-only one is never narrower than
+# square. The floors are the form-control heights, which is what a tool button's own Height
+# resolves to through Button -> FormControl.
+ToolButtonMinWidth: "@FormControlHeight"
+ToolButtonSmallMinWidth: "@FormControlSmallHeight"
+
+# The Link variant covers auto-raise buttons. The padding is uniform, so an icon-only button
+# grows squarely: size = iconSize + 2 * padding. That square only survives while
+# iconSize + 2 * padding clears ToolButtonMinWidth; below an 18px icon the width floor wins
+# and the button reads slightly wide.
+ToolButtonLinkPadding: "@Spacing.100"
+ToolButtonMenuWidth: 14px

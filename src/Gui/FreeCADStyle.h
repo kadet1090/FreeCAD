@@ -371,6 +371,20 @@ public:
         const QWidget* widget
     ) const override;
 
+    void drawComplexControl(
+        ComplexControl control,
+        const QStyleOptionComplex* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const override;
+
+    QRect subControlRect(
+        ComplexControl complexControl,
+        const QStyleOptionComplex* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const override;
+
     /**
      * @brief Builds a StyleContext from a widget and its current style option.
      *
@@ -508,6 +522,38 @@ protected:
     std::optional<int> resolvePixelMetric(
         PixelMetric metric,
         const QStyleOption* option,
+        const QWidget* widget
+    ) const;
+
+    /// Draws an anti-aliased chevron pointing @p direction, filling @p rect.
+    void drawChevronArrow(
+        QPainter* painter,
+        const QRect& rect,
+        Qt::ArrowType direction,
+        const QColor& color
+    ) const;
+
+    void drawToolButton(
+        const QStyleOptionToolButton* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const;
+
+    void drawToolButtonLabel(
+        QPainter* painter,
+        const QStyleOptionToolButton* option,
+        const QWidget* widget
+    ) const;
+
+    QSize toolButtonSizeFromContents(
+        const QStyleOptionToolButton* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    QRect toolButtonSubControlRect(
+        const QStyleOptionToolButton* option,
+        SubControl subControl,
         const QWidget* widget
     ) const;
 

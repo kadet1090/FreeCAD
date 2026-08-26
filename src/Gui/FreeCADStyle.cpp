@@ -32,7 +32,10 @@
 #include <QPainterPath>
 #include <QPalette>
 #include <QPushButton>
+#include <QToolBar>
+#include <QToolButton>
 #include <QStyleOptionButton>
+#include <QStyleOptionToolButton>
 #include <QStyleOption>
 #include <QWidget>
 #endif
@@ -672,8 +675,29 @@ bool isFlat(const QWidget* widget, const QStyleOption* option)
     if (const auto* button = qobject_cast<const QPushButton*>(widget)) {
         return button->isFlat();
     }
+    if (const auto* toolButton = qobject_cast<const QToolButton*>(widget)) {
+        return toolButton->autoRaise();
+    }
     return widget && widget->property("flat").toBool();
 }
+
+/**
+ * @brief Returns the orientation of the nearest ancestor QToolBar, or nullopt if the widget is
+ *        not inside a toolbar.
+ */
+std::optional<Qt::Orientation> toolbarOrientationOf(const QWidget* widget)
+{
+    const QWidget* ancestor = widget ? widget->parentWidget() : nullptr;
+
+    if (const auto* toolbar = qobject_cast<const QToolBar*>(ancestor)) {
+        return toolbar->orientation();
+    }
+
+    return std::nullopt;
+}
+
+// The chevron is drawn slightly softer than body text.
+constexpr int arrowAlpha = 160;
 
 QIcon::Mode iconModeOf(const QStyleOption* option)
 {
@@ -745,6 +769,377 @@ QPixmap FreeCADStyle::renderStyledIcon(
     );
 }
 
+void FreeCADStyle::drawChevronArrow(
+    QPainter* painter,
+    const QRect& rect,
+    Qt::ArrowType direction,
+    const QColor& color
+) const
+{
+    constexpr qreal arrowMaxSize = 6.0;
+    constexpr qreal arrowPenWidthRatio = 0.18;
+    constexpr qreal arrowMinPenWidth = 1.0;
+    // For down/up: width=side, height=side*ratio. For left/right: proportions swap.
+    constexpr qreal arrowHeightRatio = 0.5;
+
+    const qreal side = qMin(static_cast<qreal>(qMin(rect.width(), rect.height())), arrowMaxSize);
+    const qreal penWidth = qMax(arrowMinPenWidth, side * arrowPenWidthRatio);
+    const qreal halfW = side / 2.0;
+    const qreal halfH = side * arrowHeightRatio / 2.0;
+
+    // Use QRectF centre to avoid the 0.5 px truncation of QRect::center().
+    const QPointF center = QRectF(rect).center();
+
+    // Each direction is computed directly — no painter rotation, no rounding accumulation.
+    QPainterPath chevronPath;
+    // clang-format off
+    switch (direction) {
+        case Qt::UpArrow:
+            chevronPath.moveTo(center.x() - halfW, center.y() + halfH);
+            chevronPath.lineTo(center.x(),         center.y() - halfH);
+            chevronPath.lineTo(center.x() + halfW, center.y() + halfH);
+            break;
+        case Qt::LeftArrow:
+            chevronPath.moveTo(center.x() + halfH, center.y() - halfW);
+            chevronPath.lineTo(center.x() - halfH, center.y());
+            chevronPath.lineTo(center.x() + halfH, center.y() + halfW);
+            break;
+        case Qt::RightArrow:
+            chevronPath.moveTo(center.x() - halfH, center.y() - halfW);
+            chevronPath.lineTo(center.x() + halfH, center.y());
+            chevronPath.lineTo(center.x() - halfH, center.y() + halfW);
+            break;
+        default:  // Qt::DownArrow
+            chevronPath.moveTo(center.x() - halfW, center.y() - halfH);
+            chevronPath.lineTo(center.x(),         center.y() + halfH);
+            chevronPath.lineTo(center.x() + halfW, center.y() - halfH);
+            break;
+    }
+    // clang-format on
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(Qt::NoPen);
+    painter->strokePath(chevronPath, QPen(color, penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter->restore();
+}
+
+QSize FreeCADStyle::toolButtonSizeFromContents(
+    const QStyleOptionToolButton* option,
+    const QSize& size,
+    const QWidget* widget
+) const
+{
+    BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
+
+    const int menuWidth = proxy()->pixelMetric(PM_MenuButtonIndicator, option, widget);
+    const bool hasMenu = option->features & QStyleOptionToolButton::MenuButtonPopup;
+
+    const std::optional<Qt::Orientation> toolbarOrientation = toolbarOrientationOf(widget);
+
+    // QToolButton::sizeHint() adds PM_MenuButtonIndicator to the width for
+    // MenuButtonPopup buttons before calling sizeFromContents, regardless of toolbar
+    // orientation. For vertical toolbars the strip goes below the icon, so we move
+    // the indicator contribution from width to height.
+    QSize contentSize = size;
+    if (hasMenu && toolbarOrientation == Qt::Vertical) {
+        contentSize.rwidth() -= menuWidth;
+        contentSize.rheight() += menuWidth;
+    }
+
+    // For horizontal menu-strip buttons, minWidth expresses the button body minimum;
+    // add the strip width so constrain sees the correct total minimum.
+    const bool hasHorizontalMenu = hasMenu && toolbarOrientation != Qt::Vertical;
+    if (hasHorizontalMenu && geometry.minWidth) {
+        geometry.minWidth = *geometry.minWidth + menuWidth;
+    }
+
+    // For instant/delayed popup buttons the arrow indicator is drawn inline within the
+    // button body (no separate strip). Reserve width for it so the icon does not overlap.
+    const bool hasInlineIndicator = (option->features & QStyleOptionToolButton::HasMenu) && !hasMenu;
+    if (hasInlineIndicator) {
+        contentSize.rwidth() += menuWidth;
+        if (geometry.minWidth) {
+            geometry.minWidth = *geometry.minWidth + menuWidth;
+        }
+    }
+
+    return geometry.sizeFromContents(contentSize);
+}
+
+QRect FreeCADStyle::toolButtonSubControlRect(
+    const QStyleOptionToolButton* option,
+    SubControl subControl,
+    const QWidget* widget
+) const
+{
+    const QRect rect = option->rect;
+
+    if (option->features & QStyleOptionToolButton::MenuButtonPopup) {
+        const int menuWidth = proxy()->pixelMetric(PM_MenuButtonIndicator, option, widget);
+        const bool isVertical = toolbarOrientationOf(widget) == Qt::Vertical;
+
+        switch (subControl) {
+            case SC_ToolButton:
+                if (isVertical) {
+                    return {rect.left(), rect.top(), rect.width(), rect.height() - menuWidth};
+                }
+                return {rect.left(), rect.top(), rect.width() - menuWidth, rect.height()};
+            case SC_ToolButtonMenu:
+                if (isVertical) {
+                    return {rect.left(), rect.bottom() - menuWidth + 1, rect.width(), menuWidth};
+                }
+                return {rect.right() - menuWidth + 1, rect.top(), menuWidth, rect.height()};
+            default:
+                return QProxyStyle::subControlRect(CC_ToolButton, option, subControl, widget);
+        }
+    }
+
+    return QProxyStyle::subControlRect(CC_ToolButton, option, subControl, widget);
+}
+
+void FreeCADStyle::drawToolButton(
+    const QStyleOptionToolButton* option,
+    QPainter* painter,
+    const QWidget* widget
+) const
+{
+    const bool hasMenuButton = option->features & QStyleOptionToolButton::MenuButtonPopup;
+    const bool isVertical = toolbarOrientationOf(widget) == Qt::Vertical;
+
+    // The main half keeps the border on the join; the strip drops it, so one rule separates
+    // the two. In a vertical toolbar the strip sits below the body rather than beside it.
+    const SeamEdge mainSeam = !hasMenuButton ? SeamEdge::None
+        : isVertical                         ? SeamEdge::Bottom
+                                             : SeamEdge::Right;
+    const SeamEdge menuSeam = isVertical ? SeamEdge::Top : SeamEdge::Left;
+
+    // Draw the main button area. Strip State_Sunken when only the menu strip is the
+    // active subcontrol so that clicking the dropdown does not depress the main area.
+    // When the menu strip is being pressed Qt may clear State_MouseOver from the overall
+    // state. Use activeSubControls instead: it is non-zero whenever the mouse is over
+    // any part of the split button, so the main half keeps its hover look.
+    const QRect mainRect = proxy()->subControlRect(CC_ToolButton, option, SC_ToolButton, widget);
+    QStyleOptionToolButton mainOption = *option;
+    if (!(option->activeSubControls & SC_ToolButton)) {
+        mainOption.state &= ~State_Sunken;
+    }
+    if (hasMenuButton && option->activeSubControls) {
+        mainOption.state |= State_MouseOver;
+    }
+    drawBoxBackground(
+        painter,
+        mainRect,
+        seamedBoxStyle(contextOf(widget, &mainOption), mainSeam, SeamBorder::Keep)
+    );
+
+    if (hasMenuButton) {
+        // Draw the dropdown arrow strip with its own interactive state.
+        const QRect menuRect
+            = proxy()->subControlRect(CC_ToolButton, option, SC_ToolButtonMenu, widget);
+        QStyleOptionToolButton menuOption = *option;
+        if (!(option->activeSubControls & SC_ToolButtonMenu)) {
+            menuOption.state &= ~State_Sunken;
+        }
+        drawBoxBackground(
+            painter,
+            menuRect,
+            seamedBoxStyle(contextOf(widget, &menuOption), menuSeam, SeamBorder::Drop)
+        );
+
+        QStyleOptionToolButton arrowOption = *option;
+        arrowOption.rect = menuRect;
+        proxy()->drawPrimitive(PE_IndicatorArrowDown, &arrowOption, painter, widget);
+    }
+    QRect labelRect = mainRect;
+
+    if (option->features & QStyleOptionToolButton::HasMenu && !hasMenuButton) {
+        // Instant/delayed popup: draw a small arrow indicator on the right, vertically
+        // centered within the content area (respecting margin and padding).
+        const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
+        const QRect contentArea = geometry.contentRect(option->rect);
+        const int arrowSize = proxy()->pixelMetric(PM_MenuButtonIndicator, option, widget);
+
+        QStyleOptionToolButton arrowOption = *option;
+        arrowOption.rect = QRect(
+            contentArea.right() - arrowSize + 1,
+            contentArea.top() + ((contentArea.height() - arrowSize) / 2),
+            arrowSize,
+            arrowSize
+        );
+        proxy()->drawPrimitive(PE_IndicatorArrowDown, &arrowOption, painter, widget);
+
+        // Narrow the label rect by arrowSize only. The sizeFromContents adds
+        // arrowSize + iconSpacing to the button width, so the content rect inside
+        // CE_ToolButtonLabel ends up iconSpacing wider than the icon — the icon
+        // centers within it, placing iconSpacing/2 of buffer between the icon and
+        // the arrow rect. Do not subtract iconSpacing here as well, which would
+        // cancel its effect entirely.
+        labelRect.setRight(mainRect.right() - arrowSize);
+    }
+
+    // Draw label (icon + text). Restrict to SC_ToolButton so it does not bleed into
+    // the menu strip. Also clear SC_ToolButtonMenu so QCommonStyle::CE_ToolButtonLabel
+    // does not draw its own menu indicator arrow on top of ours.
+    QStyleOptionToolButton labelOption = *option;
+    labelOption.rect = labelRect;
+    labelOption.subControls &= ~SC_ToolButtonMenu;
+    proxy()->drawControl(CE_ToolButtonLabel, &labelOption, painter, widget);
+}
+
+void FreeCADStyle::drawToolButtonLabel(
+    QPainter* painter,
+    const QStyleOptionToolButton* option,
+    const QWidget* widget
+) const
+{
+    const StyleContext context = contextOf(widget, option);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+    const QRect contentRect = geometry.contentRect(option->rect);
+
+    const Qt::ToolButtonStyle tbStyle = option->toolButtonStyle;
+    const bool hasIconOrArrow = !option->icon.isNull() || option->arrowType != Qt::NoArrow;
+    const bool hasText = hasIconOrArrow && !option->text.isEmpty()
+        && (tbStyle == Qt::ToolButtonTextBesideIcon || tbStyle == Qt::ToolButtonTextUnderIcon);
+
+    if (!hasText) {
+        // Icon-only with a real (non-arrow) icon: draw it ourselves so the
+        // token-based icon color is applied. Text-only, arrow-only, and
+        // ToolButtonTextOnly always delegate — we have nothing to colour there.
+        const bool hasRealIcon = !option->icon.isNull() && option->arrowType == Qt::NoArrow
+            && tbStyle != Qt::ToolButtonTextOnly;
+        if (!hasRealIcon) {
+            QProxyStyle::drawControl(CE_ToolButtonLabel, option, painter, widget);
+            return;
+        }
+
+        // Prefer the padded content rect, but where the padding leaves too little room for
+        // the icon on an axis, ignore the padding there (grow back toward the full button
+        // rect) so a short button shows the icon at size instead of squashing it.
+        QRect iconRect = contentRect;
+        if (iconRect.width() < option->iconSize.width()) {
+            iconRect.setLeft(option->rect.left());
+            iconRect.setWidth(option->rect.width());
+        }
+        if (iconRect.height() < option->iconSize.height()) {
+            iconRect.setTop(option->rect.top());
+            iconRect.setHeight(option->rect.height());
+        }
+        iconRect = applyButtonShift(iconRect, option, widget);
+
+        // Shrink to the available room preserving aspect ratio; never distort or upscale.
+        QSize iconSize = option->iconSize;
+        if (iconSize.width() > iconRect.width() || iconSize.height() > iconRect.height()) {
+            iconSize.scale(iconRect.size(), Qt::KeepAspectRatio);
+        }
+
+        const QPixmap pixmap = renderStyledIcon(painter, option->icon, iconSize, option, context);
+        if (!pixmap.isNull()) {
+            proxy()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, pixmap);
+        }
+        return;
+    }
+
+    const int iconSpacing = geometry.iconSpacing;
+
+    const QRect shiftedContentRect = applyButtonShift(contentRect, option, widget);
+
+    const bool hasArrow = option->arrowType != Qt::NoArrow;
+
+    QPixmap pixmap;
+    QSize pixmapSize = option->iconSize;
+    if (!hasArrow && !option->icon.isNull()) {
+        pixmap = renderStyledIcon(
+            painter,
+            option->icon,
+            shiftedContentRect.size().boundedTo(option->iconSize),
+            option,
+            context
+        );
+        pixmapSize = pixmap.size() / painter->device()->devicePixelRatio();
+    }
+
+    const auto drawArrowInRect = [&](const QRect& arrowRect) {
+        QStyleOption arrowOpt(*option);
+        arrowOpt.rect = arrowRect;
+        PrimitiveElement primitive = PE_IndicatorArrowDown;
+        switch (option->arrowType) {
+            case Qt::LeftArrow:
+                primitive = PE_IndicatorArrowLeft;
+                break;
+            case Qt::RightArrow:
+                primitive = PE_IndicatorArrowRight;
+                break;
+            case Qt::UpArrow:
+                primitive = PE_IndicatorArrowUp;
+                break;
+            default:
+                break;
+        }
+        proxy()->drawPrimitive(primitive, &arrowOpt, painter, widget);
+    };
+
+    const int textFlags = mnemonicTextFlags(option, widget);
+
+    painter->save();
+    painter->setFont(option->font);
+
+    if (tbStyle == Qt::ToolButtonTextBesideIcon) {
+        const QRect iconRect(
+            shiftedContentRect.left(),
+            shiftedContentRect.top() + (shiftedContentRect.height() - pixmapSize.height()) / 2,
+            pixmapSize.width(),
+            pixmapSize.height()
+        );
+        const QRect textRect = shiftedContentRect.adjusted(pixmapSize.width() + iconSpacing, 0, 0, 0);
+
+        if (hasArrow) {
+            drawArrowInRect(iconRect);
+        }
+        else {
+            proxy()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, pixmap);
+        }
+        proxy()->drawItemText(
+            painter,
+            QStyle::visualRect(option->direction, shiftedContentRect, textRect),
+            textFlags | Qt::AlignLeft | Qt::AlignVCenter,
+            option->palette,
+            option->state & State_Enabled,
+            option->text,
+            QPalette::ButtonText
+        );
+    }
+    else {
+        // Qt::ToolButtonTextUnderIcon
+        const int fontHeight = option->fontMetrics.height();
+        const QRect iconRect = shiftedContentRect.adjusted(0, 0, 0, -(fontHeight + iconSpacing));
+        const QRect textRect(
+            shiftedContentRect.left(),
+            iconRect.bottom() + 1 + iconSpacing,
+            shiftedContentRect.width(),
+            fontHeight
+        );
+
+        if (hasArrow) {
+            drawArrowInRect(iconRect);
+        }
+        else {
+            proxy()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, pixmap);
+        }
+        proxy()->drawItemText(
+            painter,
+            QStyle::visualRect(option->direction, shiftedContentRect, textRect),
+            textFlags | Qt::AlignHCenter | Qt::AlignTop,
+            option->palette,
+            option->state & State_Enabled,
+            option->text,
+            QPalette::ButtonText
+        );
+    }
+
+    painter->restore();
+}
+
 std::optional<int> FreeCADStyle::resolvePixelMetric(
     PixelMetric metric,
     const QStyleOption* option,
@@ -764,6 +1159,10 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
 
     if (const auto found = metrics.find(metric); found != metrics.end()) {
         return resolve<int>(context, found->second);
+    }
+
+    if (metric == PM_MenuButtonIndicator) {
+        return resolve<int>(contextOf(widget, option, StyleComponentElement::Menu), Width);
     }
 
     return {};
@@ -794,7 +1193,46 @@ QSize FreeCADStyle::sizeFromContents(
         return geometry.sizeFromContents(contentSize);
     }
 
+    if (type == CT_ToolButton) {
+        if (const auto* tbOption = qstyleoption_cast<const QStyleOptionToolButton*>(option)) {
+            return toolButtonSizeFromContents(tbOption, size, widget);
+        }
+    }
+
     return QProxyStyle::sizeFromContents(type, option, size, widget);
+}
+
+QRect FreeCADStyle::subControlRect(
+    ComplexControl complexControl,
+    const QStyleOptionComplex* option,
+    SubControl subControl,
+    const QWidget* widget
+) const
+{
+    if (complexControl == CC_ToolButton) {
+        if (const auto* opt = qstyleoption_cast<const QStyleOptionToolButton*>(option)) {
+            return toolButtonSubControlRect(opt, subControl, widget);
+        }
+    }
+
+    return QProxyStyle::subControlRect(complexControl, option, subControl, widget);
+}
+
+void FreeCADStyle::drawComplexControl(
+    ComplexControl control,
+    const QStyleOptionComplex* option,
+    QPainter* painter,
+    const QWidget* widget
+) const
+{
+    if (control == CC_ToolButton) {
+        if (const auto* opt = qstyleoption_cast<const QStyleOptionToolButton*>(option)) {
+            drawToolButton(opt, painter, widget);
+            return;
+        }
+    }
+
+    QProxyStyle::drawComplexControl(control, option, painter, widget);
 }
 
 void FreeCADStyle::drawPrimitive(
@@ -806,6 +1244,25 @@ void FreeCADStyle::drawPrimitive(
 {
     if (element == PE_PanelButtonCommand) {
         drawComponent(painter, option->rect, widget, option);
+        return;
+    }
+
+    if (element == PE_IndicatorArrowDown || element == PE_IndicatorArrowUp
+        || element == PE_IndicatorArrowLeft || element == PE_IndicatorArrowRight) {
+        // clang-format off
+        const Qt::ArrowType direction = [&] {
+            switch (element) {
+                case PE_IndicatorArrowUp:    return Qt::UpArrow;
+                case PE_IndicatorArrowLeft:  return Qt::LeftArrow;
+                case PE_IndicatorArrowRight: return Qt::RightArrow;
+                default:                     return Qt::DownArrow;
+            }
+        }();
+        // clang-format on
+        const StyleContext context = contextOf(widget, option);
+        QColor arrowColor = resolveIconColor(context, option->palette);
+        arrowColor.setAlpha(arrowAlpha);
+        drawChevronArrow(painter, option->rect, direction, arrowColor);
         return;
     }
 
@@ -833,6 +1290,13 @@ void FreeCADStyle::drawControl(
     if (element == CE_PushButtonLabel) {
         if (const auto* btnOption = qstyleoption_cast<const QStyleOptionButton*>(option)) {
             drawPushButtonLabel(painter, btnOption, widget);
+            return;
+        }
+    }
+
+    if (element == CE_ToolButtonLabel) {
+        if (const auto* tbOption = qstyleoption_cast<const QStyleOptionToolButton*>(option)) {
+            drawToolButtonLabel(painter, tbOption, widget);
             return;
         }
     }
@@ -1030,7 +1494,10 @@ StyleContext FreeCADStyle::contextOf(
     StyleContext context;
     context.element = element;
 
-    if (qobject_cast<const QPushButton*>(widget)) {
+    if (qobject_cast<const QToolButton*>(widget)) {
+        context.component = StyleComponent::ToolButton;
+    }
+    else if (qobject_cast<const QPushButton*>(widget)) {
         context.component = StyleComponent::PushButton;
     }
 
@@ -1095,7 +1562,8 @@ StyleContext FreeCADStyle::contextOf(
         // State_Sunken means "is being pressed" for a button, but "has a sunken frame" for an
         // input widget, which sets it permanently. Only button-like components map it to
         // Pressed, so an input's Focused state is not masked by it.
-        const bool isButton = context.component == StyleComponent::PushButton;
+        const bool isButton = context.component == StyleComponent::PushButton
+            || context.component == StyleComponent::ToolButton;
         if (isButton && (option->state & QStyle::State_Sunken)) {
             context.state |= StyleState::Pressed;
         }
