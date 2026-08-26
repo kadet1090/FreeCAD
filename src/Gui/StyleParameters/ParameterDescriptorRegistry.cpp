@@ -231,6 +231,8 @@ const std::map<StyleProperty, std::string_view> propertyNames = {
     {StyleProperty::IconSpacing,        "IconSpacing"},
     {StyleProperty::FontSize,           "FontSize"},
     {StyleProperty::FontWeight,         "FontWeight"},
+    {StyleProperty::FontFamily,         "FontFamily"},
+    {StyleProperty::FontStyle,          "FontStyle"},
     {StyleProperty::Background,         "Background"},
     {StyleProperty::TextColor,          "TextColor"},
     {StyleProperty::InnerShadow,        "InnerShadow"},

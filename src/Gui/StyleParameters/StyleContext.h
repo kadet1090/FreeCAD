@@ -281,6 +281,8 @@ enum class StyleProperty : uint8_t
     IconSpacing,
     FontSize,
     FontWeight,
+    FontFamily,
+    FontStyle,
     Background,
     TextColor,
     InnerShadow,

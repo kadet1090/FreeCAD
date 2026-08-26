@@ -201,3 +201,21 @@ TEST(DescriptorRegistryTest, AnActiveTabResolvesThroughSelected)
     EXPECT_NE(std::ranges::find(prefixes, "TabBarTabSelected"), prefixes.end());
     EXPECT_EQ(std::ranges::find(prefixes, "TabBarTabChecked"), prefixes.end());
 }
+
+TEST(DescriptorRegistryTest, FontFamilyAndStylePropertiesParse)
+{
+    EXPECT_EQ(propertyString(StyleProperty::FontFamily), "FontFamily");
+    EXPECT_EQ(propertyString(StyleProperty::FontStyle), "FontStyle");
+
+    const ParameterDescriptorRegistry registry = builtinRegistry();
+
+    const auto family = registry.parse("ButtonFontFamily");
+    ASSERT_TRUE(family.has_value());
+    EXPECT_EQ(family->component, "Button");
+    EXPECT_EQ(family->property, "FontFamily");
+
+    const auto style = registry.parse("ButtonFontStyle");
+    ASSERT_TRUE(style.has_value());
+    EXPECT_EQ(style->component, "Button");
+    EXPECT_EQ(style->property, "FontStyle");
+}
