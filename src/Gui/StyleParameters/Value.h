@@ -158,6 +158,7 @@ enum class TupleKind : std::uint8_t
     Corners,
     LinearGradient,
     RadialGradient,
+    ColorEffect,
 };
 
 constexpr const char* tupleKindName(TupleKind kind)
@@ -179,6 +180,8 @@ constexpr const char* tupleKindName(TupleKind kind)
             return "LinearGradient";
         case TupleKind::RadialGradient:
             return "RadialGradient";
+        case TupleKind::ColorEffect:
+            return "ColorEffect";
     }
     return "<unknown>";
 }

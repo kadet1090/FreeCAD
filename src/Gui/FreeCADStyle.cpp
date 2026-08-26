@@ -36,6 +36,7 @@
 #include "Application.h"
 #include "Utilities.h"
 #include "FreeCADStyle.h"
+#include "StyleParameters/ColorEffect.h"
 #include "StyleParameters/Corners.h"
 #include "StyleParameters/Edges.h"
 #include "StyleParameters/Insets.h"
@@ -217,6 +218,67 @@ static void drawBorderRingSided(
 }
 
 
+namespace
+{
+
+/**
+ * @brief Applies a ColorEffect to each color in a QBrush.
+ *
+ * Solid brushes are shifted directly. Gradient brushes have each stop color
+ * shifted individually so the gradient shape is preserved.
+ */
+QBrush applyEffectToBrush(const QBrush& brush, const ColorEffect& effect)
+{
+    const auto applyToColor = [&](const QColor& color) -> QColor {
+        return effect.apply(Base::Color::fromValue(color)).asValue<QColor>();
+    };
+
+    if (brush.style() == Qt::SolidPattern) {
+        return QBrush(applyToColor(brush.color()));
+    }
+
+    if (const QGradient* gradient = brush.gradient()) {
+        QGradientStops stops = gradient->stops();
+        for (auto& [position, color] : stops) {
+            color = applyToColor(color);
+        }
+
+        // clang-format off
+        switch (gradient->type()) {
+            case QGradient::LinearGradient: {
+                const auto* linear = static_cast<const QLinearGradient*>(gradient);
+                QLinearGradient result(linear->start(), linear->finalStop());
+                result.setStops(stops);
+                result.setSpread(gradient->spread());
+                result.setCoordinateMode(gradient->coordinateMode());
+                return result;
+            }
+            case QGradient::RadialGradient: {
+                const auto* radial = static_cast<const QRadialGradient*>(gradient);
+                QRadialGradient result(radial->center(), radial->radius(), radial->focalPoint());
+                result.setStops(stops);
+                result.setSpread(gradient->spread());
+                result.setCoordinateMode(gradient->coordinateMode());
+                return result;
+            }
+            case QGradient::ConicalGradient: {
+                const auto* conical = static_cast<const QConicalGradient*>(gradient);
+                QConicalGradient result(conical->center(), conical->angle());
+                result.setStops(stops);
+                result.setCoordinateMode(gradient->coordinateMode());
+                return result;
+            }
+            default:
+                break;
+        }
+        // clang-format on
+    }
+
+    return brush;  // unsupported brush type — return unchanged
+}
+
+}  // namespace
+
 void FreeCADStyle::drawBoxBackground(
     QPainter* painter,
     const QRect& rect,
@@ -386,6 +448,19 @@ FreeCADStyle::BoxStyleDefinition FreeCADStyle::resolveBoxStyle(const StyleContex
     }
     if (const auto borderColors = resolve<BorderColors>(context, StyleProperty::BorderColor)) {
         result.borderColor = Base::convertTo<BorderColorsPerSide>(*borderColors);
+    }
+
+    if (const auto effect = resolve<ColorEffect>(context, StyleProperty::BackgroundEffect)) {
+        result.background = applyEffectToBrush(result.background, *effect);
+    }
+
+    if (const auto effect = resolve<ColorEffect>(context, StyleProperty::BorderColorEffect)) {
+        if (result.borderColor) {
+            auto& colors = *result.borderColor;
+            for (QColor* side : {&colors.top, &colors.right, &colors.bottom, &colors.left}) {
+                *side = effect->apply(Base::Color::fromValue(*side)).asValue<QColor>();
+            }
+        }
     }
 
     boxStyleCache[key] = result;

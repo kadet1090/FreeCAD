@@ -20,6 +20,7 @@ add_executable(Gui_tests_run
         StyleParameters/CornersTest.cpp
         StyleParameters/GradientTest.cpp
         StyleParameters/ColorShadingTest.cpp
+        StyleParameters/ColorEffectTest.cpp
         StyleParameters/StyleContextTest.cpp
         StyleParameters/ShippedThemeTest.cpp
         InputHintTest.cpp

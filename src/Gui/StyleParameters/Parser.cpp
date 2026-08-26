@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 #include "Parser.h"
+#include "ColorEffect.h"
 #include "ColorShading.h"
 #include "Corners.h"
 #include "Gradient.h"
@@ -458,6 +459,7 @@ const std::unordered_map<std::string_view, StyleFunction>& styleFunctions()
         {"border_radius", [](const Tuple& args) -> Value { return Corners(args).tuple(); }},
         {"linear_gradient", [](const Tuple& args) -> Value { return LinearGradient(args).tuple(); }},
         {"radial_gradient", [](const Tuple& args) -> Value { return RadialGradient(args).tuple(); }},
+        {"effect", [](const Tuple& args) -> Value { return ColorEffect(args).tuple(); }},
     };
     return table;
 }
