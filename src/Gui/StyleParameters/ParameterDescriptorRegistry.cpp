@@ -58,6 +58,7 @@ const std::map<StyleComponentElement, std::string_view> elementNames = {
     {StyleComponentElement::Item, "Item"},
     {StyleComponentElement::Row, "Row"},
     {StyleComponentElement::Menu, "Menu"},
+    {StyleComponentElement::Arrow, "Arrow"},
 };
 // clang-format on
 
@@ -622,6 +623,16 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"State"},
         .inherits = {},
     }, StyleComponent::Header);
+
+    // A menu is deliberately standalone rather than inheriting List: it has no rows, no
+    // alternate parity and no selection model, and List's hover and selection colours live
+    // on the Row element, which a MenuItem context could never reach. The theme borrows
+    // List's values instead, which leaves menus independently tunable.
+    registry.registerDescriptor({
+        .name     = "Menu",
+        .variants = {"State"},
+        .inherits = {},
+    }, StyleComponent::Menu);
     // clang-format on
 }
 

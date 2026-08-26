@@ -35,6 +35,7 @@
 #include <QCoreApplication>
 #include <QPalette>
 #include <QPushButton>
+#include <QMenu>
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QToolBar>
@@ -1397,6 +1398,280 @@ void FreeCADStyle::drawSeparatorLine(
     }
 }
 
+void FreeCADStyle::drawMenuItemIcon(
+    QPainter* painter,
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget,
+    const MenuItemLayout& layout
+) const
+{
+    const StyleContext iconContext = contextOf(widget, option, StyleComponentElement::Item);
+
+    const QPixmap pixmap
+        = renderStyledIcon(painter, option->icon, layout.icon.size(), option, iconContext);
+    drawItemPixmap(painter, layout.icon, Qt::AlignCenter, pixmap);
+}
+
+QString FreeCADStyle::menuItemDrawnLabel(
+    const QFontMetrics& metrics,
+    int textFlags,
+    const QString& label,
+    int availableWidth
+)
+{
+    // Two-measurement trap: menuItemSizeFromContents() measures the label with these same
+    // mnemonic flags, which do not count the '&' as a glyph. elidedText() takes no flags and
+    // would count it, eliding a label CT_MenuItem already sized to fit exactly. Elide only
+    // when the mnemonic-aware measurement itself overflows the available width.
+    if (metrics.boundingRect(QRect(), textFlags, label).width() <= availableWidth) {
+        return label;
+    }
+    return metrics.elidedText(label, Qt::ElideRight, availableWidth);
+}
+
+void FreeCADStyle::drawMenuItemText(
+    QPainter* painter,
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget,
+    const MenuItemLayout& layout
+) const
+{
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+
+    painter->save();
+    painter->setFont(option->font);
+
+    const QString label = menuItemLabel(option->text);
+    if (!label.isEmpty()) {
+        if (const auto color = resolve<Base::Color>(itemContext, StyleProperty::TextColor)) {
+            painter->setPen(color->asValue<QColor>());
+        }
+        else {
+            painter->setPen(option->palette.text().color());
+        }
+        const int textFlags = mnemonicTextFlags(option, widget);
+        const QFontMetrics metrics(option->font);
+        const QString drawnLabel = menuItemDrawnLabel(metrics, textFlags, label, layout.text.width());
+        painter->drawText(
+            layout.text,
+            visualAlignment(option->direction, Qt::AlignLeft) | Qt::AlignVCenter | textFlags,
+            drawnLabel
+        );
+    }
+
+    painter->restore();
+}
+
+void FreeCADStyle::drawMenuItem(
+    QPainter* painter,
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget
+) const
+{
+    const auto layout = menuItemLayout(option, widget);
+    if (!layout) {
+        return;
+    }
+
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
+
+    paintBox(painter, menuItemBoxRect(option->rect, geometry), itemContext);
+
+    if (!layout->icon.isNull()) {
+        drawMenuItemIcon(painter, option, widget, *layout);
+    }
+
+    drawMenuItemText(painter, option, widget, *layout);
+
+    if (!layout->arrow.isNull()) {
+        const Qt::ArrowType direction = option->direction == Qt::RightToLeft ? Qt::LeftArrow
+                                                                             : Qt::RightArrow;
+        drawChevronArrow(painter, layout->arrow, direction, menuArrowColor(option, widget));
+    }
+}
+
+QColor FreeCADStyle::menuArrowColor(const QStyleOptionMenuItem* option, const QWidget* widget) const
+{
+    const StyleContext arrowContext = contextOf(widget, option, StyleComponentElement::Arrow);
+
+    if (const auto color = resolve<Base::Color>(arrowContext, StyleProperty::IconColor)) {
+        return color->asValue<QColor>();
+    }
+    if (const auto color = resolve<Base::Color>(arrowContext, StyleProperty::TextColor)) {
+        return color->asValue<QColor>();
+    }
+
+    // Elements do not chain, so an Arrow-element token cannot see the item's state. With no
+    // arrow-specific colour stated, follow the label instead of freezing at the palette
+    // colour — the arrow is part of the item's foreground.
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+    return resolveIconColor(itemContext, option->palette);
+}
+
+QString FreeCADStyle::menuItemLabel(const QString& text)
+{
+    const qsizetype separator = text.indexOf(u'\t');
+    return separator >= 0 ? text.left(separator) : text;
+}
+
+QRect FreeCADStyle::menuItemBoxRect(const QRect& rect, const BoxGeometryDefinition& geometry)
+{
+    // Split so an odd spacing still removes exactly what CT_MenuItem added.
+    const int above = geometry.spacing / 2;
+    return rect.adjusted(0, above, 0, -(geometry.spacing - above));
+}
+
+int FreeCADStyle::menuIconSize(const QWidget* widget, const QStyleOption* option) const
+{
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Root);
+    return resolve<int>(context, StyleProperty::IconSize).value_or(0);
+}
+
+bool FreeCADStyle::ownsMenuItem(const QStyleOptionMenuItem* option, const QWidget* widget) const
+{
+    if (option == nullptr) {
+        return false;
+    }
+    if (contextOf(widget, option, StyleComponentElement::Item).component != StyleComponent::Menu) {
+        return false;
+    }
+
+    switch (option->menuItemType) {
+        case QStyleOptionMenuItem::Normal:
+        case QStyleOptionMenuItem::DefaultItem:
+        case QStyleOptionMenuItem::SubMenu:
+            return true;
+        default:
+            // Separators, scrollers and tear-off handles keep Qt's own painting for now.
+            return false;
+    }
+}
+
+bool FreeCADStyle::ownsMenuSurface(const QWidget* widget, const QStyleOption* option) const
+{
+    // The same test ownsMenuItem() makes, so a surface and the rows drawn on it can never
+    // disagree about whose popup this is.
+    return contextOf(widget, option, StyleComponentElement::Root).component == StyleComponent::Menu;
+}
+
+FreeCADStyle::MenuItemColumns FreeCADStyle::menuItemColumns(
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget
+) const
+{
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+    const int gap = resolveBoxGeometry(itemContext).iconSpacing;
+
+    MenuItemColumns columns;
+
+    // One leading slot, as wide as the widest occupant any row in this menu can have, so
+    // labels stay aligned down the menu.
+    //
+    // maxIconWidth is Qt's hardcoded PM_SmallIconSize + 4, so only its zero / non-zero answer
+    // is used - "does this menu have icons". The column itself is MenuIconSize.
+    if (option->maxIconWidth > 0) {
+        columns.leading = menuIconSize(widget, option) + gap;
+    }
+
+    // Reserved per item rather than menu-wide: labels are left-aligned, so the arrow column
+    // only moves the right edge and alignment holds either way, and most FreeCAD context
+    // menus have no submenus at all.
+    if (option->menuItemType == QStyleOptionMenuItem::SubMenu) {
+        const StyleContext arrowContext = contextOf(widget, option, StyleComponentElement::Arrow);
+        columns.arrow = resolve<int>(arrowContext, StyleProperty::Width).value_or(0) + gap;
+    }
+
+    return columns;
+}
+
+QSize FreeCADStyle::menuItemSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const
+{
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
+    const MenuItemColumns columns = menuItemColumns(option, widget);
+
+    // Qt measured the label with the menu's own font and Qt::TextShowMnemonic, which is wrong
+    // for an action carrying its own font and for the mnemonic setting actually in force.
+    // Remeasuring here with the font and flags the label is drawn with keeps the hint and the
+    // paint in agreement.
+    const QFontMetrics metrics(option->font);
+    const int textWidth
+        = metrics
+              .boundingRect(QRect(), mnemonicTextFlags(option, widget), menuItemLabel(option->text))
+              .width();
+
+    int contentHeight = metrics.height();
+    if (option->maxIconWidth > 0) {
+        contentHeight = qMax(contentHeight, menuIconSize(widget, option));
+    }
+
+    QSize size = geometry.marginBox({textWidth + columns.total(), contentHeight});
+    size.rheight() += geometry.spacing;
+    return size;
+}
+
+std::optional<FreeCADStyle::MenuItemLayout> FreeCADStyle::menuItemLayout(
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget
+) const
+{
+    if (!ownsMenuItem(option, widget)) {
+        return {};
+    }
+
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
+    const MenuItemColumns columns = menuItemColumns(option, widget);
+
+    const QRect content = geometry.contentRect(menuItemBoxRect(option->rect, geometry));
+
+    // A column spans the full content height, so its occupant can be centred both ways in it.
+    const auto columnAt = [&content](int left, int width) {
+        return QRect(QPoint(left, content.top()), QSize(width, content.height()));
+    };
+    const auto centredIn = [](const QRect& column, const QSize& size) {
+        return QRect(
+            QPoint(
+                column.left() + ((column.width() - size.width()) / 2),
+                column.top() + ((column.height() - size.height()) / 2)
+            ),
+            size
+        );
+    };
+
+    MenuItemLayout layout;
+    int left = content.left();
+    int right = content.right();
+
+    if (columns.leading > 0) {
+        const QRect column = columnAt(left, columns.leading - geometry.iconSpacing);
+
+        if (!option->icon.isNull()) {
+            const int extent = menuIconSize(widget, option);
+            layout.icon = centredIn(column, {extent, extent});
+        }
+
+        left += columns.leading;
+    }
+
+    if (columns.arrow > 0) {
+        const int extent = columns.arrow - geometry.iconSpacing;
+        layout.arrow = centredIn(columnAt(right + 1 - extent, extent), {extent, extent});
+        right -= columns.arrow;
+    }
+
+    layout.text = QRect(QPoint(left, content.top()), QPoint(right, content.bottom()));
+
+    if (option->direction == Qt::RightToLeft) {
+        layout.icon = visualRect(option->direction, content, layout.icon);
+        layout.text = visualRect(option->direction, content, layout.text);
+        layout.arrow = visualRect(option->direction, content, layout.arrow);
+    }
+
+    return layout;
+}
+
 void FreeCADStyle::drawMenuBarItem(
     QPainter* painter,
     const QStyleOptionMenuItem* option,
@@ -1936,7 +2211,11 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
 {
     using enum StyleProperty;
 
-    const StyleContext context = contextOf(widget, option);
+    const auto element = [&widget, &option](StyleComponentElement byElement) {
+        return contextOf(widget, option, byElement);
+    };
+
+    const StyleContext context = element(StyleComponentElement::Root);
 
     // Qt asks for whichever of these suits the widget it is sizing an icon for; both answer
     // from the same token, so a component states its icon size once.
@@ -1975,7 +2254,49 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         }
     }
 
-    return {};
+    if (!qobject_cast<const QMenu*>(widget)) {
+        return {};
+    }
+
+    switch (metric) {
+        case PM_MenuPanelWidth:
+            return 0;
+
+        case PM_SubMenuOverlap:
+            return resolve<int>(context, Overlap);
+
+        // A scalar metric per axis, so horizontal-vs-vertical asymmetry works but left/right
+        // and top/bottom collapse to the leading edge. Both the border and the padding are
+        // added here because the panel width is 0, so this one number carries the whole
+        // border + padding inset of the box model.
+        case PM_MenuHMargin:
+        case PM_MenuVMargin: {
+            const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+            const BoxStyleDefinition boxStyle = resolveBoxStyle(context);
+            const QMarginsF borderThickness = boxStyle.borderThickness.value_or(QMarginsF());
+            const bool horizontal = metric == PM_MenuHMargin;
+            const qreal border = horizontal ? borderThickness.left() : borderThickness.top();
+            const qreal padding = horizontal ? geometry.padding.left() : geometry.padding.top();
+            const int margin = static_cast<int>(border + padding);
+
+            if (horizontal) {
+                return margin;
+            }
+
+            // Every item carries half of the inter-item gap above it and half below, so
+            // between two items the halves merge into the gap the token asks for. The first
+            // item's top half and the last item's bottom half have no neighbour to merge
+            // with and would otherwise pile onto the popup's inset, making it read taller
+            // than the horizontal one. Deduct that orphaned half, never below the border.
+            const BoxGeometryDefinition itemGeometry = resolveBoxGeometry(
+                element(StyleComponentElement::Item)
+            );
+            return std::max(static_cast<int>(border), margin - (itemGeometry.spacing / 2));
+        }
+
+        default:
+            return {};
+    }
 }
 
 int FreeCADStyle::pixelMetric(PixelMetric metric, const QStyleOption* option, const QWidget* widget) const
@@ -2057,6 +2378,13 @@ QSize FreeCADStyle::sizeFromContents(
 
     if (type == CT_ItemViewItem) {
         return itemViewItemSizeFromContents(option, size, widget);
+    }
+
+    if (type == CT_MenuItem) {
+        if (const auto* menuOption = qstyleoption_cast<const QStyleOptionMenuItem*>(option);
+            menuOption && ownsMenuItem(menuOption, widget)) {
+            return menuItemSizeFromContents(menuOption, widget);
+        }
     }
 
     if (type == CT_MenuBarItem) {
@@ -2237,6 +2565,18 @@ void FreeCADStyle::drawPrimitive(
         }
     }
 
+    // A combo box paints its dropdown container with a menu panel as well, and the Menu tokens
+    // do not describe that surface, so a widget this style does not own keeps the base style's.
+    if (element == PE_PanelMenu && ownsMenuSurface(widget, option)) {
+        // A menu embedded in another widget rather than shown as its own popup window has no
+        // surface of its own; painting one would put an opaque slab inside its host.
+        if (!widget->isWindow()) {
+            return;
+        }
+        drawComponent(painter, option->rect, widget, option);
+        return;
+    }
+
     if (element == PE_IndicatorToolBarSeparator) {
         // In a horizontal toolbar the buttons are side by side, so the separator is a vertical
         // line; in a vertical toolbar it is a horizontal one.
@@ -2337,6 +2677,19 @@ void FreeCADStyle::drawControl(
                 );
             }
             QProxyStyle::drawControl(CE_ItemViewItem, &adjusted, painter, widget);
+            return;
+        }
+    }
+
+    if (element == CE_MenuEmptyArea) {
+        // PE_PanelMenu already painted the whole popup surface, this region included.
+        return;
+    }
+
+    if (element == CE_MenuItem) {
+        if (const auto* menuOption = qstyleoption_cast<const QStyleOptionMenuItem*>(option);
+            menuOption && ownsMenuItem(menuOption, widget)) {
+            drawMenuItem(painter, menuOption, widget);
             return;
         }
     }
@@ -2595,6 +2948,20 @@ StyleContext FreeCADStyle::contextOf(
     else if (qobject_cast<const QAbstractItemView*>(widget)) {
         context.component = StyleComponent::List;
         context.element = element;
+    }
+    else if (qobject_cast<const QMenu*>(widget)) {
+        context.component = StyleComponent::Menu;
+        context.element = element;
+
+        // A menu marks the row under the cursor with State_Selected and adds State_Sunken
+        // while the mouse is held on it, which is the menu bar convention rather than the
+        // item view one, where Selected means a persistent selection.
+        if (option && (option->state & QStyle::State_Selected)) {
+            context.state |= StyleState::Hovered;
+        }
+        if (option && (option->state & QStyle::State_Sunken)) {
+            context.state |= StyleState::Pressed;
+        }
     }
     else if (qobject_cast<const QMenuBar*>(widget)) {
         context.component = StyleComponent::MenuBar;

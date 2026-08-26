@@ -220,3 +220,30 @@ HeaderItemDisabledTextColor: "@ButtonDisabledTextColor"
 HeaderItemBorderColor: "border_colors(@Colors.transparent, bottom: @FormControlBorderColor)"
 HeaderItemBorderThickness: "border_thickness(0px, bottom: 1px)"
 HeaderItemBorderRadius: "border_radius(0px)"
+
+# The popup is a top-level window, so it stays square: a painted radius would leave the
+# window's own square corners showing through. MenuPadding is the pill inset, and with
+# MenuBorderThickness it drives PM_MenuHMargin and PM_MenuVMargin, which is the only way Qt
+# lets a style inset menu items: QMenu::paintEvent clips every item to its own action rect.
+MenuBackground: "@ListBackground"
+MenuBorderColor: "@ListBorderColor"
+MenuBorderThickness: "@ListBorderThickness"
+MenuBorderRadius: 0px
+MenuPadding: "padding(@Spacing.050)"
+MenuIconSize: 16px
+MenuOverlap: 0px
+
+# MenuItemIconSpacing is every inter-column gap; MenuItemSpacing is the gap between rows, and
+# MenuItemMargin insets the highlight beyond what MenuPadding already does.
+MenuItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.075, right: @Spacing.300)"
+MenuItemIconSpacing: "@ListItemIconSpacing"
+MenuItemSpacing: "@Spacing.050"
+MenuItemMargin: "padding(0px)"
+MenuItemBorderRadius: 2px
+MenuItemTextColor: "@BaseTextColor"
+MenuItemHoveredBackground: "@ListRowPressedBackground"
+MenuItemPressedBackgroundEffect: "@ButtonPressedBackgroundEffect"
+MenuItemDisabledTextColor: "@ListDisabledTextColor"
+MenuItemMinWidth: 240px
+
+MenuArrowWidth: 10px

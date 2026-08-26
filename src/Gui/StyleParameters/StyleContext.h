@@ -55,6 +55,7 @@ enum class StyleComponent : uint8_t
     TextEdit,       // QPlainTextEdit, QTextEdit and derivatives
     List,           // QListWidget, QListView and other item views
     Header,         // QHeaderView sections
+    Menu,           // QMenu popup: context menus, menu bar and tool button dropdowns
     MenuBar,        // QMenuBar
     ToolBarButton,  // QToolButton in a QToolBar - semantically a different control
     COUNT
@@ -74,6 +75,7 @@ enum class StyleComponentElement : uint8_t
     Item,  // One item of the component
     Row,   // One row of the component, spanning its full width
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
+    Arrow, // Submenu arrow of a menu item
     COUNT,
 };
 

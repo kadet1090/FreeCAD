@@ -741,6 +741,93 @@ protected:
         const QWidget* widget
     ) const;
 
+    /// Where each part of a menu item sits inside its row.
+    struct MenuItemLayout
+    {
+        QRect icon;
+        QRect text;
+        QRect arrow;
+    };
+
+    /// The width each optional column of a menu item claims, gap included.
+    struct MenuItemColumns
+    {
+        int leading = 0;
+        int arrow = 0;
+
+        int total() const
+        {
+            return leading + arrow;
+        }
+    };
+
+    /**
+     * @brief Lays out the parts of a menu item from the Item token geometry.
+     *
+     * The outer inset comes from Padding and every gap between parts from IconSpacing, so
+     * menus space their columns on the same scale as the rest of the design system.
+     *
+     * Returns nullopt for anything this style does not describe.
+     */
+    std::optional<MenuItemLayout> menuItemLayout(
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
+    MenuItemColumns menuItemColumns(
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
+    QSize menuItemSizeFromContents(
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
+    void drawMenuItem(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
+    void drawMenuItemIcon(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget,
+        const MenuItemLayout& layout
+    ) const;
+
+    void drawMenuItemText(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget,
+        const MenuItemLayout& layout
+    ) const;
+
+    QColor menuArrowColor(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    /// The label with any accelerator suffix removed.
+    static QString menuItemLabel(const QString& text);
+
+    /// The label elided to @p width, so a long one shortens rather than widening the menu.
+    static QString menuItemDrawnLabel(
+        const QFontMetrics& metrics,
+        int textFlags,
+        const QString& label,
+        int width
+    );
+
+    /// @p rect with the inter-row gap removed, i.e. the row's own box.
+    static QRect menuItemBoxRect(const QRect& rect, const BoxGeometryDefinition& geometry);
+
+    int menuIconSize(const QWidget* widget, const QStyleOption* option) const;
+
+    /// Whether this style describes @p option's row, rather than leaving it to the base style.
+    bool ownsMenuItem(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    /// Whether this style describes the popup surface @p widget paints.
+    bool ownsMenuSurface(const QWidget* widget, const QStyleOption* option) const;
+
     void drawMenuBarItem(
         QPainter* painter,
         const QStyleOptionMenuItem* option,
