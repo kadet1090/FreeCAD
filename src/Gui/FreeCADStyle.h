@@ -648,6 +648,9 @@ protected:
         Interaction,
     };
 
+    /// The inter-row gap the rows of this view each reserve above themselves.
+    int leadingRowGap(const QStyleOption* option, const QWidget* widget) const;
+
     void drawItemViewRow(
         QPainter* painter,
         const QStyleOptionViewItem* vopt,

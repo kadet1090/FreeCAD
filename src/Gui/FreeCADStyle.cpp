@@ -894,6 +894,15 @@ int itemViewPartCount(const QStyleOptionViewItem& option)
         + ((option.features & QStyleOptionViewItem::HasDisplay) ? 1 : 0);
 }
 
+// What a view's top padding becomes once it has handed back the leading gap its first row
+// carries, so that row lands where the bare padding alone would have put it. Never negative: a
+// theme whose gap exceeds its padding sees the first row sit that much lower, and the view that
+// much taller, rather than an inverted rect.
+int paddingLessLeadingGap(int padding, int leadingGap)
+{
+    return std::max(0, padding - leadingGap);
+}
+
 // The view an item-view style option belongs to; widget can be the viewport.
 const QWidget* itemViewOf(const QStyleOptionViewItem* option, const QWidget* widget)
 {
@@ -1631,6 +1640,12 @@ QRect FreeCADStyle::spinBoxSubControlRect(
     }
 }
 
+int FreeCADStyle::leadingRowGap(const QStyleOption* option, const QWidget* widget) const
+{
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+    return resolveBoxGeometry(itemContext).spacing;
+}
+
 void FreeCADStyle::drawItemViewRow(
     QPainter* painter,
     const QStyleOptionViewItem* vopt,
@@ -1867,9 +1882,14 @@ std::optional<QRect> FreeCADStyle::itemViewContentsRect(
         return {};
     }
 
+    // The top gives back the leading gap row 0 now carries, so the first row still sits at
+    // exactly border + padding from the frame's edge.
+    const int top = border.top()
+        + paddingLessLeadingGap(padding.top(), leadingRowGap(option, widget));
+
     return option->rect.marginsRemoved(QMargins(
         border.left() + padding.left(),
-        border.top() + padding.top(),
+        top,
         border.right() + padding.right(),
         border.bottom() + padding.bottom()
     ));
