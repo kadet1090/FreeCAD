@@ -220,6 +220,16 @@ BaseTooltipTextColor: "@TooltipTextColor"
 ReportOutputBackground: "reset()"
 ReportOutputBorderColor: "reset()"
 
+# The halo Gui::HighlightOverlay paints around a marked control. The background is a tint
+# rather than a fill so the control's own text and indicator stay legible beneath it, and
+# HighlightOverlayMargin is both how far the halo stands off the control and how far it is
+# allowed to reach past the edge of the widget hosting it.
+HighlightOverlayBackground: "opacity(@Accent.500, 12%)"
+HighlightOverlayBorderColor: "@Accent.500"
+HighlightOverlayBorderThickness: 2px
+HighlightOverlayBorderRadius: "@BaseRadius.medium"
+HighlightOverlayMargin: "@Spacing.100"
+
 # A scroll bar's appearance lives in QSS pseudo-elements QProxyStyle cannot reach, so it is
 # the one component the style does not paint. These tokens are what its rules read.
 ScrollBarBackground: "@Colors.transparent"
