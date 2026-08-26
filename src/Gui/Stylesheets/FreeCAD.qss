@@ -910,24 +910,6 @@ QTextBrowser:disabled {
 
 QTextBrowser:hover, QTextBrowser:!hover, QTextBrowser:selected, QTextBrowser:pressed {}
 
-/* Gui::SplitButton --------------------------------------------------------- */
-
-Gui--SplitButton QPushButton[splitRole="main"] {
-    border-right: none;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-Gui--SplitButton QToolButton[splitRole="menu"] {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-Gui--SplitButton QToolButton::menu-indicator {
-    image: none;
-    border-image: none;
-}
-
 /* ------------------------------------------------------------------------ */
 /* INPUTS - NO FIELDS ----------------------------------------------------- */
 /* ------------------------------------------------------------------------ */

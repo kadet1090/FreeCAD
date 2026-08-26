@@ -118,3 +118,10 @@ ToolButtonMenuWidth: 14px
 # A toolbar decides how tall its buttons are, so the form-control height a tool button would
 # otherwise inherit is stopped here rather than overridden with a second number.
 ToolBarButtonHeight: "reset()"
+
+# The two halves of a split button are painted as separate boxes, so the token system zeroes
+# the corners where they meet and drops the trailing half's border there. FreeCADStyle needs
+# to know nothing about SplitButton for this to work.
+SplitButtonMainBorderRadius: "border_radius(@FormControlBorderRadius, right: 0px)"
+SplitButtonMenuBorderRadius: "border_radius(@FormControlBorderRadius, left: 0px)"
+SplitButtonMenuBorderThickness: "border_thickness(@FormControlBorderThickness, left: 0px)"
