@@ -24,6 +24,7 @@ add_executable(Gui_tests_run
         StyleParameters/ColorEffectTest.cpp
         StyleParameters/StyleContextTest.cpp
         StyleParameters/ShippedThemeTest.cpp
+        TreeBranchGeometryTest.cpp
         StyleParameters/StyleOverridesTest.cpp
         InputHintTest.cpp
         SelectionTest.cpp
@@ -47,6 +48,7 @@ setup_qt_test(MenuGeometry)
 setup_qt_test(CheckIndicator)
 setup_qt_test(ComboDropdown)
 setup_qt_test(MdiSurface)
+setup_qt_test(TreeBranch)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main

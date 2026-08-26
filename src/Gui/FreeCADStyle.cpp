@@ -892,6 +892,13 @@ std::optional<Qt::Orientation> toolbarOrientationOf(const QWidget* widget)
     return std::nullopt;
 }
 
+// How far a branch connector stops short of the centre when an expand arrow sits there.
+// Sized against the chevron drawChevronArrow paints, so the two cannot drift apart.
+constexpr qreal arrowClearance = 5.0;
+
+// Odd, so a box centred on a half-pixel point keeps that point as its own centre.
+constexpr int arrowBoxSize = 13;
+
 // The chevron is drawn slightly softer than body text.
 constexpr int arrowAlpha = 160;
 
@@ -2269,6 +2276,66 @@ int FreeCADStyle::leadingRowGap(const QStyleOption* option, const QWidget* widge
     return resolveBoxGeometry(itemContext).spacing;
 }
 
+QPointF FreeCADStyle::branchCenter(const QRect& cell, int leadingGap)
+{
+    // Half-pixel centres keep an odd-width stroke on a single pixel row. The leading gap is
+    // excluded because it belongs to the row above, so the centre tracks the item box rather
+    // than the taller cell Qt hands over.
+    return {
+        std::floor(cell.x() + (cell.width() / 2.0)) + 0.5,
+        std::floor(cell.y() + leadingGap + ((cell.height() - leadingGap) / 2.0)) + 0.5,
+    };
+}
+
+QList<QLineF> FreeCADStyle::branchSegments(
+    const QRect& cell,
+    QStyle::State state,
+    bool topLevel,
+    Qt::LayoutDirection direction,
+    int leadingGap
+)
+{
+    if (topLevel) {
+        return {};
+    }
+
+    const bool ownsItem = state.testFlag(QStyle::State_Item);
+    const bool siblingFollows = state.testFlag(QStyle::State_Sibling);
+    const bool hasArrow = state.testFlag(QStyle::State_Children);
+
+    const QPointF center = branchCenter(cell, leadingGap);
+
+    // An expand arrow occupies the centre of its own cell. The connectors stop short of it so
+    // the glyph reads as a symbol rather than as a bead threaded onto a wire.
+    const qreal clearance = hasArrow ? arrowClearance : 0.0;
+
+    QList<QLineF> segments;
+
+    if (siblingFollows && !hasArrow) {
+        segments.append(QLineF(center.x(), cell.top(), center.x(), cell.bottom() + 1));
+    }
+    else {
+        if (siblingFollows || ownsItem) {
+            segments.append(QLineF(center.x(), cell.top(), center.x(), center.y() - clearance));
+        }
+        if (siblingFollows) {
+            segments.append(QLineF(center.x(), center.y() + clearance, center.x(), cell.bottom() + 1));
+        }
+    }
+
+    if (ownsItem) {
+        // In a right-to-left layout the item's own cell is the leftmost of the branch
+        // cells and the label sits to its left, so the stub must reach toward the left
+        // edge rather than the right edge it uses in left-to-right layouts.
+        const bool rightToLeft = direction == Qt::RightToLeft;
+        const qreal stubEnd = rightToLeft ? cell.left() : cell.right() + 1;
+        const qreal stubStart = rightToLeft ? center.x() - clearance : center.x() + clearance;
+        segments.append(QLineF(stubStart, center.y(), stubEnd, center.y()));
+    }
+
+    return segments;
+}
+
 bool FreeCADStyle::isLeadingCell(const QStyleOptionViewItem* vopt)
 {
     return vopt->viewItemPosition == QStyleOptionViewItem::Beginning
@@ -2345,6 +2412,107 @@ void FreeCADStyle::drawItemViewRow(
     }
     paintBox(painter, rowRect, rowContext);
     painter->restore();
+}
+
+bool FreeCADStyle::atTreeColumnLeadingEdge(
+    const QTreeView* view,
+    const QRect& cellRect,
+    Qt::LayoutDirection direction
+)
+{
+    if (view == nullptr || view->header() == nullptr) {
+        return false;
+    }
+
+    // treePosition() names a logical column and defaults to 0; QTreeViewPrivate::
+    // logicalIndexForTree() only consults header->logicalIndex(0) once a caller sets it
+    // negative via setTreePosition(). A header with no sections yet (no model attached)
+    // leaves no real column to measure against; fall back to the old absolute-zero test.
+    const int treeColumn = view->treePosition() >= 0 ? view->treePosition()
+                                                     : view->header()->logicalIndex(0);
+    if (treeColumn < 0 || treeColumn >= view->header()->count()) {
+        return direction == Qt::RightToLeft ? false : cellRect.left() <= 0;
+    }
+
+    // columnViewportPosition() already accounts for horizontal scrolling, so comparing
+    // against it (rather than absolute zero) keeps the root cell test correct while a
+    // scrolled view or a relocated tree column moves the branch column's leading edge
+    // away from x == 0.
+    const int columnPosition = view->columnViewportPosition(treeColumn);
+
+    if (direction == Qt::RightToLeft) {
+        // A right-to-left layout mirrors the column so its leading edge is on the right.
+        const int trailingEdge = columnPosition + view->columnWidth(treeColumn);
+        return cellRect.right() >= trailingEdge - 1;
+    }
+
+    return cellRect.left() <= columnPosition;
+}
+
+void FreeCADStyle::drawItemViewBranch(
+    QPainter* painter,
+    const QStyleOption* option,
+    const QWidget* widget
+) const
+{
+    const auto* view = qobject_cast<const QTreeView*>(widget);
+    const QVariant enabled = widget != nullptr ? widget->property("branches") : QVariant();
+    const bool suppressed = enabled.isValid() && !enabled.toBool();
+
+    if (!suppressed) {
+        const bool topLevel = view != nullptr && view->rootIsDecorated()
+            && atTreeColumnLeadingEdge(view, option->rect, option->direction);
+
+        const StyleContext context = contextOf(widget, option, StyleComponentElement::Branch);
+
+        if (const auto color = resolve<Base::Color>(context, StyleProperty::BorderColor)) {
+            const auto thickness = resolve<Numeric>(context, StyleProperty::BorderThickness);
+
+            QPen pen(color->asValue<QColor>());
+            pen.setWidthF(thickness ? static_cast<double>(*thickness) : 1.0);
+            pen.setCapStyle(Qt::FlatCap);
+
+            painter->save();
+            painter->setRenderHint(QPainter::Antialiasing, false);
+            painter->setPen(pen);
+            painter->drawLines(branchSegments(
+                option->rect,
+                option->state,
+                topLevel,
+                option->direction,
+                leadingRowGap(option, widget)
+            ));
+            painter->restore();
+        }
+    }
+
+    if (option->state & State_Children) {
+        drawBranchArrow(painter, option, widget);
+    }
+}
+
+void FreeCADStyle::drawBranchArrow(QPainter* painter, const QStyleOption* option, const QWidget* widget) const
+{
+    const bool rightToLeft = option->direction == Qt::RightToLeft;
+    const Qt::ArrowType direction = (option->state & State_Open) ? Qt::DownArrow
+        : rightToLeft                                            ? Qt::LeftArrow
+                                                                 : Qt::RightArrow;
+
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Branch);
+    QColor arrowColor = resolveIconColor(context, option->palette);
+    arrowColor.setAlpha(arrowAlpha);
+
+    // Centred on the point the connectors converge on, so the glyph sits in the gap they leave
+    // rather than beside it. The odd box size keeps that centre on the same half-pixel.
+    const QPointF center = branchCenter(option->rect, leadingRowGap(option, widget));
+    const QRect arrowRect(
+        static_cast<int>(center.x() - (arrowBoxSize / 2.0)),
+        static_cast<int>(center.y() - (arrowBoxSize / 2.0)),
+        arrowBoxSize,
+        arrowBoxSize
+    );
+
+    drawChevronArrow(painter, arrowRect, direction, arrowColor);
 }
 
 bool FreeCADStyle::ownsItemViewLayout(const QStyleOptionViewItem* option, const QWidget* widget) const
@@ -3434,6 +3602,11 @@ void FreeCADStyle::drawPrimitive(
         }
     }
 
+    if (element == PE_IndicatorBranch) {
+        drawItemViewBranch(painter, option, widget);
+        return;
+    }
+
     if (element == PE_PanelItemViewRow) {
         // Qt emits this before the cells, which is where a row's resting surface belongs:
         // the content then sits on top of it rather than being buried by it.
@@ -3896,6 +4069,10 @@ StyleContext FreeCADStyle::contextOf(
         context.component = StyleComponent::Header;
         context.element = element;
     }
+    else if (qobject_cast<const QTreeView*>(widget)) {
+        context.component = StyleComponent::Tree;
+        context.element = element;
+    }
     else if (qobject_cast<const QListView*>(widget)) {
         // polish() tags the QComboBox's own list so this does not depend on Qt's internal
         // parent chain, which changes when the container is reparented at show time.
@@ -4061,6 +4238,7 @@ StyleContext FreeCADStyle::contextOf(
         // In an item view State_Selected marks a persistent selection, unlike a menu's, which
         // follows the cursor.
         const bool isItemView = context.component == StyleComponent::List
+            || context.component == StyleComponent::Tree
             || context.component == StyleComponent::DropdownList;
         if (isItemView && (option->state & QStyle::State_Selected)) {
             context.state |= StyleState::Selected;

@@ -349,3 +349,10 @@ DropdownListSeparatorHeight: "@Spacing.100 + 1px"
 DropdownListSeparatorMargin: "padding(horizontal: @Spacing.100)"
 DropdownListSeparatorBorderColor: "@SeparatorColor"
 DropdownListSeparatorBorderThickness: "@SeparatorThickness"
+
+TreeItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.100)"
+
+# The connector lines in the indent column. Set the thickness to reset() to drop them; the
+# expand arrow is drawn either way.
+TreeBranchBorderColor: "@BaseBorderColor"
+TreeBranchBorderThickness: 1px

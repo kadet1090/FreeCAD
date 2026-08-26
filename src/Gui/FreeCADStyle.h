@@ -58,6 +58,7 @@
 
 class QChildEvent;
 class QListView;
+class QTreeView;
 class QTextDocument;
 
 namespace Gui
@@ -562,6 +563,18 @@ public:
     /// Restores what Qt would have done, for a combo box leaving this style.
     void restoreComboDropdownDefaults(QComboBox* comboBox);
 
+    /// Where a branch connector's lines meet, inside the indent cell @p cell.
+    static QPointF branchCenter(const QRect& cell, int leadingGap);
+
+    /// The connector segments an indent cell draws, given what it joins.
+    static QList<QLineF> branchSegments(
+        const QRect& cell,
+        QStyle::State state,
+        bool topLevel,
+        Qt::LayoutDirection direction,
+        int leadingGap
+    );
+
     /// Where a dropdown popup sits relative to the combo box it belongs to.
     enum class ComboPopupPlacementMode : std::uint8_t
     {
@@ -761,6 +774,21 @@ protected:
 
     /// The inter-row gap the rows of this view each reserve above themselves.
     int leadingRowGap(const QStyleOption* option, const QWidget* widget) const;
+
+    /// Whether @p cellRect sits at the leading edge of the tree's own column.
+    static bool atTreeColumnLeadingEdge(
+        const QTreeView* view,
+        const QRect& cellRect,
+        Qt::LayoutDirection direction
+    );
+
+    void drawItemViewBranch(
+        QPainter* painter,
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const;
+
+    void drawBranchArrow(QPainter* painter, const QStyleOption* option, const QWidget* widget) const;
 
     /// Whether a cell is the one nearest its view's leading edge.
     static bool isLeadingCell(const QStyleOptionViewItem* vopt);

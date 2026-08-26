@@ -58,6 +58,7 @@ const std::map<StyleComponentElement, std::string_view> elementNames = {
     {StyleComponentElement::Item, "Item"},
     {StyleComponentElement::Row, "Row"},
     {StyleComponentElement::Indicator, "Indicator"},
+    {StyleComponentElement::Branch, "Branch"},
     {StyleComponentElement::IconIndicator, "IconIndicator"},
     {StyleComponentElement::Menu, "Menu"},
     {StyleComponentElement::Separator, "Separator"},
@@ -631,6 +632,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"RowType", "State"},
         .inherits = {"List"},
     }, StyleComponent::DropdownList);
+
+    registry.registerDescriptor({
+        .name     = "Tree",
+        .variants = {"RowType", "State"},
+        .inherits = {"List"},
+    }, StyleComponent::Tree);
 
     registry.registerDescriptor({
         .name     = "Header",
