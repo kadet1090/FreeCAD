@@ -13,6 +13,7 @@ add_executable(Gui_tests_run
         StyleParameters/ParserTest.cpp
         StyleParameters/ParserRobustnessTest.cpp
         StyleParameters/ParameterManagerTest.cpp
+        StyleParameters/ValueTest.cpp
         StyleParameters/YamlParameterSourceTest.cpp
         StyleParameters/DiagnosticsTest.cpp
         StyleParameters/ValueAccessTest.cpp

@@ -307,6 +307,12 @@ constexpr const char* valueTypeName()
     else if constexpr (std::is_same_v<T, Tuple>) {
         return "tuple";
     }
+    else if constexpr (std::is_same_v<T, bool>) {
+        return "boolean";
+    }
+    else if constexpr (std::is_same_v<T, None>) {
+        return "none";
+    }
 
     return "<unknown>";
 }
@@ -320,17 +326,19 @@ const T& styleDefault();
 /**
  * @brief This struct represents any valid value that can be used as the parameter value.
  *
- * The value can be one of four basic types:
+ * The value can be one of:
  *  - Numbers / Lengths (so any length with optional unit) (Numeric)
  *  - Colors (Base::Color)
  *  - Any other generic expression (std::string)
  *  - Tuples of values (Tuple)
+ *  - Booleans (bool)
+ *  - Nothing at all, when a token is explicitly reset (None)
  *
  * As a rule, operations can be only performed over values of the same type.
  */
-struct GuiExport Value: std::variant<Numeric, Base::Color, std::string, Tuple, None>
+struct GuiExport Value: std::variant<Numeric, Base::Color, std::string, Tuple, bool, None>
 {
-    using std::variant<Numeric, Base::Color, std::string, Tuple, None>::variant;
+    using std::variant<Numeric, Base::Color, std::string, Tuple, bool, None>::variant;
 
     /**
      * Converts the object into its string representation.
@@ -418,6 +426,13 @@ template<>
 inline const std::string& styleDefault<std::string>()
 {
     static const std::string value;
+    return value;
+}
+
+template<>
+inline const bool& styleDefault<bool>()
+{
+    static const bool value = false;
     return value;
 }
 
@@ -558,9 +573,25 @@ std::optional<T> valueAs(const std::optional<Value>& value)
     return held ? std::optional<T>(*held) : std::nullopt;
 }
 
+/**
+ * @brief Boolean tokens resolve only from a genuine boolean value.
+ *
+ * A Numeric never converts, so a token written as `1` is not accepted where a boolean
+ * is expected.
+ */
+template<typename T>
+    requires std::is_same_v<T, bool>
+std::optional<bool> valueAs(const std::optional<Value>& value)
+{
+    if (!value || !value->holds<bool>()) {
+        return std::nullopt;
+    }
+    return value->get<bool>();
+}
+
 /// A token asked for as a plain number answers from its Numeric, dropping the unit.
 template<typename T>
-    requires std::is_arithmetic_v<T>
+    requires std::is_arithmetic_v<T> && (!std::is_same_v<T, bool>)
 std::optional<T> valueAs(const std::optional<Value>& value)
 {
     if (const auto numeric = valueAs<Numeric>(value)) {

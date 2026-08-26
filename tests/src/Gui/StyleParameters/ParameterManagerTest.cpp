@@ -867,3 +867,112 @@ TEST_F(ParameterManagerTest, TokenThatFailsToEvaluateSubstitutesItsLiteralText)
     );
     EXPECT_THAT(capture.messages(), Contains(HasSubstr("Broken")));
 }
+
+// --- reset() function tests ---
+
+// reset() expression causes resolve() to return Value{None{}}, not nullopt.
+// The distinction matters: nullopt means "not defined", None means "explicitly reset".
+TEST_F(ParameterManagerTest, ResetExpressionResolvesToNone)
+{
+    auto resetSource = std::make_unique<InMemoryParameterSource>(
+        std::list<Parameter> {{"BaseSize", "reset()"}},
+        ParameterSource::Metadata {"Reset Source"}
+    );
+    manager.addSource(resetSource.get());
+    sources.push_back(std::move(resetSource));
+
+    auto result = manager.resolve("BaseSize");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result->holds<None>());
+}
+
+// A higher-priority source with reset() overrides a lower-priority value.
+TEST_F(ParameterManagerTest, ResetOverridesInheritedValue)
+{
+    auto overrideSource = std::make_unique<InMemoryParameterSource>(
+        std::list<Parameter> {{"PrimaryColor", "reset()"}},
+        ParameterSource::Metadata {"Override Source"}
+    );
+    manager.addSource(overrideSource.get());
+    sources.push_back(std::move(overrideSource));
+
+    // PrimaryColor was "#ff0000" in Source 1 — now explicitly reset.
+    auto result = manager.resolve("PrimaryColor");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result->holds<None>());
+
+    // BaseSize should still resolve normally.
+    auto baseSize = manager.resolve("BaseSize");
+    ASSERT_TRUE(baseSize.has_value());
+    EXPECT_TRUE(baseSize->holds<Numeric>());
+}
+
+// Typed resolve<T> of a reset parameter falls back to the definition default.
+TEST_F(ParameterManagerTest, ResetFallsBackToDefinitionDefault)
+{
+    auto resetSource = std::make_unique<InMemoryParameterSource>(
+        std::list<Parameter> {{"BaseSize", "reset()"}},
+        ParameterSource::Metadata {"Reset Source"}
+    );
+    manager.addSource(resetSource.get());
+    sources.push_back(std::move(resetSource));
+
+    ParameterDefinition<Numeric> definition {
+        .name = "BaseSize",
+        .defaultValue = Numeric {.value = 42, .unit = "px"},
+    };
+
+    auto result = manager.resolve(definition);
+    EXPECT_DOUBLE_EQ(result.value, 42.0);
+    EXPECT_EQ(result.unit, "px");
+}
+
+// reset() with arguments should throw an expression error.
+TEST_F(ParameterManagerTest, ResetWithArgumentsThrows)
+{
+    auto badSource = std::make_unique<InMemoryParameterSource>(
+        std::list<Parameter> {{"BadToken", "reset(10px)"}},
+        ParameterSource::Metadata {"Bad Source"}
+    );
+    manager.addSource(badSource.get());
+    sources.push_back(std::move(badSource));
+
+    // Should not resolve to a valid Numeric (the parse fails → fallback to string).
+    auto result = manager.resolve("BadToken");
+    // The exception causes the fallback string path, result is a string not a Numeric.
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result->holds<std::string>());
+}
+
+// Value holding None serialises as "reset()".
+TEST_F(ParameterManagerTest, NoneToString)
+{
+    Value noneValue {None {}};
+    EXPECT_EQ(noneValue.toString(), "reset()");
+}
+
+// holds<None>() is true for a None value and false for other types.
+TEST_F(ParameterManagerTest, NoneHoldsCheck)
+{
+    Value noneValue {None {}};
+    EXPECT_TRUE(noneValue.holds<None>());
+    EXPECT_FALSE(noneValue.holds<Numeric>());
+    EXPECT_FALSE(noneValue.holds<Base::Color>());
+    EXPECT_FALSE(noneValue.holds<std::string>());
+    EXPECT_FALSE(noneValue.holds<Tuple>());
+}
+
+// valueAs<T> returns nullopt when the value is None.
+TEST_F(ParameterManagerTest, ValueAsReturnsNulloptForNone)
+{
+    std::optional<Value> noneOpt {Value {None {}}};
+    EXPECT_FALSE(valueAs<Numeric>(noneOpt).has_value());
+    EXPECT_FALSE(valueAs<Base::Color>(noneOpt).has_value());
+}
+
+// reset() in an @{...} inline expression in QSS produces an empty string.
+TEST_F(ParameterManagerTest, ResetInQssInlineExpressionProducesEmptyString)
+{
+    auto result = manager.replacePlaceholders("color: @{reset()}");
+    EXPECT_EQ(result, "color: ");
+}

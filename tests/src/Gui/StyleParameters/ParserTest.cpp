@@ -125,6 +125,43 @@ TEST_F(ParserTest, BorderRadiusPositionalBaseWithEdgePairOverride)
 }
 
 
+TEST_F(ParserTest, ParseBooleanLiterals)
+{
+    {
+        Parser parser("true");
+        auto result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+        EXPECT_TRUE(std::holds_alternative<bool>(result));
+        EXPECT_TRUE(std::get<bool>(result));
+    }
+
+    {
+        Parser parser(" false ");
+        auto result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+        EXPECT_TRUE(std::holds_alternative<bool>(result));
+        EXPECT_FALSE(std::get<bool>(result));
+    }
+}
+
+TEST_F(ParserTest, ParseBooleanInsideTuple)
+{
+    Parser parser("(enabled: true, visible: false)");
+    auto result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    ASSERT_TRUE(std::holds_alternative<Tuple>(result));
+    const auto& tuple = std::get<Tuple>(result);
+    EXPECT_TRUE(tuple.get<bool>("enabled"));
+    EXPECT_FALSE(tuple.get<bool>("visible"));
+}
+
+TEST_F(ParserTest, BooleanKeywordRequiresWordBoundary)
+{
+    // "trueish" must stay an identifier, so it is parsed as a function name and
+    // then rejected for the missing '(' — not silently read as `true` + "ish".
+    Parser parser("trueish");
+    EXPECT_THROW(parser.parse(), Base::ParserError);
+}
+
+
 TEST_F(ParserTest, ResetYieldsNone)
 {
     Parser parser("reset()");

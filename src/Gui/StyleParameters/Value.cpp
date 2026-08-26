@@ -163,6 +163,14 @@ std::string Value::toString() const
         return fmt::format("({})", fmt::join(parts, ", "));
     }
 
+    if (holds<bool>()) {
+        return get<bool>() ? "true" : "false";
+    }
+
+    if (holds<None>()) {
+        return "reset()";
+    }
+
     return get<std::string>();
 }
 

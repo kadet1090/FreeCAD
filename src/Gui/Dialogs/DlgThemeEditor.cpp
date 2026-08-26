@@ -142,6 +142,9 @@ QString typeOfTokenValue(const Gui::StyleParameters::Value& value)
                         return QWidget::tr("Tuple");
                 }
             },
+            [](bool) {
+                return QWidget::tr("Boolean");
+            },
             [](const Gui::StyleParameters::None&) {
                 return QWidget::tr("None");
             }
