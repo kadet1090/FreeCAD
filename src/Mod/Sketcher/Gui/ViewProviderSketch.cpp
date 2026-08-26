@@ -34,6 +34,8 @@
 #include <Inventor/events/SoKeyboardEvent.h>
 #include <Inventor/lists/SoPickedPointList.h>
 #include <Inventor/nodes/SoCamera.h>
+#include <Inventor/nodes/SoDrawStyle.h>
+#include <Inventor/nodes/SoPickStyle.h>
 #include <Inventor/nodes/SoShapeHints.h>
 #include <Inventor/nodes/SoSeparator.h>
 #include <Inventor/nodes/SoTransform.h>
@@ -558,6 +560,30 @@ SoSketchFaces::SoSketchFaces(){
     SoSeparator::addChild(coords);
     SoSeparator::addChild(norm);
     SoSeparator::addChild(faceset);
+
+    // The internal edges and vertices are already tessellated on every recompute,
+    // and InternalEdge<n>/InternalVertex<n> resolve onto them. They must exist in
+    // the graph so a selection or highlight overlay can draw them, but they must
+    // not be drawn or picked on their own: they are a partition of the sketch's
+    // own curves, which are already rendered by the edit-mode nodes.
+    auto* overlayOnly = new SoSeparator;
+
+    auto* pickStyle = new SoPickStyle;
+    pickStyle->style = SoPickStyle::UNPICKABLE;
+    overlayOnly->addChild(pickStyle);
+
+    // Only the draw style is ours to force; leaving the remaining fields to the
+    // enclosing state keeps the overlay's line width, point size and pattern.
+    auto* drawStyle = new SoDrawStyle;
+    drawStyle->style = SoDrawStyle::INVISIBLE;
+    drawStyle->lineWidth.setIgnored(true);
+    drawStyle->pointSize.setIgnored(true);
+    drawStyle->linePattern.setIgnored(true);
+    overlayOnly->addChild(drawStyle);
+
+    overlayOnly->addChild(lineset);
+    overlayOnly->addChild(nodeset);
+    SoSeparator::addChild(overlayOnly);
 }
 
 void SoSketchFaces::initClass()
@@ -3935,6 +3961,16 @@ void ViewProviderSketch::onChanged(const App::Property* prop)
     }
 }
 
+void SketcherGui::ViewProviderSketch::onTemporaryVisibilityChanged(bool visible)
+{
+    ViewProvider2DObject::onTemporaryVisibilityChanged(visible);
+
+    // The faces hang off the annotation node, outside the mode switch, so moving the
+    // switch never reaches them. Ending the reveal restores what onChanged() would have
+    // set, which is Visibility as it stands now.
+    pcSketchFacesToggle->on = visible || Visibility.getValue();
+}
+
 void SketcherGui::ViewProviderSketch::updateColorPropertiesVisibility()
 {
     auto usesAutomaticColors = AutoColor.getValue();
@@ -4076,6 +4112,19 @@ std::vector<std::pair<std::string, std::string>> ViewProviderSketch::getRelatedE
     return result;
 }
 
+/// The element @p subname names in the sketch's internal namespace, with the
+/// namespace prefix stripped. Null when @p subname names an ordinary element.
+static const char* internalElementName(const char* subname)
+{
+    if (!subname) {
+        return nullptr;
+    }
+
+    const char* lastPart = strrchr(subname, '.');
+
+    return SketchObject::convertInternalName(lastPart ? lastPart + 1 : subname);
+}
+
 bool ViewProviderSketch::getDetailPath(
     const char* subname,
     SoFullPath* pPath,
@@ -4083,33 +4132,58 @@ bool ViewProviderSketch::getDetailPath(
     SoDetail*& det
 ) const
 {
-    const auto getLastPartOfName = [](const char* subname) -> const char* {
-        const char* realName = strrchr(subname, '.');
-
-        return realName ? realName + 1 : subname;
-    };
-
-    if (!isInEditMode() && subname) {
-        const char* realName = getLastPartOfName(subname);
-
-        realName = SketchObject::convertInternalName(realName);
+    if (!isInEditMode()) {
+        const char* realName = internalElementName(subname);
         if (realName) {
-            auto len = pPath->getLength();
             if (append) {
                 pPath->append(pcRoot);
                 pPath->append(pcAnnotation);
                 pPath->append(pcSketchFacesToggle);
             }
 
-            if (!ViewProvider2DObject::getDetailPath(realName, pPath, false, det)) {
-                pPath->truncate(len);
-                return false;
-            }
+            // The internal shape is tessellated into its own node set, whose vertex
+            // coordinates start after its faces rather than after the rendered
+            // shape's, so the detail cannot come from the rendered shape's nodes.
+            det = makeShapeDetail(realName, pcSketchFaces->nodeset->startIndex.getValue());
             return true;
         }
     }
 
     return ViewProvider2DObject::getDetailPath(subname, pPath, append, det);
+}
+
+std::vector<std::string> ViewProviderSketch::getBoundaryElements(const char* subName) const
+{
+    // getDetailPath() resolves the internal namespace only outside edit mode, and a
+    // boundary element nobody can resolve is worse than none at all.
+    const char* realName = isInEditMode() ? nullptr : internalElementName(subName);
+    if (!realName) {
+        return ViewProvider2DObject::getBoundaryElements(subName);
+    }
+
+    // An internal face is made from the sketch curves split at their intersections,
+    // so its boundary edges exist only in the internal shape. Naming them there is
+    // what getDetailPath() resolves against, and it is also what makes the outline
+    // follow the trimmed fragments rather than the whole curves.
+    const Part::TopoShape& internalShape = getSketchObject()->InternalShape.getShape();
+    if (internalShape.isNull()) {
+        return {};
+    }
+
+    return boundaryEdgeNames(
+        internalShape.getSubShape(realName, /*silent*/ true),
+        internalShape.getShape(),
+        SketchObject::internalPrefix()
+    );
+}
+
+std::string ViewProviderSketch::mapElementNameForColor(const std::string& elementName) const
+{
+    // getDetailPath() resolves the internal namespace only outside edit mode, so an
+    // "Internal..." name reaching here during edit mode was not resolved through it and
+    // names something else entirely — leave it alone, matching getBoundaryElements() above.
+    const char* realName = isInEditMode() ? nullptr : internalElementName(elementName.c_str());
+    return realName ? std::string(realName) : elementName;
 }
 // clang-format off
 

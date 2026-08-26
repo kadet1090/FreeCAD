@@ -50,6 +50,15 @@ public:
 
     void attach(App::DocumentObject* pcObject) override;
 
+    /// Shows or hides the profile highlight independently of the transparent result
+    /// preview, so callers can keep the current profile marked while the full preview
+    /// is off (e.g. while the user is still picking the profile).
+    void showProfile(bool enable);
+
+    /// Extends the base preview toggle so the profile highlight follows it by default;
+    /// picking code can re-enable just the profile afterwards via showProfile().
+    void showPreview(bool enable) override;
+
 protected:
     void updateData(const App::Property* prop) override;
     void updatePreview() override;
