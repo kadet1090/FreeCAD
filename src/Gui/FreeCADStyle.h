@@ -1090,6 +1090,14 @@ protected:
     /// Whether this style describes the popup surface @p widget paints.
     bool ownsMenuSurface(const QWidget* widget, const QStyleOption* option) const;
 
+    /// Whether @p widget is the label a tooltip surface is shown on. Keyed on the window type
+    /// rather than the class: QTipLabel is private Qt API, and Gui::NotificationLabel is a
+    /// separate class showing the same surface.
+    static bool isTooltipLabel(const QWidget* widget);
+
+    /// Whether this style describes the tip surface @p widget paints.
+    bool ownsTooltipSurface(const QWidget* widget, const QStyleOption* option) const;
+
     void drawMenuBarItem(QPainter* painter, const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
     void drawPushButtonLabel(

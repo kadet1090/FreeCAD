@@ -65,6 +65,7 @@ enum class StyleComponent : uint8_t
     MenuBar,        // QMenuBar
     ToolBarButton,  // QToolButton in a QToolBar - semantically a different control
     GroupBox,       // QGroupBox frame and title
+    Tooltip,        // QTipLabel and Gui::NotificationLabel: the surface behind tip text
     COUNT
 };
 

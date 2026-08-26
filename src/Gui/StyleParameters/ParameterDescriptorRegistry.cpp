@@ -608,6 +608,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
     }, StyleComponent::GroupBox);
 
     registry.registerDescriptor({
+        .name     = "Tooltip",
+        .variants = {"State"},
+        .inherits = {},
+    }, StyleComponent::Tooltip);
+
+    registry.registerDescriptor({
         .name     = "ToolBar",
         .variants = {"Position", "State"},
         .inherits = {},

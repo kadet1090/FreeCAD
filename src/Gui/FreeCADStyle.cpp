@@ -43,6 +43,7 @@
 # include <QPalette>
 # include <QPushButton>
 # include <QGroupBox>
+# include <QLabel>
 # include <QLayout>
 # include <QMenu>
 # include <QMenuBar>
@@ -1843,6 +1844,17 @@ bool FreeCADStyle::ownsMenuSurface(const QWidget* widget, const QStyleOption* op
     // The same test ownsMenuItem() makes, so a surface and the rows drawn on it can never
     // disagree about whose popup this is.
     return contextOf(widget, option, StyleComponentElement::Root).component == StyleComponent::Menu;
+}
+
+bool FreeCADStyle::isTooltipLabel(const QWidget* widget)
+{
+    return qobject_cast<const QLabel*>(widget) != nullptr && widget->windowType() == Qt::ToolTip;
+}
+
+bool FreeCADStyle::ownsTooltipSurface(const QWidget* widget, const QStyleOption* option) const
+{
+    return contextOf(widget, option, StyleComponentElement::Root).component
+        == StyleComponent::Tooltip;
 }
 
 FreeCADStyle::MenuItemColumns FreeCADStyle::menuItemColumns(
@@ -3773,6 +3785,30 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         return {};
     }
 
+    // QTipLabel and Gui::NotificationLabel both compute their content inset as 1 + this
+    // metric, so the pixel Qt adds unconditionally is deducted here: the border and the
+    // padding together are the whole inset, and this one scalar carries it.
+    //
+    // Two limits Qt leaves no way around. Only the left values are read — the metric is a
+    // single number applied to all four sides, which is why TooltipPadding is stated as a
+    // scalar rather than a padding(). And QTipLabel's setIndent(1) puts one further pixel on
+    // the left edge alone, set after polish() has already run.
+    //
+    // A border and padding of zero give -1, the one negative this can produce and the correct
+    // one: it lands the label on a margin of 0.
+    if (metric == PM_ToolTipLabelFrameWidth) {
+        if (!ownsTooltipSurface(widget, option)) {
+            return {};
+        }
+
+        const QMarginsF borderThickness = resolveBoxStyle(context).borderThickness.value_or(
+            QMarginsF()
+        );
+        const qreal inset = borderThickness.left() + resolveBoxGeometry(context).padding.left();
+
+        return static_cast<int>(inset) - 1;
+    }
+
     if (!qobject_cast<const QMenu*>(widget)) {
         return {};
     }
@@ -4268,6 +4304,14 @@ void FreeCADStyle::drawPrimitive(
 
     // A combo box paints its dropdown container with a menu panel as well, and the Menu tokens
     // do not describe that surface, so a widget this style does not own keeps the base style's.
+    // A tip panel is asked for by anything showing a tooltip surface; only a widget the
+    // Tooltip tokens describe is ours to paint, and declining has to reach the base style
+    // rather than leave a hole where the panel was.
+    if (element == PE_PanelTipLabel && ownsTooltipSurface(widget, option)) {
+        drawComponent(painter, option->rect, widget, option);
+        return;
+    }
+
     if (element == PE_PanelMenu && ownsMenuSurface(widget, option)) {
         // A menu embedded in another widget rather than shown as its own popup window has no
         // surface of its own; painting one would put an opaque slab inside its host.
@@ -4795,6 +4839,10 @@ StyleContext FreeCADStyle::contextOf(
         context.component = StyleComponent::List;
         context.element = element;
     }
+    else if (isTooltipLabel(widget)) {
+        context.component = StyleComponent::Tooltip;
+        context.element = element;
+    }
     else if (qobject_cast<const QGroupBox*>(widget)) {
         context.component = StyleComponent::GroupBox;
         context.element = element;
@@ -5256,6 +5304,13 @@ void FreeCADStyle::polish(QWidget* widget)
         // fill here is what lets the backing store clip the subwindows stacked underneath;
         // without it their last paint stays visible through every such gap.
         widget->setAutoFillBackground(true);
+    }
+
+    // Qt takes a tooltip's font from QApplication::font("QTipLabel"), never from the style, so
+    // a FontSize token can only reach the label here. QTipLabel calls ensurePolished() from its
+    // constructor before it measures itself, so the font lands before the tip is sized.
+    if (isTooltipLabel(widget)) {
+        widget->setFont(resolveFont(contextOf(widget), widget->font()));
     }
 
     if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(widget)) {

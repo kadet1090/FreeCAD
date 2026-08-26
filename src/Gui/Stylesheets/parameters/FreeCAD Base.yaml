@@ -155,6 +155,31 @@ GroupBoxTitlePadding: "padding(horizontal: @Spacing.150, vertical: 0)"
 GroupBoxTitleFontWeight: 600
 GroupBoxTitleTextColor: "@Contrast.500"
 
+# A tooltip borrows the menu's surface: both are floating panels over the document, and a
+# theme that retunes one almost always means the other.
+#
+# The radius follows Menu's 0px because a tooltip is a top-level window: a painted radius
+# alone would leave the window's own square corners showing through. Rounding both is one
+# shared follow-up (WA_TranslucentBackground in polish()), not a per-component decision.
+#
+# TooltipPadding is a single value, not padding(...): Qt reports the content inset through
+# PM_ToolTipLabelFrameWidth, one scalar for all four sides, so an asymmetric padding() would
+# silently collapse to its left edge.
+#
+# There is no TooltipFontSize by default — a tooltip keeps the application font until a theme
+# states otherwise. FreeCADStyle::polish() applies the token wherever one is stated.
+TooltipBackground: "@MenuBackground"
+TooltipBorderColor: "@MenuBorderColor"
+TooltipBorderThickness: "@MenuBorderThickness"
+TooltipBorderRadius: "@MenuBorderRadius"
+TooltipPadding: "@Spacing.200"
+TooltipTextColor: "@BaseTextColor"
+
+# What polish(QPalette&) hands Qt for the widgets that take a tip colour from the palette
+# rather than from the style.
+BaseTooltipBackground: "@TooltipBackground"
+BaseTooltipTextColor: "@TooltipTextColor"
+
 # The two halves of a split button are painted as separate boxes, so the token system zeroes
 # the corners where they meet and drops the trailing half's border there. FreeCADStyle needs
 # to know nothing about SplitButton for this to work.

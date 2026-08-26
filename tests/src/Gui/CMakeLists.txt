@@ -14,6 +14,7 @@ add_executable(Gui_tests_run
         StyleParameters/ParserRobustnessTest.cpp
         StyleParameters/ParameterManagerTest.cpp
         StyleParameters/ValueTest.cpp
+        StyleParameters/DescriptorRegistryTest.cpp
         StyleParameters/YamlParameterSourceTest.cpp
         StyleParameters/DiagnosticsTest.cpp
         StyleParameters/ValueAccessTest.cpp
@@ -51,6 +52,7 @@ setup_qt_test(TabGeometry)
 setup_qt_test(MdiSurface)
 setup_qt_test(TreeBranch)
 setup_qt_test(GroupBoxFrame)
+setup_qt_test(TooltipSurface)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main
