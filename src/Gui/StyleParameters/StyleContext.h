@@ -64,6 +64,7 @@ enum class StyleComponent : uint8_t
     Menu,           // QMenu popup: context menus, menu bar and tool button dropdowns
     MenuBar,        // QMenuBar
     ToolBarButton,  // QToolButton in a QToolBar - semantically a different control
+    GroupBox,       // QGroupBox frame and title
     COUNT
 };
 
@@ -77,19 +78,20 @@ enum class StyleComponent : uint8_t
  */
 enum class StyleComponentElement : uint8_t
 {
-    Root,  // Main component
-    Item,  // One item of the component
-    Row,   // One row of the component, spanning its full width
-    Indicator, // Check or radio glyph belonging to the component
-    Branch,    // Connector lines in the indent column of a tree view
-    Tab,       // Individual tab of a TabBar
-    Base,      // Base strip of a TabBar
-    CloseButton, // Tab close button, an QAbstractButton child of the bar
-    IconIndicator, // State box drawn behind a checkable menu item's icon
-    Menu,  // Dropdown strip of a MenuButtonPopup tool button
-    Separator, // Separator rule, and the label of an addSection() header, inside a menu
-    Arrow, // Submenu arrow of a menu item
-    Shortcut,  // Accelerator column of a menu item
+    Root,           // Main component
+    Item,           // One item of the component
+    Row,            // One row of the component, spanning its full width
+    Indicator,      // Check or radio glyph belonging to the component
+    Branch,         // Connector lines in the indent column of a tree view
+    Tab,            // Individual tab of a TabBar
+    Base,           // Base strip of a TabBar
+    CloseButton,    // Tab close button, an QAbstractButton child of the bar
+    IconIndicator,  // State box drawn behind a checkable menu item's icon
+    Menu,           // Dropdown strip of a MenuButtonPopup tool button
+    Separator,      // Separator rule, and the label of an addSection() header, inside a menu
+    Arrow,          // Submenu arrow of a menu item
+    Shortcut,       // Accelerator column of a menu item
+    Title,          // Title of a framed container, drawn on its top edge
     COUNT,
 };
 
@@ -199,6 +201,18 @@ enum class RowType : uint8_t
 };
 
 /**
+ * @brief Frame treatment variant for framed containers.
+ *
+ * Flat mirrors QStyleOptionFrame::Flat, which QGroupBox sets from setFlat(true).
+ */
+enum class FrameType : uint8_t
+{
+    Default,
+    Flat,
+    COUNT
+};
+
+/**
  * @brief Registry of variant dimensions used in token names.
  *
  * Each slot corresponds to one enum dimension (ButtonType, ControlSize, …).
@@ -209,6 +223,7 @@ enum class VariantSlot : uint8_t
     ControlSize,
     Position,
     RowType,           // Alternate row parity for item-view components
+    FrameType,         // Flat frame treatment for framed containers
     CheckType,         // Exclusive (radio) vs non-exclusive check state on a menu item
     TransparencyMode,  // Applies to every component, so it is declared last
     COUNT

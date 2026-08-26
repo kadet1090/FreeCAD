@@ -67,6 +67,7 @@ const std::map<StyleComponentElement, std::string_view> elementNames = {
     {StyleComponentElement::Separator, "Separator"},
     {StyleComponentElement::Arrow, "Arrow"},
     {StyleComponentElement::Shortcut, "Shortcut"},
+    {StyleComponentElement::Title, "Title"},
 };
 // clang-format on
 
@@ -97,6 +98,9 @@ const std::map<VariantSlot, std::map<uint8_t, std::string_view>> variantSlotName
     }},
     {VariantSlot::RowType, {
         {static_cast<uint8_t>(RowType::Alternate), "Alternate"},
+    }},
+    {VariantSlot::FrameType, {
+        {static_cast<uint8_t>(FrameType::Flat), "Flat"},
     }},
     {VariantSlot::CheckType, {
         {static_cast<uint8_t>(CheckType::Exclusive), "Exclusive"},
@@ -195,10 +199,18 @@ constexpr std::array<std::string_view, size_t(VariantSlot::COUNT)> variantSlotDi
     "ControlSize", // VariantSlot::ControlSize
     "Position",    // VariantSlot::Position
     "RowType",     // VariantSlot::RowType
+    "FrameType",   // VariantSlot::FrameType
     "CheckType",   // VariantSlot::CheckType
     "TransparencyMode", // VariantSlot::TransparencyMode
 };
 // clang-format on
+
+// The array is sized by VariantSlot::COUNT, so a slot added without a name here would leave
+// an empty string behind and silently shift every later slot's name onto the wrong dimension.
+static_assert(
+    std::ranges::none_of(variantSlotDisplayNames, [](std::string_view name) { return name.empty(); }),
+    "Every VariantSlot needs a display name, in enum order."
+);
 
 // clang-format off
 const std::map<StyleProperty, std::string_view> propertyNames = {
@@ -274,8 +286,9 @@ void ParameterDescriptorRegistry::registerDescriptor(
     _sortedNamesDirty = true;
 }
 
-std::optional<ParameterDescriptorRegistry::ComponentSplit>
-ParameterDescriptorRegistry::splitComponentPrefix(const std::string& name) const
+std::optional<ParameterDescriptorRegistry::ComponentSplit> ParameterDescriptorRegistry::splitComponentPrefix(
+    const std::string& name
+) const
 {
     // sortedNames() is longest-first, so the first match is the most specific component.
     for (const std::string& candidate : sortedNames()) {
@@ -587,6 +600,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"ControlSize", "State"},
         .inherits = {"ToolButton", "Button", "FormControl"},
     }, StyleComponent::ToolBarButton);
+
+    registry.registerDescriptor({
+        .name     = "GroupBox",
+        .variants = {"FrameType", "ControlSize", "State"},
+        .inherits = {},
+    }, StyleComponent::GroupBox);
 
     registry.registerDescriptor({
         .name     = "ToolBar",

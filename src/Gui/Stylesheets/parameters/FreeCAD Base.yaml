@@ -135,6 +135,26 @@ ToolBarTransparentBorderColor: "reset()"
 SeparatorThickness: 1px
 SeparatorColor: "@BaseBorderColor"
 
+# Read by resolveBoxStyle as the box's own fill. It named the opaque patch behind the title
+# while QSS drew the group box; the title is masked out of the border now, so nothing is
+# painted behind it and the body stays see-through.
+GroupBoxBackground: "@Colors.transparent"
+GroupBoxBorderColor: "@Neutral.300"
+GroupBoxBorderRadius: "@BaseRadius.medium"
+GroupBoxBorderThickness: 1px
+GroupBoxPadding: "padding(@Spacing.300)"
+
+# Flat group boxes keep Qt's convention — a single line along the top edge, no side or bottom
+# frame. Override these three to give a flat box a frame of its own.
+GroupBoxFlatBorderThickness: "border_thickness(0px, top: 1px)"
+GroupBoxFlatBorderRadius: 0px
+# With no side or bottom line to stand off from, only the gap below the top line means anything.
+GroupBoxFlatPadding: "padding(0, top: @Spacing.300)"
+
+GroupBoxTitlePadding: "padding(horizontal: @Spacing.150, vertical: 0)"
+GroupBoxTitleFontWeight: 600
+GroupBoxTitleTextColor: "@Contrast.500"
+
 # The two halves of a split button are painted as separate boxes, so the token system zeroes
 # the corners where they meet and drops the trailing half's border there. FreeCADStyle needs
 # to know nothing about SplitButton for this to work.

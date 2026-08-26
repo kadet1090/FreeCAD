@@ -50,6 +50,7 @@ setup_qt_test(ComboDropdown)
 setup_qt_test(TabGeometry)
 setup_qt_test(MdiSurface)
 setup_qt_test(TreeBranch)
+setup_qt_test(GroupBoxFrame)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main

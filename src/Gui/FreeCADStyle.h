@@ -358,8 +358,7 @@ public:
 
     void polish(QPalette& palette) override;
 
-    int pixelMetric(PixelMetric metric, const QStyleOption* option, const QWidget* widget)
-        const override;
+    int pixelMetric(PixelMetric metric, const QStyleOption* option, const QWidget* widget) const override;
 
     int styleHint(
         StyleHint hint,
@@ -418,8 +417,8 @@ public:
     static StyleParameters::StyleContext contextOf(
         const QWidget* widget,
         const QStyleOption* option = nullptr,
-        const StyleParameters::StyleComponentElement& element =
-            StyleParameters::StyleComponentElement::Root
+        const StyleParameters::StyleComponentElement& element
+        = StyleParameters::StyleComponentElement::Root
     );
 
     /**
@@ -485,6 +484,15 @@ public:
     BoxStyleDefinition resolveBoxStyle(const StyleParameters::StyleContext& context) const;
 
     /**
+     * @brief The font @p base takes on under @p context.
+     *
+     * Applies the FontSize and FontWeight tokens. Where a token does not resolve the
+     * corresponding property of @p base is kept, so a caller can always hand over the widget's
+     * own font and get back something safe to paint with.
+     */
+    QFont resolveFont(const StyleParameters::StyleContext& context, const QFont& base) const;
+
+    /**
      * @brief Resolves a box that abuts another one, and squares off the edge they share.
      *
      * The two halves of a split control are painted as separate boxes, so without this each
@@ -502,11 +510,7 @@ public:
      *
      * @p rect is the outer rect, so the resolved margin is taken off before painting.
      */
-    void paintBox(
-        QPainter* painter,
-        const QRect& rect,
-        const StyleParameters::StyleContext& context
-    ) const;
+    void paintBox(QPainter* painter, const QRect& rect, const StyleParameters::StyleContext& context) const;
 
     // clang-format off
     /// Tags the QListView Qt built for a combo box popup.
@@ -623,10 +627,7 @@ public:
     static void scheduleItemViewRelayout(QWidget* widget);
 
     /// The rect a combo popup's container lays its list out in.
-    std::optional<QRect> comboPopupContentsRect(
-        const QStyleOption* option,
-        const QWidget* widget
-    ) const;
+    std::optional<QRect> comboPopupContentsRect(const QStyleOption* option, const QWidget* widget) const;
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
@@ -640,9 +641,7 @@ protected:
      * Useful for resolved-with-fallback patterns, e.g.:
      * resolve({"ToolButtonSmallPadding", "ToolButtonPadding"})
      */
-    std::optional<StyleParameters::Value> resolve(
-        std::initializer_list<std::string_view> names
-    ) const;
+    std::optional<StyleParameters::Value> resolve(std::initializer_list<std::string_view> names) const;
 
     /**
      * @brief Resolves @p property for @p context, caching the result.
@@ -721,11 +720,7 @@ protected:
 
     void drawTabBarTab(QPainter* painter, const QStyleOptionTab* option, const QWidget* widget) const;
 
-    void drawTabBarTabLabel(
-        QPainter* painter,
-        const QStyleOptionTab* option,
-        const QWidget* widget
-    ) const;
+    void drawTabBarTabLabel(QPainter* painter, const QStyleOptionTab* option, const QWidget* widget) const;
 
     QSize tabBarTabSizeFromContents(
         const QStyleOption* option,
@@ -739,11 +734,7 @@ protected:
     /// @p rect grown by @p tabOverlap on its trailing edge.
     static QRect tabVisualRect(const QRect& rect, int tabOverlap, bool isVertical);
 
-    void drawTabCloseButton(
-        QPainter* painter,
-        const QStyleOption* option,
-        const QWidget* widget
-    ) const;
+    void drawTabCloseButton(QPainter* painter, const QStyleOption* option, const QWidget* widget) const;
 
     void drawTabWidgetFrame(
         QPainter* painter,
@@ -769,17 +760,9 @@ protected:
     /// Insets a text edit's content by its padding token, through the document's own margin.
     void applyTextEditDocumentPadding(QWidget* widget, QTextDocument* document) const;
 
-    void drawHeaderSection(
-        QPainter* painter,
-        const QStyleOptionHeader* option,
-        const QWidget* widget
-    ) const;
+    void drawHeaderSection(QPainter* painter, const QStyleOptionHeader* option, const QWidget* widget) const;
 
-    void drawComboBox(
-        const QStyleOptionComboBox* option,
-        QPainter* painter,
-        const QWidget* widget
-    ) const;
+    void drawComboBox(const QStyleOptionComboBox* option, QPainter* painter, const QWidget* widget) const;
 
     void drawComboBoxLabel(
         QPainter* painter,
@@ -793,11 +776,51 @@ protected:
         const QWidget* widget
     ) const;
 
-    void drawSpinBox(
-        const QStyleOptionSpinBox* option,
+    /**
+     * @brief The shape a group box's border is confined to, leaving its title clear.
+     *
+     * Empty for a box with neither a title nor a check indicator, so the frame stays whole.
+     */
+    QPainterPath groupBoxBorderMask(
+        const QStyleOptionGroupBox* option,
+        const QWidget* widget,
+        const QRect& frameRect
+    ) const;
+
+    void drawGroupBoxLabel(
         QPainter* painter,
+        const QStyleOptionGroupBox* option,
         const QWidget* widget
     ) const;
+
+    void drawGroupBox(QPainter* painter, const QStyleOptionGroupBox* option, const QWidget* widget) const;
+
+    /**
+     * @brief The font a group box's title is painted in.
+     */
+    QFont groupBoxTitleFont(const QStyleOptionGroupBox* option, const QWidget* widget) const;
+
+    /**
+     * @brief The area a group box's title occupies on the frame's top edge.
+     *
+     * Covers the label, the check indicator, or both. Null when the box has neither, which is
+     * the caller's signal that the frame runs unbroken.
+     */
+    QRect groupBoxTitleRect(const QStyleOptionGroupBox* option, const QWidget* widget) const;
+
+    QRect groupBoxSubControlRect(
+        const QStyleOptionGroupBox* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const;
+
+    QSize groupBoxSizeFromContents(
+        const QStyleOptionGroupBox* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    void drawSpinBox(const QStyleOptionSpinBox* option, QPainter* painter, const QWidget* widget) const;
 
     QRect spinBoxSubControlRect(
         const QStyleOptionSpinBox* option,
@@ -827,11 +850,7 @@ protected:
         Qt::LayoutDirection direction
     );
 
-    void drawItemViewBranch(
-        QPainter* painter,
-        const QStyleOption* option,
-        const QWidget* widget
-    ) const;
+    void drawItemViewBranch(QPainter* painter, const QStyleOption* option, const QWidget* widget) const;
 
     void drawBranchArrow(QPainter* painter, const QStyleOption* option, const QWidget* widget) const;
 
@@ -891,10 +910,7 @@ protected:
     ) const;
 
     /// The rect a view lays its rows out in, inset by its own border and padding.
-    std::optional<QRect> itemViewContentsRect(
-        const QStyleOption* option,
-        const QWidget* widget
-    ) const;
+    std::optional<QRect> itemViewContentsRect(const QStyleOption* option, const QWidget* widget) const;
 
     /// Clips a scroll area to its own rounded corners, so rows cannot paint over them.
     void updateScrollAreaMask(QAbstractScrollArea* scrollArea) const;
@@ -989,21 +1005,11 @@ protected:
         const QWidget* widget
     ) const;
 
-    MenuItemColumns menuItemColumns(
-        const QStyleOptionMenuItem* option,
-        const QWidget* widget
-    ) const;
+    MenuItemColumns menuItemColumns(const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
-    QSize menuItemSizeFromContents(
-        const QStyleOptionMenuItem* option,
-        const QWidget* widget
-    ) const;
+    QSize menuItemSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
-    void drawMenuItem(
-        QPainter* painter,
-        const QStyleOptionMenuItem* option,
-        const QWidget* widget
-    ) const;
+    void drawMenuItem(QPainter* painter, const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
     /**
      * @brief Draws an addSection() header's label and returns the band left for the rule.
@@ -1031,10 +1037,7 @@ protected:
         const QRect& band
     ) const;
 
-    QSize menuSeparatorSizeFromContents(
-        const QStyleOptionMenuItem* option,
-        const QWidget* widget
-    ) const;
+    QSize menuSeparatorSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
     void drawMenuItemIndicator(
         QPainter* painter,
@@ -1044,10 +1047,7 @@ protected:
     ) const;
 
     /// The inset the state box behind a checkable item's icon adds around it.
-    QMargins menuIconIndicatorPadding(
-        const QStyleOptionMenuItem* option,
-        const QWidget* widget
-    ) const;
+    QMargins menuIconIndicatorPadding(const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
     void drawMenuItemIcon(
         QPainter* painter,
@@ -1090,11 +1090,7 @@ protected:
     /// Whether this style describes the popup surface @p widget paints.
     bool ownsMenuSurface(const QWidget* widget, const QStyleOption* option) const;
 
-    void drawMenuBarItem(
-        QPainter* painter,
-        const QStyleOptionMenuItem* option,
-        const QWidget* widget
-    ) const;
+    void drawMenuBarItem(QPainter* painter, const QStyleOptionMenuItem* option, const QWidget* widget) const;
 
     void drawPushButtonLabel(
         QPainter* painter,
