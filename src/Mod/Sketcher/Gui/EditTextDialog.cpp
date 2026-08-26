@@ -48,6 +48,7 @@ EditTextDialog::EditTextDialog(ViewProviderSketch* viewProvider, int constraintI
     ui->setupUi(this);
 
     ui->comboBox_font->setMaxVisibleItems(20);
+    ui->comboBox_font->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 
     const Sketcher::SketchObject* sketch = sketchView->getSketchObject();
     const Sketcher::Constraint* constraint = sketch->Constraints[constrIndex];

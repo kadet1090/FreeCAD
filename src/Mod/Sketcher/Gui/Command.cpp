@@ -1989,7 +1989,7 @@ QWidget* RenderingOrderAction::createWidget(QWidget* parent)
     list->setDefaultDropAction(Qt::MoveAction);
     list->setSelectionMode(QAbstractItemView::SingleSelection);
     list->setDragEnabled(true);
-    list->setFixedSize(200, 50);
+    list->setFixedSize(200, 80);
 
 
     QWidget* renderingWidget = new QWidget(parent);
