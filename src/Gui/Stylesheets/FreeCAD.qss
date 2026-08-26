@@ -37,7 +37,6 @@ FOLLOWING CODES ARE CHANGED IN THE SETTINGS:
 @StylesheetIconsColor
 @IconsLocationFolderName
 @MenuBackgroundColor
-@ScrollbarBackgroundColor
 @SketcherConflictingConstraintsColor
 @SketcherEmptySketchColor
 @SketcherFullyConstrainedColor
@@ -121,134 +120,41 @@ QToolButton[controlSize="small"] {
 
 /* QScrollBar -------------------------------------------------------------
 
-https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qscrollbar
+A scroll bar's appearance lives entirely in pseudo-elements, which QProxyStyle
+cannot reach, so it stays in QSS. What it does not have to stay is hardcoded:
+every value below is a design token.
 
 --------------------------------------------------------------------------- */
 
-QScrollBar:horizontal {
-  border-right: 14px solid @GeneralBorderColor;
-  border-left: 14px solid @GeneralBorderColor;
-  border-top: 1px solid @GeneralBorderColor;
-  border-bottom: 1px solid @GeneralBorderColor;
-  background-color: @ScrollbarBackgroundColor;
-  padding: 0;
-  margin: 0;
+QScrollBar {
+  background-color: @ScrollBarBackground;
 }
 
-QScrollBar:vertical {
-  border-top: 14px solid @GeneralBorderColor;
-  border-bottom: 14px solid @GeneralBorderColor;
-  border-left: 1px solid @GeneralBorderColor;
-  border-right: 1px solid @GeneralBorderColor;
-  background-color: @ScrollbarBackgroundColor;
-  padding: 0;
-  margin: 0;
+QScrollBar:hover {
+  background-color: @ScrollBarHoveredBackground;
 }
 
-QScrollBar::handle:horizontal {
-  border-left: 1px solid @GeneralBorderColor;
-  border-right: 1px solid @GeneralBorderColor;
-  min-width: 20px;
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @ButtonTopBackgroundColor, stop:1 @ButtonBottomBackgroundColor);
+QScrollBar::handle {
+  background-color: @ScrollBarThumbBackground;
+  margin: @ScrollBarThumbMargin;
+  border-radius: @ScrollBarThumbBorderRadius;
 }
 
-QScrollBar::handle:horizontal:hover {
-  background-color: @GeneralBackgroundHoverColor;
-  border: 1px @ButtonTopBackgroundColor;
-}
-
-QScrollBar::handle:horizontal:focus {
-  border: 1px solid @AccentColor;
-}
-
-QScrollBar::handle:vertical {
-  border-top: 1px solid @GeneralBorderColor;
-  border-bottom: 1px solid @GeneralBorderColor;
-  min-height: 20px;
-  background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 @ButtonTopBackgroundColor, stop:1 @ButtonBottomBackgroundColor);
-}
-
-QScrollBar::handle:vertical:focus {
-  border: 1px solid @AccentColor;
-}
-
-QScrollBar::handle:vertical:hover {
-  background-color: @GeneralBackgroundHoverColor;
-  border: 1px @ButtonTopBackgroundColor;
+QScrollBar::handle:hover {
+  background-color: @ScrollBarThumbHoveredBackground;
 }
 
 QScrollBar::add-line, QScrollBar::sub-line {
-  height: 12px;
-  width: 12px;
-  subcontrol-origin: margin;
-  border: 1px solid @GeneralBorderColor;
+  background-color: transparent;
+  border: transparent;
 }
 
-QScrollBar::handle:hover,
-QScrollBar::add-line:vertical:hover, QScrollBar::sub-line:vertical:hover ,
-QScrollBar::add-line:horizontal:hover, QScrollBar::sub-line:horizontal:hover {
-  background-color: @GeneralBackgroundHoverColor;
+QScrollBar::handle:horizontal {
+  min-width: @ScrollBarThumbMinLength;
 }
 
-QScrollBar::right-arrow, QScrollBar::left-arrow, QScrollBar::up-arrow, QScrollBar::down-arrow {
-  margin: 2px;
-}
-
-QScrollBar::left-arrow {
-  border-image: url(qss:@IconsLocationFolderName/arrow-left-lightgray.svg);
-}
-
-QScrollBar::right-arrow {
-  border-image: url(qss:@IconsLocationFolderName/arrow-right-lightgray.svg);
-}
-
-QScrollBar::up-arrow {
-  border-image: url(qss:@IconsLocationFolderName/arrow-up-lightgray.svg);
-}
-
-QScrollBar::down-arrow {
-  border-image: url(qss:@IconsLocationFolderName/arrow-down-lightgray.svg);
-}
-
-QScrollBar::left-arrow:hover {
-  border-image: url(qss:@IconsLocationFolderName/arrow-left-@StylesheetIconsColor.svg);
-}
-
-QScrollBar::right-arrow:hover {
-  border-image: url(qss:@IconsLocationFolderName/arrow-right-@StylesheetIconsColor.svg);
-}
-
-QScrollBar::up-arrow:hover {
-  border-image: url(qss:@IconsLocationFolderName/arrow-up-@StylesheetIconsColor.svg);
-}
-
-QScrollBar::down-arrow:hover {
-  border-image: url(qss:@IconsLocationFolderName/arrow-down-@StylesheetIconsColor.svg);
-}
-
-QScrollBar::add-line:horizontal {
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @ButtonTopBackgroundColor, stop:1 @ButtonBottomBackgroundColor);
-  subcontrol-position: right;
-}
-
-QScrollBar::add-line:vertical {
-  background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 @ButtonTopBackgroundColor, stop:1 @ButtonBottomBackgroundColor);
-  subcontrol-position: bottom;
-}
-
-QScrollBar::sub-line:horizontal {
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @ButtonTopBackgroundColor, stop:1 @ButtonBottomBackgroundColor);
-  subcontrol-position: left;
-}
-
-QScrollBar::sub-line:vertical {
-  background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 @ButtonTopBackgroundColor, stop:1 @ButtonBottomBackgroundColor);
-  subcontrol-position: top;
-}
-
-QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal,
-QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-  background-color: none;
+QScrollBar::handle:vertical {
+  min-height: @ScrollBarThumbMinLength;
 }
 
 /* ------------------------------------------------------------------------ */

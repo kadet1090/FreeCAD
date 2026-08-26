@@ -45,7 +45,6 @@ PrimaryColorLighten5: "lighten(@PrimaryColor,300)"
 PrimaryColorLighten6: "lighten(@PrimaryColor,5890)"
 RadioButtonBackgroundColor: "@CheckBoxBackgroundColor"
 RadioButtonBorderColor: "@GeneralBorderColor"
-ScrollbarBackgroundColor: "@GeneralDisabledBackgroundColor"
 # The whole dark theme is these five statements. Both scales are re-anchored: Neutral runs
 # dark-to-light from a dark base, and Contrast.900 - which BaseTextColor reads - becomes
 # near-white from a light one.
