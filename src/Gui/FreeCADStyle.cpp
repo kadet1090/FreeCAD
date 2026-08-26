@@ -3276,6 +3276,206 @@ void FreeCADStyle::scheduleItemViewRelayout(QWidget* widget)
     }
 }
 
+void FreeCADStyle::drawTabBarTab(QPainter* painter, const QStyleOptionTab* option, const QWidget* widget) const
+{
+    const Position position = tabPositionOf(option->shape);
+    const StyleContext positionContext = contextOf(widget, option, StyleComponentElement::Tab);
+    const int tabOverlap = tabOverlapOf(option, widget);
+    const bool isVertical = (position == Position::East || position == Position::West);
+
+    drawBoxBackground(
+        painter,
+        tabVisualRect(option->rect, tabOverlap, isVertical),
+        resolveBoxStyle(positionContext)
+    );
+}
+
+void FreeCADStyle::drawTabBarTabLabel(
+    QPainter* painter,
+    const QStyleOptionTab* option,
+    const QWidget* widget
+) const
+{
+    const Position position = tabPositionOf(option->shape);
+    const bool isVertical = (position == Position::East || position == Position::West);
+
+    const bool hasIcon = !option->icon.isNull();
+    const bool hasText = !option->text.isEmpty();
+
+    const StyleContext tabContext = contextOf(widget, option, StyleComponentElement::Tab);
+
+    // The background is drawn on a rect shrunk by |tabOverlap| on the trailing edge (see
+    // drawTabBarTab). To keep content padding symmetric relative to the visible background,
+    // base all content geometry on the same visual rect.
+    const QRect visualRect = tabVisualRect(option->rect, tabOverlapOf(option, widget), isVertical);
+
+    // For vertical tabs or non-icon+text tabs, delegate to parent. Apply token text color by
+    // setting palette ButtonText so Qt's draw path picks it up automatically. Use visualRect so
+    // Qt's tabLayout sees the same bounds as the background.
+    if (isVertical || !hasIcon || !hasText) {
+        QStyleOptionTab adjusted = *option;
+        adjusted.rect = visualRect;
+        if (const auto color = resolve<Base::Color>(tabContext, StyleProperty::TextColor)) {
+            adjusted.palette.setColor(QPalette::All, QPalette::ButtonText, color->asValue<QColor>());
+        }
+        QProxyStyle::drawControl(CE_TabBarTabLabel, &adjusted, painter, widget);
+        return;
+    }
+
+    // Geometry is always resolved in the canonical North context (PM_TabBarTabHSpace/VSpace does
+    // the same: the tab size is computed in North space and transposed by QTabBar for East/West).
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(withNorthPosition(tabContext));
+
+    const QRect contentRect = geometry.contentRect(visualRect);
+
+    const QPixmap pixmap
+        = renderStyledIcon(painter, option->icon, option->iconSize, option, tabContext);
+    const QSize pixmapSize = pixmap.size() / painter->device()->devicePixelRatio();
+
+    const int iconSpacing = geometry.iconSpacing;
+
+    const QRect iconRect(
+        contentRect.left(),
+        contentRect.top() + (contentRect.height() - pixmapSize.height()) / 2,
+        pixmapSize.width(),
+        pixmapSize.height()
+    );
+    const QRect textRect = contentRect.adjusted(pixmapSize.width() + iconSpacing, 0, 0, 0);
+
+    const int textFlags = mnemonicTextFlags(option, widget);
+
+    painter->save();
+
+    QPalette::ColorRole textRole = QPalette::ButtonText;
+    if (const auto color = resolve<Base::Color>(tabContext, StyleProperty::TextColor)) {
+        painter->setPen(color->asValue<QColor>());
+        textRole = QPalette::NoRole;
+    }
+
+    proxy()->drawItemPixmap(painter, iconRect, Qt::AlignCenter, pixmap);
+    proxy()->drawItemText(
+        painter,
+        QStyle::visualRect(option->direction, contentRect, textRect),
+        textFlags | Qt::AlignLeft | Qt::AlignVCenter,
+        option->palette,
+        option->state & State_Enabled,
+        option->text,
+        textRole
+    );
+
+    painter->restore();
+}
+
+QSize FreeCADStyle::tabBarTabSizeFromContents(
+    const QStyleOption* option,
+    const QSize& size,
+    const QWidget* widget
+) const
+{
+    QSize result = QProxyStyle::sizeFromContents(CT_TabBarTab, option, size, widget);
+
+    const auto* tabOption = qstyleoption_cast<const QStyleOptionTab*>(option);
+    if (tabOption) {
+        const BoxGeometryDefinition tabGeometry = resolveBoxGeometry(
+            withNorthPosition(contextOf(widget, option, StyleComponentElement::Tab))
+        );
+
+        // Adjust icon–text gap: Qt hardcodes 4 px; replace with our token value.
+        if (!tabOption->icon.isNull() && !tabOption->text.isEmpty()) {
+            result.rwidth() += tabGeometry.iconGapDelta();
+        }
+
+        // Adjust close-button gap: Qt also hardcodes 4 px next to each button; replace with
+        // our token value (same Tab IconSpacing, one delta per button side present).
+        if (tabOption->rightButtonSize.isValid()) {
+            result.rwidth() += tabGeometry.iconGapDelta();
+        }
+        if (tabOption->leftButtonSize.isValid()) {
+            result.rwidth() += tabGeometry.iconGapDelta();
+        }
+    }
+
+    // The background is painted narrower by |tabOverlap| on the trailing edge to create the
+    // visual gap between tabs (see drawTabBarTab). Add that same amount to the tab rect so
+    // the content area, computed from the background rect, still has symmetric padding.
+    const int tabOverlap = proxy()->pixelMetric(PM_TabBarTabOverlap, option, widget);
+    if (tabOverlap < 0) {
+        result.rwidth() -= tabOverlap;
+    }
+
+    // If the tab bar has an expanding size policy along its cross-axis, grow tabs to fill the
+    // allocated extent rather than staying at the style-computed minimum.
+    // Note: QTabBar transposes tab sizes for East/West; the height here maps to widget width.
+    if (const auto* tabBar = qobject_cast<const QTabBar*>(widget)) {
+        const bool isVertical = tabBar->shape() == QTabBar::RoundedEast
+            || tabBar->shape() == QTabBar::RoundedWest || tabBar->shape() == QTabBar::TriangularEast
+            || tabBar->shape() == QTabBar::TriangularWest;
+        if (isVertical) {
+            if (tabBar->sizePolicy().horizontalPolicy() & QSizePolicy::ExpandFlag) {
+                result.setWidth(tabBar->width());
+            }
+        }
+        else {
+            if (tabBar->sizePolicy().verticalPolicy() & QSizePolicy::ExpandFlag) {
+                result.setHeight(tabBar->height());
+            }
+        }
+    }
+
+    return result;
+}
+
+int FreeCADStyle::tabOverlapOf(const QStyleOptionTab* option, const QWidget* widget) const
+{
+    const bool isLastOrOnly = option->position == QStyleOptionTab::End
+        || option->position == QStyleOptionTab::OnlyOneTab;
+    return isLastOrOnly ? 0 : proxy()->pixelMetric(PM_TabBarTabOverlap, option, widget);
+}
+
+QRect FreeCADStyle::tabVisualRect(const QRect& rect, int tabOverlap, bool isVertical)
+{
+    if (tabOverlap == 0) {
+        return rect;
+    }
+    if (isVertical) {
+        return rect.adjusted(0, 0, 0, tabOverlap);
+    }
+    return rect.adjusted(0, 0, tabOverlap, 0);
+}
+
+
+void FreeCADStyle::drawTabCloseButton(
+    QPainter* painter,
+    const QStyleOption* option,
+    const QWidget* widget
+) const
+{
+    // Explicitly request CloseButton element so token lookup works whether widget is the
+    // close button (QAbstractButton child of QTabBar) or the QTabBar itself.
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::CloseButton);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+    const BoxStyleDefinition style = resolveBoxStyle(context);
+    const QRect borderRect = geometry.borderRect(option->rect);
+
+    drawBoxBackground(painter, borderRect, style);
+
+    // X mark — two diagonal lines crossing at center, inset by the box padding.
+    constexpr qreal xPenWidthRatio = 0.12;
+    constexpr qreal xMinPenWidth = 1.2;
+
+    const QRectF innerRect = QRectF(geometry.contentRect(option->rect));
+    const qreal penWidth = qMax(xMinPenWidth, innerRect.width() * xPenWidthRatio);
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(
+        QPen(resolveIconColor(context, option->palette), penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
+    );
+    painter->drawLine(innerRect.topLeft(), innerRect.bottomRight());
+    painter->drawLine(innerRect.topRight(), innerRect.bottomLeft());
+    painter->restore();
+}
+
 void FreeCADStyle::drawTabBarBase(
     QPainter* painter,
     const QStyleOptionTabBarBase* option,
@@ -3334,6 +3534,8 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         // and never for PM_SmallIconSize, and Fusion hardcodes it, so leaving it out pins
         // every list row's icon to 24 whatever the theme says.
         {PM_ListViewIconSize, {StyleComponentElement::Root, IconSize}},
+        {PM_TabCloseIndicatorWidth, {StyleComponentElement::CloseButton, Width}},
+        {PM_TabCloseIndicatorHeight, {StyleComponentElement::CloseButton, Height}},
         {PM_ExclusiveIndicatorWidth, {StyleComponentElement::Indicator, Width}},
         {PM_ExclusiveIndicatorHeight, {StyleComponentElement::Indicator, Height}},
         {PM_IndicatorWidth, {StyleComponentElement::Indicator, Width}},
@@ -3353,6 +3555,34 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         if (qobject_cast<const QAbstractSpinBox*>(widget)) {
             return 0;
         }
+    }
+
+    // A pure painting hint: it tells CE_TabBarTabShape how far to extend (positive) or pull in
+    // (negative) the trailing edge of every tab but the last. QTabBar's own layout never asks
+    // for it, so the space between two tabs comes from this adjustment alone. TabBarTabSpacing
+    // states a gap, and a gap is a negative overlap.
+    if (metric == PM_TabBarTabOverlap) {
+        if (const auto spacing = resolve<int>(element(StyleComponentElement::Tab), Spacing)) {
+            return -*spacing;
+        }
+
+        return {};
+    }
+
+    // What QCommonStyle adds around a tab's label when it sizes CT_TabBarTab. Driving the
+    // padding through these keeps Qt's close button and minimum size rules, which a size
+    // computed here would have to restate. North is canonical: QTabBar transposes the result
+    // itself for an east or west bar.
+    if (metric == PM_TabBarTabHSpace || metric == PM_TabBarTabVSpace) {
+        const StyleContext tabContext = withNorthPosition(element(StyleComponentElement::Tab));
+
+        if (const auto padding = resolve<Insets>(tabContext, Padding)) {
+            return static_cast<int>(
+                metric == PM_TabBarTabHSpace ? padding->horizontal() : padding->vertical()
+            );
+        }
+
+        return {};
     }
 
     if (metric == PM_TabBarBaseHeight || metric == PM_TabBarBaseOverlap) {
@@ -3498,6 +3728,10 @@ QSize FreeCADStyle::sizeFromContents(
             const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
             return geometry.sizeFromContents(QProxyStyle::sizeFromContents(type, option, size, widget));
         }
+    }
+
+    if (type == CT_TabBarTab) {
+        return tabBarTabSizeFromContents(option, size, widget);
     }
 
     if (type == CT_ItemViewItem) {
@@ -3665,6 +3899,11 @@ void FreeCADStyle::drawPrimitive(
         if (option->state & QStyle::State_Item) {
             return;
         }
+    }
+
+    if (element == PE_IndicatorTabClose) {
+        drawTabCloseButton(painter, option, widget);
+        return;
     }
 
     if (element == PE_FrameTabBarBase) {
@@ -3889,6 +4128,20 @@ void FreeCADStyle::drawControl(
     if (element == CE_MenuBarItem) {
         if (const auto* menuOption = qstyleoption_cast<const QStyleOptionMenuItem*>(option)) {
             drawMenuBarItem(painter, menuOption, widget);
+            return;
+        }
+    }
+
+    if (element == CE_TabBarTabShape) {
+        if (const auto* tabOption = qstyleoption_cast<const QStyleOptionTab*>(option)) {
+            drawTabBarTab(painter, tabOption, widget);
+            return;
+        }
+    }
+
+    if (element == CE_TabBarTabLabel) {
+        if (const auto* tabOption = qstyleoption_cast<const QStyleOptionTab*>(option)) {
+            drawTabBarTabLabel(painter, tabOption, widget);
             return;
         }
     }
@@ -4140,6 +4393,26 @@ StyleContext FreeCADStyle::contextOf(
     else if (qobject_cast<const QHeaderView*>(widget)) {
         context.component = StyleComponent::Header;
         context.element = element;
+    }
+    else if (
+        qobject_cast<const QAbstractButton*>(widget) && widget->parent()
+        && qobject_cast<const QTabBar*>(widget->parent())
+    ) {
+        // Qt's tab close buttons are private QAbstractButton children of the bar, so they have
+        // to be recognised before the generic button branches below.
+        context.component = StyleComponent::TabBar;
+        context.element = StyleComponentElement::CloseButton;
+
+        // TabBar is not on the isButton list below, so Pressed is mapped here.
+        if (option && (option->state & QStyle::State_Sunken)) {
+            context.state |= StyleState::Pressed;
+        }
+        // Qt's close button reports hover as State_Raised: its paintEvent uses underMouse()
+        // rather than hover events. Map both flags.
+        if (option
+            && ((option->state & QStyle::State_Raised) || (option->state & QStyle::State_MouseOver))) {
+            context.state |= StyleState::Hovered;
+        }
     }
     else if (const auto* tabBar = qobject_cast<const QTabBar*>(widget)) {
         context.component = StyleComponent::TabBar;

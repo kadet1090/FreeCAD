@@ -719,6 +719,32 @@ protected:
     /// The edge a tab bar's tabs sit on, as a Position variant value.
     static StyleParameters::Position tabPositionOf(QTabBar::Shape shape);
 
+    void drawTabBarTab(QPainter* painter, const QStyleOptionTab* option, const QWidget* widget) const;
+
+    void drawTabBarTabLabel(
+        QPainter* painter,
+        const QStyleOptionTab* option,
+        const QWidget* widget
+    ) const;
+
+    QSize tabBarTabSizeFromContents(
+        const QStyleOption* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    /// How far a tab's paint rect reaches past its own, so adjacent tabs share one border.
+    int tabOverlapOf(const QStyleOptionTab* option, const QWidget* widget) const;
+
+    /// @p rect grown by @p tabOverlap on its trailing edge.
+    static QRect tabVisualRect(const QRect& rect, int tabOverlap, bool isVertical);
+
+    void drawTabCloseButton(
+        QPainter* painter,
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const;
+
     void drawTabBarBase(
         QPainter* painter,
         const QStyleOptionTabBarBase* option,

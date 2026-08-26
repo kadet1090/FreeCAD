@@ -363,3 +363,43 @@ TabBarBaseOverlap: 4px
 TabBarBaseBorderColor: "@BaseBorderColor"
 TabBarBaseBorderThickness: "border_thickness(0px, bottom: 1px)"
 TabBarBaseBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, opacity(@BaseBorderColor, 0%), opacity(@BaseBorderColor, 40%))"
+
+# North is canonical: the geometric tokens are stated once and rotated to the other
+# positions. A per-position colour override is still possible, e.g. TabBarTabSouthBackground.
+#
+# The stop at y1 is the edge a tab shares with its pane. Routing it through a token rather
+# than a literal lets a pane whose background is not the default declare its own.
+# The surface a tab is attached to. The pane paints with it; a selected tab's gradient stops
+# at it, so the two read as one surface.
+TabWidgetBackground: "@Background.100"
+CurrentPaneBackground: "@TabWidgetBackground"
+TabBarTabSelectedBackground: "linear_gradient(x1: 0, x2: 0, y1: 1, y2: 0, @CurrentPaneBackground, @Background.000)"
+
+TabBarTabBorderRadius: "border_radius(0px, top: @BaseRadius.medium)"
+TabBarTabHoveredBorderColor: "@BaseBorderColor"
+TabBarTabBorderThickness: "border_thickness(1px, bottom: 0)"
+
+# Gap semantics: positive is a gap, negative an overlap. -1px merges the borders of adjacent
+# tabs into one.
+TabBarTabSpacing: -1px
+
+TabBarTabPadding: "padding(vertical: @Spacing.150, horizontal: @Spacing.300)"
+TabBarTabIconSpacing: "@Spacing.150"
+
+TabBarTabSelectedBorderColor: "@BaseBorderColor"
+TabBarTabDisabledBackground: "@BaseDisabledBackground"
+TabBarTabDisabledTextColor: "@BaseDisabledTextColor"
+
+TabBarCloseButtonHeight: 14px
+TabBarCloseButtonWidth: 14px
+TabBarCloseButtonBorderRadius: "@BaseRadius.medium"
+TabBarCloseButtonIconColor: "@BaseTextColor"
+TabBarCloseButtonPadding: "padding(@Spacing.100)"
+
+TabBarCloseButtonHoveredBackground: "@Red.600"
+TabBarCloseButtonHoveredIconColor: "@Background.050"
+
+TabBarCloseButtonPressedBackground: "@Red.800"
+TabBarCloseButtonPressedIconColor: "@Background.050"
+
+TabBarCloseButtonDisabledIconColor: "@BaseDisabledTextColor"

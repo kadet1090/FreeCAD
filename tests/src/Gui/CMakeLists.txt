@@ -47,6 +47,7 @@ setup_qt_test(FormControlSizing)
 setup_qt_test(MenuGeometry)
 setup_qt_test(CheckIndicator)
 setup_qt_test(ComboDropdown)
+setup_qt_test(TabGeometry)
 setup_qt_test(MdiSurface)
 setup_qt_test(TreeBranch)
 

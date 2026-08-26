@@ -81,7 +81,9 @@ enum class StyleComponentElement : uint8_t
     Row,   // One row of the component, spanning its full width
     Indicator, // Check or radio glyph belonging to the component
     Branch,    // Connector lines in the indent column of a tree view
+    Tab,       // Individual tab of a TabBar
     Base,      // Base strip of a TabBar
+    CloseButton, // Tab close button, an QAbstractButton child of the bar
     IconIndicator, // State box drawn behind a checkable menu item's icon
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
     Separator, // Separator rule, and the label of an addSection() header, inside a menu
