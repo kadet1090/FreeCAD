@@ -439,6 +439,11 @@ public:
      * @p expression is written in the same language the theme files use. The override applies
      * to @p widget and everything below it, and a nearer declaration of the same name wins.
      *
+     * Takes effect immediately for fonts as well as colours: every descendant has applyWidgetFont()
+     * re-run on it as part of this same call. QEvent::FontChange only reaches a descendant whose
+     * resolved font actually changes as a result; calling this from inside such a handler runs it
+     * reentrantly wherever that happens.
+     *
      * Setting the dynamic property directly works too, but only takes effect the next time the
      * widget is polished; use this, or refreshStyleOverrides(), for a change made afterwards.
      *
@@ -446,7 +451,14 @@ public:
      */
     static void setStyleOverride(QWidget* widget, const QString& name, const QString& expression);
 
-    /// Re-derives the override set of @p widget and its descendants after a declaration changed.
+    /**
+     * @brief Re-derives the override set of @p widget and its descendants after a declaration
+     * changed.
+     *
+     * Also reapplies every descendant's font immediately, the same way setStyleOverride() does:
+     * QEvent::FontChange reaches only a descendant whose resolved font actually changes, and
+     * calling this from inside such a handler runs it reentrantly.
+     */
     static void refreshStyleOverrides(QWidget* widget);
 
     /**
@@ -1180,6 +1192,14 @@ protected:
     /// Records @p set on @p widget, where overrideSetOf() reads it back.
     void storeOverrideSet(QWidget* widget, uint32_t set) const;
 
+    /**
+     * @brief Recomputes @p widget's override set and every descendant's, then reapplies each
+     * widget's font.
+     *
+     * The font reapply is what makes a font override visible without an explicit repolish; it is
+     * not merely bookkeeping despite the name. QEvent::FontChange reaches a widget only where its
+     * resolved font actually changes, and reentrantly if that happens from inside such a handler.
+     */
     void recomputeOverrideSets(QWidget* widget) const;
 
     /// Re-applies applyWidgetFont() to @p widget and every descendant, for a theme reload that

@@ -79,6 +79,7 @@ public:
                     {.name = "TestPanePadding", .value = "padding(4px)"},
                     {.name = "TestPanelPadding", .value = "@TestPanePadding"},
                     {.name = "TestPanelBorderColor", .value = "#000000"},
+                    {.name = "TestPanelFontSize", .value = "13px"},
                     {.name = "TabBarBackground", .value = "@TestPaneBackground"},
 
                     // The two tab fills the rendered mapping test tells apart. Flat colours
@@ -488,6 +489,29 @@ private Q_SLOTS:
         );
 
         QCOMPARE(backgroundOf(panel), QColor(0x77, 0x88, 0x99));
+    }
+
+    // A colour override reaches paint time on its own: resolveBoxStyle() reads the widget's
+    // current override set fresh on every call, which is what the two tests above rely on. A
+    // font does not — applyWidgetFont() bakes it into the widget's own QFont once, and nothing
+    // repaints that on its own. Without recomputeOverrideSets() re-applying it, this call would
+    // leave the declaration recorded but the widget still showing the font from its last polish.
+    void test_settingAFontOverrideAfterPolishTakesEffect()  // NOLINT
+    {
+        QWidget root;
+        QWidget* panel = makePanel(&root);
+
+        style()->polish(&root);
+        style()->polish(panel);
+        QCOMPARE(panel->font().pixelSize(), 13);
+
+        Gui::FreeCADStyle::setStyleOverride(
+            panel,
+            QStringLiteral("TestPanelFontSize"),
+            QStringLiteral("21px")
+        );
+
+        QCOMPARE(panel->font().pixelSize(), 21);
     }
 
     void test_reparentingIntoASubtreeTakesEffectAfterARefresh()  // NOLINT

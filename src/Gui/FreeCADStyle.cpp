@@ -5367,6 +5367,16 @@ void FreeCADStyle::recomputeOverrideSets(QWidget* widget) const
 {
     storeOverrideSet(widget, computeOverrideSet(widget));
 
+    // A colour override reaches paint time on its own, the next time the widget draws itself,
+    // because resolving one always reads the widget's current override set. A font does not:
+    // applyWidgetFont() bakes it into the widget's own QFont, and nothing repaints that. A
+    // changed declaration can affect any name in this widget's set, not only the one a caller
+    // happened to touch, and can belong to an ancestor several levels up from where the actual
+    // font token lives, so re-deriving which names changed here would still have to visit every
+    // widget below to find out. Reapplying unconditionally is what this walk already does for
+    // the override set itself; doing the same for the font costs one more idempotent call.
+    applyWidgetFont(widget);
+
     forEachChildWidget(widget, [this](QWidget* childWidget) { recomputeOverrideSets(childWidget); });
 }
 
