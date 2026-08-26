@@ -132,6 +132,12 @@ ToolBarBorderThickness: "border_thickness(0px, bottom: 1px)"
 ToolBarTransparentBackground: "reset()"
 ToolBarTransparentBorderColor: "reset()"
 
+# WbToolBar — the toolbar hosting the workbench selector sits flush with no layout margins so
+# the tabs span its full extent. QToolBarLayout rebuilds its contents margins from
+# ToolBarItemMargin + ToolBarFrameWidth on every invalidate, so both must resolve to zero here.
+WbToolBarItemMargin: 0px
+WbToolBarFrameWidth: 0px
+
 SeparatorThickness: 1px
 SeparatorColor: "@BaseBorderColor"
 
@@ -370,6 +376,7 @@ DropdownListPadding: "@MenuPadding"
 # How tall a dropdown may grow. Cleared with reset(), it is bounded only by Qt, which keeps
 # it on screen and honours maxVisibleItems.
 DropdownListMaxHeight: "250px"
+WorkbenchSelectorDropdownMaxHeight: "reset()"
 
 # Where the popup opens:
 #   current - the current row lands on the combo box, the way a menu opens over its button
@@ -463,6 +470,13 @@ TabBarTabIconSpacing: "@Spacing.150"
 TabBarTabSelectedBorderColor: "@BaseBorderColor"
 TabBarTabDisabledBackground: "@BaseDisabledBackground"
 TabBarTabDisabledTextColor: "@BaseDisabledTextColor"
+
+# The workbench selector's tabs run edge to edge along the toolbar rather than sitting on a
+# base strip, so they lose the strip and the rounded corners and keep only the rules between
+# neighbours.
+WbTabBarBaseBackground: "reset()"
+WbTabBarTabBorderRadius: "border_radius(0px)"
+WbTabBarTabBorderThickness: "border_thickness(0px, left: 1px, right: 1px)"
 
 TabBarCloseButtonHeight: 14px
 TabBarCloseButtonWidth: 14px

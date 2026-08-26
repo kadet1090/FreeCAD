@@ -24,7 +24,6 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QMenuBar>
-#include <QScreen>
 #include <QStatusBar>
 #include <QToolBar>
 #include <QLayout>
@@ -46,6 +45,11 @@ using namespace Gui;
 WorkbenchComboBox::WorkbenchComboBox(WorkbenchGroup* aGroup, QWidget* parent)
     : QComboBox(parent)
 {
+    // Every workbench has to be reachable without scrolling, so the dropdown drops the height
+    // cap the design system puts on an ordinary one and asks Qt for a row per workbench. Qt
+    // still keeps the popup on screen, scrolling if the list outgrows it.
+    setProperty("dropdownComponent", "WorkbenchSelectorDropdown");
+
     setIconSize(QSize(16, 16));
     setToolTip(aGroup->toolTip());
     setStatusTip(aGroup->action()->statusTip());
@@ -58,18 +62,6 @@ WorkbenchComboBox::WorkbenchComboBox(WorkbenchGroup* aGroup, QWidget* parent)
     connect(this, qOverload<int>(&WorkbenchComboBox::activated), aGroup, [aGroup](int index) {
         aGroup->actions()[index]->trigger();
     });
-}
-
-void WorkbenchComboBox::showPopup()
-{
-    int rows = count();
-    if (rows > 0) {
-        int height = view()->sizeHintForRow(0);
-        int maxHeight = QApplication::primaryScreen()->size().height();
-        view()->setMinimumHeight(qMin(height * rows, maxHeight / 2));
-    }
-
-    QComboBox::showPopup();
 }
 
 void WorkbenchComboBox::refreshList(QList<QAction*> actionList)
@@ -99,6 +91,8 @@ void WorkbenchComboBox::refreshList(QList<QAction*> actionList)
             this->setCurrentIndex(this->count() - 1);
         }
     }
+
+    setMaxVisibleItems(qMax(1, count()));
 }
 
 WorkbenchTabWidget::WorkbenchTabWidget(WorkbenchGroup* aGroup, QWidget* parent)
@@ -119,6 +113,8 @@ WorkbenchTabWidget::WorkbenchTabWidget(WorkbenchGroup* aGroup, QWidget* parent)
     layout->addWidget(moreButton);
     layout->setAlignment(moreButton, Qt::AlignCenter);
 
+    sizePolicy().setVerticalPolicy(QSizePolicy::Expanding);
+
     setLayout(layout);
 
     moreButton->setIcon(Gui::BitmapFactory().iconFromTheme("list-add"));
@@ -126,6 +122,7 @@ WorkbenchTabWidget::WorkbenchTabWidget(WorkbenchGroup* aGroup, QWidget* parent)
     moreButton->setPopupMode(QToolButton::InstantPopup);
     moreButton->setMenu(new QMenu(moreButton));
     moreButton->setObjectName(QStringLiteral("WbTabBarMore"));
+    moreButton->setAutoRaise(true);
 
     if (parent->inherits("QToolBar")) {
         // when toolbar is created it is not yet placed in its designated area
@@ -156,6 +153,12 @@ WorkbenchTabWidget::WorkbenchTabWidget(WorkbenchGroup* aGroup, QWidget* parent)
     connect(tabBar, &QTabBar::currentChanged, this, &WorkbenchTabWidget::handleTabChange);
 
     if (auto toolBar = qobject_cast<QToolBar*>(parent)) {
+        // Give the toolbar the WbToolBar token namespace, whose ToolBarItemMargin/ToolBarFrameWidth
+        // resolve to zero, so the selector sits flush. Otherwise QToolBarLayout's
+        // updateMarginAndSpacing() rebuilds the contents margins from those metrics on every
+        // invalidate (e.g. a theme re-polish), re-padding the selector.
+        toolBar->setProperty("component", QStringLiteral("WbToolBar"));
+
         connect(toolBar, &QToolBar::topLevelChanged, this, &WorkbenchTabWidget::updateLayout);
         connect(toolBar, &QToolBar::orientationChanged, this, &WorkbenchTabWidget::updateLayout);
     }
@@ -222,17 +225,26 @@ void WorkbenchTabWidget::updateLayout()
         setToolBarArea(Gui::ToolBarArea::TopToolBarArea);
         return;
     }
+    tabBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     if (auto toolBar = qobject_cast<QToolBar*>(parentWidget())) {
-        setSizePolicy(toolBar->sizePolicy());
-        tabBar->setSizePolicy(toolBar->sizePolicy());
-
+        // Zero the margins for the current layout pass; the WbToolBar token namespace (set in the
+        // constructor) keeps them zero across later QToolBarLayout invalidations.
+        toolBar->layout()->setContentsMargins({});
         if (toolBar->isFloating()) {
             setToolBarArea(
                 toolBar->orientation() == Qt::Horizontal ? Gui::ToolBarArea::TopToolBarArea
                                                          : Gui::ToolBarArea::LeftToolBarArea
             );
             return;
+        }
+        else {
+            if (toolBar->orientation() == Qt::Horizontal) {
+                tabBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+            }
+            else {
+                tabBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+            }
         }
     }
 
@@ -295,8 +307,6 @@ void WorkbenchTabWidget::handleTabChange(int selectedTabIndex)
     if (selectedTabIndex != temporaryWorkbenchTabIndex()) {
         setTemporaryWorkbenchTab(nullptr);
     }
-
-    adjustSize();
 }
 
 void WorkbenchTabWidget::updateWorkbenchList()

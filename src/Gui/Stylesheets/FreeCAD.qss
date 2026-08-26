@@ -367,24 +367,12 @@ Gui--OverlayToolButton[objectName="OBTN Overlay"]:hover {
   image: url(qss:@IconsLocationFolderName/overlay-@StylesheetIconsColor.svg);
 }
 
-/**
- * Special handling for WB Tab Bar
- */
- #WbTabBar #WbTabBarMore {
-  padding-right: 12px;
- }
-
 QPushButton[objectName="buttonIFCPropertiesDelete"] {
   min-width: 100px;
 }
 
 QGroupBox[objectName="matOpsGrpBox"] QPushButton {
   min-width: 235px;
-}
-
-
-Gui--WorkbenchComboBox {
-padding-right: -10px;
 }
 /* Below is a fix for indentation in properties*/
 
