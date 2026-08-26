@@ -259,6 +259,36 @@ Value darken(const Tuple& args)
     return lightenOrDarken(args, false);
 }
 
+/// Replaces the alpha of a color, or of every stop of a gradient. A bare number is taken as a
+/// 0..1 alpha; a percentage is scaled down to that range.
+Value opacity(const Tuple& args)
+{
+    auto resolved = ArgumentParser {{"color"}, {"alpha"}}.resolve(args);
+
+    const Numeric& alpha = requireArgument<Numeric>(resolved, "alpha", "opacity");
+
+    // NOLINTNEXTLINE(*-magic-numbers)
+    const auto alphaValue = static_cast<float>(alpha.unit == "%" ? alpha.value / 100.0 : alpha.value);
+
+    const auto applyAlpha = [alphaValue](const Base::Color& color) -> Base::Color {
+        return Base::Color(color.r, color.g, color.b, alphaValue);
+    };
+
+    const Value* colorValue = resolved.find("color");
+    if (colorValue->holds<Tuple>()) {
+        auto mapped = mapGradientStops(*colorValue, applyAlpha);
+        if (!mapped) {
+            THROWM(
+                Base::ExpressionError,
+                "opacity: 'color' argument must be a color or gradient"
+            );
+        }
+        return Value {std::move(*mapped)};
+    }
+
+    return applyAlpha(requireArgument<Base::Color>(resolved, "color", "opacity"));
+}
+
 Value blend(const Tuple& args)
 {
     auto resolved = ArgumentParser {{"from"}, {"to"}, {"amount"}}.resolve(args);
@@ -416,6 +446,7 @@ const std::unordered_map<std::string_view, StyleFunction>& styleFunctions()
     static const std::unordered_map<std::string_view, StyleFunction> table = {
         {"lighten", lighten},
         {"darken", darken},
+        {"opacity", opacity},
         {"blend", blend},
         {"shade", shade},
         {"shades", shades},
