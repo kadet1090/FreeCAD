@@ -274,7 +274,9 @@ void ViewProviderDocumentObject::setShowable(bool enable)
 
     _Showable = enable;
     int which = getModeSwitch()->whichChild.getValue();
-    if (_Showable && which == -1 && Visibility.getValue()) {
+    // A temporary reveal counts as a reason to be in the scene: it was dropped when the
+    // object stopped being showable, and is still owed to whoever asked for it.
+    if (_Showable && which == -1 && (Visibility.getValue() || isTemporarilyVisible())) {
         setModeSwitch();
     }
     else if (!_Showable) {
@@ -328,6 +330,36 @@ void ViewProviderDocumentObject::show()
         Visibility.setStatus(App::Property::User2, true);
         Visibility.setValue(true);
         Visibility.setStatus(App::Property::User2, false);
+    }
+}
+
+void ViewProviderDocumentObject::makeTemporaryVisible(bool visible)
+{
+    if (visible) {
+        if (++temporaryVisibility == 1) {
+            onTemporaryVisibilityChanged(true);
+        }
+        return;
+    }
+
+    // A conceal with no reveal outstanding is nobody's reveal to end: whoever owns the
+    // object's visibility already put it where it belongs.
+    if (temporaryVisibility > 0 && --temporaryVisibility == 0) {
+        onTemporaryVisibilityChanged(false);
+    }
+}
+
+void ViewProviderDocumentObject::onTemporaryVisibilityChanged(bool visible)
+{
+    // Deliberately not show()/hide(): those write Visibility back, and a temporary reveal
+    // must leave the document's idea of visibility exactly as it found it. Going back
+    // means re-applying what Visibility says now, so an object made genuinely visible
+    // during the reveal simply stays visible.
+    if (visible) {
+        ViewProvider::show();
+    }
+    else if (!Visibility.getValue()) {
+        ViewProvider::hide();
     }
 }
 
@@ -878,4 +910,72 @@ std::string ViewProviderDocumentObject::getFullName() const
         return pcObject->getFullName() + ".ViewObject";
     }
     return std::string("?");
+}
+
+namespace
+{
+/// The view provider that can reveal @p object, or null when there is none — a headless
+/// session, a closed Gui document, or an object that never had one.
+ViewProviderDocumentObject* revealableViewProvider(App::DocumentObject* object)
+{
+    if (!object || !Application::Instance) {
+        return nullptr;
+    }
+    return Application::Instance->getViewProvider<ViewProviderDocumentObject>(object);
+}
+}  // namespace
+
+TemporaryVisibility::TemporaryVisibility(App::DocumentObject* object)
+{
+    if (auto* viewProvider = revealableViewProvider(object)) {
+        viewProvider->makeTemporaryVisible(true);
+        _object = object;
+    }
+}
+
+TemporaryVisibility::TemporaryVisibility(ViewProviderDocumentObject* viewProvider)
+{
+    if (viewProvider && viewProvider->getObject()) {
+        viewProvider->makeTemporaryVisible(true);
+        _object = viewProvider->getObject();
+    }
+}
+
+TemporaryVisibility::TemporaryVisibility(TemporaryVisibility&& other)
+    : _object(*other._object)
+{
+    // The weak pointer is rebuilt rather than moved from: a moved-from one cannot be
+    // asked anything afterwards, and the source still has to answer active().
+    other._object.reset();
+}
+
+TemporaryVisibility& TemporaryVisibility::operator=(TemporaryVisibility&& other)
+{
+    if (this != &other) {
+        reset();
+        _object = *other._object;
+        other._object.reset();
+    }
+    return *this;
+}
+
+TemporaryVisibility::~TemporaryVisibility()
+{
+    reset();
+}
+
+bool TemporaryVisibility::active() const
+{
+    return !_object.expired();
+}
+
+void TemporaryVisibility::reset()
+{
+    App::DocumentObject* object = *_object;
+    _object.reset();
+    // A null resolve means the object was deleted or its document closed meanwhile: the
+    // reveal died with the view provider, so there is nothing left to give back.
+    if (auto* viewProvider = revealableViewProvider(object)) {
+        viewProvider->makeTemporaryVisible(false);
+    }
 }
