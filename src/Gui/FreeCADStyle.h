@@ -48,6 +48,7 @@
 #include <QAbstractScrollArea>
 #include <QComboBox>
 #include <QStyleOptionHeader>
+#include <QTabBar>
 #include <QToolBar>
 #include <QStyleOption>
 
@@ -714,6 +715,18 @@ protected:
         const QStyleOption* option,
         const QWidget* widget
     ) const;
+
+    /// The edge a tab bar's tabs sit on, as a Position variant value.
+    static StyleParameters::Position tabPositionOf(QTabBar::Shape shape);
+
+    void drawTabBarBase(
+        QPainter* painter,
+        const QStyleOptionTabBarBase* option,
+        const QWidget* widget
+    ) const;
+
+    /// Repaints a tab bar on pointer moves, so the cursor check in contextOf sees fresh state.
+    static void forceTabBarRepaint(QObject* obj, QEvent* event);
 
     /// The edge a toolbar is docked to, as a Position variant value.
     static StyleParameters::Position toolbarPositionOf(const QToolBar* toolbar);

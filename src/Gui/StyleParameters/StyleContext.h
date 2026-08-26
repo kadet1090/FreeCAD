@@ -58,6 +58,7 @@ enum class StyleComponent : uint8_t
     List,           // QListWidget, QListView and other item views
     DropdownList,   // QListView inside a QComboBox popup
     Tree,           // QTreeWidget, QTreeView
+    TabBar,         // QTabBar
     Header,         // QHeaderView sections
     Menu,           // QMenu popup: context menus, menu bar and tool button dropdowns
     MenuBar,        // QMenuBar
@@ -80,6 +81,7 @@ enum class StyleComponentElement : uint8_t
     Row,   // One row of the component, spanning its full width
     Indicator, // Check or radio glyph belonging to the component
     Branch,    // Connector lines in the indent column of a tree view
+    Base,      // Base strip of a TabBar
     IconIndicator, // State box drawn behind a checkable menu item's icon
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
     Separator, // Separator rule, and the label of an addSection() header, inside a menu

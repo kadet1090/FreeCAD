@@ -356,3 +356,10 @@ TreeItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.100)"
 # expand arrow is drawn either way.
 TreeBranchBorderColor: "@BaseBorderColor"
 TreeBranchBorderThickness: 1px
+
+# The strip under the tabs, which the active tab's own edge joins.
+TabBarBaseHeight: 4px
+TabBarBaseOverlap: 4px
+TabBarBaseBorderColor: "@BaseBorderColor"
+TabBarBaseBorderThickness: "border_thickness(0px, bottom: 1px)"
+TabBarBaseBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, opacity(@BaseBorderColor, 0%), opacity(@BaseBorderColor, 40%))"

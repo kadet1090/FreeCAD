@@ -3256,6 +3256,48 @@ void FreeCADStyle::scheduleItemViewRelayout(QWidget* widget)
     QMetaObject::invokeMethod(itemView, "doItemsLayout", Qt::QueuedConnection);
 }
 
+/*static*/ Position FreeCADStyle::tabPositionOf(QTabBar::Shape shape)
+{
+    switch (shape) {
+        case QTabBar::RoundedNorth:
+        case QTabBar::TriangularNorth:
+            return Position::North;
+        case QTabBar::RoundedEast:
+        case QTabBar::TriangularEast:
+            return Position::East;
+        case QTabBar::RoundedSouth:
+        case QTabBar::TriangularSouth:
+            return Position::South;
+        case QTabBar::RoundedWest:
+        case QTabBar::TriangularWest:
+            return Position::West;
+        default:
+            return Position::North;
+    }
+}
+
+void FreeCADStyle::drawTabBarBase(
+    QPainter* painter,
+    const QStyleOptionTabBarBase* option,
+    const QWidget* widget
+) const
+{
+    const StyleContext positionContext = contextOf(widget, option, StyleComponentElement::Base);
+    drawBoxBackground(painter, option->rect, resolveBoxStyle(positionContext));
+}
+
+void FreeCADStyle::forceTabBarRepaint(QObject* obj, QEvent* event)
+{
+    if (!qobject_cast<QTabBar*>(obj)) {
+        return;
+    }
+
+    if (event->type() == QEvent::MouseMove || event->type() == QEvent::Leave
+        || event->type() == QEvent::HoverMove || event->type() == QEvent::HoverLeave) {
+        static_cast<QWidget*>(obj)->update();
+    }
+}
+
 std::optional<int> FreeCADStyle::resolvePixelMetric(
     PixelMetric metric,
     const QStyleOption* option,
@@ -3311,6 +3353,29 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         if (qobject_cast<const QAbstractSpinBox*>(widget)) {
             return 0;
         }
+    }
+
+    if (metric == PM_TabBarBaseHeight || metric == PM_TabBarBaseOverlap) {
+        if (qobject_cast<const QTabBar*>(widget)) {
+            const StyleContext baseContext = element(StyleComponentElement::Base);
+            const auto height = resolve<int>(baseContext, Height);
+            const auto overlap = resolve<int>(baseContext, Overlap);
+
+            if (metric == PM_TabBarBaseHeight && height) {
+                return *height + overlap.value_or(0);
+            }
+            if (metric == PM_TabBarBaseOverlap && overlap) {
+                return overlap;
+            }
+
+            return {};
+        }
+
+        if (metric == PM_TabBarBaseOverlap) {
+            return 1;
+        }
+
+        return {};
     }
 
     if (!qobject_cast<const QMenu*>(widget)) {
@@ -3598,6 +3663,13 @@ void FreeCADStyle::drawPrimitive(
         // State_Item marks. The row's own highlight already says where the focus is, and the
         // fill only tints it.
         if (option->state & QStyle::State_Item) {
+            return;
+        }
+    }
+
+    if (element == PE_FrameTabBarBase) {
+        if (const auto* baseOption = qstyleoption_cast<const QStyleOptionTabBarBase*>(option)) {
+            drawTabBarBase(painter, baseOption, widget);
             return;
         }
     }
@@ -4069,6 +4141,22 @@ StyleContext FreeCADStyle::contextOf(
         context.component = StyleComponent::Header;
         context.element = element;
     }
+    else if (const auto* tabBar = qobject_cast<const QTabBar*>(widget)) {
+        context.component = StyleComponent::TabBar;
+        context.element = element;
+        context.variant.set(VariantSlot::Position, tabPositionOf(tabBar->shape()));
+
+        // A tab bar marks the active tab with State_Selected rather than State_On.
+        if (option && (option->state & QStyle::State_Selected)) {
+            context.state |= StyleState::Selected;
+        }
+
+        // QStyleOptionTab does not reliably carry State_MouseOver: Qt tracks tab hover with
+        // its own hover index and does not always put it in the option. Read the cursor.
+        if (option && option->rect.contains(tabBar->mapFromGlobal(QCursor::pos()))) {
+            context.state |= StyleState::Hovered;
+        }
+    }
     else if (qobject_cast<const QTreeView*>(widget)) {
         context.component = StyleComponent::Tree;
         context.element = element;
@@ -4522,6 +4610,11 @@ void FreeCADStyle::polish(QWidget* widget)
         && transparencyBelow(widget->parentWidget());
     tagWidgetTransparency(widget, ownSurface(widget, inherited));
 
+    if (qobject_cast<QTabBar*>(widget)) {
+        widget->setMouseTracking(true);
+        widget->installEventFilter(this);
+    }
+
     if (auto* itemView = qobject_cast<QAbstractItemView*>(widget)) {
         itemView->setAttribute(Qt::WA_MouseTracking);
     }
@@ -4595,6 +4688,10 @@ void FreeCADStyle::unpolish(QWidget* widget)
         return;
     }
 
+    if (qobject_cast<QTabBar*>(widget)) {
+        widget->removeEventFilter(this);
+    }
+
     if (auto* comboBox = qobject_cast<QComboBox*>(widget)) {
         restoreComboDropdownDefaults(comboBox);
     }
@@ -4635,6 +4732,8 @@ void FreeCADStyle::applyTextEditDocumentPadding(QWidget* widget, QTextDocument* 
 
 bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 {
+    forceTabBarRepaint(obj, event);
+
     repaintPressedDropdownRow(obj, event);
 
     if (event->type() == QEvent::Show) {
