@@ -29,6 +29,7 @@
 # include <QImage>
 # include <array>
 # include <algorithm>
+# include <cmath>
 # include <map>
 # include <QPainter>
 # include <QPainterPath>
@@ -4710,29 +4711,91 @@ void FreeCADStyle::polish(QPalette& palette)
 }
 
 
-QFont FreeCADStyle::resolveFont(const StyleContext& context, const QFont& base) const
+namespace
 {
-    QFont font = base;
 
-    if (const auto size = resolve<Numeric>(context, StyleProperty::FontSize)) {
-        if (size->value > 0) {
-            if (size->unit == "pt") {
-                font.setPointSizeF(size->value);
-            }
-            else {
-                font.setPixelSize(static_cast<int>(*size));
-            }
+// A relative size multiplies whatever the base is expressed in: QFont reports pointSizeF() as -1
+// once a pixel size is set, so the two cannot be mixed without laundering the unit.
+void applyScaledSize(QFont& font, const QFont& reference, double factor)
+{
+    if (reference.pixelSize() > 0) {
+        font.setPixelSize(std::max(1, static_cast<int>(std::lround(reference.pixelSize() * factor))));
+    }
+    else {
+        // A reference with neither a pixel nor a point size ever set reports pointSizeF() as -1,
+        // same as the pixel branch's floor guards against a rounded-to-zero pixel size.
+        font.setPointSizeF(std::max(1.0, reference.pointSizeF() * factor));
+    }
+}
+
+QFont::Style fontStyleFromToken(std::string_view name)
+{
+    if (name == "italic") {
+        return QFont::StyleItalic;
+    }
+
+    if (name == "oblique") {
+        return QFont::StyleOblique;
+    }
+
+    return QFont::StyleNormal;
+}
+
+}  // namespace
+
+QFont FreeCADStyle::resolveTokenFont(const StyleContext& context, const QFont& base) const
+{
+    QFont font;
+
+    if (const auto size = resolve<Numeric>(context, StyleProperty::FontSize);
+        size && size->value > 0) {
+        if (size->unit == "pt") {
+            font.setPointSizeF(size->value);
+        }
+        else if (size->unit == "em") {
+            applyScaledSize(font, base, size->value);
+        }
+        else if (size->unit == "rem") {
+            applyScaledSize(font, QApplication::font(), size->value);
+        }
+        else {
+            font.setPixelSize(static_cast<int>(size->value));
         }
     }
 
     if (const auto weight = resolve<Numeric>(context, StyleProperty::FontWeight)) {
         // QFont rejects anything outside 1..1000 and warns; a malformed token should not be
         // able to spray the log from inside a paint call.
-        const int clamped = std::clamp(static_cast<int>(*weight), 1, 1000);
+        const int clamped = std::clamp(static_cast<int>(weight->value), 1, 1000);
         font.setWeight(static_cast<QFont::Weight>(clamped));
     }
 
+    if (const auto family = resolve<std::string>(context, StyleProperty::FontFamily)) {
+        QStringList families;
+        const QStringList parts
+            = QString::fromStdString(*family).split(QLatin1Char(','), Qt::SkipEmptyParts);
+        for (const QString& part : parts) {
+            const QString trimmed = part.trimmed();
+            if (!trimmed.isEmpty()) {
+                families.append(trimmed);
+            }
+        }
+
+        if (!families.isEmpty()) {
+            font.setFamilies(families);
+        }
+    }
+
+    if (const auto style = resolve<std::string>(context, StyleProperty::FontStyle)) {
+        font.setStyle(fontStyleFromToken(*style));
+    }
+
     return font;
+}
+
+QFont FreeCADStyle::resolveFont(const StyleContext& context, const QFont& base) const
+{
+    return resolveTokenFont(context, base).resolve(base);
 }
 
 StyleContext FreeCADStyle::contextOf(

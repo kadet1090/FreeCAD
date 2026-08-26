@@ -484,11 +484,18 @@ public:
     BoxStyleDefinition resolveBoxStyle(const StyleParameters::StyleContext& context) const;
 
     /**
+     * @brief The font attributes @p context states, and nothing else.
+     *
+     * The result carries only the properties a token spoke for, so a caller may apply it over a
+     * font without disturbing the rest of it. @p base is consulted only by relative sizes.
+     */
+    QFont resolveTokenFont(const StyleParameters::StyleContext& context, const QFont& base) const;
+
+    /**
      * @brief The font @p base takes on under @p context.
      *
-     * Applies the FontSize and FontWeight tokens. Where a token does not resolve the
-     * corresponding property of @p base is kept, so a caller can always hand over the widget's
-     * own font and get back something safe to paint with.
+     * Where a token does not resolve the corresponding property of @p base is kept, so a caller
+     * can always hand over the widget's own font and get back something safe to paint with.
      */
     QFont resolveFont(const StyleParameters::StyleContext& context, const QFont& base) const;
 
