@@ -280,10 +280,7 @@ Value opacity(const Tuple& args)
     if (colorValue->holds<Tuple>()) {
         auto mapped = mapGradientStops(*colorValue, applyAlpha);
         if (!mapped) {
-            THROWM(
-                Base::ExpressionError,
-                "opacity: 'color' argument must be a color or gradient"
-            );
+            THROWM(Base::ExpressionError, "opacity: 'color' argument must be a color or gradient");
         }
         return Value {std::move(*mapped)};
     }
@@ -483,6 +480,11 @@ Value Boolean::evaluate([[maybe_unused]] const EvaluationContext& context) const
     return value;
 }
 
+Value StringLiteral::evaluate([[maybe_unused]] const EvaluationContext& context) const
+{
+    return value;
+}
+
 Value Color::evaluate([[maybe_unused]] const EvaluationContext& context) const
 {
     return color;
@@ -643,6 +645,31 @@ std::unique_ptr<Expr> Parser::parseBoolean()
     return std::make_unique<Boolean>(value);
 }
 
+bool Parser::peekStringLiteral() const
+{
+    return pos < input.size() && (input[pos] == '"' || input[pos] == '\'');
+}
+
+std::unique_ptr<Expr> Parser::parseStringLiteral()
+{
+    const char quote = input[pos];
+    ++pos;
+
+    const size_t start = pos;
+    while (pos < input.size() && input[pos] != quote) {
+        ++pos;
+    }
+
+    if (pos >= input.size()) {
+        THROWM(Base::ParserError, fmt::format("Unterminated string literal: {}", input.substr(start)));
+    }
+
+    std::string value = input.substr(start, pos - start);
+    ++pos;
+
+    return std::make_unique<StringLiteral>(std::move(value));
+}
+
 std::unique_ptr<Expr> Parser::parseExpression()
 {
     auto expr = parseTerm();
@@ -714,6 +741,9 @@ std::unique_ptr<Expr> Parser::parseFactor()
                 }
             }
         }
+    }
+    else if (peekStringLiteral()) {
+        expr = parseStringLiteral();
     }
     else if (peekColor()) {
         expr = parseColor();

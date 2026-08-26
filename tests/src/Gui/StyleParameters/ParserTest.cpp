@@ -3015,3 +3015,27 @@ TEST_F(ParserTest, MalformedGradientConvertsToNoBrush)
     EXPECT_NO_THROW({ brush = Base::convertTo<QBrush>(Value {broken}); });
     EXPECT_EQ(brush.style(), Qt::NoBrush);
 }
+
+TEST_F(ParserTest, ParsesDoubleQuotedStringLiteral)
+{
+    Parser parser("\"DejaVu Sans Mono\"");
+    auto result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    ASSERT_TRUE(result.holds<std::string>());
+    EXPECT_EQ(result.get<std::string>(), "DejaVu Sans Mono");
+}
+
+TEST_F(ParserTest, ParsesSingleQuotedStringLiteralWithComma)
+{
+    Parser parser("'Inter, sans-serif'");
+    auto result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    ASSERT_TRUE(result.holds<std::string>());
+    EXPECT_EQ(result.get<std::string>(), "Inter, sans-serif");
+}
+
+TEST_F(ParserTest, UnterminatedStringLiteralThrows)
+{
+    Parser parser("\"unterminated");
+    EXPECT_THROW(parser.parse(), Base::Exception);
+}

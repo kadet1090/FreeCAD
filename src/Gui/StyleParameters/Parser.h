@@ -91,6 +91,17 @@ struct GuiExport Boolean: public Expr
     Value evaluate([[maybe_unused]] const EvaluationContext& context) const override;
 };
 
+struct GuiExport StringLiteral: public Expr
+{
+    std::string value;
+
+    explicit StringLiteral(std::string value)
+        : value(std::move(value))
+    {}
+
+    Value evaluate([[maybe_unused]] const EvaluationContext& context) const override;
+};
+
 struct GuiExport Color: public Expr
 {
     Base::Color color;
@@ -199,6 +210,8 @@ private:
     bool peekKeyword(const char* keyword) const;
     bool peekBoolean();
     std::unique_ptr<Expr> parseBoolean();
+    bool peekStringLiteral() const;
+    std::unique_ptr<Expr> parseStringLiteral();
     int parseInt();
     std::unique_ptr<Expr> parseNumber();
     std::string parseUnit();
