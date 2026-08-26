@@ -177,3 +177,5 @@ LineEditHoveredBorderColorEffect: "@BaseHoveredBorderColorEffect"
 
 LineEditDisabledBackground: "@BaseDisabledBackground"
 LineEditDisabledTextColor: "@BaseDisabledTextColor"
+
+TextEditPadding: "padding(@FormControlPadding.left)"

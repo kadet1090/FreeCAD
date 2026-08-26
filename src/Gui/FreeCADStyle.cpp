@@ -1853,6 +1853,9 @@ StyleContext FreeCADStyle::contextOf(
     else if (qobject_cast<const QLineEdit*>(widget)) {
         context.component = StyleComponent::LineEdit;
     }
+    else if (qobject_cast<const QTextEdit*>(widget) || qobject_cast<const QPlainTextEdit*>(widget)) {
+        context.component = StyleComponent::TextEdit;
+    }
     else if (qobject_cast<const QMenuBar*>(widget)) {
         context.component = StyleComponent::MenuBar;
         context.element = element;
@@ -2217,8 +2220,26 @@ void FreeCADStyle::clearTokenCache()
     StyleContext::Intern::global().clear();
 }
 
+void FreeCADStyle::applyTextEditDocumentPadding(QWidget* widget, QTextDocument* document) const
+{
+    const StyleContext context = contextOf(widget);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+    document->setDocumentMargin(geometry.padding.left());
+}
+
 bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 {
+    // The padding reaches the text through the document's own margin, which leaves the scroll
+    // bars flush with the frame edge; a viewport margin would push them inwards with the text.
+    if (event->type() == QEvent::Polish) {
+        if (auto* textEdit = qobject_cast<QTextEdit*>(obj)) {
+            applyTextEditDocumentPadding(textEdit, textEdit->document());
+        }
+        else if (auto* plainTextEdit = qobject_cast<QPlainTextEdit*>(obj)) {
+            applyTextEditDocumentPadding(plainTextEdit, plainTextEdit->document());
+        }
+    }
+
     if (event->type() == ThemeReloadEvent::registeredType()) {
         clearTokenCache();
 

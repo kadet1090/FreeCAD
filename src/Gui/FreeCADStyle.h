@@ -53,6 +53,8 @@
 #include "StyleParameters/StyleOverrides.h"
 #include "StyleParameters/Value.h"
 
+class QTextDocument;
+
 namespace Gui
 {
 
@@ -587,6 +589,9 @@ protected:
 
     /// Draws a separator rule centred in @p rect, running along @p orientation.
     void drawSeparatorLine(QPainter* painter, const QRect& rect, Qt::Orientation orientation) const;
+
+    /// Insets a text edit's content by its padding token, through the document's own margin.
+    void applyTextEditDocumentPadding(QWidget* widget, QTextDocument* document) const;
 
     /// Draws an anti-aliased chevron pointing @p direction, filling @p rect.
     void drawChevronArrow(

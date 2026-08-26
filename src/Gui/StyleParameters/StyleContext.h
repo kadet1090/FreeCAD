@@ -50,6 +50,7 @@ enum class StyleComponent : uint8_t
     ToolButton,
     ToolBar,        // QToolBar
     LineEdit,       // QLineEdit and the edit frame of a QAbstractSpinBox
+    TextEdit,       // QPlainTextEdit, QTextEdit and derivatives
     MenuBar,        // QMenuBar
     ToolBarButton,  // QToolButton in a QToolBar - semantically a different control
     COUNT
