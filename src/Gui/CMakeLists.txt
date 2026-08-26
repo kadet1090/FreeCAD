@@ -1352,6 +1352,7 @@ SET(FreeCADGui_CPP_SRCS
     GuiApplicationNativeEventAware.cpp
     GuiConsole.cpp
     IconManager.cpp
+    ThemeReloadEvent.cpp
     InputHintWidget.cpp
     InputHintPy.cpp
     Macro.cpp
@@ -1403,6 +1404,7 @@ SET(FreeCADGui_SRCS
     GuiConsole.h
     InventorAll.h
     IconManager.h
+    ThemeReloadEvent.h
     InputHint.h
     InputHintPy.h
     InputHintWidget.h

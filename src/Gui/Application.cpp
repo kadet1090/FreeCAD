@@ -153,6 +153,7 @@
 #include "QtWidgets.h"
 
 #include <FreeCADStyle.h>
+#include <ThemeReloadEvent.h>
 #include <OverlayManager.h>
 #include <ParamHandler.h>
 #include <Base/ServiceProvider.h>
@@ -227,6 +228,39 @@ public:
 };
 
 // Pimpl class
+/**
+ * @brief Performs the theme reload when a ThemeReloadEvent reaches qApp.
+ *
+ * Installed on qApp so any caller can trigger a reload by sending the event, without a
+ * reference to Application and without depending on what qApp->style() currently is.
+ */
+class ThemeReloadHandler: public QObject
+{
+public:
+    ThemeReloadHandler()
+        : QObject(qApp)
+    {
+        qApp->installEventFilter(this);
+    }
+
+    bool eventFilter(QObject*, QEvent* event) override
+    {
+        if (event->type() == ThemeReloadEvent::registeredType()) {
+            const auto hGrp = App::GetApplication().GetParameterGroupByPath(
+                "User parameter:BaseApp/Preferences/MainWindow"
+            );
+            const QString qssFile = QString::fromStdString(hGrp->GetASCII("StyleSheet"));
+            const bool tiledBackground = hGrp->GetBool("TiledBackground", false);
+
+            Application::Instance->styleParameterManager()->reload();
+            Application::Instance->setStyleSheet(qssFile, tiledBackground);
+            OverlayManager::instance()->refresh(nullptr, true);
+        }
+
+        return false;
+    }
+};
+
 struct ApplicationP
 {
     explicit ApplicationP(bool GUIenabled)
@@ -260,6 +294,8 @@ struct ApplicationP
     MacroManager* macroMngr;
     PreferencePackManager* prefPackManager;
     StyleParameters::ParameterManager* styleParameterManager;
+
+    ThemeReloadHandler* themeReloadHandler {nullptr};
 
     /// List of all registered views
     std::list<Gui::BaseView*> passive;
@@ -472,15 +508,13 @@ void Application::initStyleParameterManager()
     auto reloadStylesheetHandler = handlers.addDelayedHandler(
         "BaseApp/Preferences/MainWindow",
         {"ThemeStyleParametersFiles", "Theme", "StyleSheet"},
-        [themeParametersSource, deduceParametersFilePath, this](ParameterGrp::handle hGrp) {
+        [themeParametersSource, deduceParametersFilePath]([[maybe_unused]] ParameterGrp::handle) {
+            // Update the theme parameters file path before triggering the reload so the
+            // handler picks up the new path when it calls styleParameterManager()->reload().
             themeParametersSource->changeFilePath(deduceParametersFilePath());
-            styleParameterManager()->reload();
 
-            std::string sheet = hGrp->GetASCII("StyleSheet");
-            bool tiledBG = hGrp->GetBool("TiledBackground", false);
-
-            setStyleSheet(QString::fromStdString(sheet), tiledBG);
-            OverlayManager::instance()->refresh(nullptr, true);
+            ThemeReloadEvent event;
+            QApplication::sendEvent(qApp, &event);
         }
     );
 
@@ -492,17 +526,6 @@ void Application::initStyleParameterManager()
 
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(
         new StyleParameters::BuiltInParameterSource({.name = QT_TR_NOOP("Built-in Parameters")})
-    );
-
-    // todo: left for compatibility with older theme versions, to be removed before release
-    Base::registerServiceImplementation<StyleParameters::ParameterSource>(
-        new StyleParameters::UserParameterSource(
-            App::GetApplication().GetParameterGroupByPath(
-                "User parameter:BaseApp/Preferences/Themes/UserTokens"
-            ),
-            {.name = QT_TR_NOOP("Theme Parameters - Fallback"),
-             .options = StyleParameters::ParameterSourceOption::ReadOnly}
-        )
     );
 
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(designSystemParametersSource);
@@ -528,6 +551,13 @@ void Application::initStyleParameterManager()
 
     StyleParameters::populateBuiltinDescriptors(d->styleParameterManager->descriptorRegistry());
     d->styleParameterManager->setResolver(createStyleParameterResolver());
+
+    // Installed after FreeCADStyle so this handler runs first: event filters are called in
+    // LIFO order, and the style's own handling assumes the parameters have already reloaded.
+    // Only created when a QApplication exists, since qApp is null in headless contexts.
+    if (qApp) {
+        d->themeReloadHandler = new ThemeReloadHandler();
+    }
 }
 
 // clang-format off

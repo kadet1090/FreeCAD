@@ -31,6 +31,7 @@
 #include <map>
 #include <QPainter>
 #include <QPainterPath>
+#include <QApplication>
 #include <QCoreApplication>
 #include <QPalette>
 #include <QPushButton>
@@ -46,6 +47,7 @@
 
 #include "Application.h"
 #include "IconManager.h"
+#include "ThemeReloadEvent.h"
 #include "Utilities.h"
 #include "FreeCADStyle.h"
 #include "StyleParameters/ColorEffect.h"
@@ -2121,5 +2123,30 @@ void FreeCADStyle::clearTokenCache()
 
 bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 {
+    if (event->type() == ThemeReloadEvent::registeredType()) {
+        clearTokenCache();
+
+        // IsTransparent may resolve differently after a reload, so the tags the propagator
+        // produced from the previous theme have to be recomputed before anything repaints.
+        // Guard the list: updateTransparency() sends StyleChange synchronously and in-tree
+        // handlers may destroy other top-level widgets while we are still walking them.
+        QList<QPointer<QWidget>> topLevels;
+        for (QWidget* topLevel : QApplication::topLevelWidgets()) {
+            topLevels.append(topLevel);
+        }
+        for (const QPointer<QWidget>& topLevel : topLevels) {
+            if (!topLevel.isNull()) {
+                updateTransparency(topLevel, false);
+            }
+        }
+
+        for (QWidget* widget : QApplication::allWidgets()) {
+            widget->update();
+        }
+
+        // Let the handler in Application process the event as well.
+        return false;
+    }
+
     return QObject::eventFilter(obj, event);
 }
