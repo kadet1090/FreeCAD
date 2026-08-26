@@ -65,6 +65,66 @@ protected:
     std::vector<std::unique_ptr<ParameterSource>> sources;
 };
 
+TEST_F(ParserTest, BorderRadiusEdgePairTopBottom)
+{
+    Parser parser("border_radius(top: 4px, bottom: 0px)");
+    auto expr = parser.parse();
+    auto result = expr->evaluate({.manager = &manager, .context = {}});
+    ASSERT_TRUE(result.holds<Tuple>());
+    const auto& tuple = result.get<Tuple>();
+    EXPECT_EQ(tuple.kind, TupleKind::Corners);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("top_left").value, 4.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("top_right").value, 4.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("bottom_right").value, 0.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("bottom_left").value, 0.0);
+}
+
+TEST_F(ParserTest, BorderRadiusEdgePairLeftRight)
+{
+    Parser parser("border_radius(left: 8px, right: 4px)");
+    auto expr = parser.parse();
+    auto result = expr->evaluate({.manager = &manager, .context = {}});
+    ASSERT_TRUE(result.holds<Tuple>());
+    const auto& tuple = result.get<Tuple>();
+    EXPECT_EQ(tuple.kind, TupleKind::Corners);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("top_left").value, 8.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("bottom_left").value, 8.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("top_right").value, 4.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("bottom_right").value, 4.0);
+}
+
+TEST_F(ParserTest, BorderRadiusEdgePairGroupWithExplicitOverride)
+{
+    // top group sets top_left/top_right, bottom group sets both bottom corners,
+    // then explicit bottom_left overrides just that one corner
+    Parser parser("border_radius(top: 4px, bottom: 0px, bottom_left: 8px)");
+    auto expr = parser.parse();
+    auto result = expr->evaluate({.manager = &manager, .context = {}});
+    ASSERT_TRUE(result.holds<Tuple>());
+    const auto& tuple = result.get<Tuple>();
+    EXPECT_EQ(tuple.kind, TupleKind::Corners);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("top_left").value, 4.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("top_right").value, 4.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("bottom_right").value, 0.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("bottom_left").value, 8.0);
+}
+
+TEST_F(ParserTest, BorderRadiusPositionalBaseWithEdgePairOverride)
+{
+    // positional sets all four to 4px, then top group overrides top_left and top_right to 8px
+    Parser parser("border_radius(4px, top: 8px)");
+    auto expr = parser.parse();
+    auto result = expr->evaluate({.manager = &manager, .context = {}});
+    ASSERT_TRUE(result.holds<Tuple>());
+    const auto& tuple = result.get<Tuple>();
+    EXPECT_EQ(tuple.kind, TupleKind::Corners);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("top_left").value, 8.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("top_right").value, 8.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("bottom_right").value, 4.0);
+    EXPECT_DOUBLE_EQ(tuple.get<Numeric>("bottom_left").value, 4.0);
+}
+
+
 TEST_F(ParserTest, ResetYieldsNone)
 {
     Parser parser("reset()");
