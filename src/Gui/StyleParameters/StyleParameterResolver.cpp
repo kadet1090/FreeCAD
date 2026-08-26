@@ -134,6 +134,10 @@ std::optional<Value> InheritingParameterResolver::resolve(
         if (!result) {
             continue;
         }
+        if (result->holds<None>()) {
+            // reset() stops the chain here rather than letting a less specific prefix answer.
+            return std::nullopt;
+        }
         return result;
     }
 

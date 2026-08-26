@@ -485,6 +485,13 @@ Value Color::evaluate([[maybe_unused]] const EvaluationContext& context) const
 
 Value FunctionCall::evaluate(const EvaluationContext& context) const
 {
+    if (functionName == "reset") {
+        if (!arguments.elements.empty()) {
+            THROWM(Base::ExpressionError, "reset() takes no arguments");
+        }
+        return None {};
+    }
+
     if (functionName == "coalesce") {
         if (arguments.elements.empty()) {
             THROWM(Base::ExpressionError, "coalesce requires at least one argument");

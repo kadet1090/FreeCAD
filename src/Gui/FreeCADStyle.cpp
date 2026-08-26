@@ -1620,9 +1620,14 @@ std::optional<Value> FreeCADStyle::resolve(const StyleContext& context, StylePro
         // Use the flat resolver per prefix: the prefix list IS the inheritance
         // walk, so name-based chain synthesis must not run here.
         result = manager->resolve(prefix + propertySuffix, StyleParameters::ParameterManager::ResolveContext {});
-        if (result) {
-            break;
+        if (!result) {
+            continue;
         }
+        if (result->holds<None>()) {
+            // reset() stops the chain here, so the property resolves to nothing at all.
+            result = std::nullopt;
+        }
+        break;
     }
 
     tokenCache[key] = result;

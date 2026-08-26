@@ -140,6 +140,10 @@ std::string gradientToQss(const Tuple& tuple, const auto& formatValue)
 /// All other types delegate to toString().
 std::string toQss(const Value& value)
 {
+    if (value.holds<None>()) {
+        return "";
+    }
+
     if (value.holds<Tuple>()) {
         const auto& tuple = value.get<Tuple>();
 

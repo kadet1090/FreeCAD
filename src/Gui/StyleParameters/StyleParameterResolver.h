@@ -150,8 +150,8 @@ public:
      * @brief Resolves a parameter name via descriptor-driven chain synthesis.
      *
      * Parses the name, builds the fallback prefix list, and returns the first result the
-     * full resolver chain answers with. Returns nullopt if the name is unrecognised or the
-     * chain is exhausted.
+     * full resolver chain answers with, treating a reset() as the end of the chain. Returns
+     * nullopt if the name is unrecognised or the chain is exhausted.
      */
     std::optional<Value> resolve(const std::string& name, const ParameterManager* manager) const override;
 };

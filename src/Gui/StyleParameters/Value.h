@@ -148,6 +148,18 @@ struct Value;
  * guessing from shape alone. Each kind is produced by its own construction function and
  * accepted only after its expected element names and types have been validated.
  */
+/**
+ * @brief An explicitly unset parameter value.
+ *
+ * A token defined as reset() resolves to this. The resolver turns it back into nothing, which
+ * stops the fallback chain at that prefix rather than letting a lower-priority source answer.
+ * It is how a theme or a component suppresses a token it would otherwise inherit.
+ */
+struct GuiExport None
+{
+    bool operator==(const None&) const = default;
+};
+
 enum class TupleKind : std::uint8_t
 {
     Generic,
@@ -316,9 +328,9 @@ const T& styleDefault();
  *
  * As a rule, operations can be only performed over values of the same type.
  */
-struct GuiExport Value: std::variant<Numeric, Base::Color, std::string, Tuple>
+struct GuiExport Value: std::variant<Numeric, Base::Color, std::string, Tuple, None>
 {
-    using std::variant<Numeric, Base::Color, std::string, Tuple>::variant;
+    using std::variant<Numeric, Base::Color, std::string, Tuple, None>::variant;
 
     /**
      * Converts the object into its string representation.

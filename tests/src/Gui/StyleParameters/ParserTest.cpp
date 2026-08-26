@@ -65,6 +65,22 @@ protected:
     std::vector<std::unique_ptr<ParameterSource>> sources;
 };
 
+TEST_F(ParserTest, ResetYieldsNone)
+{
+    Parser parser("reset()");
+    const Value result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    EXPECT_TRUE(result.holds<None>());
+}
+
+TEST_F(ParserTest, ResetTakesNoArguments)
+{
+    Parser parser("reset(10px)");
+    const auto expr = parser.parse();
+
+    EXPECT_THROW(expr->evaluate({.manager = &manager, .context = {}}), Base::ExpressionError);
+}
+
 // Test number parsing
 TEST_F(ParserTest, ParseNumbers)
 {

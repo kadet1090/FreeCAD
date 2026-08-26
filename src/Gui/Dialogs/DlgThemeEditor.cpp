@@ -141,6 +141,9 @@ QString typeOfTokenValue(const Gui::StyleParameters::Value& value)
                     default:
                         return QWidget::tr("Tuple");
                 }
+            },
+            [](const Gui::StyleParameters::None&) {
+                return QWidget::tr("None");
             }
         },
         value
