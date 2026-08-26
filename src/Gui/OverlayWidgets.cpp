@@ -355,6 +355,9 @@ OverlayToolButton::OverlayToolButton(QWidget* parent)
     : QToolButton(parent)
 {
     setCursor(Qt::ArrowCursor);
+    // Panel title bars want a smaller icon than a tool button carries elsewhere, so they get a
+    // namespace of their own ahead of the usual ToolButton chain to size them from.
+    setProperty("component", QStringLiteral("PanelButton"));
 }
 
 // --------------------------------------------------------------------

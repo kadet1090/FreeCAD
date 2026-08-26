@@ -350,23 +350,6 @@ Gui--StatefulLabel[state="fully_constrained"] {
   font-weight: bold;
 }
 
-/* overlay */
-Gui--OverlayToolButton[objectName="OBTN Float"] {
-  image: url(qss:@IconsLocationFolderName/float-lightgray.svg);
-}
-
-Gui--OverlayToolButton[objectName="OBTN Float"]:hover {
-  image: url(qss:@IconsLocationFolderName/float-@StylesheetIconsColor.svg);
-}
-
-Gui--OverlayToolButton[objectName="OBTN Overlay"] {
-  image: url(qss:@IconsLocationFolderName/overlay-lightgray.svg);
-}
-
-Gui--OverlayToolButton[objectName="OBTN Overlay"]:hover {
-  image: url(qss:@IconsLocationFolderName/overlay-@StylesheetIconsColor.svg);
-}
-
 QPushButton[objectName="buttonIFCPropertiesDelete"] {
   min-width: 100px;
 }
