@@ -40,6 +40,11 @@ class QTabWidget;
 class QKeyEvent;
 class QMouseEvent;
 
+namespace Gui
+{
+class HighlightOverlay;
+}
+
 namespace Gui::Dialog
 {
 class PreferencePage;
@@ -103,7 +108,7 @@ public:
 
     // Search functionality
     void performSearch(const QString& searchText);
-    void clearHighlights();
+    void clearHighlight();
     void hideSearchResultsList();
     void showSearchResultsList();
 
@@ -144,8 +149,7 @@ private:
     // UI helpers
     void configurePopupSize();
     int calculatePopupHeight(int popupWidth) const;
-    void applyHighlightToWidget(QWidget* widget);
-    static QString getHighlightStyleForWidget(QWidget* widget);
+    void showHighlight(QWidget* widget);
     static QString toPlainText(const QString& text);
 
     // Search result navigation
@@ -170,8 +174,7 @@ private:
     // Search state
     QList<SearchResult> m_searchResults;
     QString m_lastSearchText;
-    QList<QWidget*> m_highlightedWidgets;
-    QMap<QWidget*, QString> m_originalStyles;
+    HighlightOverlay* m_highlightOverlay;
 };
 
 class PreferencesPageItem: public QStandardItem

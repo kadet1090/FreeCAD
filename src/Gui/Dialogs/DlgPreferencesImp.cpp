@@ -38,7 +38,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QMap>
 #include <QMenu>
 #include <QMessageBox>
 #include <QRadioButton>
@@ -65,6 +64,7 @@
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/Tools.h>
+#include <Gui/HighlightOverlay.h>
 
 #include "Dialogs/DlgPreferencesImp.h"
 #include "ui_DlgPreferences.h"
@@ -1271,9 +1271,12 @@ PreferencesSearchController::PreferencesSearchController(DlgPreferencesImp* pare
     , m_pageNameRole(0)
     , m_searchBox(nullptr)
     , m_searchResultsList(nullptr)
+    , m_highlightOverlay(nullptr)
 {
     // Get reference to search box from parent dialog's UI
     m_searchBox = m_parentDialog->ui->searchBox;
+
+    m_highlightOverlay = new HighlightOverlay(m_parentDialog->ui->scrollArea);
 
     // Create the search results popup list
     m_searchResultsList = new QListWidget(m_parentDialog);
@@ -1360,7 +1363,7 @@ bool PreferencesSearchController::isPopupAncestorOf(QWidget* widget) const
 void PreferencesSearchController::onSearchTextChanged(const QString& text)
 {
     if (text.isEmpty()) {
-        clearHighlights();
+        clearHighlight();
         m_searchResults.clear();
         m_lastSearchText.clear();
         hideSearchResultsList();
@@ -1376,7 +1379,7 @@ void PreferencesSearchController::onSearchTextChanged(const QString& text)
 
 void PreferencesSearchController::performSearch(const QString& searchText)
 {
-    clearHighlights();
+    clearHighlight();
     m_searchResults.clear();
 
     if (searchText.length() < 2) {
@@ -1434,16 +1437,9 @@ void PreferencesSearchController::performSearch(const QString& searchText)
     }
 }
 
-void PreferencesSearchController::clearHighlights()
+void PreferencesSearchController::clearHighlight()
 {
-    // Restore original styles for all highlighted widgets
-    for (auto widget : m_highlightedWidgets) {
-        if (widget && m_originalStyles.contains(widget)) {
-            widget->setStyleSheet(m_originalStyles[widget]);
-        }
-    }
-    m_highlightedWidgets.clear();
-    m_originalStyles.clear();
+    m_highlightOverlay->setTarget(nullptr);
 }
 
 void PreferencesSearchController::collectSearchResults(
@@ -1536,14 +1532,9 @@ void PreferencesSearchController::navigateToCurrentSearchResult(PopupAction acti
         // Emit signal to request navigation
         Q_EMIT navigationRequested(result.groupName, result.pageName);
 
-        // Clear any existing highlights
-        clearHighlights();
-
-        // Only highlight specific widgets for non-page-level matches
-        if (!result.isPageLevelMatch && !result.widget.isNull()) {
-            applyHighlightToWidget(result.widget);
-        }
-        // For page-level matches, we just navigate without highlighting anything
+        // Page-level matches navigate without marking anything.
+        const bool marksAWidget = !result.isPageLevelMatch && !result.widget.isNull();
+        showHighlight(marksAWidget ? result.widget.data() : nullptr);
 
         // Close popup only if requested (double-click or Enter)
         if (action == PopupAction::CloseAfter) {
@@ -1928,44 +1919,29 @@ void PreferencesSearchController::ensureSearchBoxFocus()
     }
 }
 
-QString PreferencesSearchController::getHighlightStyleForWidget(QWidget* widget)
+void PreferencesSearchController::showHighlight(QWidget* widget)
 {
-    const auto baseStyle = QStringLiteral(
-        "background-color: #E3F2FD; color: #1565C0; border: 2px solid #2196F3; border-radius: 3px;"
-    );
+    m_highlightOverlay->setTarget(widget);
 
-    if (qobject_cast<QLabel*>(widget)) {
-        return QStringLiteral("QLabel { ") + baseStyle + QStringLiteral(" padding: 2px; }");
-    }
-
-    if (qobject_cast<QCheckBox*>(widget)) {
-        return QStringLiteral("QCheckBox { ") + baseStyle + QStringLiteral(" padding: 2px; }");
-    }
-
-    if (qobject_cast<QRadioButton*>(widget)) {
-        return QStringLiteral("QRadioButton { ") + baseStyle + QStringLiteral(" padding: 2px; }");
-    }
-
-    if (qobject_cast<QGroupBox*>(widget)) {
-        return QStringLiteral("QGroupBox::title { ") + baseStyle + QStringLiteral(" padding: 2px; }");
-    }
-
-    if (qobject_cast<QPushButton*>(widget)) {
-        return QStringLiteral("QPushButton { ") + baseStyle + QStringLiteral(" }");
-    }
-
-    return QStringLiteral("QWidget { ") + baseStyle + QStringLiteral(" padding: 2px; }");
-}
-
-void PreferencesSearchController::applyHighlightToWidget(QWidget* widget)
-{
     if (!widget) {
         return;
     }
 
-    m_originalStyles[widget] = widget->styleSheet();
-    widget->setStyleSheet(getHighlightStyleForWidget(widget));
-    m_highlightedWidgets.append(widget);
+    // The page has only just been switched in and its layout runs when the event loop next
+    // spins, so scrolling now would aim at the widget's pre-layout position.
+    QMetaObject::invokeMethod(
+        this,
+        [this, target = QPointer<QWidget>(widget)] {
+            // A matched widget can be hidden (findChildren applies no visibility filter, so a
+            // widget on an inactive stacked page still matches). The overlay then paints no
+            // halo for it, so the scroll has to skip it too rather than jumping to a spot with
+            // nothing marked.
+            if (target && target->isVisible()) {
+                m_parentDialog->ui->scrollArea->ensureWidgetVisible(target);
+            }
+        },
+        Qt::QueuedConnection
+    );
 }
 
 bool PreferencesSearchController::handleSearchBoxKeyPress(QKeyEvent* keyEvent)
@@ -2086,7 +2062,7 @@ bool DlgPreferencesImp::eventFilter(QObject* obj, QEvent* event)
 
             if (m_searchController->isClickOutsidePopup(mouseEvent)) {
                 m_searchController->hideSearchResultsList();
-                m_searchController->clearHighlights();
+                m_searchController->clearHighlight();
             }
         }
     }

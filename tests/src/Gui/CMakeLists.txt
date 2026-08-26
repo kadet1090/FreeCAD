@@ -54,6 +54,7 @@ setup_qt_test(TreeBranch)
 setup_qt_test(GroupBoxFrame)
 setup_qt_test(TooltipSurface)
 setup_qt_test(ExpressionButtonLayout)
+setup_qt_test(HighlightOverlay)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main
