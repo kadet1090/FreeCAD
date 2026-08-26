@@ -60,6 +60,8 @@
 #include "ViewProviderSketch.h"
 #include "ui_TaskSketcherConstraints.h"
 
+#include <IconManager.h>
+
 
 // clang-format off
 using namespace SketcherGui;
@@ -956,6 +958,9 @@ TaskSketcherConstraints::TaskSketcherConstraints(ViewProviderSketch* sketchView)
         "User parameter:BaseApp/Preferences/Mod/Sketcher/General");
     ui->filterBox->setChecked(hGrp->GetBool("ConstraintFilterEnabled", true));
     ui->filterButton->setEnabled(ui->filterBox->isChecked());
+
+    ui->settingsButton->setIcon(Gui::IconManager::instance().icon(":/icons/tabler/outline/adjustments.svg"));
+    ui->showHideButton->setIcon(Gui::IconManager::instance().icon(":/icons/tabler/outline/eye.svg"));
 
     // Create filter button
     QWidgetAction* action = new QWidgetAction(this);

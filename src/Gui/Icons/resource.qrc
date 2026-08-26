@@ -326,6 +326,7 @@
         <file>zoom-in.svg</file>
         <file>zoom-out.svg</file>
         <file>zoom-selection.svg</file>
+        <file>tabler/outline/adjustments.svg</file>
         <file>tabler/outline/eye.svg</file>
         <file>tabler/outline/eye-closed.svg</file>
     </qresource>
