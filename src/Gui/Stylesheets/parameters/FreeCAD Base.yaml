@@ -183,3 +183,40 @@ TextEditPadding: "padding(@FormControlPadding.left)"
 SelectPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.100)"
 SelectSmallPadding: "@FormControlPadding"
 SelectBigPadding: "@FormControlPadding"
+
+ListBackground: "@Background.000"
+ListBorderColor: "@FormControlBorderColor"
+ListBorderRadius: "@FormControlBorderRadius"
+ListBorderThickness: "@FormControlBorderThickness"
+
+# The list frame reacts to focus and hover like a text input, so its accent ring and hover
+# border effect are stated once, on LineEdit.
+ListFocusedBorderColor: "@LineEditFocusedBorderColor"
+ListHoveredBorderColorEffect: "@LineEditHoveredBorderColorEffect"
+
+ListDisabledBackground: "@LineEditDisabledBackground"
+ListDisabledTextColor: "@LineEditDisabledTextColor"
+
+ListItemPadding: "padding(horizontal: @Spacing.100, vertical: @Spacing.050)"
+ListItemIconSpacing: "@Spacing.150"
+
+# Default rows are transparent; an alternate row takes the palette's alternate base. The
+# Alternate variant prefix is tried before the plain ListRow* fallback.
+ListRowAlternateBackground: "@BaseAlternateBackground"
+
+ListRowSelectedBackground: "opacity(@Accent.500, 40%)"
+ListItemSelectedTextColor: "@BaseTextColor"
+
+ListRowHoveredBackground: "opacity(@Accent.500, 20%)"
+ListRowPressedBackground: "@Background.200"
+
+HeaderItemBackground: "@ButtonBackground"
+HeaderItemHoveredBackgroundEffect: "@ButtonHoveredBackgroundEffect"
+HeaderItemPressedBackgroundEffect: "@ButtonPressedBackgroundEffect"
+HeaderItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.100)"
+HeaderItemTextColor: "@ButtonTextColor"
+HeaderItemDisabledTextColor: "@ButtonDisabledTextColor"
+
+HeaderItemBorderColor: "border_colors(@Colors.transparent, bottom: @FormControlBorderColor)"
+HeaderItemBorderThickness: "border_thickness(0px, bottom: 1px)"
+HeaderItemBorderRadius: "border_radius(0px)"

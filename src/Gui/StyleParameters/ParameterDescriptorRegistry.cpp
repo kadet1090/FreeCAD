@@ -56,6 +56,7 @@ auto lookup(const Map& map, const typename Map::key_type& key) -> const typename
 // clang-format off
 const std::map<StyleComponentElement, std::string_view> elementNames = {
     {StyleComponentElement::Item, "Item"},
+    {StyleComponentElement::Row, "Row"},
     {StyleComponentElement::Menu, "Menu"},
 };
 // clang-format on
@@ -84,6 +85,9 @@ const std::map<VariantSlot, std::map<uint8_t, std::string_view>> variantSlotName
         {static_cast<uint8_t>(Position::East),  "East"},
         {static_cast<uint8_t>(Position::South), "South"},
         {static_cast<uint8_t>(Position::West),  "West"},
+    }},
+    {VariantSlot::RowType, {
+        {static_cast<uint8_t>(RowType::Alternate), "Alternate"},
     }},
     {VariantSlot::TransparencyMode, {
         {static_cast<uint8_t>(TransparencyMode::Transparent), "Transparent"},
@@ -178,6 +182,7 @@ constexpr std::array<std::string_view, size_t(VariantSlot::COUNT)> variantSlotDi
     "ButtonType",  // VariantSlot::ButtonType
     "ControlSize", // VariantSlot::ControlSize
     "Position",    // VariantSlot::Position
+    "RowType",     // VariantSlot::RowType
     "TransparencyMode", // VariantSlot::TransparencyMode
 };
 // clang-format on
@@ -605,6 +610,18 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"ControlSize", "State"},
         .inherits = {"LineEdit", "FormControl"},
     }, StyleComponent::ComboBox);
+
+    registry.registerDescriptor({
+        .name     = "List",
+        .variants = {"RowType", "State"},
+        .inherits = {},
+    }, StyleComponent::List);
+
+    registry.registerDescriptor({
+        .name     = "Header",
+        .variants = {"State"},
+        .inherits = {},
+    }, StyleComponent::Header);
     // clang-format on
 }
 

@@ -45,6 +45,8 @@
 #include <QPointer>
 #include <QProxyStyle>
 #include <QPushButton>
+#include <QAbstractScrollArea>
+#include <QStyleOptionHeader>
 #include <QToolBar>
 #include <QStyleOption>
 
@@ -236,6 +238,11 @@ public:
         static constexpr int qtBuiltInIconGap = 4;
 
         int iconSpacing = qtBuiltInIconGap;  // fallback matches Qt's built-in
+
+        /** Gap reserved between consecutive rows of a stacked component. The gap is excluded
+         *  from the content rect and from the row's own box, so it renders as the surface
+         *  behind the rows. 0 = rows abut. */
+        int spacing = 0;
 
         /**
          * @brief Width delta to replace Qt's hardcoded icon–text gap with the token spacing.
@@ -593,6 +600,12 @@ protected:
     /// Insets a text edit's content by its padding token, through the document's own margin.
     void applyTextEditDocumentPadding(QWidget* widget, QTextDocument* document) const;
 
+    void drawHeaderSection(
+        QPainter* painter,
+        const QStyleOptionHeader* option,
+        const QWidget* widget
+    ) const;
+
     void drawComboBox(
         const QStyleOptionComboBox* option,
         QPainter* painter,
@@ -622,6 +635,76 @@ protected:
         SubControl subControl,
         const QWidget* widget
     ) const;
+
+    /**
+     * @brief Which of a row's two painted layers is being drawn.
+     *
+     * The surface is what a row looks like at rest; the interaction layer sits over it so a
+     * hover or selection reads as an overlay rather than replacing the background.
+     */
+    enum class RowLayer : std::uint8_t
+    {
+        Surface,
+        Interaction,
+    };
+
+    void drawItemViewRow(
+        QPainter* painter,
+        const QStyleOptionViewItem* vopt,
+        const QWidget* widget,
+        RowLayer layer
+    ) const;
+
+    /// Where each part of an item-view cell sits.
+    struct ItemViewLayout
+    {
+        QRect checkIndicator;
+        QRect decoration;
+        QRect text;
+    };
+
+    /**
+     * @brief Lays out the parts of an item-view cell from the Item token geometry.
+     *
+     * The outer inset comes from Padding and every gap between parts from IconSpacing.
+     * Returns nullopt for a cell this style does not describe.
+     */
+    std::optional<ItemViewLayout> itemViewLayout(
+        const QStyleOptionViewItem* option,
+        const QWidget* widget
+    ) const;
+
+    bool ownsItemViewLayout(const QStyleOptionViewItem* option, const QWidget* widget) const;
+
+    /// The gutter Qt's own item painting leaves before a cell's text.
+    int itemViewTextGutter(const QStyleOption* option, const QWidget* widget) const;
+
+    int itemViewContentHeight(
+        const QStyleOptionViewItem& option,
+        int iconExtent,
+        const QWidget* widget
+    ) const;
+
+    QRect itemViewSubElementRect(
+        SubElement element,
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const;
+
+    QSize itemViewItemSizeFromContents(
+        const QStyleOption* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    /// The rect a view lays its rows out in, inset by its own border and padding.
+    std::optional<QRect> itemViewContentsRect(
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const;
+
+    /// Clips a scroll area to its own rounded corners, so rows cannot paint over them.
+    void updateScrollAreaMask(QAbstractScrollArea* scrollArea) const;
 
     /// Draws an anti-aliased chevron pointing @p direction, filling @p rect.
     void drawChevronArrow(

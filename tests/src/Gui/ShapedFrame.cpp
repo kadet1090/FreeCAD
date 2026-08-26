@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QImage>
 #include <QPainter>
+#include <QScrollArea>
 #include <QStyleOptionFrame>
 #include <QTest>
 
@@ -32,6 +33,7 @@ public:
                     // one stays transparent rather than merely off-colour.
                     {.name = "SeparatorColor", .value = "#ff0000"},
                     {.name = "SeparatorThickness", .value = "1px"},
+                    {.name = "ListBackground", .value = "#00ff00"},
                 },
                 {.name = "Shaped Frame Fixture"}
             )
@@ -90,6 +92,51 @@ private Q_SLOTS:
         QCOMPARE(image.pixelColor(4, 10), QColor(Qt::red));
         QCOMPARE(image.pixelColor(0, 10).alpha(), 0);
         QCOMPARE(image.pixelColor(8, 10).alpha(), 0);
+    }
+
+    // A panel is a surface, and a plain frame naming a component is asking for that
+    // component's surface rather than for Qt's bevel.
+    void test_aPanelIsDrawnAsTheComponentItNames()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QFrame frame;
+        frame.setFrameShape(QFrame::StyledPanel);
+        frame.setProperty("component", QStringLiteral("List"));
+
+        const QImage image = paintFrame(style, frame, {20, 20});
+
+        QCOMPARE(image.pixelColor(10, 10), QColor(Qt::green));
+    }
+
+    // A scroll area is a frame too, and one that names a component has to end up with that
+    // component's surface behind its content rather than with Qt's palette fill.
+    void test_aPlainScrollAreaPaintsItsComponentSurface()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QScrollArea area;
+        area.setProperty("component", QStringLiteral("List"));
+        area.setStyle(&style);
+        area.resize(20, 20);
+        style.polish(&area);
+
+        QImage image(area.size(), QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+        area.render(&image, QPoint(), QRegion(), QWidget::DrawWindowBackground);
+
+        QCOMPARE(image.pixelColor(2, 2), QColor(Qt::green));
+    }
+
+    // A shape the style has nothing to say about has to reach the base style, which is what
+    // draws every frame this one does not describe.
+    void test_anUnnamedBoxIsLeftToTheBaseStyle()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QFrame frame;
+        frame.setFrameShape(QFrame::StyledPanel);
+
+        const QImage image = paintFrame(style, frame, {20, 20});
+
+        QCOMPARE(image.pixelColor(10, 10), QColor(Qt::transparent));
     }
 };
 

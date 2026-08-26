@@ -43,6 +43,7 @@
 #include <QStyleOptionComboBox>
 #include <QStyleOptionFrame>
 #include <QStyleOptionMenuItem>
+#include <QStyleOptionViewItem>
 #include <QStyleOptionSpinBox>
 #include <QStyleOptionToolButton>
 #include <QStyleOption>
@@ -786,6 +787,10 @@ FreeCADStyle::BoxGeometryDefinition FreeCADStyle::resolveBoxGeometry(const Style
         result.iconSpacing = static_cast<int>(*spacing);
     }
 
+    if (const auto resolvedSpacing = resolve<Numeric>(context, StyleProperty::Spacing)) {
+        result.spacing = static_cast<int>(*resolvedSpacing);
+    }
+
     boxGeometryCache.store(bin, key, result);
     return result;
 }
@@ -880,6 +885,20 @@ std::optional<Qt::Orientation> toolbarOrientationOf(const QWidget* widget)
 
 // The chevron is drawn slightly softer than body text.
 constexpr int arrowAlpha = 160;
+
+// How many of the three cell parts — check indicator, icon, text — this cell actually has.
+int itemViewPartCount(const QStyleOptionViewItem& option)
+{
+    return ((option.features & QStyleOptionViewItem::HasCheckIndicator) ? 1 : 0)
+        + ((option.features & QStyleOptionViewItem::HasDecoration) ? 1 : 0)
+        + ((option.features & QStyleOptionViewItem::HasDisplay) ? 1 : 0);
+}
+
+// The view an item-view style option belongs to; widget can be the viewport.
+const QWidget* itemViewOf(const QStyleOptionViewItem* option, const QWidget* widget)
+{
+    return option && option->widget ? option->widget : widget;
+}
 
 QIcon::Mode iconModeOf(const QStyleOption* option)
 {
@@ -1397,6 +1416,16 @@ void FreeCADStyle::drawMenuBarItem(
     painter->restore();
 }
 
+void FreeCADStyle::drawHeaderSection(
+    QPainter* painter,
+    const QStyleOptionHeader* option,
+    const QWidget* widget
+) const
+{
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+    drawBoxBackground(painter, option->rect, resolveBoxStyle(itemContext));
+}
+
 void FreeCADStyle::drawComboBox(
     const QStyleOptionComboBox* option,
     QPainter* painter,
@@ -1602,6 +1631,283 @@ QRect FreeCADStyle::spinBoxSubControlRect(
     }
 }
 
+void FreeCADStyle::drawItemViewRow(
+    QPainter* painter,
+    const QStyleOptionViewItem* vopt,
+    const QWidget* widget,
+    RowLayer layer
+) const
+{
+    StyleContext rowContext = contextOf(widget, vopt, StyleComponentElement::Row);
+
+    const bool interactive = rowContext.state.testFlag(StyleState::Hovered)
+        || rowContext.state.testFlag(StyleState::Pressed)
+        || rowContext.state.testFlag(StyleState::Selected);
+
+    if (layer == RowLayer::Surface) {
+        // The surface is what the row looks like at rest — its own background, or the
+        // alternating one. Interaction belongs to the layer above.
+        //
+        // contextOf only marks a row alternate when the option carries no state at all, so that
+        // an interaction resolves through ListRowHovered* rather than ListRowAlternateHovered*.
+        // At rest that rule has nothing to protect and everything to lose: State_HasFocus sits
+        // on whichever cell is current and State_MouseOver on a hovered row, and either one
+        // would drop the alternating background from that cell alone.
+        rowContext.state = {};
+        if (vopt->features & QStyleOptionViewItem::Alternate) {
+            rowContext.variant.set(VariantSlot::RowType, RowType::Alternate);
+        }
+    }
+    else if (!interactive) {
+        return;
+    }
+
+    const BoxGeometryDefinition itemGeometry = resolveBoxGeometry(
+        contextOf(widget, vopt, StyleComponentElement::Item)
+    );
+    // Exclude the reserved inter-row gap so the highlight floats below the background gap.
+    QRect rowRect = vopt->rect;
+    rowRect.adjust(0, itemGeometry.spacing, 0, 0);
+
+    paintBox(painter, rowRect, rowContext);
+}
+
+bool FreeCADStyle::ownsItemViewLayout(const QStyleOptionViewItem* option, const QWidget* widget) const
+{
+    if (!option || !qobject_cast<const QAbstractItemView*>(widget)) {
+        return false;
+    }
+
+    // Icon-mode views stack the icon above the text and word-wrapped cells need Qt's line
+    // breaking — neither arrangement maps onto the token geometry, so both keep Qt's layout.
+    const bool isSideBySide = option->decorationPosition == QStyleOptionViewItem::Left
+        || option->decorationPosition == QStyleOptionViewItem::Right;
+    if (!isSideBySide || (option->features & QStyleOptionViewItem::WrapText)) {
+        return false;
+    }
+
+    return contextOf(widget, option, StyleComponentElement::Item).element
+        == StyleComponentElement::Item;
+}
+
+int FreeCADStyle::itemViewTextGutter(const QStyleOption* option, const QWidget* widget) const
+{
+    return pixelMetric(PM_FocusFrameHMargin, option, widget) + 1;
+}
+
+int FreeCADStyle::itemViewContentHeight(
+    const QStyleOptionViewItem& option,
+    int iconExtent,
+    const QWidget* widget
+) const
+{
+    int height = std::max(option.fontMetrics.height(), iconExtent);
+    if (option.features & QStyleOptionViewItem::HasCheckIndicator) {
+        height = std::max(height, pixelMetric(PM_IndicatorHeight, &option, widget));
+    }
+    return height;
+}
+
+std::optional<FreeCADStyle::ItemViewLayout> FreeCADStyle::itemViewLayout(
+    const QStyleOptionViewItem* option,
+    const QWidget* widget
+) const
+{
+    if (!ownsItemViewLayout(option, widget)) {
+        return {};
+    }
+
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Item);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+
+    // The reserved inter-row gap belongs to the list background, not to the cell content.
+    const QRect content = geometry.contentRect(option->rect).adjusted(0, geometry.spacing, 0, 0);
+
+    const auto centredAt = [&content](int left, const QSize& size) {
+        const int top = content.top() + ((content.height() - size.height()) / 2);
+        return QRect(QPoint(left, top), size);
+    };
+
+    ItemViewLayout layout;
+    int left = content.left();
+    int right = content.right();
+
+    if (option->features & QStyleOptionViewItem::HasCheckIndicator) {
+        const QSize indicatorSize(
+            pixelMetric(PM_IndicatorWidth, option, widget),
+            pixelMetric(PM_IndicatorHeight, option, widget)
+        );
+        layout.checkIndicator = centredAt(left, indicatorSize);
+        left = layout.checkIndicator.right() + 1 + geometry.iconSpacing;
+    }
+
+    if (option->features & QStyleOptionViewItem::HasDecoration) {
+        const QSize decorationSize = option->decorationSize;
+        if (option->decorationPosition == QStyleOptionViewItem::Left) {
+            layout.decoration = centredAt(left, decorationSize);
+            left = layout.decoration.right() + 1 + geometry.iconSpacing;
+        }
+        else {
+            layout.decoration = centredAt(right + 1 - decorationSize.width(), decorationSize);
+            right = layout.decoration.left() - 1 - geometry.iconSpacing;
+        }
+    }
+
+    // The text takes whatever is left; QCommonStyle elides it to fit. It insets the rect it is
+    // handed by one gutter on each side before drawing, so hand it a rect widened by exactly
+    // that much — the label then lands where IconSpacing put it, with its full width intact.
+    const int gutter = itemViewTextGutter(option, widget);
+    layout.text = QRect(QPoint(left - gutter, content.top()), QPoint(right + gutter, content.bottom()));
+
+    if (option->direction == Qt::RightToLeft) {
+        layout.checkIndicator = visualRect(option->direction, content, layout.checkIndicator);
+        layout.decoration = visualRect(option->direction, content, layout.decoration);
+        layout.text = visualRect(option->direction, content, layout.text);
+    }
+
+    return layout;
+}
+
+QRect FreeCADStyle::itemViewSubElementRect(
+    SubElement element,
+    const QStyleOption* option,
+    const QWidget* widget
+) const
+{
+    const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option);
+    const auto layout = itemViewLayout(vopt, itemViewOf(vopt, widget));
+    if (!layout) {
+        return QProxyStyle::subElementRect(element, option, widget);
+    }
+
+    switch (element) {
+        case SE_ItemViewItemCheckIndicator:
+            return layout->checkIndicator;
+        case SE_ItemViewItemDecoration:
+            return layout->decoration;
+        default:
+            return layout->text;
+    }
+}
+
+QSize FreeCADStyle::itemViewItemSizeFromContents(
+    const QStyleOption* option,
+    const QSize& size,
+    const QWidget* widget
+) const
+{
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Item);
+    if (context.element != StyleComponentElement::Item) {
+        return QProxyStyle::sizeFromContents(CT_ItemViewItem, option, size, widget);
+    }
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
+
+    // If there is an index widget registered for this item (set via setItemWidget),
+    // use its natural sizeHint as the base so callers do not need to setSizeHint.
+    QSize baseSize = size;
+    const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option);
+    if (const auto* view = qobject_cast<const QAbstractItemView*>(widget);
+        view && vopt && vopt->index.isValid()) {
+        if (const QWidget* indexWidget = view->indexWidget(vopt->index)) {
+            baseSize = indexWidget->sizeHint();
+        }
+    }
+    if (!baseSize.isValid()) {
+        baseSize = QProxyStyle::sizeFromContents(CT_ItemViewItem, option, size, widget);
+        if (vopt && ownsItemViewLayout(vopt, itemViewOf(vopt, widget))) {
+            // Qt sizes a cell by surrounding each of its parts with one gutter. itemViewLayout()
+            // separates them with IconSpacing instead, so trade the gutters Qt charged for the
+            // gaps actually inserted.
+            const int parts = itemViewPartCount(*vopt);
+            const int gaps = std::max(0, parts - 1) * geometry.iconSpacing;
+            const int gutters = 2 * parts * itemViewTextGutter(option, widget);
+            baseSize.setWidth(std::max(0, baseSize.width() - gutters + gaps));
+
+            // Qt's height is the tallest part, plus two pixels whenever that part is the icon
+            // ("prevent icons from overlapping"). Both halves make the pitch depend on which
+            // part happened to win: a row carrying no icon comes out short, and a row whose
+            // label just outgrows its icon drops the two pixels its neighbours keep. Separating
+            // rows is ListItemSpacing's job here, so state the height outright instead.
+            //
+            // Only when the theme states an icon size. A component that leaves IconSize unset
+            // takes whatever the base style sizes decorations at — Fusion hardcodes 24 — and
+            // deriving a row height from that number would resize views this style never
+            // described.
+            if (const auto iconExtent = resolvePixelMetric(PM_ListViewIconSize, option, widget)) {
+                baseSize.setHeight(itemViewContentHeight(*vopt, *iconExtent, widget));
+            }
+        }
+    }
+
+    QSize itemSize = geometry.sizeFromContents(baseSize);
+    // ListItemSpacing: reserve an inter-row gap above each row. The gap is excluded from the
+    // content rect (subElementRect) and the highlight (drawItemViewRow), so it renders as the
+    // list background between rows. Every row reserves one, the first included, so the pitch is
+    // uniform; the container hands that first gap back through its own top inset.
+    itemSize.rheight() += geometry.spacing;
+    return itemSize;
+}
+
+std::optional<QRect> FreeCADStyle::itemViewContentsRect(
+    const QStyleOption* option,
+    const QWidget* widget
+) const
+{
+    if (option == nullptr || !qobject_cast<const QAbstractItemView*>(widget)) {
+        return {};
+    }
+
+    // The view paints its own edge from the same tokens (PE_Frame reaches drawComponent), so the
+    // border is part of the inset here just as it is for a combo popup's container — contents
+    // laid out inside the padding alone would paint over that edge.
+    const StyleContext context = contextOf(widget, option, StyleComponentElement::Root);
+    const QMargins border = resolveBoxStyle(context).borderThickness.value_or(QMarginsF()).toMargins();
+    const QMargins padding = resolveBoxGeometry(context).padding.toMargins();
+    if (padding.isNull()) {
+        return {};
+    }
+
+    return option->rect.marginsRemoved(QMargins(
+        border.left() + padding.left(),
+        border.top() + padding.top(),
+        border.right() + padding.right(),
+        border.bottom() + padding.bottom()
+    ));
+}
+
+void FreeCADStyle::updateScrollAreaMask(QAbstractScrollArea* scrollArea) const
+{
+    if (scrollArea->size().isEmpty()) {
+        return;
+    }
+
+    const StyleContext context = contextOf(scrollArea, nullptr);
+    const BoxStyleDefinition boxStyle = resolveBoxStyle(context);
+
+    CornerRadii outerRadii = boxStyle.borderRadius.resolve(scrollArea->size());
+    outerRadii.setBottom(0);
+
+    if (!outerRadii.isRounded()) {
+        scrollArea->clearMask();
+        return;
+    }
+
+    // Clip the scroll area to its outer border-radius so the square widget corners
+    // are not visible at the compositor level.
+    QBitmap bitmap(scrollArea->size());
+    bitmap.fill(Qt::color0);
+    {
+        QPainter maskPainter(&bitmap);
+        maskPainter.fillPath(roundedRectPath(QRectF(scrollArea->rect()), outerRadii), Qt::color1);
+    }
+    scrollArea->setMask(bitmap);
+}
+
+// The combo box @p listView is the popup list of, or nullptr if it is not one.
+//
+// The parent chain only says where to look. A QListView that merely sits inside a combo box is
+// not its popup — an editable combo's completer builds one of those — so the combo box is
+// returned only when it names this very view as its own.
 std::optional<int> FreeCADStyle::resolvePixelMetric(
     PixelMetric metric,
     const QStyleOption* option,
@@ -1630,6 +1936,10 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         {PM_ToolBarFrameWidth, {StyleComponentElement::Root, FrameWidth}},
         {PM_ToolBarIconSize, {StyleComponentElement::Root, IconSize}},
         {PM_MenuBarItemSpacing, {StyleComponentElement::Item, Spacing}},
+        // PM_ListViewIconSize is the one a row's decoration comes from: QListView asks for it
+        // and never for PM_SmallIconSize, and Fusion hardcodes it, so leaving it out pins
+        // every list row's icon to 24 whatever the theme says.
+        {PM_ListViewIconSize, {StyleComponentElement::Root, IconSize}},
     };
 
     if (const auto found = elementMetrics.find(metric); found != elementMetrics.end()) {
@@ -1716,6 +2026,19 @@ QSize FreeCADStyle::sizeFromContents(
         return geometry.sizeFromContents(QProxyStyle::sizeFromContents(type, option, size, widget));
     }
 
+    if (type == CT_HeaderSection) {
+        if (const auto* headerOption = qstyleoption_cast<const QStyleOptionHeader*>(option)) {
+            const StyleContext itemContext
+                = contextOf(widget, headerOption, StyleComponentElement::Item);
+            const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
+            return geometry.sizeFromContents(QProxyStyle::sizeFromContents(type, option, size, widget));
+        }
+    }
+
+    if (type == CT_ItemViewItem) {
+        return itemViewItemSizeFromContents(option, size, widget);
+    }
+
     if (type == CT_MenuBarItem) {
         const BoxGeometryDefinition geometry = resolveBoxGeometry(
             contextOf(widget, option, StyleComponentElement::Item)
@@ -1739,6 +2062,29 @@ QRect FreeCADStyle::subElementRect(
     const QWidget* widget
 ) const
 {
+    if (element == SE_ItemViewItemCheckIndicator || element == SE_ItemViewItemDecoration
+        || element == SE_ItemViewItemText) {
+        return itemViewSubElementRect(element, option, widget);
+    }
+
+    if (element == SE_ShapedFrameContents) {
+        if (const auto contents = itemViewContentsRect(option, widget)) {
+            return *contents;
+        }
+    }
+
+    if (element == SE_HeaderLabel) {
+        const auto* headerOption = qstyleoption_cast<const QStyleOptionHeader*>(option);
+        if (!headerOption) {
+            return QProxyStyle::subElementRect(element, option, widget);
+        }
+        const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+        const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
+        QStyleOptionHeader adjustedOption = *headerOption;
+        adjustedOption.rect = geometry.contentRect(headerOption->rect);
+        return QProxyStyle::subElementRect(element, &adjustedOption, widget);
+    }
+
     if (element == SE_LineEditContents) {
         // Same lineWidth == 0 rule as PE_PanelLineEdit: the spin box manages the edit field's
         // rect, so the padding must not be taken off it a second time.
@@ -1837,6 +2183,40 @@ void FreeCADStyle::drawPrimitive(
         return;
     }
 
+    if (element == PE_PanelItemViewRow) {
+        // Qt emits this before the cells, which is where a row's resting surface belongs:
+        // the content then sits on top of it rather than being buried by it.
+        const StyleContext context = contextOf(widget, option, StyleComponentElement::Item);
+        if (context.element == StyleComponentElement::Item) {
+            if (const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option)) {
+                drawItemViewRow(painter, vopt, widget, RowLayer::Surface);
+            }
+            return;
+        }
+    }
+
+    if (element == PE_PanelItemViewItem) {
+        const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option);
+        if (!vopt) {
+            return;
+        }
+
+        drawItemViewRow(painter, vopt, widget, RowLayer::Interaction);
+
+        const StyleContext context = contextOf(widget, option, StyleComponentElement::Item);
+        const BoxGeometryDefinition itemGeometry = resolveBoxGeometry(context);
+        paintBox(painter, option->rect.adjusted(0, itemGeometry.spacing, 0, 0), context);
+
+        return;
+    }
+
+    if (element == PE_Frame) {
+        if (qstyleoption_cast<const QStyleOptionFrame*>(option)) {
+            drawComponent(painter, option->rect, widget, option);
+            return;
+        }
+    }
+
     if (element == PE_IndicatorToolBarSeparator) {
         // In a horizontal toolbar the buttons are side by side, so the separator is a vertical
         // line; in a vertical toolbar it is a horizontal one.
@@ -1893,6 +2273,51 @@ void FreeCADStyle::drawControl(
                 );
                 return;
             }
+
+            // A panel is a surface, and a plain QFrame naming a component through the property
+            // is asking for that component's surface.
+            if (shape == QFrame::StyledPanel || shape == QFrame::Panel) {
+                drawComponent(painter, option->rect, contextOf(widget, option));
+                return;
+            }
+        }
+    }
+
+    if (element == CE_HeaderSection || element == CE_Header) {
+        if (const auto* headerOption = qstyleoption_cast<const QStyleOptionHeader*>(option)) {
+            drawHeaderSection(painter, headerOption, widget);
+
+            if (element == CE_Header) {
+                // The label, its icon and the sort indicator stay with the base style; the
+                // palette is patched so its text picks up the token colour.
+                const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+                QStyleOptionHeader adjusted = *headerOption;
+                if (const auto textColor = resolve<Base::Color>(itemContext, StyleProperty::TextColor)) {
+                    adjusted.palette
+                        .setColor(QPalette::All, QPalette::ButtonText, textColor->asValue<QColor>());
+                }
+                QProxyStyle::drawControl(CE_HeaderLabel, &adjusted, painter, widget);
+            }
+
+            return;
+        }
+    }
+
+    if (element == CE_ItemViewItem) {
+        if (const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option)) {
+            // Patch HighlightedText so the base style's own item painting uses the token
+            // colour for a selected row rather than the palette's near-white default.
+            const StyleContext context = contextOf(widget, option, StyleComponentElement::Item);
+            QStyleOptionViewItem adjusted = *vopt;
+            if (const auto textColor = resolve<Base::Color>(context, StyleProperty::TextColor)) {
+                adjusted.palette.setColor(
+                    QPalette::All,
+                    QPalette::HighlightedText,
+                    textColor->asValue<QColor>()
+                );
+            }
+            QProxyStyle::drawControl(CE_ItemViewItem, &adjusted, painter, widget);
+            return;
         }
     }
 
@@ -2143,6 +2568,14 @@ StyleContext FreeCADStyle::contextOf(
     else if (qobject_cast<const QTextEdit*>(widget) || qobject_cast<const QPlainTextEdit*>(widget)) {
         context.component = StyleComponent::TextEdit;
     }
+    else if (qobject_cast<const QHeaderView*>(widget)) {
+        context.component = StyleComponent::Header;
+        context.element = element;
+    }
+    else if (qobject_cast<const QAbstractItemView*>(widget)) {
+        context.component = StyleComponent::List;
+        context.element = element;
+    }
     else if (qobject_cast<const QMenuBar*>(widget)) {
         context.component = StyleComponent::MenuBar;
         context.element = element;
@@ -2236,7 +2669,12 @@ StyleContext FreeCADStyle::contextOf(
         const bool isButton = context.component == StyleComponent::PushButton
             || context.component == StyleComponent::ToolButton
             || context.component == StyleComponent::ToolBarButton
-            || context.component == StyleComponent::Select;
+            || context.component == StyleComponent::Select
+            // A header section is the one item view surface that genuinely reports
+            // State_Sunken, which is why the views themselves are not on this list: every
+            // scroll area takes QFrame::Sunken as its default shadow and would read as
+            // pressed for as long as it exists.
+            || context.component == StyleComponent::Header;
         if (isButton && (option->state & QStyle::State_Sunken)) {
             context.state |= StyleState::Pressed;
         }
@@ -2245,6 +2683,12 @@ StyleContext FreeCADStyle::contextOf(
         }
         if (option->state & QStyle::State_On) {
             context.state |= StyleState::Checked;
+        }
+        // In an item view State_Selected marks a persistent selection, unlike a menu's, which
+        // follows the cursor.
+        if (context.component == StyleComponent::List
+            && (option->state & QStyle::State_Selected)) {
+            context.state |= StyleState::Selected;
         }
         if (option->state & QStyle::State_HasFocus) {
             context.state |= StyleState::Focused;
@@ -2268,6 +2712,16 @@ StyleContext FreeCADStyle::contextOf(
         if (const QLineEdit* innerEdit = widget->findChild<QLineEdit*>()) {
             if (innerEdit->hasFocus()) {
                 context.state |= StyleState::Focused;
+            }
+        }
+    }
+
+    // RowType is set only when no interaction state is active, so a hovered or selected
+    // alternate row resolves through ListRowHovered* rather than ListRowAlternateHovered*.
+    if (context.state == StyleState::Normal) {
+        if (const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option)) {
+            if (vopt->features & QStyleOptionViewItem::Alternate) {
+                context.variant.set(VariantSlot::RowType, RowType::Alternate);
             }
         }
     }
@@ -2538,6 +2992,12 @@ void FreeCADStyle::applyTextEditDocumentPadding(QWidget* widget, QTextDocument* 
 
 bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 {
+    if (event->type() == QEvent::Resize || event->type() == QEvent::Show) {
+        if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(obj)) {
+            updateScrollAreaMask(scrollArea);
+        }
+    }
+
     // The padding reaches the text through the document's own margin, which leaves the scroll
     // bars flush with the frame edge; a viewport margin would push them inwards with the text.
     if (event->type() == QEvent::Polish) {

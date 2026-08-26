@@ -53,6 +53,8 @@ enum class StyleComponent : uint8_t
     ComboBox,       // QComboBox that is editable; inherits LineEdit
     LineEdit,       // QLineEdit and the edit frame of a QAbstractSpinBox
     TextEdit,       // QPlainTextEdit, QTextEdit and derivatives
+    List,           // QListWidget, QListView and other item views
+    Header,         // QHeaderView sections
     MenuBar,        // QMenuBar
     ToolBarButton,  // QToolButton in a QToolBar - semantically a different control
     COUNT
@@ -70,6 +72,7 @@ enum class StyleComponentElement : uint8_t
 {
     Root,  // Main component
     Item,  // One item of the component
+    Row,   // One row of the component, spanning its full width
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
     COUNT,
 };
@@ -153,6 +156,19 @@ enum class TransparencyMode : uint8_t
 };
 
 /**
+ * @brief Row parity variant for item-view components.
+ *
+ * Set to Alternate when QStyleOptionViewItem::Alternate is active so that alternate-row
+ * tokens are tried before falling back to the default-row ones.
+ */
+enum class RowType : uint8_t
+{
+    Default,
+    Alternate,
+    COUNT
+};
+
+/**
  * @brief Registry of variant dimensions used in token names.
  *
  * Each slot corresponds to one enum dimension (ButtonType, ControlSize, …).
@@ -162,6 +178,7 @@ enum class VariantSlot : uint8_t
     ButtonType,
     ControlSize,
     Position,
+    RowType,           // Alternate row parity for item-view components
     TransparencyMode,  // Applies to every component, so it is declared last
     COUNT
 };
