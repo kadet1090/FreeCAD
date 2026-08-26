@@ -333,40 +333,6 @@ QRadioButton::indicator:checked:disabled {
   image:url(qss:@IconsLocationFolderName/radio-mark-lightgray.svg);
 }
 
-/* QMenuBar ---------------------------------------------------------------
-
-https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qmenubar
-
---------------------------------------------------------------------------- */
-QMenuBar {
-  background-color: @MenuBackgroundColor;
-}
-
-QMenuBar:disabled,
-QMenuBar::item:disabled{
-  color: @TextDisabledColor;
-}
-
-QMenuBar:focus {
-  border: 1px solid @AccentColor;
-}
-
-QMenuBar::item {
-  background-color: transparent;
-  padding: 2px 8px 3px 8px;
-}
-
-QMenuBar::item:selected {
-  background-color: transparent;
-  border-style: none;
-  background-color: @AccentBackgroundColor;
-}
-
-QMenuBar::item:pressed {
-  border-style: none;
-  background-color: @AccentBackgroundColor;
-}
-
 /* QMenu ------------------------------------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qmenu

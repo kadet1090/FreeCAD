@@ -98,6 +98,7 @@
 #include "DownloadManager.h"
 #include "FileDialog.h"
 #include "InputHintWidget.h"
+#include "FCMenuBar.h"
 #include "MenuManager.h"
 #include "ModuleIO.h"
 #include "NotificationArea.h"
@@ -386,6 +387,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f)
 
     // global access
     instance = this;
+
+    setMenuBar(new FCMenuBar(this));
 
     d->connParam = App::GetApplication().GetUserParameter().signalParamChanged.connect(
         [this](ParameterGrp* Param, ParameterGrp::ParamType, const char* Name, const char*) {

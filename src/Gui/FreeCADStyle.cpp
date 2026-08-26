@@ -40,6 +40,7 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QStyleOptionButton>
+#include <QStyleOptionMenuItem>
 #include <QStyleOptionToolButton>
 #include <QStyleOption>
 #include <QWidget>
@@ -1365,6 +1366,34 @@ void FreeCADStyle::drawSeparatorLine(
     }
 }
 
+void FreeCADStyle::drawMenuBarItem(
+    QPainter* painter,
+    const QStyleOptionMenuItem* option,
+    const QWidget* widget
+) const
+{
+    const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
+
+    const QRect contentRect = geometry.contentRect(option->rect);
+
+    drawBoxBackground(painter, geometry.borderRect(option->rect), resolveBoxStyle(itemContext));
+
+    painter->save();
+
+    if (const auto textColor = resolve<Base::Color>(itemContext, StyleProperty::TextColor)) {
+        painter->setPen(textColor->asValue<QColor>());
+    }
+    else {
+        painter->setPen(option->palette.buttonText().color());
+    }
+
+    constexpr int textFlags = Qt::AlignCenter | Qt::TextShowMnemonic | Qt::TextDontClip;
+    painter->drawText(contentRect, textFlags, option->text);
+
+    painter->restore();
+}
+
 std::optional<int> FreeCADStyle::resolvePixelMetric(
     PixelMetric metric,
     const QStyleOption* option,
@@ -1392,6 +1421,7 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         {PM_ToolBarItemSpacing, {StyleComponentElement::Item, Spacing}},
         {PM_ToolBarFrameWidth, {StyleComponentElement::Root, FrameWidth}},
         {PM_ToolBarIconSize, {StyleComponentElement::Root, IconSize}},
+        {PM_MenuBarItemSpacing, {StyleComponentElement::Item, Spacing}},
     };
 
     if (const auto found = elementMetrics.find(metric); found != elementMetrics.end()) {
@@ -1425,6 +1455,14 @@ QSize FreeCADStyle::sizeFromContents(
             contentSize.rwidth() += geometry.iconGapDelta();
         }
         return geometry.sizeFromContents(contentSize);
+    }
+
+    if (type == CT_MenuBarItem) {
+        const BoxGeometryDefinition geometry = resolveBoxGeometry(
+            contextOf(widget, option, StyleComponentElement::Item)
+        );
+
+        return geometry.marginBox(size);
     }
 
     if (type == CT_ToolButton) {
@@ -1537,6 +1575,22 @@ void FreeCADStyle::drawControl(
                 );
                 return;
             }
+        }
+    }
+
+    if (element == CE_MenuBarEmptyArea) {
+        // Qt clips the painter to the region no item occupies before calling this, so painting
+        // the whole rect leaves only the empty portion of the bar. Each item paints its own
+        // portion of the bar background inside CE_MenuBarItem.
+        const StyleContext barContext = contextOf(widget, option);
+        drawBoxBackground(painter, option->rect, resolveBoxStyle(barContext));
+        return;
+    }
+
+    if (element == CE_MenuBarItem) {
+        if (const auto* menuOption = qstyleoption_cast<const QStyleOptionMenuItem*>(option)) {
+            drawMenuBarItem(painter, menuOption, widget);
+            return;
         }
     }
 
@@ -1770,6 +1824,20 @@ StyleContext FreeCADStyle::contextOf(
     }
     else if (qobject_cast<const QPushButton*>(widget)) {
         context.component = StyleComponent::PushButton;
+    }
+    else if (qobject_cast<const QMenuBar*>(widget)) {
+        context.component = StyleComponent::MenuBar;
+        context.element = element;
+
+        // A menu bar marks the item under the cursor with State_Selected and the one whose
+        // menu is open with State_Sunken. Neither means what it means on an item view, where
+        // Selected is a persistent choice, so both are remapped here.
+        if (option && (option->state & QStyle::State_Selected)) {
+            context.state |= StyleState::Hovered;
+        }
+        if (option && (option->state & QStyle::State_Sunken)) {
+            context.state |= StyleState::Pressed;
+        }
     }
     else if (const auto* toolbar = qobject_cast<const QToolBar*>(widget)) {
         context.component = StyleComponent::ToolBar;

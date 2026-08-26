@@ -49,6 +49,7 @@ enum class StyleComponent : uint8_t
     PushButton,
     ToolButton,
     ToolBar,        // QToolBar
+    MenuBar,        // QMenuBar
     ToolBarButton,  // QToolButton in a QToolBar - semantically a different control
     COUNT
 };

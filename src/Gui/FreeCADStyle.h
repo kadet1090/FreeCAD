@@ -614,6 +614,12 @@ protected:
         const QWidget* widget
     ) const;
 
+    void drawMenuBarItem(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
     void drawPushButtonLabel(
         QPainter* painter,
         const QStyleOptionButton* option,

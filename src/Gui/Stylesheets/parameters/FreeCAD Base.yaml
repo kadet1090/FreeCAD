@@ -140,3 +140,25 @@ SeparatorColor: "@BaseBorderColor"
 SplitButtonMainBorderRadius: "border_radius(@FormControlBorderRadius, right: 0px)"
 SplitButtonMenuBorderRadius: "border_radius(@FormControlBorderRadius, left: 0px)"
 SplitButtonMenuBorderThickness: "border_thickness(@FormControlBorderThickness, left: 0px)"
+
+# The bar's own tokens drive its background and the separator between it and the content
+# area below.
+MenuBarBackground: "@BaseWindowBackground"
+MenuBarPadding: "padding(horizontal: @Spacing.300, vertical: @Spacing.000)"
+MenuBarBorderColor: "@BaseBorderColor"
+MenuBarBorderThickness: "border_thickness(0px, bottom: 1px)"
+
+MenuBarItemSpacing: "@Spacing.000"
+MenuBarItemPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.050)"
+MenuBarItemMargin: "padding(@Spacing.100)"
+MenuBarItemBorderRadius: "@BaseRadius.small"
+MenuBarItemTextColor: "@BaseTextColor"
+
+MenuBarItemHoveredBackground: "@Background.200"
+MenuBarItemHoveredTextColor: "@BaseTextColor"
+
+MenuBarItemPressedBackground: "@Neutral.400"
+MenuBarItemPressedInnerShadow: "@ButtonPressedInnerShadow"
+MenuBarItemPressedTextColor: "@BaseTextColor"
+
+MenuBarItemDisabledTextColor: "@BaseDisabledTextColor"

@@ -575,6 +575,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"Position", "State"},
         .inherits = {},
     }, StyleComponent::ToolBar);
+
+    registry.registerDescriptor({
+        .name     = "MenuBar",
+        .variants = {"State"},
+        .inherits = {},
+    }, StyleComponent::MenuBar);
     // clang-format on
 }
 
