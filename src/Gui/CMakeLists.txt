@@ -1432,6 +1432,7 @@ SET(FreeCADGui_SRCS
     StyleParameters/Edges.h
     StyleParameters/Insets.h
     StyleParameters/Corners.h
+    StyleParameters/InnerShadow.h
     StyleParameters/Gradient.h
     StyleParameters/ColorShading.h
     StyleParameters/ParameterDescriptorRegistry.h

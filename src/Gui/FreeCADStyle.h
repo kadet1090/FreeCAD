@@ -33,6 +33,7 @@
 #include <FCGlobal.h>
 
 #include <QBrush>
+#include <QColor>
 #include <QEvent>
 #include <QMarginsF>
 #include <QPainter>
@@ -127,6 +128,17 @@ public:
     };
 
     /**
+     * @brief Describes an inward shadow drawn on top of a box background.
+     */
+    struct InnerShadow
+    {
+        QColor color;
+        qreal x = 0;
+        qreal y = 0;
+        qreal blur = 0;
+    };
+
+    /**
      * @brief Per-side border colors in CSS TRBL order.
      *
      * When all four sides are equal, isUniform() returns true and uniform()
@@ -162,6 +174,7 @@ public:
         std::optional<BorderColorsPerSide> borderColor;
         std::optional<QMarginsF> borderThickness;
         CornerRadii borderRadius;  // default: all zero (sharp corners)
+        std::optional<InnerShadow> innerShadow;
     };
 
     /**

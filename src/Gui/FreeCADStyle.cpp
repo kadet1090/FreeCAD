@@ -26,6 +26,7 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+#include <QImage>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPalette>
@@ -39,9 +40,23 @@
 #include "StyleParameters/ColorEffect.h"
 #include "StyleParameters/Corners.h"
 #include "StyleParameters/Edges.h"
+#include "StyleParameters/InnerShadow.h"
 #include "StyleParameters/Insets.h"
 #include "StyleParameters/ParameterDescriptorRegistry.h"
 #include "StyleParameters/ParameterManager.h"
+
+// Qt exports its blur but does not declare it in any public header, and there is no public
+// equivalent. The declaration has to match QtWidgets' own, namespace included.
+QT_BEGIN_NAMESPACE
+extern Q_WIDGETS_EXPORT void qt_blurImage(
+    QPainter* painter,
+    QImage& blurImage,
+    qreal radius,
+    bool quality,
+    bool alphaOnly,
+    int transposed = 0
+);
+QT_END_NAMESPACE
 
 using namespace Gui;
 using namespace Gui::StyleParameters;
@@ -57,6 +72,17 @@ FreeCADStyle::CornerRadii convertTo<FreeCADStyle::CornerRadii, Corners>(const Co
         .topRight = corners.topRight(),
         .bottomRight = corners.bottomRight(),
         .bottomLeft = corners.bottomLeft(),
+    };
+}
+
+template<>
+FreeCADStyle::InnerShadow convertTo<FreeCADStyle::InnerShadow, InnerShadow>(const InnerShadow& shadow)
+{
+    return {
+        .color = shadow.color().asValue<QColor>(),
+        .x = shadow.x(),
+        .y = shadow.y(),
+        .blur = shadow.blur(),
     };
 }
 
@@ -168,6 +194,93 @@ FreeCADStyle::CornerRadii innerRadii(const FreeCADStyle::CornerRadii& outer, con
 }
 
 
+
+namespace
+{
+
+struct ShadowCacheKey
+{
+    int width, height;
+    qreal x, y, blur;
+    QRgb color;
+    qreal radiusTopLeft, radiusTopRight, radiusBottomRight, radiusBottomLeft;
+
+    auto operator<=>(const ShadowCacheKey&) const = default;
+};
+
+QImage buildShadowImage(
+    const QRect& rect,
+    const FreeCADStyle::CornerRadii& radii,
+    const FreeCADStyle::InnerShadow& shadow
+)
+{
+    const int padding = static_cast<int>(std::ceil(shadow.blur)) + 1;
+    const QSize imageSize = rect.size() + QSize(2 * padding, 2 * padding);
+
+    // Create a fully opaque black image and punch a transparent hole in the shape.
+    // The opaque ring that remains around the hole produces the shadow after blurring.
+    QImage mask(imageSize, QImage::Format_ARGB32_Premultiplied);
+    mask.fill(Qt::black);
+
+    {
+        QPainter maskPainter(&mask);
+        maskPainter.setRenderHint(QPainter::Antialiasing);
+        maskPainter.setCompositionMode(QPainter::CompositionMode_Clear);
+        maskPainter.fillPath(
+            roundedRectPath(QRectF(padding, padding, rect.width(), rect.height()), radii),
+            Qt::transparent
+        );
+    }
+
+    QImage blurred(imageSize, QImage::Format_ARGB32_Premultiplied);
+    blurred.fill(Qt::transparent);
+    {
+        QPainter blurPainter(&blurred);
+        qt_blurImage(&blurPainter, mask, shadow.blur, false, false);
+    }
+
+    // Tint the blurred image with the shadow color.
+    {
+        QPainter tintPainter(&blurred);
+        tintPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+        tintPainter.fillRect(blurred.rect(), shadow.color);
+    }
+
+    return blurred;
+}
+
+const QImage& getCachedShadowImage(
+    const QRect& rect,
+    const FreeCADStyle::CornerRadii& radii,
+    const FreeCADStyle::InnerShadow& shadow
+)
+{
+    constexpr int maxCacheEntries = 32;
+    static std::map<ShadowCacheKey, QImage> cache;
+
+    const ShadowCacheKey key {
+        .width = rect.width(),
+        .height = rect.height(),
+        .x = shadow.x,
+        .y = shadow.y,
+        .blur = shadow.blur,
+        .color = shadow.color.rgba(),
+        .radiusTopLeft = radii.topLeft.value,
+        .radiusTopRight = radii.topRight.value,
+        .radiusBottomRight = radii.bottomRight.value,
+        .radiusBottomLeft = radii.bottomLeft.value,
+    };
+
+    if (auto it = cache.find(key); it != cache.end()) {
+        return it->second;
+    }
+    if (static_cast<int>(cache.size()) >= maxCacheEntries) {
+        cache.erase(cache.begin());
+    }
+    return cache.emplace(key, buildShadowImage(rect, radii, shadow)).first->second;
+}
+
+}  // namespace
 
 // Fills each side of a border ring with its own color using CSS-style diagonal corner splits.
 // Four non-overlapping trapezoids partition the border ring; corners are split diagonally,
@@ -288,8 +401,9 @@ void FreeCADStyle::drawBoxBackground(
 {
     const bool hasBorder = rule.borderColor.has_value() && rule.borderThickness.has_value();
     const bool hasBackground = rule.background.style() != Qt::NoBrush;
+    const bool hasInnerShadow = rule.innerShadow.has_value();
 
-    if (!hasBackground && !hasBorder) {
+    if (!hasBackground && !hasBorder && !hasInnerShadow) {
         return;
     }
 
@@ -315,6 +429,23 @@ void FreeCADStyle::drawBoxBackground(
             roundedRectPath(QRectF(backgroundInnerRect), resolvedBorderRadius),
             rule.background
         );
+    }
+
+    if (hasInnerShadow) {
+        const int padding = static_cast<int>(std::ceil(rule.innerShadow->blur)) + 1;
+        const QImage& shadowImage = getCachedShadowImage(rect, resolvedBorderRadius, *rule.innerShadow);
+
+        painter->save();
+        painter->setRenderHint(QPainter::Antialiasing);
+        painter->setClipPath(roundedRectPath(QRectF(rect), resolvedBorderRadius), Qt::IntersectClip);
+        painter->drawImage(
+            QPointF(
+                rect.left() - padding + rule.innerShadow->x,
+                rect.top() - padding + rule.innerShadow->y
+            ),
+            shadowImage
+        );
+        painter->restore();
     }
 
     if (hasBorder) {
@@ -448,6 +579,11 @@ FreeCADStyle::BoxStyleDefinition FreeCADStyle::resolveBoxStyle(const StyleContex
     }
     if (const auto borderColors = resolve<BorderColors>(context, StyleProperty::BorderColor)) {
         result.borderColor = Base::convertTo<BorderColorsPerSide>(*borderColors);
+    }
+
+    if (const auto innerShadow
+        = resolve<StyleParameters::InnerShadow>(context, StyleProperty::InnerShadow)) {
+        result.innerShadow = Base::convertTo<InnerShadow>(*innerShadow);
     }
 
     if (const auto effect = resolve<ColorEffect>(context, StyleProperty::BackgroundEffect)) {
