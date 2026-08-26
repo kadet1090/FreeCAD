@@ -62,29 +62,11 @@ FOLLOWING CODES ARE CHANGED IN THE SETTINGS:
 
 --------------------------------------------------------------------------- */
 
-/* fix for column items background when a link is present */
-Gui--PropertyEditor--PropertyEditor > QWidget > QFrame:focus {
-  background-color: @AccentColor;/* same as focused background color */}
-/* hack to hide weird redundant information inside cells with links and no editable data (but editable via "..." button) */
-Gui--PropertyEditor--PropertyEditor > QWidget > QWidget > QLabel {
-  background-color: @PrimaryColor;/* same as focused background color */
-  /* border-radius: @InputFieldBorderRadius; */
-}
-
-/* Pushbutton style for "..." inside Placement cell which launches Placement tool */
-Gui--PropertyEditor--PropertyEditor > QWidget > QWidget > QPushButton,
-Gui--PropertyEditor--PropertyEditor > QWidget > PushButton {
-  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @ButtonTopBackgroundColor,stop:1 @ButtonBottomBackgroundColor);
-  border: 1px solid @GeneralBorderColor;
-  min-width: 16px; /* reset it due to larger value on regular QPushButton, same or bigger value as regular QPushButton min-height */
-  border-radius: @InputFieldBorderRadius;
-  margin: 0px; /* reset */
-  padding: 0px; /* reset */
-}
-
-Gui--PropertyEditor--PropertyEditor > QWidget > QPushButton {
-    text-align:left;
-    padding-left: 2px;
+/* The group header rows are the one part the delegate does not paint from tokens, because Qt
+   reaches them through widget properties rather than through the style. */
+Gui--PropertyEditor--PropertyEditor {
+  qproperty-groupTextColor: @BaseTextColor;
+  qproperty-groupBackground: @{@Background.200}
 }
 /*navgation src/Mod/Tux/NavigationIndicatorGui.py */
 Gui--NavigationIndicatorGui--BlenderNavigationStyle {
@@ -357,13 +339,6 @@ QPushButton[objectName="buttonIFCPropertiesDelete"] {
 QGroupBox[objectName="matOpsGrpBox"] QPushButton {
   min-width: 235px;
 }
-/* Below is a fix for indentation in properties*/
-
-
-QTreeView::item#groupsTreeView {
-  /* background-color: @AccentColor; */
-}
-
 /*==================================================================================================
 Input validation
 ==================================================================================================*/

@@ -154,6 +154,19 @@ ExpressionButtonCheckedBorderColor: "@Accent.900"
 ExpressionButtonCheckedIconColor: "@Background.050"
 ExpressionButtonPadding: "0px"
 
+# ── Transparent property editor — an opaque panel sized to its rows ──────────
+# Unlike the tree, property rows are a dense label/value grid that needs a continuous surface
+# behind them, so this paints a real panel rather than a box per item. Because it paints, it
+# stops the transparency chain: the header, scrollbars and inline editors below it render as
+# if docked. Items deliberately get no Transparent tokens — the variant then drops out of the
+# fallback chain and they resolve their normal styling.
+PropertyEditorTransparentBackground: "@Background.050"
+PropertyEditorTransparentBorderColor: "@BaseBorderColor"
+PropertyEditorTransparentBorderThickness: 1px
+PropertyEditorTransparentBorderRadius: "@BaseRadius.medium"
+PropertyEditorTransparentPadding: "0px"
+PropertyEditorTransparentIsTransparent: "false"
+
 SeparatorThickness: 1px
 SeparatorColor: "@BaseBorderColor"
 

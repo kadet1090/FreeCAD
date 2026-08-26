@@ -109,11 +109,12 @@ void PropertyItemDelegate::paint(
 
     QPen savedPen = painter->pen();
 
+
+    QStyle* style = option.widget ? option.widget->style() : QApplication::style();
+
     if (index.column() == 1 && property && dynamic_cast<PropertyBoolItem*>(property)) {
         bool checked = index.data(Qt::EditRole).toBool();
         bool readonly = property->isReadOnly();
-
-        QStyle* style = option.widget ? option.widget->style() : QApplication::style();
         QPalette palette = option.widget ? option.widget->palette() : QApplication::palette();
 
         QStyleOptionButton checkboxOption;
@@ -157,6 +158,16 @@ void PropertyItemDelegate::paint(
         painter->drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, labelText);
     }
     else {
+        QStyleOptionViewItem override = option;
+
+        // default QItemDelegate painting is quite bad - it does not respect style but does paint
+        // some random backgrounds, instead of using the PanelItemViewItem. This is the way to
+        // circumvent it by forcing drawing of item.
+        if (property && !property->isSeparator()) {
+            style->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, option.widget);
+            option.state &= ~QStyle::State_Selected;
+        }
+
         QItemDelegate::paint(painter, option, index);
     }
 
@@ -165,12 +176,34 @@ void PropertyItemDelegate::paint(
         &opt,
         qobject_cast<QWidget*>(parent())
     ));
-    painter->setPen(QPen(color));
-    if (index.column() == 1 || !(property && property->isSeparator())) {
-        int right = (option.direction == Qt::LeftToRight) ? option.rect.right() : option.rect.left();
+    // A cosmetic pen is one device pixel wide whatever the display scale, so the grid stays a
+    // hairline instead of a one-logical-pixel stroke that is centred on the cell edge and spills
+    // half its width into the neighbour at every ratio above 1.
+    QPen gridPen(color);
+    gridPen.setCosmetic(true);
+    gridPen.setWidth(1);
+    painter->setPen(gridPen);
+
+    // The view draws its own outline, so the grid stops short of it: the last column needs no
+    // line down its right edge and the last row none along its bottom, or the two coincide and
+    // read as a doubled border.
+    const auto* view = qobject_cast<const PropertyEditor*>(parent());
+    const bool isLastColumn = index.column() >= index.model()->columnCount(index.parent()) - 1;
+    const bool isLastRow = view != nullptr && !view->indexBelow(index).isValid();
+
+    if (!isLastColumn && (index.column() == 1 || !(property && property->isSeparator()))) {
+        const int right = (option.direction == Qt::LeftToRight) ? option.rect.right()
+                                                                : option.rect.left();
         painter->drawLine(right, option.rect.y(), right, option.rect.bottom());
     }
-    painter->drawLine(option.rect.x(), option.rect.bottom(), option.rect.right(), option.rect.bottom());
+    if (!isLastRow) {
+        painter->drawLine(
+            option.rect.x(),
+            option.rect.bottom(),
+            option.rect.right(),
+            option.rect.bottom()
+        );
+    }
     painter->setPen(savedPen);
 }
 
