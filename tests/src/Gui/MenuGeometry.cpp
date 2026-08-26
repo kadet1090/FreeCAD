@@ -566,7 +566,9 @@ private Q_SLOTS:
         QVERIFY(!layout->arrow.isNull());
 
         QVERIFY(layout->icon.right() < layout->text.left());
-        QVERIFY(layout->text.right() < layout->arrow.left());
+        QVERIFY(!layout->shortcut.isNull());
+        QVERIFY(layout->text.right() < layout->shortcut.left());
+        QVERIFY(layout->shortcut.right() < layout->arrow.left());
 
         QVERIFY(option.rect.contains(layout->icon));
         QVERIFY(option.rect.contains(layout->arrow));
@@ -1050,6 +1052,27 @@ private Q_SLOTS:
             canvas.pixelColor(option.rect.width() - 6, option.rect.height() / 2),
             QColor(QStringLiteral("#00ff00"))
         );
+    }
+
+    // Qt adds reservedShortcutWidth to max_column_width itself, after sizing every item.
+    // Adding it here too is what makes stock Fusion menus so wide; only the gap is ours.
+    void test_shortcutContributesItsGapButNotItsWidth()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QMenu menu;
+
+        QStyleOptionMenuItem plain = plainItem(menu);
+        const int base = style.sizeFromContents(QStyle::CT_MenuItem, &plain, QSize(), &menu).width();
+
+        QStyleOptionMenuItem withShortcut = plain;
+        withShortcut.text = QStringLiteral("Open\tCtrl+O");
+        withShortcut.reservedShortcutWidth = 77;
+        const int shortcutWidth
+            = style.sizeFromContents(QStyle::CT_MenuItem, &withShortcut, QSize(), &menu).width();
+
+        // The label is the same in both, so the whole delta is the gap — never the 77px.
+        QCOMPARE(shortcutWidth - base, shortcutSpacing);
     }
 };
 

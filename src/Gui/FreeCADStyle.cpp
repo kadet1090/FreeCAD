@@ -1704,6 +1704,20 @@ void FreeCADStyle::drawMenuItemText(
         );
     }
 
+    const QString shortcut = menuItemShortcut(option->text);
+    if (!shortcut.isEmpty() && !layout.shortcut.isNull()) {
+        const StyleContext shortcutContext = contextOf(widget, option, StyleComponentElement::Shortcut);
+        if (const auto color = resolve<Base::Color>(shortcutContext, StyleProperty::TextColor)) {
+            painter->setPen(color->asValue<QColor>());
+        }
+        // The accelerator is literal text; mnemonic markers do not apply to it.
+        painter->drawText(
+            layout.shortcut,
+            visualAlignment(option->direction, Qt::AlignRight) | Qt::AlignVCenter,
+            shortcut
+        );
+    }
+
     painter->restore();
 }
 
@@ -1767,6 +1781,12 @@ QString FreeCADStyle::menuItemLabel(const QString& text)
 {
     const qsizetype separator = text.indexOf(u'\t');
     return separator >= 0 ? text.left(separator) : text;
+}
+
+QString FreeCADStyle::menuItemShortcut(const QString& text)
+{
+    const qsizetype separator = text.indexOf(u'\t');
+    return separator >= 0 ? text.mid(separator + 1) : QString();
 }
 
 QRect FreeCADStyle::menuItemBoxRect(const QRect& rect, const BoxGeometryDefinition& geometry)
@@ -1852,6 +1872,13 @@ FreeCADStyle::MenuItemColumns FreeCADStyle::menuItemColumns(
     if (option->menuItemType == QStyleOptionMenuItem::SubMenu) {
         const StyleContext arrowContext = contextOf(widget, option, StyleComponentElement::Arrow);
         columns.arrow = resolve<int>(arrowContext, StyleProperty::Width).value_or(0) + gap;
+    }
+
+    // Only the gap. Qt adds reservedShortcutWidth to the menu's column width itself once
+    // every item has been sized; adding it here as well would double-count it.
+    if (option->text.contains(u'\t')) {
+        const StyleContext shortcutContext = contextOf(widget, option, StyleComponentElement::Shortcut);
+        columns.shortcutGap = resolve<int>(shortcutContext, StyleProperty::Spacing).value_or(0);
     }
 
     return columns;
@@ -1961,6 +1988,16 @@ std::optional<FreeCADStyle::MenuItemLayout> FreeCADStyle::menuItemLayout(
         right -= columns.arrow;
     }
 
+    // Qt reports the accelerator column width it measured menu-wide; a style can neither
+    // change that measurement nor move the column, only put a gap in front of it.
+    if (option->reservedShortcutWidth > 0) {
+        layout.shortcut = QRect(
+            QPoint(right + 1 - option->reservedShortcutWidth, content.top()),
+            QPoint(right, content.bottom())
+        );
+        right -= option->reservedShortcutWidth + columns.shortcutGap;
+    }
+
     layout.text = QRect(QPoint(left, content.top()), QPoint(right, content.bottom()));
 
     if (option->direction == Qt::RightToLeft) {
@@ -1968,6 +2005,7 @@ std::optional<FreeCADStyle::MenuItemLayout> FreeCADStyle::menuItemLayout(
         layout.iconIndicator = visualRect(option->direction, content, layout.iconIndicator);
         layout.icon = visualRect(option->direction, content, layout.icon);
         layout.text = visualRect(option->direction, content, layout.text);
+        layout.shortcut = visualRect(option->direction, content, layout.shortcut);
         layout.arrow = visualRect(option->direction, content, layout.arrow);
     }
 

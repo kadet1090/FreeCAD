@@ -81,6 +81,7 @@ enum class StyleComponentElement : uint8_t
     Menu,  // Dropdown strip of a MenuButtonPopup tool button
     Separator, // Separator rule, and the label of an addSection() header, inside a menu
     Arrow, // Submenu arrow of a menu item
+    Shortcut,  // Accelerator column of a menu item
     COUNT,
 };
 

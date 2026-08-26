@@ -769,6 +769,7 @@ protected:
         QRect iconIndicator;
         QRect icon;
         QRect text;
+        QRect shortcut;
         QRect arrow;
     };
 
@@ -777,10 +778,11 @@ protected:
     {
         int leading = 0;
         int arrow = 0;
+        int shortcutGap = 0;
 
         int total() const
         {
-            return leading + arrow;
+            return leading + arrow + shortcutGap;
         }
     };
 
@@ -875,6 +877,9 @@ protected:
 
     /// The label with any accelerator suffix removed.
     static QString menuItemLabel(const QString& text);
+
+    /// The accelerator suffix, or nothing when the label carries none.
+    static QString menuItemShortcut(const QString& text);
 
     /// The label elided to @p width, so a long one shortens rather than widening the menu.
     static QString menuItemDrawnLabel(
