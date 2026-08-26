@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QImage>
+#include <QPushButton>
 #include <QTabBar>
 #include <QTabWidget>
 #include <QCursor>
@@ -682,6 +683,25 @@ private Q_SLOTS:
             "the inactive tab was not filled from TabBarTabBackground"
         );
         QCOMPARE(pixelsOfColour(canvas, restingTab, selectedFill), 0);
+    }
+
+    // An empty expression means "no override", not "an override that evaluates to nothing".
+    // A stored empty expression is accepted by declaredOverrides and then warns on every
+    // resolve, which is both noisy and never what a caller clearing a preference meant.
+    void test_anEmptyExpressionClearsTheOverride()  // NOLINT
+    {
+        QPushButton button;
+
+        Gui::FreeCADStyle::setStyleOverride(
+            &button,
+            QStringLiteral("ButtonFontSize"),
+            QStringLiteral("21px")
+        );
+        QVERIFY(button.property("fcStyleButtonFontSize").isValid());
+
+        Gui::FreeCADStyle::setStyleOverride(&button, QStringLiteral("ButtonFontSize"), QString());
+
+        QVERIFY(!button.property("fcStyleButtonFontSize").isValid());
     }
 };
 

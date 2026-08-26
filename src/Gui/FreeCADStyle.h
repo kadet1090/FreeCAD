@@ -441,6 +441,8 @@ public:
      *
      * Setting the dynamic property directly works too, but only takes effect the next time the
      * widget is polished; use this, or refreshStyleOverrides(), for a change made afterwards.
+     *
+     * An empty @p expression removes the override instead of declaring one.
      */
     static void setStyleOverride(QWidget* widget, const QString& name, const QString& expression);
 

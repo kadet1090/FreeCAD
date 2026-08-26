@@ -5339,7 +5339,13 @@ void FreeCADStyle::setStyleOverride(QWidget* widget, const QString& name, const 
     }
 
     const QString propertyName = QString::fromLatin1(overridePropertyPrefix) + name;
-    widget->setProperty(propertyName.toLatin1().constData(), expression);
+
+    // An invalid QVariant is what removes a dynamic property. An empty QString is a valid one,
+    // so it would be stored as an override with nothing to evaluate and warn on every resolve.
+    widget->setProperty(
+        propertyName.toLatin1().constData(),
+        expression.isEmpty() ? QVariant() : QVariant(expression)
+    );
 
     refreshStyleOverrides(widget);
 }
