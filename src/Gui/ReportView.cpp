@@ -38,6 +38,7 @@
 #include "BitmapFactory.h"
 #include "DockWindowManager.h"
 #include "FileDialog.h"
+#include "FreeCADStyle.h"
 #include "PythonConsole.h"
 #include "PythonConsolePy.h"
 #include "Tools.h"
@@ -445,7 +446,7 @@ ReportOutput::ReportOutput(QWidget* parent)
     bLog = false;
     reportHl = new ReportHighlighter(this);
 
-    restoreFont();
+    applyFontPreferences();
     setReadOnly(true);
     clear();
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -479,22 +480,32 @@ ReportOutput::~ReportOutput()
     delete d;
 }
 
-void ReportOutput::restoreFont()
+void ReportOutput::applyFontPreferences()
 {
-    QFont font;
-    auto hPrefGrp = App::GetApplication().GetParameterGroupByPath(
+    auto preferences = App::GetApplication().GetParameterGroupByPath(
         "User parameter:BaseApp/Preferences/Editor"
     );
-    int fontSize = hPrefGrp->GetInt("FontSize", 10);
-    auto serifFont = hPrefGrp->GetASCII("Font");
-    if (serifFont.empty()) {
-        font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-        font.setPointSize(fontSize);
-    }
-    else {
-        font = QFont(QString::fromStdString(serifFont), fontSize);
-    }
-    setFont(font);
+
+    const int fontSize = preferences->GetInt("FontSize", 10);
+    const std::string family = preferences->GetASCII("Font");
+
+    // A family reaches the token system as a quoted literal: an override is not given the
+    // raw-text fallback an ordinary parameter gets, so an unquoted name would be discarded.
+    // Parser::parseStringLiteral has no escape for the quote character itself, so a font name
+    // containing an apostrophe truncates the expression, throws Base::ParserError, and the
+    // preference silently falls back through the token chain instead of erroring visibly. This
+    // is a pre-existing parser limitation, not something introduced here; no choice of quote
+    // character avoids it.
+    const QString familyExpression = family.empty()
+        ? QStringLiteral("'%1'").arg(QFontDatabase::systemFont(QFontDatabase::FixedFont).family())
+        : QStringLiteral("'%1'").arg(QString::fromStdString(family));
+
+    FreeCADStyle::setStyleOverride(this, QStringLiteral("TextEditFontFamily"), familyExpression);
+    FreeCADStyle::setStyleOverride(
+        this,
+        QStringLiteral("TextEditFontSize"),
+        QStringLiteral("%1pt").arg(fontSize)
+    );
 }
 
 void ReportOutput::sendLog(
@@ -921,18 +932,10 @@ void ReportOutput::OnChange(Base::Subject<const char*>& rCaller, const char* sRe
         gotoEnd = rclGrp.GetBool(sReason, gotoEnd);
     }
     else if (strcmp(sReason, "FontSize") == 0 || strcmp(sReason, "Font") == 0) {
-        int fontSize = rclGrp.GetInt("FontSize", 10);
-        QFont font;
-        auto fontName = rclGrp.GetASCII("Font");
-        if (fontName.empty()) {
-            font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-            font.setPointSize(fontSize);
-        }
-        else {
-            font = QFont(QString::fromStdString(fontName), fontSize);
-        }
-        setFont(font);
-        QFontMetrics metric(font);
+        applyFontPreferences();
+        // setStyleOverride() reapplies font() synchronously, so the metrics below already
+        // reflect the new override.
+        QFontMetrics metric(font());
         int width = QtTools::horizontalAdvance(metric, QLatin1String("0000"));
         setTabStopDistance(width);
     }
