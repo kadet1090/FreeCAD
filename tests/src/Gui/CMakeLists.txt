@@ -29,6 +29,7 @@ add_executable(Gui_tests_run
         StyleParameters/StyleOverridesTest.cpp
         InputHintTest.cpp
         SelectionTest.cpp
+        GeometrySelectionTest.cpp
         GeometryHighlighterTest.cpp
         ViewProviderTest.cpp
         SelectionContextTest.cpp

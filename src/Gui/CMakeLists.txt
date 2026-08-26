@@ -1188,6 +1188,8 @@ SET(Widget_CPP_SRCS
     SplitButton.cpp
     HighlightOverlay.cpp
     GeometryHighlighter.cpp
+    GeometrySelection.cpp
+    GeometrySelectionGate.cpp
 )
 if(WIN32)
     SET(Widget_CPP_SRCS
@@ -1224,6 +1226,8 @@ SET(Widget_HPP_SRCS
     HighlightOverlay.h
     GeometryHighlighter.h
     GeometryReference.h
+    GeometrySelection.h
+    GeometrySelectionGate.h
 )
 SET(Widget_SRCS
     ${Widget_CPP_SRCS}
