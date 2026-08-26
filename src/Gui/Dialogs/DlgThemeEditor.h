@@ -97,6 +97,9 @@ public:
     void reset();
     void flush() override;
 
+    const StyleParameters::ParameterManager& parameterManager() const;
+
+
     void expandTupleIfNeeded(const QModelIndex& index);
 
     int rowCount(const QModelIndex& index) const override;
@@ -154,10 +157,10 @@ public:
 
 public Q_SLOTS:
     void handleButtonClick(QAbstractButton* button);
+    void onExportTokens();
 
 private:
     std::unique_ptr<Ui::DlgThemeEditor> ui;
-    std::unique_ptr<StyleParameters::ParameterManager> manager;
     std::unique_ptr<StyleParametersModel> model;
 };
 }  // namespace Gui

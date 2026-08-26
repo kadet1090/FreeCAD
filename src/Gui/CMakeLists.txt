@@ -1383,6 +1383,7 @@ SET(FreeCADGui_CPP_SRCS
     StyleParameters/ParameterDescriptorRegistry.cpp
     StyleParameters/StyleContext.cpp
     StyleParameters/StyleOverrides.cpp
+    StyleParameters/TokenExporter.cpp
     StyleParameters/StyleParameterResolver.cpp
 )
 SET(FreeCADGui_SRCS
@@ -1446,6 +1447,7 @@ SET(FreeCADGui_SRCS
     StyleParameters/ParameterDescriptorRegistry.h
     StyleParameters/StyleContext.h
     StyleParameters/StyleOverrides.h
+    StyleParameters/TokenExporter.h
     StyleParameters/StyleParameterResolver.h
 )
 
