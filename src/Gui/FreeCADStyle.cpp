@@ -31,6 +31,7 @@
 #include <map>
 #include <QPainter>
 #include <QPainterPath>
+#include <QCoreApplication>
 #include <QPalette>
 #include <QPushButton>
 #include <QToolBar>
@@ -650,6 +651,84 @@ void FreeCADStyle::paintBox(
     // BoxGeometry property, so a box painted from a bare rect would otherwise ignore it.
     const QRect borderRect = resolveBoxGeometry(context).borderRect(rect);
     drawBoxBackground(painter, borderRect, resolveBoxStyle(context));
+}
+
+bool FreeCADStyle::transparencyBelow(const QWidget* widget) const
+{
+    if (widget == nullptr) {
+        return false;
+    }
+
+    // Only the propagated tag describes the surface: it says the widget is painted over
+    // something see-through. The Transparent variant contextOf() derives for a toolbar hosted
+    // in a status bar means the opposite direction — suppress my own chrome, I blend into an
+    // opaque host — and must not be mistaken for a see-through surface for the children.
+    // A theme that does want such a toolbar's children in the Transparent chain says so with
+    // ToolBarTransparentIsTransparent, which resolves here for exactly that widget.
+    return resolve<bool>(contextOf(widget), StyleProperty::IsTransparent).value_or(isTransparent(widget));
+}
+
+void FreeCADStyle::tagWidgetTransparency(QWidget* widget, bool surface) const
+{
+    if (isTransparent(widget) == surface) {
+        return;
+    }
+
+    widget->setProperty(transparencyProperty, surface);
+
+    // The tag changes padding, spacing and height tokens as well as colours, so a repaint
+    // is not enough — QTabBar caches its tab sizes until the style changes.
+    notifyStyleChange(widget);
+}
+
+bool FreeCADStyle::ownSurface(const QWidget* widget, bool inherited)
+{
+    // An explicit property opens a root; otherwise inherit.
+    const QVariant seed = widget->property(transparencyOverrideProperty);
+    return seed.isValid() ? seed.toBool() : inherited;
+}
+
+bool FreeCADStyle::canInheritTransparency(const QWidget* widget)
+{
+    // Popups, menus, tooltips and dialogs are separate top-level surfaces over the desktop,
+    // not surfaces over the 3D view — they do not inherit through the QObject parent/child
+    // link used purely for lifetime management. An explicit override still applies regardless,
+    // via ownSurface().
+    return widget != nullptr && !widget->isWindow();
+}
+
+void FreeCADStyle::updateTransparency(QWidget* widget, bool inherited)
+{
+    if (widget == nullptr) {
+        return;
+    }
+
+    tagWidgetTransparency(widget, ownSurface(widget, inherited));
+
+    const bool below = transparencyBelow(widget);
+
+    forEachChildWidget(widget, [this, below](QWidget* childWidget) {
+        updateTransparency(childWidget, canInheritTransparency(childWidget) && below);
+    });
+}
+
+
+
+
+
+
+
+
+
+bool FreeCADStyle::isTransparent(const QWidget* widget)
+{
+    return widget != nullptr && widget->property(transparencyProperty).toBool();
+}
+
+void FreeCADStyle::notifyStyleChange(QWidget* widget)
+{
+    QEvent styleChange(QEvent::StyleChange);
+    QCoreApplication::sendEvent(widget, &styleChange);
 }
 
 FreeCADStyle::BoxGeometryDefinition FreeCADStyle::resolveBoxGeometry(const StyleContext& context) const
@@ -1683,6 +1762,10 @@ StyleContext FreeCADStyle::contextOf(
 void FreeCADStyle::bindWidget(StyleContext& context, const QWidget* widget)
 {
     context.widget = widget;
+
+    if (isTransparent(widget)) {
+        context.variant.set(VariantSlot::TransparencyMode, TransparencyMode::Transparent);
+    }
 }
 
 std::optional<Value> FreeCADStyle::resolve(std::string_view name) const
@@ -1883,7 +1966,20 @@ void FreeCADStyle::polish(QWidget* widget)
     // widget rather than seeding from the parent's stored id, so a widget polished before its
     // parent still lands on the right set. Only this widget is tagged here: QWidget::
     // ensurePolished() already walks descendants and polishes each in turn.
+    //
+    // This must run before tagWidgetTransparency() below: that call can synchronously dispatch
+    // QEvent::StyleChange to this widget, and a handler reacting to it resolves tokens for this
+    // same widget before polish() returns. The override id has to already be in place when that
+    // happens, or the handler runs under the id this widget had before this polish.
     storeOverrideSet(widget, computeOverrideSet(widget));
+
+    // Transparency is inherited down the widget tree. Seeding from the parent here covers
+    // widgets built after their parent's subtree was propagated - lazily created editors,
+    // popups and the like - without an extra event filter. Nothing here depends on this
+    // widget's own override id: it resolves only against widget->parentWidget().
+    const bool inherited = canInheritTransparency(widget)
+        && transparencyBelow(widget->parentWidget());
+    tagWidgetTransparency(widget, ownSurface(widget, inherited));
 }
 
 void FreeCADStyle::unpolish(QWidget* widget)

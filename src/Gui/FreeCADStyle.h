@@ -427,6 +427,22 @@ public:
     /// Re-derives the override set of @p widget and its descendants after a declaration changed.
     static void refreshStyleOverrides(QWidget* widget);
 
+    /**
+     * @brief Recomputes the inherited transparency of @p widget and everything below it.
+     *
+     * @param widget    Root of the subtree to update.
+     * @param inherited Transparency of the surface behind @p widget. A widget carrying the
+     *                  "transparent" property overrides this for itself, opening a root.
+     */
+    void updateTransparency(QWidget* widget, bool inherited);
+
+    /**
+     * @brief Whether @p widget is painted over a transparent surface.
+     *
+     * Returns false for a null widget and for any widget the propagator has not reached.
+     */
+    static bool isTransparent(const QWidget* widget);
+
     // clang-format off
     /// Prefix of a property declaring an override, e.g. "fcStyleCurrentPaneBackground"
     /// overrides the CurrentPaneBackground token.
@@ -656,6 +672,29 @@ protected:
     uint32_t overrideSetOf(const QWidget* widget) const;
 
     static void forEachChildWidget(QWidget* widget, const std::function<void(QWidget*)>& visit);
+
+    // clang-format off
+    /// Where the propagated transparency tag is recorded. Style-owned.
+    static constexpr const char* transparencyProperty          = "_fc_transparent";
+    /// What a widget sets to declare its own surface, opening a transparency root.
+    static constexpr const char* transparencyOverrideProperty  = "transparent";
+    // clang-format on
+
+    /// Whether the surface behind @p widget is see-through, as its own tokens describe it.
+    bool transparencyBelow(const QWidget* widget) const;
+
+    /// Records @p surface on @p widget and tells it its style changed, since the tag moves
+    /// padding and heights as well as colours.
+    void tagWidgetTransparency(QWidget* widget, bool surface) const;
+
+    /// Whether @p widget declares its own surface, falling back to what it inherits.
+    static bool ownSurface(const QWidget* widget, bool inherited);
+
+    /// Whether @p widget takes its surface from its parent at all.
+    static bool canInheritTransparency(const QWidget* widget);
+
+    static void notifyStyleChange(QWidget* widget);
+
 
 private:
     /// @p context with its Position reset to North, for resolving a geometric token that is

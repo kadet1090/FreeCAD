@@ -129,6 +129,23 @@ enum class StyleState : uint8_t
 };
 
 /**
+ * @brief Selects the treatment a component uses when it must not paint an opaque surface.
+ *
+ * Transparent is reached two ways, which mean different things and must not be
+ * conflated. A toolbar hosted in the status bar or as a QMenuBar corner widget
+ * blends into an otherwise opaque host, so it suppresses its own chrome but the
+ * surface beneath its children is still solid. A widget carrying the propagated
+ * transparency tag genuinely sits over a see-through surface, and that is the only
+ * form that its children inherit.
+ */
+enum class TransparencyMode : uint8_t
+{
+    Normal,
+    Transparent,
+    COUNT
+};
+
+/**
  * @brief Registry of variant dimensions used in token names.
  *
  * Each slot corresponds to one enum dimension (ButtonType, ControlSize, …).
@@ -138,6 +155,7 @@ enum class VariantSlot : uint8_t
     ButtonType,
     ControlSize,
     Position,
+    TransparencyMode,  // Applies to every component, so it is declared last
     COUNT
 };
 

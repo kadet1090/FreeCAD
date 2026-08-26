@@ -84,6 +84,9 @@ const std::map<VariantSlot, std::map<uint8_t, std::string_view>> variantSlotName
         {static_cast<uint8_t>(Position::South), "South"},
         {static_cast<uint8_t>(Position::West),  "West"},
     }},
+    {VariantSlot::TransparencyMode, {
+        {static_cast<uint8_t>(TransparencyMode::Transparent), "Transparent"},
+    }},
 };
 // clang-format on
 
@@ -174,6 +177,7 @@ constexpr std::array<std::string_view, size_t(VariantSlot::COUNT)> variantSlotDi
     "ButtonType",  // VariantSlot::ButtonType
     "ControlSize", // VariantSlot::ControlSize
     "Position",    // VariantSlot::Position
+    "TransparencyMode", // VariantSlot::TransparencyMode
 };
 // clang-format on
 
@@ -482,6 +486,23 @@ std::vector<std::string> ParameterDescriptorRegistry::variantNamesFor(
 
 void registerBuiltinVariants(ParameterDescriptorRegistry& registry)
 {
+    // TransparencyMode applies to every component: buildPrefixes() walks all variant slots
+    // regardless of the descriptor, so parse() has to recognise it everywhere too.
+    constexpr auto globalSlots = std::to_array({VariantSlot::TransparencyMode});
+
+    // variantNamesFor() appends global variants after the descriptor's own, so parse() only
+    // matches them in declaration order if every global slot is declared last. A global slot
+    // placed before a per-descriptor one silently mis-parses qualified token names.
+    constexpr size_t firstGlobalSlot = static_cast<size_t>(VariantSlot::COUNT) - globalSlots.size();
+    static_assert(
+        std::ranges::all_of(
+            globalSlots,
+            [](VariantSlot slot) { return static_cast<size_t>(slot) >= firstGlobalSlot; }
+        ),
+        "Global variant slots must occupy the last VariantSlot positions - move them to the "
+        "end of the enum, or teach variantNamesFor() to interleave them by slot order."
+    );
+
     // Variant-kind dimensions — derived from the canonical variantSlotNames tables.
     for (size_t index = 0; index < variantSlotDisplayNames.size(); ++index) {
         const auto variantSlot = static_cast<VariantSlot>(index);
@@ -495,7 +516,14 @@ void registerBuiltinVariants(ParameterDescriptorRegistry& registry)
             variant.values.emplace_back(name);
         }
 
-        registry.registerVariant(std::move(variant));
+        const bool isGlobal = std::ranges::find(globalSlots, variantSlot) != globalSlots.end();
+
+        if (isGlobal) {
+            registry.registerGlobalVariant(std::move(variant));
+        }
+        else {
+            registry.registerVariant(std::move(variant));
+        }
     }
 
     // State-kind dimension — derived from the canonical stateNames table.
