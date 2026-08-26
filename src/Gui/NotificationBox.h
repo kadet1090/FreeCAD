@@ -107,8 +107,6 @@ public:
     static void setPalette(const QPalette&);
     /// Returns the font of the notification.
     static QFont font();
-    /// Sets the font to be used in the notification.
-    static void setFont(const QFont&);
 };
 
 inline NotificationBox::Options operator|(NotificationBox::Options lhs, NotificationBox::Options rhs)

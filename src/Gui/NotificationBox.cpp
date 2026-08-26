@@ -456,11 +456,6 @@ void NotificationBox::setPalette(const QPalette& palette)
     }
 }
 
-void NotificationBox::setFont(const QFont& font)
-{
-    QApplication::setFont(font, "NotificationLabel");
-}
-
 }  // namespace Gui
 
 #include "NotificationBox.moc"
