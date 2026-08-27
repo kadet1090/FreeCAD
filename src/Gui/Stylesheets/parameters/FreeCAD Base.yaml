@@ -57,10 +57,8 @@ ButtonPadding: "padding(horizontal: @Spacing.300, vertical: @Spacing.100)"
 ButtonIconSpacing: "@FormControlIconSpacing"
 ButtonIconSize: 16px
 
-ButtonFontSize: 12px
-ButtonFontWeight: 500
-ButtonSmallFontSize: 11px
-ButtonSmallFontWeight: 500
+ButtonSmallFontSize: 0.75rem
+ButtonSmallFontWeight: 600
 ButtonContentBox: "content_box((width: @ButtonMinWidth, height: @FormControlHeight), @ButtonPadding, @FormControlBorderThickness)"
 
 ButtonFocusedBorderColor: "@Accent.600"
@@ -399,6 +397,7 @@ MenuItemMinWidth: 240px
 
 MenuShortcutSpacing: "@Spacing.400"
 MenuShortcutTextColor: "@BaseDisabledTextColor"
+MenuShortcutFontSize: 0.75rem
 
 # One element covers both a plain rule and an addSection() header; the header additionally
 # uses MenuSeparatorPadding, MenuSeparatorTextColor and MenuSeparatorIconSpacing, the gap
