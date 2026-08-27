@@ -35,6 +35,37 @@ function(fc_copy_sources target_name outpath)
     endforeach(it)
 endfunction(fc_copy_sources)
 
+# Copies sources that the running application may rewrite in place.
+#
+# fc_copy_sources() drives its copies from add_custom_command(OUTPUT), which the build system
+# considers up to date whenever the destination is newer than its source. A file the application
+# persists into the build's data directory is therefore never restored, and the stale copy
+# shadows the source from then on. These copies run on every build instead. copy_if_different
+# leaves the destination alone when the content already matches, so nothing downstream is
+# rebuilt by a timestamp this introduces.
+function(fc_copy_sources_always target_name outpath)
+    if(INSTALL_PREFER_SYMLINKS)
+        # A symlink cannot go stale: the build path resolves to the source. That the application
+        # then writes through to the source tree is the symlink build's own trade-off, not one
+        # this function can improve on.
+        fc_copy_sources(${target_name} ${outpath} ${ARGN})
+        return()
+    endif()
+
+    foreach(it ${ARGN})
+        get_filename_component(infile ${it} ABSOLUTE)
+        get_filename_component(outfile "${outpath}/${it}" ABSOLUTE)
+        get_filename_component(outfile_dir "${outfile}" PATH)
+
+        add_custom_command(
+            TARGET ${target_name} POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${outfile_dir}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${infile}" "${outfile}"
+            VERBATIM
+        )
+    endforeach(it)
+endfunction(fc_copy_sources_always)
+
 MACRO (fc_copy_file_if_different inputfile outputfile)
     if (EXISTS ${inputfile})
         if (EXISTS ${outputfile})
