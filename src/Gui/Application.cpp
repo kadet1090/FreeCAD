@@ -511,6 +511,12 @@ void Application::initStyleParameterManager()
          .options = StyleParameters::ParameterSourceOption::UserEditable}
     );
 
+    auto defaultParametersSource = new StyleParameters::YamlParameterSource(
+        "qss:parameters/defaults.yaml",
+        {.name = QT_TR_NOOP("Default Parameters"),
+         .options = StyleParameters::ParameterSourceOption::UserEditable}
+    );
+
     auto reloadStylesheetHandler = handlers.addDelayedHandler(
         "BaseApp/Preferences/MainWindow",
         {"ThemeStyleParametersFiles", "Theme", "StyleSheet"},
@@ -546,6 +552,8 @@ void Application::initStyleParameterManager()
     );
 
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(designSystemParametersSource);
+
+    Base::registerServiceImplementation<StyleParameters::ParameterSource>(defaultParametersSource);
 
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(themeParametersSource);
 

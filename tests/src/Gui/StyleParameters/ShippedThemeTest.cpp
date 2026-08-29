@@ -170,6 +170,9 @@ protected:
             "qss:parameters/Design System.yaml",
             {.name = "Design System Parameters"}
         ));
+        manager->addSource(
+            new YamlParameterSource("qss:parameters/defaults.yaml", {.name = "Default Parameters"})
+        );
         manager->addSource(new YamlParameterSource(
             "qss:parameters/" + themeName + ".yaml",
             {.name = "Theme Parameters"}
@@ -182,6 +185,12 @@ private:
     QStringList previousSearchPaths;
 };
 
+// The same search paths as ShippedThemeTest, without the theme parameter — this case is about
+// a theme that has no file at all, so there is nothing to parameterise over.
+class ShippedThemeDefaultsTest: public ShippedThemeTest
+{
+};
+
 // The files have to be found at all before anything below means anything: an unreadable path
 // yields an empty source, and an empty source has no dangling references to report.
 TEST_P(ShippedThemeTest, TheShippedFilesAreFoundAndNonEmpty)  // NOLINT
@@ -192,6 +201,51 @@ TEST_P(ShippedThemeTest, TheShippedFilesAreFoundAndNonEmpty)  // NOLINT
     // One from the theme's inherited "FreeCAD Base.yaml", one from "Design System.yaml".
     EXPECT_TRUE(manager->parameter("BaseWindowBackground").has_value());
     EXPECT_TRUE(manager->parameter("Spacing").has_value());
+}
+
+// A theme that ships no parameters file at all is not hypothetical: the FreeCAD Classic
+// preference pack names one that does not exist. A dock panel paints its own body and title bar,
+// so without these two the panel chrome is not merely plain, it is absent - which is the whole
+// reason the defaults layer exists. Nothing else is expected to survive here.
+TEST_F(ShippedThemeDefaultsTest, AThemeWithNoFileStillPaintsPanelChrome)  // NOLINT
+{
+    const auto manager = loadShippedTheme("FreeCAD Classic");
+
+    EXPECT_TRUE(manager->resolve("PanelBackground").has_value());
+    EXPECT_TRUE(manager->resolve("PanelTitleBackground").has_value());
+    EXPECT_TRUE(manager->resolve("PanelTitleTextColor").has_value());
+
+    // The net is deliberately thin: what a theme's silence leaves plain rather than invisible is
+    // not defaulted, and BaseBorderColor belongs to the theme layer that such a theme never loads.
+    EXPECT_FALSE(manager->parameter("BaseBorderColor").has_value());
+}
+
+// The defaults layer may reach Design System.yaml, which is loaded beside it, and nothing else.
+// A reference into FreeCAD Base.yaml would be invisible to exactly the themes this file exists
+// for. Resolving is not enough to catch that: an unresolved "@Name" comes back as the literal
+// string, which is an engaged value, so the token would look defaulted while painting nonsense.
+// Sweeping the no-file manager is what turns the rule into something that fails.
+TEST_F(ShippedThemeDefaultsTest, TheDefaultsLayerReferencesNothingItCannotSee)  // NOLINT
+{
+    const auto manager = loadShippedTheme("FreeCAD Classic");
+
+    std::set<std::string> dangling;
+
+    for (const Parameter& parameter : manager->parameters()) {
+        for (const Reference& reference : referencesIn(parameter.value)) {
+            if (const std::string reason = reasonReferenceFails(*manager, reference);
+                !reason.empty()) {
+                dangling.insert(parameter.name + " -> " + reference.spelling() + ": " + reason);
+            }
+        }
+    }
+
+    std::string report;
+    for (const std::string& entry : dangling) {
+        report += "\n  " + entry;
+    }
+
+    EXPECT_TRUE(dangling.empty()) << "Defaults reaching outside their own layer:" << report;
 }
 
 // ParameterReference::evaluate() answers an unresolved "@Name" with the literal string
