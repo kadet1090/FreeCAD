@@ -36,6 +36,7 @@
 #include "src/App/InitApplication.h"
 
 #include <App/Application.h>
+#include <Gui/StyleParameters/Insets.h>
 #include <Gui/StyleParameters/ParameterManager.h>
 #include <Gui/StyleParameters/Value.h>
 
@@ -246,6 +247,23 @@ TEST_F(ShippedThemeDefaultsTest, TheDefaultsLayerReferencesNothingItCannotSee)  
     }
 
     EXPECT_TRUE(dangling.empty()) << "Defaults reaching outside their own layer:" << report;
+}
+
+// The overlay layout reads this one straight off the manager rather than through a style
+// context, and converts it to margins. A name starting with a digit is unusual enough to be
+// worth pinning: the parser accepts it, but nothing else in the shipped files looks like this.
+TEST_P(ShippedThemeTest, TheViewPaddingResolvesAsInsets)  // NOLINT
+{
+    const auto manager = loadShippedTheme(GetParam());
+
+    const auto insets = valueAs<Insets>(manager->resolve("3DViewPadding"));
+    ASSERT_TRUE(insets.has_value());
+
+    // Stated once and applied to every edge, so all four have to come back with the same room.
+    EXPECT_GT(insets->left().value, 0.0);
+    EXPECT_EQ(insets->left().value, insets->top().value);
+    EXPECT_EQ(insets->left().value, insets->right().value);
+    EXPECT_EQ(insets->left().value, insets->bottom().value);
 }
 
 // ParameterReference::evaluate() answers an unresolved "@Name" with the literal string

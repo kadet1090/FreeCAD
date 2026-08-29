@@ -168,6 +168,15 @@ public:
         return touched;
     }
 
+    /**
+     * @brief The gap overlay panels keep between themselves and the window edge.
+     *
+     * Panels float over the 3D view instead of being docked beside it, so nothing else reserves
+     * this room. A reveal strip is deliberately exempt: an edge you can throw the pointer at is
+     * worth more there than a consistent gap.
+     */
+    static QMargins viewPadding();
+
     /// Set geometry of this tab widget
     void setRect(QRect rect);
 
@@ -445,6 +454,9 @@ private:
     qreal _animation = 0;
     QPropertyAnimation* _animator = nullptr;
 
+    /// Runs the whole edge that faces the view, so the panel can be grabbed anywhere along it.
+    OverlaySizeGrip* sizeGrip = nullptr;
+
     State _state = State::Normal;
 
     std::map<QDockWidget*, int> _sizemap;
@@ -495,7 +507,6 @@ private:
     QPoint dragOffset;
     QSize dragSize;
     QLayoutItem* titleItem = nullptr;
-    QColor textcolor;
     int timerId = 0;
     bool blink = false;
     bool mouseMovePending = false;
@@ -507,6 +518,9 @@ class OverlaySizeGrip: public QWidget
 {
     Q_OBJECT
 public:
+    /// How thick the grip is across the edge it runs along; it spans that edge in full.
+    static constexpr int thickness = 6;
+
     OverlaySizeGrip(QWidget* parent, bool vertical);
 
 Q_SIGNALS:
@@ -544,10 +558,17 @@ public:
     friend class OverlaySplitter;
 
     OverlaySplitterHandle(Qt::Orientation, QSplitter* parent);
+
+    /// The name this handle answers to, whoever renames it. See claimObjectName().
+    static constexpr const char* objectNameLiteral = "OverlaySplitHandle";
+
     void setTitleItem(QLayoutItem*);
     void retranslate();
     void refreshIcons();
     QDockWidget* dockWidget();
+
+    /// Which end of the strip the title text hugs. The buttons take the other one.
+    Qt::Alignment titleAlignment() const;
 
     void showTitle(bool enable);
     bool isShowing() const
@@ -575,6 +596,16 @@ protected:
 protected:
     void onAction();
     void onTimer();
+
+    /**
+     * @brief Takes the handle's name back from whoever last wrote it.
+     *
+     * QSplitter renames every handle to qt_splithandle_* once createHandle() has returned, and
+     * QStyleSheetStyle reads a qt_ prefix as one of Qt's own internal children: it answers any
+     * font set on such a widget by replacing it with the parent's. This is a panel title bar,
+     * not one of Qt's internals, and only a name of its own lets a font token reach it.
+     */
+    void claimObjectName();
 
 private:
     QLayoutItem* titleItem = nullptr;

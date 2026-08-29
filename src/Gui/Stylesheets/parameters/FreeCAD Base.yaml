@@ -174,6 +174,12 @@ WbToolBarFrameWidth: 0px
 # component below: a button in a title bar is still a button.
 PanelButtonIconSize: 12px
 
+# Overlay panels float over the 3D view rather than being docked beside it, so nothing else
+# reserves the gap between them and the window edge. Stated as an inset so a theme can give one
+# edge more room than another - the bottom shares its edge with the status bar. A reveal strip
+# is exempt: it stays flush so the pointer can still be thrown at the edge to catch it.
+3DViewPadding: "padding(@Spacing.200)"
+
 # A docked QDockWidget keeps none of its own client area - its body and its title bar divide
 # all of it between them - so these paint on those two widgets and the dock paints nothing.
 # Position is the dock area, so every geometric token here is stated at the canonical North, a
@@ -572,6 +578,8 @@ TreeBranchBorderThickness: 1px
 # The document tree paints each item as a free-standing box only over a transparent surface,
 # where a full-width row would put an opaque stripe across the 3D view. Docked, none of these
 # tokens resolve and the tree falls back through Tree → List to the ordinary item-view look.
+DocumentTreeTransparentBackground: "reset()"
+DocumentTreeTransparentBorderThickness: "reset()"
 DocumentTreeRowTransparentBackground: "reset()"
 
 DocumentTreeItemTransparentBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Background.050, @Background.100)"

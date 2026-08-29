@@ -6,6 +6,8 @@
 #include <QImage>
 #include <QMainWindow>
 #include <QPainter>
+#include <QSplitter>
+#include <QSplitterHandle>
 #include <QStyleOption>
 #include <QTabWidget>
 #include <QTest>
@@ -15,6 +17,7 @@
 
 #include <Gui/Application.h>
 #include <Gui/FreeCADStyle.h>
+#include <Gui/OverlayWidgets.h>
 #include <Gui/StyleParameters/ParameterManager.h>
 
 namespace
@@ -216,6 +219,26 @@ private Q_SLOTS:
 
         QCOMPARE(strip->font().weight(), 800);
         QVERIFY(dockedWeight != 800);
+    }
+
+    // QSplitter renames every handle to qt_splithandle_* once createHandle() has returned, and
+    // QStyleSheetStyle reads a qt_ prefix as one of Qt's own internal children: it answers any
+    // font set on such a widget by replacing it with the parent's, and does so again at the end
+    // of every later write. The handle's own name is what keeps the token font on it.
+    void test_aSplitterHandleStripKeepsItsFontThroughAStyleSheet()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        Gui::OverlaySplitter splitter(nullptr);
+        splitter.addWidget(new QWidget);
+        splitter.addWidget(new QWidget);
+        QSplitterHandle* strip = splitter.handle(1);
+        strip->setProperty("transparent", true);
+        style.polish(strip);
+        QCOMPARE(strip->font().weight(), 800);
+
+        splitter.setStyleSheet(QStringLiteral("QSplitter { }"));
+
+        QCOMPARE(strip->font().weight(), 800);
     }
 
     // The dock area is not settled while the dock is being built: a body polished before

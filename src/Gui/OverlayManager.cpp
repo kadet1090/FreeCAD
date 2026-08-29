@@ -121,7 +121,10 @@ public:
             return;
         }
 
-        if (strcmp(sReason, "StyleSheet") == 0 || strcmp(sReason, "OverlayActiveStyleSheet") == 0) {
+        // Theme is in here because the overlay layout now reads a token: without it a theme
+        // switch leaves the old padding in place until something else forces a refresh.
+        if (strcmp(sReason, "StyleSheet") == 0 || strcmp(sReason, "OverlayActiveStyleSheet") == 0
+            || strcmp(sReason, "Theme") == 0) {
             OverlayManager::instance()->refresh(nullptr, true);
         }
     }
@@ -638,6 +641,14 @@ public:
             h -= tabbar->height();
         }
 
+        // Panels are laid out inside the view rather than against it: shrink the box they share
+        // and shift every rect it produces. Each panel then keeps the gap on the edges it
+        // actually touches, and none of it appears between one panel and the next.
+        const QMargins viewPadding = OverlayTabWidget::viewPadding();
+        const QPoint viewOrigin(viewPadding.left(), viewPadding.top());
+        w -= viewPadding.left() + viewPadding.right();
+        h -= viewPadding.top() + viewPadding.bottom();
+
         int naviCubeSize = NaviCube::getNaviCubeSize();
         int naviCorner = OverlayParams::getDockOverlayCheckNaviCube()
             ? App::GetApplication()
@@ -669,7 +680,9 @@ public:
         // Bottom width is maintain the same to reduce QTextEdit re-layout
         // which may be expensive if there are lots of text, e.g. for
         // ReportView or PythonConsole.
-        _bottom.tabWidget->setRect(QRect(ofs.width(), h - rect.height(), bw, rect.height()));
+        _bottom.tabWidget->setRect(
+            QRect(ofs.width(), h - rect.height(), bw, rect.height()).translated(viewOrigin)
+        );
 
         if (_bottom.tabWidget->count() && _bottom.tabWidget->isVisible()
             && _bottom.tabWidget->getState() <= OverlayTabWidget::State::Normal) {
@@ -689,7 +702,9 @@ public:
         }
         int lh = std::max(h - ofs.width() - delta, 10);
 
-        _left.tabWidget->setRect(QRect(ofs.height(), ofs.width(), rect.width(), lh));
+        _left.tabWidget->setRect(
+            QRect(ofs.height(), ofs.width(), rect.width(), lh).translated(viewOrigin)
+        );
 
         if (_left.tabWidget->count() && _left.tabWidget->isVisible()
             && _left.tabWidget->getState() <= OverlayTabWidget::State::Normal) {
@@ -710,7 +725,9 @@ public:
         int rh = std::max(h - ofs.width() - delta, 10);
         w -= ofs.height();
 
-        _right.tabWidget->setRect(QRect(w - rect.width(), ofs.width(), rect.width(), rh));
+        _right.tabWidget->setRect(
+            QRect(w - rect.width(), ofs.width(), rect.width(), rh).translated(viewOrigin)
+        );
 
         if (_right.tabWidget->count() && _right.tabWidget->isVisible()
             && _right.tabWidget->getState() <= OverlayTabWidget::State::Normal) {
@@ -729,7 +746,9 @@ public:
         }
         int tw = w - rectLeft.width() - rectRight.width() - ofs.width() - delta;
 
-        _top.tabWidget->setRect(QRect(rectLeft.width() - ofs.width(), ofs.height(), tw, rect.height()));
+        _top.tabWidget->setRect(
+            QRect(rectLeft.width() - ofs.width(), ofs.height(), tw, rect.height()).translated(viewOrigin)
+        );
     }
 
     void setOverlayMode(OverlayMode mode)

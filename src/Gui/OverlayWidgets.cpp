@@ -34,6 +34,7 @@
 #include <QPointer>
 #include <QSpacerItem>
 #include <QSplitter>
+#include <QStyleOption>
 #include <QTabBar>
 #include <QTextStream>
 #include <QTimerEvent>
@@ -65,6 +66,8 @@
 #include "NaviCube.h"
 #include "OverlayManager.h"
 #include "OverlayParams.h"
+#include "StyleParameters/ParameterManager.h"
+#include "Utilities.h"
 #include "TaskView/TaskView.h"
 #include "Tree.h"
 #include "TreeParams.h"
@@ -957,6 +960,15 @@ void OverlayTabWidget::onTabMoved(int from, int to)
 void OverlayTabWidget::setTitleBar(QWidget* w)
 {
     titleBar = w;
+
+    // A child of the strip, so it comes and goes with it - overlay mode hides the strip, and a
+    // grip left behind would be the one piece of chrome still showing. Not in the strip's layout
+    // though: the layout's padding would inset it, and setupLayout gives it the strip's full
+    // extent instead. The layout reserves the room it needs with a spacer of its own.
+    const bool resizesVertically = dockArea == Qt::TopDockWidgetArea
+        || dockArea == Qt::BottomDockWidgetArea;
+    sizeGrip = new OverlaySizeGrip(titleBar, resizesVertically);
+    connect(sizeGrip, &OverlaySizeGrip::dragMove, this, &OverlayTabWidget::onSizeGripMove);
 }
 
 void OverlayTabWidget::changeEvent(QEvent* e)
@@ -1690,6 +1702,20 @@ void OverlayTabWidget::setSizeDelta(int delta)
     }
 }
 
+QMargins OverlayTabWidget::viewPadding()
+{
+    auto* manager = Application::Instance->styleParameterManager();
+    const auto insets = StyleParameters::valueAs<StyleParameters::Insets>(
+        manager->resolve("3DViewPadding")
+    );
+
+    if (!insets) {
+        return {};
+    }
+
+    return Base::convertTo<QMarginsF>(*insets).toMargins();
+}
+
 void OverlayTabWidget::setRect(QRect rect)
 {
     if (busy || !parentWidget() || !getMainWindow() || !getMainWindow()->getMdiArea()) {
@@ -1703,9 +1729,11 @@ void OverlayTabWidget::setRect(QRect rect)
         rect.setHeight(OverlayParams::getDockOverlayMinimumSize() * 3);
     }
 
+    const QMargins padding = viewPadding();
+
     switch (dockArea) {
         case Qt::LeftDockWidgetArea:
-            rect.moveLeft(0);
+            rect.moveLeft(padding.left());
             if (rect.width() < OverlayParams::getDockOverlayMinimumSize()) {
                 rect.setWidth(OverlayParams::getDockOverlayMinimumSize());
             }
@@ -1716,7 +1744,7 @@ void OverlayTabWidget::setRect(QRect rect)
             }
             break;
         case Qt::TopDockWidgetArea:
-            rect.moveTop(0);
+            rect.moveTop(padding.top());
             if (rect.height() < OverlayParams::getDockOverlayMinimumSize()) {
                 rect.setHeight(OverlayParams::getDockOverlayMinimumSize());
             }
@@ -1740,6 +1768,26 @@ void OverlayTabWidget::setRect(QRect rect)
     QPoint offset = getMainWindow()->getMdiArea()->pos();
 
     if (getAutoHideRect(rect) || _state == State::Hint || _state == State::Hidden) {
+        // A reveal strip goes back out to the window edge the shown panel is held away from.
+        // The edge is what makes it catchable without aiming, which is worth more here than
+        // matching the gap.
+        switch (dockArea) {
+            case Qt::LeftDockWidgetArea:
+                rect.moveLeft(rect.left() - padding.left());
+                break;
+            case Qt::RightDockWidgetArea:
+                rect.moveLeft(rect.left() + padding.right());
+                break;
+            case Qt::TopDockWidgetArea:
+                rect.moveTop(rect.top() - padding.top());
+                break;
+            case Qt::BottomDockWidgetArea:
+                rect.moveTop(rect.top() + padding.bottom());
+                break;
+            default:
+                break;
+        }
+
         QRect rectHint = rect;
         if (_state != State::Hint && _state != State::Hidden) {
             startHide();
@@ -1937,7 +1985,14 @@ void OverlayTabWidget::setupLayout()
         }
         tabSize = tsize;
     }
-    int titleBarSize = widgetMinSize(this, true);
+    // The strip's own hint, not a font measurement taken out here: it is what accounts for the
+    // strip's buttons, the inset PanelTitlePadding gives it, and a font token set on the strip
+    // rather than on this widget. Measuring the tab widget's font left the text a pixel short of
+    // its own padding.
+    const QSize titleHint = titleBar->sizeHint();
+    const bool verticalTitle = tabPosition() == North || tabPosition() == South;
+    int titleBarSize = verticalTitle ? titleHint.width() : titleHint.height();
+
     QRect rect, rectTitle;
     switch (tabPosition()) {
         case West:
@@ -1997,6 +2052,30 @@ void OverlayTabWidget::setupLayout()
     }
     splitter->setGeometry(rect);
     titleBar->setGeometry(rectTitle);
+
+    // Inside the strip and spanning it in full, on the edge that faces the view. Placed rather
+    // than laid out, because the strip's padding would otherwise shorten it, and a grab target
+    // that stops short of its own strip is one you have to aim for. The layout holds a spacer
+    // the same width, so the buttons are never left underneath it.
+    const int gripSize = OverlaySizeGrip::thickness;
+    const QRect strip = titleBar->rect();
+
+    switch (tabPosition()) {
+        case West:
+            sizeGrip->setGeometry(strip.width() - gripSize, 0, gripSize, strip.height());
+            break;
+        case East:
+            sizeGrip->setGeometry(0, 0, gripSize, strip.height());
+            break;
+        case North:
+            sizeGrip->setGeometry(0, strip.height() - gripSize, strip.width(), gripSize);
+            break;
+        case South:
+            sizeGrip->setGeometry(0, 0, strip.width(), gripSize);
+            break;
+    }
+
+    sizeGrip->raise();
 }
 
 void OverlayTabWidget::setCurrent(QDockWidget* widget)
@@ -2105,7 +2184,20 @@ QLayoutItem* OverlayTabWidget::prepareTitleWidget(QWidget* widget, const QList<Q
     bool vertical = false;
     QBoxLayout* layout = nullptr;
     auto tabWidget = qobject_cast<OverlayTabWidget*>(widget->parentWidget());
-    if (!tabWidget) {
+
+    if (auto* handle = qobject_cast<OverlaySplitterHandle*>(widget)) {
+        // A handle parting two panels side by side is a vertical bar, and paintEvent rotates its
+        // title anticlockwise to match, so the strip's bottom is where that title begins. Both
+        // the turn and the end it begins at are the title's to state, or the buttons queue
+        // across a strip a few pixels wide and meet the text coming the other way.
+        vertical = handle->orientation() != Qt::Vertical;
+        const bool fromFarEnd = handle->titleAlignment().testFlag(Qt::AlignRight);
+        const QBoxLayout::Direction direction = vertical
+            ? (fromFarEnd ? QBoxLayout::TopToBottom : QBoxLayout::BottomToTop)
+            : (fromFarEnd ? QBoxLayout::RightToLeft : QBoxLayout::LeftToRight);
+        layout = new QBoxLayout(direction, widget);
+    }
+    else if (!tabWidget) {
         layout = new QBoxLayout(QBoxLayout::LeftToRight, widget);
     }
     else {
@@ -2129,8 +2221,9 @@ QLayoutItem* OverlayTabWidget::prepareTitleWidget(QWidget* widget, const QList<Q
         }
     }
 
-    layout->addSpacing(5);
-    layout->setContentsMargins(1, 1, 1, 1);
+    // Nothing here: the strip's inset is PanelTitlePadding's to state, and a margin added on top
+    // of it is one no theme can see or line up against.
+    layout->setContentsMargins(0, 0, 0, 0);
     int buttonSize = widgetMinSize(widget);
     auto spacer = new QSpacerItem(
         buttonSize,
@@ -2144,11 +2237,12 @@ QLayoutItem* OverlayTabWidget::prepareTitleWidget(QWidget* widget, const QList<Q
         layout->addWidget(OverlayTabWidget::createTitleButton(action, buttonSize));
     }
 
+    // The box direction runs from the strip's outer edge towards the view for every dock area,
+    // so the end of the layout is the edge the size grip sits on. The grip itself is not in here
+    // - it has to span the strip in full, which nothing inside the layout's padding can - so the
+    // room it needs is reserved instead, and the buttons give way when the strip is tight.
     if (tabWidget) {
-        auto grip = new OverlaySizeGrip(tabWidget, vertical);
-        QObject::connect(grip, &OverlaySizeGrip::dragMove, tabWidget, &OverlayTabWidget::onSizeGripMove);
-        layout->addWidget(grip);
-        grip->raise();
+        layout->addSpacing(OverlaySizeGrip::thickness);
     }
 
     return spacer;
@@ -2189,6 +2283,10 @@ QPixmap OverlayTabWidget::rotateAutoHideIcon(QPixmap pxAutoHide, Qt::DockWidgetA
 OverlayTitleBar::OverlayTitleBar(QWidget* parent)
     : QWidget(parent)
 {
+    // Docked, this hangs off the QDockWidget; in overlay mode off an OverlayTabWidget. Saying
+    // so here is what lets the style treat both as the same strip.
+    setProperty("component", QStringLiteral("Panel"));
+    setProperty("element", QStringLiteral("Title"));
     setFocusPolicy(Qt::ClickFocus);
     setMouseTracking(true);
     setCursor(Qt::OpenHandCursor);
@@ -2206,9 +2304,12 @@ void OverlayTitleBar::paintEvent(QPaintEvent*)
     }
 
     QDockWidget* dock = qobject_cast<QDockWidget*>(parentWidget());
-    int vertical = false;
-    int flags = Qt::AlignCenter;
+    bool vertical = false;
+    // A docked panel's title heads the content below it, so it starts where that content
+    // starts. A tab widget's title shares its strip with the tabs and stays centred.
+    int flags = Qt::AlignLeft | Qt::AlignVCenter;
     if (!dock) {
+        flags = Qt::AlignCenter;
         OverlayTabWidget* tabWidget = qobject_cast<OverlayTabWidget*>(parentWidget());
         if (tabWidget) {
             switch (tabWidget->getDockArea()) {
@@ -2235,9 +2336,13 @@ void OverlayTitleBar::paintEvent(QPaintEvent*)
     }
 
     QPainter painter(this);
-    if (qobject_cast<OverlayTabWidget*>(parentWidget())) {
-        painter.fillRect(this->rect(), painter.background());
-    }
+
+    // Overlay mode sets WA_NoSystemBackground on this widget, which makes Qt skip the whole
+    // background pass. Issuing it here rather than relying on that pass also puts the painters
+    // in the order they belong: a stylesheet rule first, then the style's tokens, then the base.
+    QStyleOption surfaceOption;
+    surfaceOption.initFrom(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &surfaceOption, &painter, this);
 
     QRect r = titleItem->geometry();
     if (vertical) {
@@ -2261,6 +2366,9 @@ void OverlayTitleBar::paintEvent(QPaintEvent*)
         }
         title = dock->windowTitle();
     }
+    // The style puts the title's token colour in the palette; nothing else here reads a token.
+    painter.setPen(palette().windowText().color());
+
     QString text = painter.fontMetrics().elidedText(title, Qt::ElideRight, r.width());
     painter.drawText(r, flags, text);
 }
@@ -2456,13 +2564,15 @@ OverlaySizeGrip::OverlaySizeGrip(QWidget* parent, bool vertical)
     : QWidget(parent)
     , vertical(vertical)
 {
+    // Fixed across the edge, free along it: setupLayout stretches the free dimension to the
+    // whole edge.
     if (vertical) {
-        this->setFixedHeight(6);
+        this->setFixedHeight(thickness);
         this->setMinimumWidth(widgetMinSize(this, true));
         this->setCursor(Qt::SizeVerCursor);
     }
     else {
-        this->setFixedWidth(6);
+        this->setFixedWidth(thickness);
         this->setMinimumHeight(widgetMinSize(this, true));
         this->setCursor(Qt::SizeHorCursor);
     }
@@ -2507,7 +2617,6 @@ OverlaySplitter::OverlaySplitter(QWidget* parent)
 QSplitterHandle* OverlaySplitter::createHandle()
 {
     auto widget = new OverlaySplitterHandle(this->orientation(), this);
-    widget->setObjectName(QStringLiteral("OverlaySplitHandle"));
     QList<QAction*> actions;
     actions.append(&widget->actFloat);
     widget->setTitleItem(OverlayTabWidget::prepareTitleWidget(widget, actions));
@@ -2519,6 +2628,12 @@ QSplitterHandle* OverlaySplitter::createHandle()
 OverlaySplitterHandle::OverlaySplitterHandle(Qt::Orientation orientation, QSplitter* parent)
     : QSplitterHandle(orientation, parent)
 {
+    // The handle between two panels shows the lower one's title, so it is a panel title bar and
+    // says so - the same strip as the one at the top of a panel, and styled as one.
+    setProperty("component", QStringLiteral("Panel"));
+    setProperty("element", QStringLiteral("Title"));
+    claimObjectName();
+    connect(this, &QObject::objectNameChanged, this, &OverlaySplitterHandle::claimObjectName);
     setMouseTracking(true);
     setFocusPolicy(Qt::ClickFocus);
     retranslate();
@@ -2526,6 +2641,39 @@ OverlaySplitterHandle::OverlaySplitterHandle(Qt::Orientation orientation, QSplit
     QObject::connect(&actFloat, &QAction::triggered, this, &OverlaySplitterHandle::onAction);
     timer.setSingleShot(true);
     QObject::connect(&timer, &QTimer::timeout, this, &OverlaySplitterHandle::onTimer);
+}
+
+void OverlaySplitterHandle::claimObjectName()
+{
+    const QString name = QString::fromLatin1(objectNameLiteral);
+
+    if (objectName() != name) {
+        setObjectName(name);
+    }
+}
+
+Qt::Alignment OverlaySplitterHandle::titleAlignment() const
+{
+    // Heads the panel below it, so it starts where that panel's content starts, as the strip at
+    // the top of a panel does. An overlay tab widget aligns it to its own edge instead.
+    auto* tabWidget = qobject_cast<OverlayTabWidget*>(
+        splitter() ? splitter()->parentWidget() : nullptr
+    );
+
+    if (tabWidget) {
+        switch (tabWidget->getDockArea()) {
+            case Qt::TopDockWidgetArea:
+            case Qt::RightDockWidgetArea:
+                return Qt::AlignRight;
+            case Qt::BottomDockWidgetArea:
+            case Qt::LeftDockWidgetArea:
+                return Qt::AlignLeft;
+            default:
+                break;
+        }
+    }
+
+    return Qt::AlignLeft | Qt::AlignVCenter;
 }
 
 void OverlaySplitterHandle::refreshIcons()
@@ -2571,6 +2719,16 @@ QSize OverlaySplitterHandle::sizeHint() const
 {
     QSize size = QSplitterHandle::sizeHint();
     int minSize = widgetMinSize(this, true);
+
+    // The padding token reaches a handle through its layout rather than through its own contents
+    // margins, which are the drag grab area and are rewritten from resizeEvent. So the room the
+    // title needs is the layout's to state: measuring the font alone left the text short by
+    // exactly the inset, and the strip clipped it.
+    if (const QLayout* content = layout()) {
+        const QSize hint = content->sizeHint();
+        minSize = std::max(minSize, orientation() == Qt::Vertical ? hint.height() : hint.width());
+    }
+
     if (this->orientation() == Qt::Vertical) {
         size.setHeight(std::max(minSize, size.height()));
     }
@@ -2661,24 +2819,6 @@ void OverlaySplitterHandle::paintEvent(QPaintEvent* e)
         return;
     }
 
-    int flags = Qt::AlignCenter;
-    auto tabWidget = qobject_cast<OverlayTabWidget*>(splitter() ? splitter()->parentWidget() : nullptr);
-
-    if (tabWidget) {
-        switch (tabWidget->getDockArea()) {
-            case Qt::TopDockWidgetArea:
-            case Qt::RightDockWidgetArea:
-                flags = Qt::AlignRight;
-                break;
-            case Qt::BottomDockWidgetArea:
-            case Qt::LeftDockWidgetArea:
-                flags = Qt::AlignLeft;
-                break;
-            default:
-                break;
-        }
-    }
-
     QDockWidget* dock = dockWidget();
     if (!dock) {
         QSplitterHandle::paintEvent(e);
@@ -2686,7 +2826,16 @@ void OverlaySplitterHandle::paintEvent(QPaintEvent* e)
     }
 
     QPainter painter(this);
-    painter.fillRect(this->rect(), painter.background());
+
+    // Overlay mode sets WA_NoSystemBackground on this widget, which makes Qt skip the whole
+    // background pass. Issuing it here rather than relying on that pass also puts the painters
+    // in the order they belong: a stylesheet rule first, then the style's tokens, then the base.
+    QStyleOption surfaceOption;
+    surfaceOption.initFrom(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &surfaceOption, &painter, this);
+
+    // The style puts the title's token colour in the palette; nothing else here reads a token.
+    painter.setPen(palette().windowText().color());
 
     QRect r = titleItem->geometry();
     if (this->orientation() != Qt::Vertical) {
@@ -2697,7 +2846,7 @@ void OverlaySplitterHandle::paintEvent(QPaintEvent* e)
     }
     QString text = painter.fontMetrics().elidedText(dock->windowTitle(), Qt::ElideRight, r.width());
 
-    painter.drawText(r, flags, text);
+    painter.drawText(r, static_cast<int>(titleAlignment()), text);
 }
 
 void OverlaySplitterHandle::endDrag()
