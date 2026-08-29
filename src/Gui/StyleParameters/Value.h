@@ -24,6 +24,7 @@
 #ifndef STYLEPARAMETERS_VALUE_H
 #define STYLEPARAMETERS_VALUE_H
 
+#include <algorithm>
 #include <concepts>
 #include <memory>
 #include <optional>
@@ -538,6 +539,35 @@ private:
 };
 
 /**
+ * @brief Specialised for an enum whose values a theme names by word.
+ *
+ * `keywords` pairs each accepted word with its value, in the order a diagnostic should list
+ * them. A word the table does not carry is not a value of the enum at all.
+ */
+template<typename E>
+struct KeywordEnum;
+
+/// Satisfied by an enum whose words KeywordEnum names.
+template<typename E>
+concept IsKeywordEnum = requires { KeywordEnum<E>::keywords; };
+
+/// The words @p E answers to, in the order its table lists them.
+template<IsKeywordEnum E>
+std::string keywordList()
+{
+    std::string accepted;
+
+    for (const auto& entry : KeywordEnum<E>::keywords) {
+        if (!accepted.empty()) {
+            accepted += ", ";
+        }
+        accepted += entry.first;
+    }
+
+    return accepted;
+}
+
+/**
  * @brief Satisfied by domain wrapper types that validate a Value themselves.
  */
 template<typename T>
@@ -563,7 +593,7 @@ std::optional<T> valueAs(const std::optional<Value>& value)
 }
 
 template<typename T>
-    requires(!HasTryFrom<T>) && (!std::is_arithmetic_v<T>)
+    requires(!HasTryFrom<T>) && (!std::is_arithmetic_v<T>) && (!IsKeywordEnum<T>)
 std::optional<T> valueAs(const std::optional<Value>& value)
 {
     if (!value) {
@@ -587,6 +617,36 @@ std::optional<bool> valueAs(const std::optional<Value>& value)
         return std::nullopt;
     }
     return value->get<bool>();
+}
+
+/**
+ * @brief Keyword tokens resolve only from a word their enum names.
+ *
+ * A value of another type yields nothing quietly: the token is not one of these. A string the
+ * enum does not name is reported instead, since a theme that wrote it meant something by it.
+ */
+template<typename T>
+    requires IsKeywordEnum<T>
+std::optional<T> valueAs(const std::optional<Value>& value)
+{
+    const std::string* word = value ? value->tryGet<std::string>() : nullptr;
+
+    if (word == nullptr) {
+        return std::nullopt;
+    }
+
+    const auto& keywords = KeywordEnum<T>::keywords;
+    const auto found = std::ranges::find_if(keywords, [word](const auto& entry) {
+        return entry.first == *word;
+    });
+
+    if (found != keywords.end()) {
+        return found->second;
+    }
+
+    Diagnostics::report("Expected one of {}, got '{}'", keywordList<T>(), *word);
+
+    return std::nullopt;
 }
 
 /// A token asked for as a plain number answers from its Numeric, dropping the unit.

@@ -27,6 +27,7 @@
 #include <Gui/StyleParameters/ParameterManager.h>
 #include <Gui/StyleParameters/Parser.h>
 #include <Gui/StyleParameters/Value.h>
+#include <Gui/StyleParameters/Alignment.h>
 
 #include "DiagnosticsCapture.h"
 
@@ -144,4 +145,39 @@ TEST(ValueAccessTest, BlendWithNonColorOperandIsContainedByResolve)
         ASSERT_TRUE(resolved.has_value());
         EXPECT_TRUE(resolved->holds<std::string>());
     });
+}
+
+TEST(ValueAccessTest, KeywordEnumResolvesEveryWordItNames)
+{
+    DiagnosticsCapture capture;
+
+    EXPECT_EQ(valueAs<HorizontalAlign>(Value {std::string("left")}), HorizontalAlign::Left);
+    EXPECT_EQ(valueAs<HorizontalAlign>(Value {std::string("center")}), HorizontalAlign::Center);
+    EXPECT_EQ(valueAs<HorizontalAlign>(Value {std::string("right")}), HorizontalAlign::Right);
+    EXPECT_EQ(valueAs<VerticalAlign>(Value {std::string("top")}), VerticalAlign::Top);
+    EXPECT_EQ(valueAs<VerticalAlign>(Value {std::string("middle")}), VerticalAlign::Middle);
+    EXPECT_EQ(valueAs<VerticalAlign>(Value {std::string("bottom")}), VerticalAlign::Bottom);
+    EXPECT_THAT(capture.messages(), IsEmpty());
+}
+
+// A theme that wrote a word meant something by it, so a word outside the table is reported
+// rather than dropped, and the report names the words that would have worked.
+TEST(ValueAccessTest, KeywordEnumRejectsAWordItDoesNotNameAndReports)
+{
+    DiagnosticsCapture capture;
+
+    EXPECT_EQ(valueAs<HorizontalAlign>(Value {std::string("middel")}), std::nullopt);
+    EXPECT_THAT(capture.messages(), Contains(HasSubstr("left, start, center, right, end")));
+    EXPECT_THAT(capture.messages(), Contains(HasSubstr("middel")));
+}
+
+// A token of another type is not a mis-spelled keyword, it is simply not one of these, so it
+// resolves to nothing without a report - the same line valueAs<bool> draws against a Numeric.
+TEST(ValueAccessTest, KeywordEnumDoesNotResolveFromAnotherType)
+{
+    DiagnosticsCapture capture;
+
+    EXPECT_EQ(valueAs<HorizontalAlign>(Value {Numeric {.value = 0.0, .unit = ""}}), std::nullopt);
+    EXPECT_EQ(valueAs<HorizontalAlign>(std::optional<Value> {}), std::nullopt);
+    EXPECT_THAT(capture.messages(), IsEmpty());
 }
