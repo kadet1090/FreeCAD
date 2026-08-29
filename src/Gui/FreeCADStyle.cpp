@@ -36,9 +36,12 @@
 # include <QApplication>
 # include <QCoreApplication>
 # include <QChildEvent>
+# include <QDockWidget>
+# include <QMainWindow>
 # include <QMouseEvent>
 # include <QScreen>
 # include <QScrollBar>
+# include <QSplitterHandle>
 # include <QTimer>
 # include <QPointer>
 # include <QPalette>
@@ -552,6 +555,17 @@ std::array<T, 4> rotate4(std::array<T, 4> values, Position position)
     }
     // clang-format on
     // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
+}
+
+/// Per-side maximum, so an inset always covers whatever is drawn into it.
+QMarginsF expandedTo(const QMarginsF& margins, const QMarginsF& minimum)
+{
+    return {
+        std::max(margins.left(), minimum.left()),
+        std::max(margins.top(), minimum.top()),
+        std::max(margins.right(), minimum.right()),
+        std::max(margins.bottom(), minimum.bottom()),
+    };
 }
 
 /** @brief Rotates canonical (North) margins to the given position. */
@@ -1503,6 +1517,186 @@ void FreeCADStyle::drawToolButtonLabel(
         ancestor = ancestor->parentWidget();
     }
     return Position::North;
+}
+
+/*static*/ std::optional<StyleComponentElement> FreeCADStyle::panelElementOf(const QWidget* widget)
+{
+    if (widget == nullptr) {
+        return {};
+    }
+
+    // Asked rather than deduced: in overlay mode a panel hangs its strip off a tab widget
+    // rather than off a dock, and there is no dock to find it through.
+    if (widget->property(componentProperty).toString() == QLatin1String("Panel")) {
+        return contextOf(widget, nullptr, StyleComponentElement::Root).element;
+    }
+
+    const auto* dock = qobject_cast<const QDockWidget*>(widget->parentWidget());
+    if (dock != nullptr && dock->widget() == widget) {
+        return StyleComponentElement::Root;
+    }
+
+    return {};
+}
+
+/*static*/ Position FreeCADStyle::panelPositionOf(const QDockWidget* dock)
+{
+    // A floating dock attaches to nothing, and dockWidgetArea() still answers with the area it
+    // came from, which would rotate its border onto an edge that faces nothing any more.
+    if (dock == nullptr || dock->isFloating()) {
+        return Position::North;
+    }
+
+    const auto* mainWindow = qobject_cast<const QMainWindow*>(dock->parentWidget());
+    if (mainWindow == nullptr) {
+        return Position::North;
+    }
+
+    switch (mainWindow->dockWidgetArea(const_cast<QDockWidget*>(dock))) {
+        case Qt::TopDockWidgetArea:
+            return Position::North;
+        case Qt::BottomDockWidgetArea:
+            return Position::South;
+        case Qt::RightDockWidgetArea:
+            return Position::East;
+        case Qt::LeftDockWidgetArea:
+            return Position::West;
+        default:
+            return Position::North;
+    }
+}
+
+/*static*/ std::optional<Position> FreeCADStyle::separatorSeamOf(const QWidget* widget, const QRect& rect)
+{
+    const auto* window = qobject_cast<const QMainWindow*>(widget);
+    const QWidget* central = window != nullptr ? window->centralWidget() : nullptr;
+
+    if (central == nullptr) {
+        return {};
+    }
+
+    // Exact adjacency rather than proximity: QMainWindowLayout puts the central widget flush
+    // against this handle, and the handles inside a dock area are a whole handle's width away.
+    const QRect centralRect = central->geometry();
+
+    // Canonical North is a panel along the top edge, whose seam is its bottom. The handle for a
+    // left dock area meets the centre on its right, which is where West rotates that seam to.
+    if (rect.right() + 1 == centralRect.left()) {
+        return Position::West;
+    }
+    if (rect.left() - 1 == centralRect.right()) {
+        return Position::East;
+    }
+    if (rect.bottom() + 1 == centralRect.top()) {
+        return Position::North;
+    }
+    if (rect.top() - 1 == centralRect.bottom()) {
+        return Position::South;
+    }
+
+    return {};
+}
+
+/*static*/ Position FreeCADStyle::panelElementPositionOf(
+    const QWidget* widget,
+    const QDockWidget* dock,
+    StyleComponentElement element
+)
+{
+    if (element != StyleComponentElement::Title) {
+        return panelPositionOf(dock);
+    }
+
+    // A strip attaches to the edge its panel's content starts from, and that is its own shape
+    // rather than the dock area: a docked panel's strip runs across the top wherever the panel
+    // is docked, but an overlaid top or bottom panel gets one running down its left instead.
+    return widget != nullptr && widget->height() > widget->width() ? Position::West : Position::North;
+}
+
+StyleContext FreeCADStyle::panelContext(const QWidget* widget, StyleComponentElement element) const
+{
+    // contextOf() cannot answer for this component: a panel body is whichever widget the dock
+    // was given, and it keeps its own component identity for everything else it paints.
+    const auto* dock = qobject_cast<const QDockWidget*>(widget);
+    if (dock == nullptr && widget != nullptr) {
+        dock = qobject_cast<const QDockWidget*>(widget->parentWidget());
+    }
+
+    StyleContext context;
+    context.component = StyleComponent::Panel;
+    context.element = element;
+    context.variant.set(VariantSlot::Position, panelElementPositionOf(widget, dock, element));
+    bindWidget(context, widget);
+
+    return context;
+}
+
+void FreeCADStyle::applyPanelStyle(QWidget* widget, StyleComponentElement element) const
+{
+    applyPanelPadding(widget, element);
+
+    // Baked into the widget's own QFont rather than read back each time it paints, so a variant
+    // that comes and goes - overlay mode flipping the transparency tag - has to be answered here
+    // with the other values a panel part keeps rather than resolves.
+    applyWidgetFont(widget);
+
+    if (element == StyleComponentElement::Title) {
+        applyPanelTitleColor(widget);
+    }
+}
+
+void FreeCADStyle::refreshPanelBody(QDockWidget* dock) const
+{
+    QWidget* body = dock != nullptr ? dock->widget() : nullptr;
+
+    if (body == nullptr) {
+        return;
+    }
+
+    body->setAttribute(Qt::WA_StyledBackground);
+    applyPanelPadding(body, StyleComponentElement::Root);
+}
+
+void FreeCADStyle::applyPanelPadding(QWidget* widget, StyleComponentElement element) const
+{
+    const StyleContext context = panelContext(widget, element);
+    const auto position = static_cast<Position>(context.variant.get(VariantSlot::Position));
+    const BoxGeometryDefinition geometry = resolveBoxGeometry(withNorthPosition(context));
+
+    // A border the content paints over is a border the theme stated and never gets, so the inset
+    // is floored at whatever this part actually draws rather than trusting it to be stated twice.
+    const QMarginsF border = resolveBoxStyle(context).borderThickness.value_or(QMarginsF());
+    const QMargins inset = expandedTo(rotated(geometry.padding, position), border).toMargins();
+
+    // A splitter handle spends its own contents margins on the drag grab area and rewrites them
+    // from resizeEvent, so a strip that is one takes its inset through the layout placing its
+    // content. Writing the widget's would be undone at once, and QWidget answers that write with
+    // a resize, which is where this was asked from - the two would take turns until the stack ran
+    // out.
+    QLayout* const handleLayout = qobject_cast<QSplitterHandle*>(widget) != nullptr
+        ? widget->layout()
+        : nullptr;
+
+    if (handleLayout != nullptr) {
+        handleLayout->setContentsMargins(inset);
+        return;
+    }
+
+    widget->setContentsMargins(inset);
+}
+
+void FreeCADStyle::applyPanelTitleColor(QWidget* widget) const
+{
+    const StyleContext context = panelContext(widget, StyleComponentElement::Title);
+    const auto color = resolve<Base::Color>(context, StyleProperty::TextColor);
+
+    if (!color) {
+        return;
+    }
+
+    QPalette titlePalette = widget->palette();
+    titlePalette.setColor(QPalette::WindowText, color->asValue<QColor>());
+    widget->setPalette(titlePalette);
 }
 
 // ─── Context building ────────────────────────────────────────────────────────
@@ -3800,6 +3994,17 @@ std::optional<int> FreeCADStyle::resolvePixelMetric(
         return resolve<int>(contextOf(widget, option, element), property);
     }
 
+    // The handle sits between two panels and belongs to neither, so it is asked for with the
+    // main window and has to be resolved without a dock area.
+    if (metric == PM_DockWidgetSeparatorExtent) {
+        StyleContext separator;
+        separator.component = StyleComponent::Panel;
+        separator.element = StyleComponentElement::Separator;
+        bindWidget(separator, widget);
+
+        return resolve<int>(separator, Width);
+    }
+
     // A spin box computes its whole inset from tokens, so the frame widths some platforms
     // add on top of it would only inflate the control.
     if (metric == PM_SpinBoxFrameWidth || metric == PM_DefaultFrameWidth) {
@@ -4366,6 +4571,48 @@ void FreeCADStyle::drawPrimitive(
         const BoxGeometryDefinition itemGeometry = resolveBoxGeometry(context);
         paintBox(painter, option->rect.adjusted(0, itemGeometry.spacing, 0, 0), context);
 
+        return;
+    }
+
+    // A docked QDockWidget hands its whole client area to its body and its title bar, so the
+    // panel surface is painted on those instead. Anything else reaching PE_Widget is not ours.
+    if (element == PE_Widget) {
+        if (const auto panelElement = panelElementOf(widget)) {
+            drawComponent(painter, option->rect, panelContext(widget, *panelElement));
+            return;
+        }
+    }
+
+    if (element == PE_IndicatorDockWidgetResizeHandle) {
+        // The handle belongs to the main window rather than to either panel it parts, so the
+        // dock area it borders is read off its own geometry rather than from a widget.
+        const std::optional<Position> seam = separatorSeamOf(widget, option->rect);
+
+        StyleContext context;
+        context.component = StyleComponent::Panel;
+        context.element = StyleComponentElement::Separator;
+        context.variant.set(VariantSlot::Position, seam.value_or(Position::North));
+        if ((option->state & State_MouseOver) != 0) {
+            context.state |= StyleState::Hovered;
+        }
+        bindWidget(context, widget);
+
+        // A theme that states no surface for the handle wants the base style's grip, not the
+        // unpainted gap that painting an empty box would leave.
+        if (!resolve(context, StyleProperty::Background)) {
+            QProxyStyle::drawPrimitive(element, option, painter, widget);
+            return;
+        }
+
+        BoxStyleDefinition style = resolveBoxStyle(context);
+
+        // A handle between one panel and the next borders no central widget, and the seam it
+        // would rotate to the default North is a stub laid across the column.
+        if (!seam) {
+            style.borderThickness = std::nullopt;
+        }
+
+        drawBoxBackground(painter, option->rect, style);
         return;
     }
 
@@ -5522,6 +5769,32 @@ void FreeCADStyle::polish(QWidget* widget)
         itemView->setAttribute(Qt::WA_MouseTracking);
     }
 
+    // A dock is recognisable the moment it exists, while its body only becomes recognisable once
+    // setWidget() has run and only carries the right inset once the dock has been placed. Either
+    // can happen after the body was polished, so the dock is what gets watched: its own Show and
+    // Move are when both are finally true.
+    if (auto* dock = qobject_cast<QDockWidget*>(widget)) {
+        dock->removeEventFilter(this);
+        dock->installEventFilter(this);
+    }
+
+    // A docked QDockWidget gives its client area away to these two. The body takes its surface
+    // through Qt's background pass; a strip cannot, because overlay mode suppresses that pass
+    // outright, so it issues the primitive from its own paintEvent instead.
+    if (const auto panelElement = panelElementOf(widget)) {
+        if (*panelElement == StyleComponentElement::Root) {
+            widget->setAttribute(Qt::WA_StyledBackground);
+        }
+
+        applyPanelStyle(widget, *panelElement);
+
+        // Overlay mode flips the transparency tag at runtime, and the Transparent variant
+        // restates padding as well as colour. Both live on the widget, so a repaint is not
+        // enough - the StyleChange that tag carries is what recomputes them.
+        widget->removeEventFilter(this);
+        widget->installEventFilter(this);
+    }
+
     // QSint::ActionGroup fills itself with the palette's window brush, which would sit on top
     // of the panel the style paints for a task box.
     if (qobject_cast<TaskView::TaskBox*>(widget)) {
@@ -5624,6 +5897,13 @@ void FreeCADStyle::unpolish(QWidget* widget)
         widget->setProperty(styleFontMaskProperty, {});
     }
 
+    // Under another style the inset is a gap nothing fills and the attribute routes the whole
+    // background through a style with no panel tokens to paint it from.
+    if (panelElementOf(widget)) {
+        widget->setAttribute(Qt::WA_StyledBackground, false);
+        widget->setContentsMargins({});
+    }
+
     // The id means nothing under another style, and leaving it behind would have that style's
     // widget resolve against a set it never asked for.
     storeOverrideSet(widget, StyleParameters::OverrideRegistry::emptyId);
@@ -5703,6 +5983,25 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
         }
     }
 
+    // The inset a panel body carries is stated against the dock area, which is not settled while
+    // the dock is being built or while it is being dragged to another edge.
+    if (event->type() == QEvent::Show || event->type() == QEvent::Move
+        || event->type() == QEvent::Resize) {
+        if (auto* dock = qobject_cast<QDockWidget*>(obj)) {
+            refreshPanelBody(dock);
+        }
+    }
+
+    // StyleChange carries the transparency tag. Resize is when a title strip that has only just
+    // been laid out finally knows whether it runs across its panel or down the side of it.
+    if (event->type() == QEvent::StyleChange || event->type() == QEvent::Resize) {
+        if (auto* widget = qobject_cast<QWidget*>(obj)) {
+            if (const auto panelElement = panelElementOf(widget)) {
+                applyPanelStyle(widget, *panelElement);
+            }
+        }
+    }
+
     if (event->type() == ThemeReloadEvent::registeredType()) {
         clearTokenCache();
 
@@ -5729,6 +6028,13 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
             // A repaint does not reconsider row geometry, and the tokens a row is measured
             // from may well be what the reload changed.
             scheduleItemViewRelayout(widget);
+
+            // A panel's padding and its title colour reach the widget rather than the painter,
+            // so a repaint alone would leave both at what the previous theme stated.
+            if (const auto panelElement = panelElementOf(widget)) {
+                applyPanelStyle(widget, *panelElement);
+            }
+
             widget->update();
         }
 

@@ -58,6 +58,7 @@
 #include "StyleParameters/Value.h"
 
 class QChildEvent;
+class QDockWidget;
 class QListView;
 class QTreeView;
 class QTextDocument;
@@ -786,6 +787,62 @@ protected:
 
     /// The edge a toolbar is docked to, as a Position variant value.
     static StyleParameters::Position toolbarPositionOf(const QToolBar* toolbar);
+
+    /**
+     * @brief Which part of a panel @p widget is, or nothing when it is not part of one.
+     *
+     * The element a widget declares via componentProperty/elementProperty when it names the
+     * Panel component, or Root for the body a dock hands its whole client area to. A title bar
+     * declares itself this way rather than being deduced: in overlay mode a panel hangs its
+     * strip off a tab widget rather than off a dock, and both are the same strip to a theme.
+     */
+    static std::optional<StyleParameters::StyleComponentElement> panelElementOf(const QWidget* widget);
+
+    /// The edge a dock panel attaches to, as a Position variant value.
+    static StyleParameters::Position panelPositionOf(const QDockWidget* dock);
+
+    /// The edge one part of a panel attaches to: the dock area for a body, its own run for a strip.
+    static StyleParameters::Position panelElementPositionOf(
+        const QWidget* widget,
+        const QDockWidget* dock,
+        StyleParameters::StyleComponentElement element
+    );
+
+    /**
+     * @brief Where the resize handle at @p rect meets the central widget, or nothing if nowhere.
+     *
+     * The handle along a dock area's inner edge spans that whole area, so it is the one place
+     * the seam between the panels and the central widget can be drawn in one unbroken line. The
+     * handles *inside* an area, between one panel and the next, touch the central widget nowhere
+     * and carry no seam - drawing one there would leave a stub across the column.
+     */
+    static std::optional<StyleParameters::Position> separatorSeamOf(
+        const QWidget* widget,
+        const QRect& rect
+    );
+
+    /**
+     * @brief Context for one element of the dock panel @p widget belongs to.
+     *
+     * @p widget is either the dock itself or one of its direct children - its body or its
+     * title bar - and carries the dock area as the Position variant.
+     */
+    StyleParameters::StyleContext panelContext(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    ) const;
+
+    /// Applies the panel values @p element keeps on the widget rather than reading at paint time.
+    void applyPanelStyle(QWidget* widget, StyleParameters::StyleComponentElement element) const;
+
+    /// Sets up @p dock's body for the area the dock currently occupies. Safe to call repeatedly.
+    void refreshPanelBody(QDockWidget* dock) const;
+
+    /// Insets a panel part's layout by its padding token, so its surface shows around the content.
+    void applyPanelPadding(QWidget* widget, StyleParameters::StyleComponentElement element) const;
+
+    /// Puts a panel title bar's text colour in its palette, the only channel its painting reads.
+    void applyPanelTitleColor(QWidget* widget) const;
 
     /// Draws a separator rule centred in @p rect, running along @p orientation.
     void drawSeparatorLine(QPainter* painter, const QRect& rect, Qt::Orientation orientation) const;

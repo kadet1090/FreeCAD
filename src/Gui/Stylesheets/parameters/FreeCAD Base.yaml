@@ -170,8 +170,63 @@ WbToolBarFrameWidth: 0px
 
 # A namespace set on OverlayToolButton, so it resolves ahead of the ToolButton chain. A panel
 # title bar is a thin strip and its buttons are secondary to the panel content, so they carry
-# a smaller icon than a tool button elsewhere.
+# a smaller icon than a tool button elsewhere. This is an override name, not the Panel
+# component below: a button in a title bar is still a button.
 PanelButtonIconSize: 12px
+
+# A docked QDockWidget keeps none of its own client area - its body and its title bar divide
+# all of it between them - so these paint on those two widgets and the dock paints nothing.
+# Position is the dock area, so every geometric token here is stated at the canonical North, a
+# panel docked along the top edge, and rotated onto the edge that faces the central widget.
+PanelBackground: "@Background.100"
+PanelBorderColor: "@BaseBorderColor"
+# The seam belongs to the resize handle below, not to the panels: a panel spans only its own
+# slice of a dock area, so a seam drawn here breaks at every handle between one panel and the
+# next. State a thickness to give an individual panel an outline of its own; the strip and the
+# body will divide it between them along whichever edges the dock area puts it on.
+PanelBorderThickness: "reset()"
+# The content fills whatever the padding leaves it. The inset is floored at the border either
+# half draws, so this states the gutter only.
+PanelPadding: "padding(0)"
+
+# The title heads the content below it rather than floating over the panel, so it carries its
+# own surface and a rule along the edge it shares with the body. It stays at the top of its
+# panel whichever area that panel is docked to, so the rule is always its bottom edge and never
+# rotates. Its other three edges are the panel's own outline above, which does.
+PanelTitleBackground: "@Background.150"
+PanelTitleTextColor: "@Contrast.500"
+PanelTitleBorderColor: "@BaseBorderColor"
+PanelTitleBorderThickness: "border_thickness(0px, bottom: 1px)"
+PanelTitlePadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050) + padding(@PanelTitleBorderThickness)"
+
+# The handle between two panels, and between a panel and the central widget. It is wide enough
+# to grab, so it reads as the gutter the panels sit in rather than as a line of its own.
+PanelSeparatorBackground: "@Background.150"
+PanelSeparatorHoveredBackground: "@Background.200"
+PanelSeparatorWidth: "1px"
+
+# The handle along a dock area's inner edge spans that whole area, past every panel in it, so it
+# is the one surface that can draw the seam as a single unbroken line. Canonical North, i.e. the
+# bottom edge: rotated onto the right of a left dock area's handle, the left of a right one's.
+# A handle between one panel and the next borders no central widget and draws none of this.
+PanelSeparatorBorderColor: "@BaseBorderColor"
+PanelSeparatorBorderThickness: "border_thickness(0px, bottom: 1px)"
+
+# Overlay mode, where the panel floats over the 3D view. The body drops every trace of its
+# docked chrome - an opaque surface here is exactly the slab overlay mode exists to avoid - and
+# the strip keeps just enough of one to hold its buttons and its title legible over the model.
+PanelTransparentBackground: "reset()"
+PanelTransparentBorderColor: "reset()"
+PanelTransparentBorderThickness: "reset()"
+PanelTransparentPadding: "padding(@Spacing.100)"
+
+PanelTitleTransparentBackground: "@ButtonBackground"
+PanelTitleTransparentBorderColor: "@BaseBorderColor"
+PanelTitleTransparentBorderThickness: "1px"
+PanelTitleTransparentBorderRadius: "@BaseRadius.medium"
+PanelTitleTransparentPadding: "padding(@Spacing.075, right: @Spacing.150, left: @Spacing.200)"
+PanelTitleTransparentFontWeight: 800
+PanelTitleTransparentFontSize: 0.75rem
 
 # A namespace set on the expression button inside a quantity field, so it resolves ahead of the
 # ToolButton chain. It is a fixed square that sits inside the line edit's frame, so it carries
@@ -196,6 +251,12 @@ PropertyEditorTransparentBorderThickness: 1px
 PropertyEditorTransparentBorderRadius: "@BaseRadius.medium"
 PropertyEditorTransparentPadding: "0px"
 PropertyEditorTransparentIsTransparent: "false"
+
+PropertyEditorBorderRadius: 0px
+PropertyEditorBorderThickness: "border_thickness(0, bottom: 1px)"
+
+DocumentTreeBorderRadius: 0px
+DocumentTreeBorderThickness: "border_thickness(0, bottom: 1px)"
 
 SeparatorThickness: 1px
 SeparatorColor: "@BaseBorderColor"

@@ -649,6 +649,15 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .inherits = {},
     }, StyleComponent::ToolBar);
 
+    // A dock panel paints on its content widget rather than on the QDockWidget, whose body a
+    // docked layout leaves fully covered. Position is the dock area, so a single canonical
+    // North token rotates into an edge that always faces the central widget.
+    registry.registerDescriptor({
+        .name     = "Panel",
+        .variants = {"Position", "State"},
+        .inherits = {},
+    }, StyleComponent::Panel);
+
     registry.registerDescriptor({
         .name     = "MenuBar",
         .variants = {"State"},

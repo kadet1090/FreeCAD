@@ -49,6 +49,7 @@ enum class StyleComponent : uint8_t
     PushButton,
     ToolButton,
     ToolBar,           // QToolBar
+    Panel,             // Body, title bar and resize handle of a QDockWidget
     Select,            // QComboBox that is not editable; inherits Button
     ComboBox,          // QComboBox that is editable; inherits LineEdit
     LineEdit,          // QLineEdit and the edit frame of a QAbstractSpinBox
