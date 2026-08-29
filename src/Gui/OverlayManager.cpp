@@ -133,11 +133,10 @@ public:
         QString overlayStylesheetFileName = detectOverlayStyleSheetFileName();
         loadFromFile(overlayStylesheetFileName);
 
-        // If after loading the result is still empty we need to apply some defaults
-        if (activeStyleSheet.isEmpty()) {
-            activeStyleSheet = _default;
-        }
-
+        // No overlay stylesheet means no stylesheet. There used to be a fallback here assigning
+        // a *file name* as the sheet's *content*. Qt cannot parse that, and its recovery is to
+        // retry the text wrapped in "* { }" - which does parse, so the name became a universal
+        // rule silently matching every widget under the overlay, with no warning to show for it.
         activeStyleSheet = Application::Instance->replaceVariablesInQss(activeStyleSheet);
     }
 
@@ -148,24 +147,15 @@ public:
 private:
     QString detectOverlayStyleSheetFileName() const
     {
-        QString mainStyleSheet = QString::fromUtf8(handle->GetASCII("StyleSheet").c_str());
         QString overlayStyleSheet = QString::fromUtf8(
             handle->GetASCII("OverlayActiveStyleSheet").c_str()
         );
 
-        if (overlayStyleSheet.isEmpty()) {
-            // User did not choose any stylesheet, we need to choose one based on main stylesheet
-            if (mainStyleSheet.contains(QStringLiteral("light"), Qt::CaseInsensitive)) {
-                overlayStyleSheet = QStringLiteral("overlay:Light Theme + Dark Background.qss");
-            }
-            else {
-                // by default FreeCAD uses somewhat dark background for 3D View.
-                // if user has not explicitly selected light theme, the "Dark Outline" looks best
-                overlayStyleSheet = QStringLiteral("overlay:Dark Theme + Dark Background.qss");
-            }
-        }
-        else if (!overlayStyleSheet.isEmpty() && !QFile::exists(overlayStyleSheet)) {
-            // User did choose one of predefined stylesheets, we need to qualify it with namespace
+        // A bare name is one of the shipped sheets, which live behind the "overlay:" search path.
+        // Naming nothing means nothing: the two files this used to guess at when the setting was
+        // unset have not existed for some time, so guessing only ever produced a path that failed
+        // to load.
+        if (!overlayStyleSheet.isEmpty() && !QFile::exists(overlayStyleSheet)) {
             overlayStyleSheet = QStringLiteral("overlay:%1").arg(overlayStyleSheet);
         }
 
@@ -184,11 +174,7 @@ private:
             activeStyleSheet = QTextStream(&file).readAll();
         }
     }
-
-    static const QString _default;
 };
-
-const QString OverlayStyleSheet::_default = QStringLiteral("overlay:Light Theme + Dark Background.qss");
 
 // -----------------------------------------------------------
 
