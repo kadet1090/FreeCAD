@@ -480,6 +480,22 @@ OverlayTabWidget::OverlayTabWidget(QWidget* parent, Qt::DockWidgetArea pos)
     connect(_animator, &QAbstractAnimation::stateChanged, this, &OverlayTabWidget::onAnimationStateChanged);
 }
 
+OverlayTabWidget::~OverlayTabWidget()
+{
+    // The animation targets this widget, so Qt stops it from this object's own destroyed()
+    // signal - which QObject emits after the derived destructor has run but before it tears
+    // this object's connections down. That stop reaches onAnimationStateChanged on something
+    // that is no longer an OverlayTabWidget, and the slot goes on to lay the panel out and ask
+    // the overlay manager to refresh. Severing it here, while the object is still whole, is
+    // what keeps a running animation from outliving its target.
+    disconnect(
+        _animator,
+        &QAbstractAnimation::stateChanged,
+        this,
+        &OverlayTabWidget::onAnimationStateChanged
+    );
+}
+
 void OverlayTabWidget::refreshIcons()
 {
     auto curStyleSheet = App::GetApplication()
