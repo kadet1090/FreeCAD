@@ -451,6 +451,19 @@ std::optional<StyleComponent> ParameterDescriptorRegistry::findComponent(std::st
     return iterator->second;
 }
 
+std::optional<StyleComponentElement> ParameterDescriptorRegistry::findElement(std::string_view name) const
+{
+    const auto found = std::ranges::find_if(elementNames, [name](const auto& entry) {
+        return entry.second == name;
+    });
+
+    if (found == elementNames.end()) {
+        return std::nullopt;
+    }
+
+    return found->first;
+}
+
 const std::map<std::string, ParameterVariant>& ParameterDescriptorRegistry::variants() const
 {
     return _variants;

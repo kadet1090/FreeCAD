@@ -5154,7 +5154,7 @@ StyleContext FreeCADStyle::contextOf(
         && qobject_cast<const QRadioButton*>(widget) == nullptr;
 
     if (widget && !indicatorOfAnotherComponent) {
-        const std::string overrideName = widget->property("component").toString().toStdString();
+        const std::string overrideName = widget->property(componentProperty).toString().toStdString();
         if (!overrideName.empty()) {
             auto* manager = Application::Instance->styleParameterManager();
 
@@ -5163,6 +5163,20 @@ StyleContext FreeCADStyle::contextOf(
             }
             else {
                 context.componentOverride = overrideName;
+            }
+        }
+    }
+
+    // Only when the caller asked for the root: the property says what the widget is, so it must
+    // not answer for an item or an indicator the style is painting on that widget's behalf.
+    if (widget && element == StyleComponentElement::Root) {
+        const std::string elementName = widget->property(elementProperty).toString().toStdString();
+
+        if (!elementName.empty()) {
+            auto* manager = Application::Instance->styleParameterManager();
+
+            if (const auto named = manager->descriptorRegistry().findElement(elementName)) {
+                context.element = *named;
             }
         }
     }

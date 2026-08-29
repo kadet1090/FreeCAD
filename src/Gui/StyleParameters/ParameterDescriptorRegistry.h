@@ -206,6 +206,9 @@ public:
      */
     std::optional<StyleComponent> findComponent(std::string_view name) const;
 
+    /// The element a token-name fragment spells, or nothing for Root and for an unknown name.
+    std::optional<StyleComponentElement> findElement(std::string_view name) const;
+
     /**
      * @brief Returns all registered variant definitions.
      */

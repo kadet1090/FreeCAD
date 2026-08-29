@@ -34,6 +34,7 @@ public:
                     {.name = "SeparatorColor", .value = "#ff0000"},
                     {.name = "SeparatorThickness", .value = "1px"},
                     {.name = "ListBackground", .value = "#00ff00"},
+                    {.name = "ListItemBackground", .value = "#0000ff"},
                 },
                 {.name = "Shaped Frame Fixture"}
             )
@@ -106,6 +107,57 @@ private Q_SLOTS:
         const QImage image = paintFrame(style, frame, {20, 20});
 
         QCOMPARE(image.pixelColor(10, 10), QColor(Qt::green));
+    }
+
+    // A widget declares what it is, and an element is half of that. Tested on List rather than
+    // on Panel so what is under test is the mechanism, not its first caller.
+    void test_aFrameIsDrawnAsTheElementItNames()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QFrame frame;
+        frame.setFrameShape(QFrame::StyledPanel);
+        frame.setProperty("component", QStringLiteral("List"));
+        frame.setProperty("element", QStringLiteral("Item"));
+
+        const QImage image = paintFrame(style, frame, {20, 20});
+
+        QCOMPARE(image.pixelColor(10, 10), QColor(Qt::blue));
+    }
+
+    // A name no element answers to has to leave the widget at its root element rather than
+    // silently selecting some other one.
+    void test_aFrameNamingNoKnownElementStaysAtItsRoot()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QFrame frame;
+        frame.setFrameShape(QFrame::StyledPanel);
+        frame.setProperty("component", QStringLiteral("List"));
+        frame.setProperty("element", QStringLiteral("Nonsense"));
+
+        const QImage image = paintFrame(style, frame, {20, 20});
+
+        QCOMPARE(image.pixelColor(10, 10), QColor(Qt::green));
+    }
+
+    // The property names what the widget is, not what the style is painting on its behalf. When
+    // the style asks this widget for a specific sub-element, that request has to win over the
+    // property. (Queried as Shortcut rather than Indicator: contextOf() special-cases
+    // element == Indicator for every widget type, ahead of the element property, routing it to
+    // CheckBox regardless — a widget-dispatch rule that predates this task and would confound
+    // the guard under test here.)
+    void test_aDeclaredElementDoesNotAnswerForAnotherOne()  // NOLINT
+    {
+        QFrame frame;
+        frame.setProperty("component", QStringLiteral("List"));
+        frame.setProperty("element", QStringLiteral("Item"));
+
+        const auto context = Gui::FreeCADStyle::contextOf(
+            &frame,
+            nullptr,
+            Gui::StyleParameters::StyleComponentElement::Shortcut
+        );
+
+        QCOMPARE(context.element, Gui::StyleParameters::StyleComponentElement::Shortcut);
     }
 
     // A scroll area is a frame too, and one that names a component has to end up with that

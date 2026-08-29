@@ -219,3 +219,24 @@ TEST(DescriptorRegistryTest, FontFamilyAndStylePropertiesParse)
     EXPECT_EQ(style->component, "Button");
     EXPECT_EQ(style->property, "FontStyle");
 }
+
+// The element property turns a string into an element, and the names it accepts are the same
+// ones the token fragments are spelled with — there is one table, not two.
+TEST(DescriptorRegistryTest, FindsAnElementByItsTokenName)
+{
+    const ParameterDescriptorRegistry registry = builtinRegistry();
+
+    EXPECT_EQ(registry.findElement("Title"), StyleComponentElement::Title);
+    EXPECT_EQ(registry.findElement("Item"), StyleComponentElement::Item);
+}
+
+// Root maps to the empty fragment so a component's own tokens have nothing between the
+// component and the property. Naming it would therefore select every element at once.
+TEST(DescriptorRegistryTest, DoesNotFindRootOrAnUnknownName)
+{
+    const ParameterDescriptorRegistry registry = builtinRegistry();
+
+    EXPECT_FALSE(registry.findElement("Root").has_value());
+    EXPECT_FALSE(registry.findElement("Nonsense").has_value());
+    EXPECT_FALSE(registry.findElement("").has_value());
+}

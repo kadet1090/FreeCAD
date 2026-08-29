@@ -1225,6 +1225,10 @@ protected:
     static constexpr const char* transparencyProperty          = "_fc_transparent";
     /// What a widget sets to declare its own surface, opening a transparency root.
     static constexpr const char* transparencyOverrideProperty  = "transparent";
+    /// What a widget sets to name its component, either a known one or a prefix of its own.
+    static constexpr const char* componentProperty              = "component";
+    /// What a widget sets to name which element of its component it is, e.g. "Title".
+    static constexpr const char* elementProperty                = "element";
     /// The font the widget had before applyWidgetFont() touched it. Style-owned.
     static constexpr const char* styleFontBaseProperty         = "_fc_styleFontBase";
     /// The resolveMask() of the token font applyWidgetFont() applied. Style-owned.
