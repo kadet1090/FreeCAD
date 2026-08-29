@@ -241,6 +241,29 @@ private Q_SLOTS:
         QCOMPARE(strip->font().weight(), 800);
     }
 
+    // QWidget::setContentsMargins answers itself with a synchronous resize carrying the size the
+    // widget already had (qwidget.cpp:7693). Writing the inset again in reply is what sends the
+    // next one, and the panel body's padding turned that into a flood thousands deep.
+    void test_onlyAResizeThatMovedSomethingIsAnswered()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QMainWindow window;
+        auto* body = new QWidget;
+        dockInto(window, body, Qt::LeftDockWidgetArea);
+        style.polish(body);
+        QVERIFY(body->contentsMargins() != QMargins());
+
+        body->setContentsMargins(0, 0, 0, 0);
+        QResizeEvent unmoved(body->size(), body->size());
+        QCoreApplication::sendEvent(body, &unmoved);
+        QCOMPARE(body->contentsMargins(), QMargins());
+
+        QResizeEvent moved(body->size() + QSize(1, 1), body->size());
+        QCoreApplication::sendEvent(body, &moved);
+
+        QVERIFY(body->contentsMargins() != QMargins());
+    }
+
     // The dock area is not settled while the dock is being built: a body polished before
     // setWidget() finished is not recognisable as one yet, and one polished before the dock was
     // placed carries the inset for the wrong edge. Both showed up as a panel whose border only

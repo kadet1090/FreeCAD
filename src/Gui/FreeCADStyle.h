@@ -1290,6 +1290,8 @@ protected:
     static constexpr const char* styleFontBaseProperty         = "_fc_styleFontBase";
     /// The resolveMask() of the token font applyWidgetFont() applied. Style-owned.
     static constexpr const char* styleFontMaskProperty         = "_fc_styleFontMask";
+    /// What the mask currently on a scroll area was built from. Style-owned.
+    static constexpr const char* scrollAreaMaskProperty        = "_fc_scrollAreaMask";
     // clang-format on
 
     /// Whether the surface behind @p widget is see-through, as its own tokens describe it.

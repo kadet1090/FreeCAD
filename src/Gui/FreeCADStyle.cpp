@@ -557,6 +557,21 @@ std::array<T, 4> rotate4(std::array<T, 4> values, Position position)
     // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
 }
 
+/**
+ * @brief Whether @p event reports a widget that actually changed size.
+ *
+ * QWidget::setContentsMargins answers itself with a synchronous QResizeEvent carrying the size
+ * the widget already had (QWidgetPrivate::updateContentsRect, qwidget.cpp:7693). It says the
+ * contents rect moved, not the widget: nothing derived from the outer size has anything to
+ * answer, and recomputing an inset from one writes the margins that sent it.
+ */
+bool changesSize(const QEvent* event)
+{
+    const auto* resize = static_cast<const QResizeEvent*>(event);
+
+    return resize->size() != resize->oldSize();
+}
+
 /// Per-side maximum, so an inset always covers whatever is drawn into it.
 QMarginsF expandedTo(const QMarginsF& margins, const QMarginsF& minimum)
 {
@@ -3149,6 +3164,25 @@ void FreeCADStyle::updateScrollAreaMask(QAbstractScrollArea* scrollArea) const
 
     CornerRadii outerRadii = boxStyle.borderRadius.resolve(scrollArea->size());
     outerRadii.setBottom(0);
+
+    // Rasterising a bitmap the size of the widget and handing it to the compositor is much the
+    // most expensive thing a resize asks for here, and the answer only ever depends on these
+    // six numbers. Recording them is what lets a resize that moved none of them cost nothing.
+    const auto signature = static_cast<quint64>(qHashMulti(
+        0,
+        scrollArea->size().width(),
+        scrollArea->size().height(),
+        outerRadii.topLeft.value,
+        outerRadii.topRight.value,
+        outerRadii.bottomRight.value,
+        outerRadii.bottomLeft.value
+    ));
+
+    if (scrollArea->property(scrollAreaMaskProperty).value<quint64>() == signature) {
+        return;
+    }
+
+    scrollArea->setProperty(scrollAreaMaskProperty, signature);
 
     if (!outerRadii.isRounded()) {
         scrollArea->clearMask();
@@ -5889,6 +5923,10 @@ void FreeCADStyle::unpolish(QWidget* widget)
     if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(widget)) {
         scrollArea->removeEventFilter(this);
         scrollArea->clearMask();
+
+        // Cleared alongside the mask it describes, or a widget handed back to this style at the
+        // same size would be told it already has the mask that was just taken off it.
+        scrollArea->setProperty(scrollAreaMaskProperty, {});
     }
 
     if (widget->property(styleFontMaskProperty).isValid()) {
@@ -5935,6 +5973,8 @@ void FreeCADStyle::applyTextEditDocumentPadding(QWidget* widget, QTextDocument* 
 
 bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 {
+    const bool resized = event->type() == QEvent::Resize && changesSize(event);
+
     forceTabBarRepaint(obj, event);
 
     repaintPressedDropdownRow(obj, event);
@@ -5947,7 +5987,7 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
         constrainReplacedComboDropdown(obj, static_cast<QChildEvent*>(event));
     }
 
-    if (event->type() == QEvent::Resize || event->type() == QEvent::Show) {
+    if (resized || event->type() == QEvent::Show) {
         if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(obj)) {
             updateScrollAreaMask(scrollArea);
         }
@@ -5985,8 +6025,7 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 
     // The inset a panel body carries is stated against the dock area, which is not settled while
     // the dock is being built or while it is being dragged to another edge.
-    if (event->type() == QEvent::Show || event->type() == QEvent::Move
-        || event->type() == QEvent::Resize) {
+    if (event->type() == QEvent::Show || event->type() == QEvent::Move || resized) {
         if (auto* dock = qobject_cast<QDockWidget*>(obj)) {
             refreshPanelBody(dock);
         }
@@ -5994,7 +6033,7 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
 
     // StyleChange carries the transparency tag. Resize is when a title strip that has only just
     // been laid out finally knows whether it runs across its panel or down the side of it.
-    if (event->type() == QEvent::StyleChange || event->type() == QEvent::Resize) {
+    if (event->type() == QEvent::StyleChange || resized) {
         if (auto* widget = qobject_cast<QWidget*>(obj)) {
             if (const auto panelElement = panelElementOf(widget)) {
                 applyPanelStyle(widget, *panelElement);

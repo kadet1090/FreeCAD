@@ -141,6 +141,41 @@ private Q_SLOTS:
         QVERIFY(!box.autoFillBackground());
     }
 
+    // Rasterising the mask is the most expensive thing a resize can ask this style for, and
+    // setContentsMargins answers itself with a resize that moved nothing (qwidget.cpp:7693).
+    // A recompute whose inputs are unchanged has to cost nothing, so it never runs at all.
+    void test_theScrollAreaMaskIsNotRebuiltForTheSameGeometry()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QScrollArea area;
+        area.setProperty("component", QStringLiteral("List"));
+        area.resize(50, 50);
+        style.polish(&area);
+        QVERIFY(!area.mask().isEmpty());
+
+        area.clearMask();
+        QShowEvent shown;
+        QCoreApplication::sendEvent(&area, &shown);
+
+        QVERIFY(area.mask().isEmpty());
+    }
+
+    // Whatever the size, a widget this style has just let go of holds no record of a mask it no
+    // longer carries: taking it back has to put the corners back on.
+    void test_aScrollAreaHandedBackIsMaskedAgain()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QScrollArea area;
+        area.setProperty("component", QStringLiteral("List"));
+        area.resize(50, 50);
+        style.polish(&area);
+        style.unpolish(&area);
+
+        style.polish(&area);
+
+        QVERIFY(!area.mask().isEmpty());
+    }
+
     // The mask is the style's, and a widget handed back to another style has to be handed back
     // square — nothing else would ever clear the corners this one clipped away.
     void test_unpolishingAScrollAreaGivesItsCornersBack()  // NOLINT
