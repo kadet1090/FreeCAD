@@ -377,6 +377,18 @@ private:
 
 }  // namespace Gui
 
+namespace
+{
+
+/// Whether @p option's row shows a single column, and so is one cell wide.
+bool isSingleColumnRow(const QStyleOptionViewItem& option)
+{
+    return option.viewItemPosition == QStyleOptionViewItem::OnlyOne
+        || option.viewItemPosition == QStyleOptionViewItem::Invalid;
+}
+
+}  // namespace
+
 TreeWidgetItemDelegate::TreeWidgetItemDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {}
@@ -421,7 +433,11 @@ void TreeWidgetItemDelegate::paint(
 
     // Only over a transparent surface does an item become a free-standing box hugging its own
     // content; docked, the tree keeps the full-width row every other item view draws.
-    if (index.column() == 0 && FreeCADStyle::isTransparent(tree)) {
+    //
+    // And only while the row is one cell wide. Hugging each cell of a multi-column row leaves a
+    // string of disconnected islands with no reading order, so those cells keep their columns
+    // instead and the style joins them into one band.
+    if (FreeCADStyle::isTransparent(tree) && isSingleColumnRow(opt)) {
         using namespace StyleParameters;
         const StyleContext context = FreeCADStyle::contextOf(tree, &opt, StyleComponentElement::Item);
         const FreeCADStyle::BoxGeometryDefinition geometry = fcStyle->resolveBoxGeometry(context);

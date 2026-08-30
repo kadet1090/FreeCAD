@@ -615,6 +615,14 @@ DocumentTreeItemTransparentHoveredBackgroundEffect: "effect(lighten: 0.05)"
 DocumentTreeItemTransparentSelectedBackground: "blend(@DocumentTreeItemTransparentBackground, @Accent.500, 20%)"
 DocumentTreeItemTransparentSelectedBorderColor: "blend(@DocumentTreeItemTransparentBorderColor, @Accent.500, 20%)"
 
+# A row of several columns is one band, so what separates the columns is a rule inside it and the
+# distance each column's content keeps from the seam before it. Stated only under the Transparent
+# variant: a docked row carries no edge of its own to divide.
+DocumentTreeItemTransparentColumnGap: "@Spacing.150"
+DocumentTreeSeparatorTransparentBorderColor: "@DocumentTreeItemTransparentBorderColor"
+DocumentTreeSeparatorTransparentBorderThickness: "@SeparatorThickness"
+
+
 # The strip under the tabs, which the active tab's own edge joins.
 TabBarBaseHeight: 4px
 TabBarBaseOverlap: 4px
