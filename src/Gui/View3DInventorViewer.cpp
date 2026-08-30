@@ -1989,6 +1989,8 @@ void View3DInventorViewer::setGradientBackground(View3DInventorViewer::Backgroun
             }
             break;
     }
+
+    Q_EMIT backgroundChanged();
 }
 
 View3DInventorViewer::Background View3DInventorViewer::getGradientBackground() const
@@ -2007,6 +2009,7 @@ View3DInventorViewer::Background View3DInventorViewer::getGradientBackground() c
 void View3DInventorViewer::setGradientBackgroundColor(const SbColor& fromColor, const SbColor& toColor)
 {
     pcBackGround->setColorGradient(fromColor, toColor);
+    Q_EMIT backgroundChanged();
 }
 
 void View3DInventorViewer::setGradientBackgroundColor(
@@ -2016,6 +2019,20 @@ void View3DInventorViewer::setGradientBackgroundColor(
 )
 {
     pcBackGround->setColorGradient(fromColor, toColor, midColor);
+    Q_EMIT backgroundChanged();
+}
+
+QColor View3DInventorViewer::paneBackgroundColor() const
+{
+    if (getGradientBackground() == Background::NoGradient) {
+        return backgroundColor();
+    }
+
+    // toColor is the far stop of both gradients: the bottom of a linear one, the outer ring of
+    // a radial one. The middle stop never reaches the edge, so it is not asked for here.
+    const SbColor& outer = pcBackGround->toColor.getValue();
+
+    return QColor::fromRgbF(outer[0], outer[1], outer[2]);
 }
 
 void View3DInventorViewer::setEnabledFPSCounter(bool on)

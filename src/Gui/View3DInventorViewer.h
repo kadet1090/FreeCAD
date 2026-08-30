@@ -560,6 +560,15 @@ public:
         const SbColor& toColor,
         const SbColor& midColor
     );
+
+    /**
+     * @brief The colour the scene is drawn over along the bottom of the viewport.
+     *
+     * The far end of a gradient, or the plain background colour where no gradient is shown.
+     * Whatever is directly above whatever the viewport sits on.
+     */
+    QColor paneBackgroundColor() const;
+
     void setNavigationType(Base::Type);
 
     void setAxisLetterColor(const SbColor& color);
@@ -602,6 +611,8 @@ public:
 
 Q_SIGNALS:
     void cameraChanged();
+    /// The surface the scene is drawn over has changed, gradient or plain.
+    void backgroundChanged();
 
 protected:
     static GLenum getInternalTextureFormat();
