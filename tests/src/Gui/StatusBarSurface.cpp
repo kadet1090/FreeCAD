@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include <QApplication>
+#include <QBoxLayout>
 #include <QColor>
+#include <QCoreApplication>
+#include <QEvent>
 #include <QImage>
 #include <QLabel>
 #include <QPainter>
+#include <QSizeGrip>
 #include <QStatusBar>
 #include <QStyleOption>
 #include <QTest>
@@ -34,6 +38,41 @@ const QColor warningColor = QColor(QStringLiteral("#ffff00"));
 const QColor errorColor = QColor(QStringLiteral("#ff0000"));
 const QColor fallbackColor = QColor(QStringLiteral("#123456"));
 
+const QMargins statusBarPadding = QMargins(5, 3, 7, 4);
+constexpr int statusBarItemSpacing = 9;
+
+// Whether @p layout still holds a fixed (non-expanding) spacer sized along its own direction —
+// the same fixed-vs-stretch test applyLayoutTokens() itself makes before deleting one.
+bool hasFixedSpacer(QLayout* layout)
+{
+    auto* box = qobject_cast<QBoxLayout*>(layout);
+
+    if (box == nullptr) {
+        return false;
+    }
+
+    const QBoxLayout::Direction direction = box->direction();
+    const bool horizontal = direction == QBoxLayout::LeftToRight
+        || direction == QBoxLayout::RightToLeft;
+
+    for (int index = 0; index < box->count(); ++index) {
+        QLayoutItem* item = box->itemAt(index);
+        QSpacerItem* spacer = item->spacerItem();
+
+        if (spacer == nullptr || item->expandingDirections() != Qt::Orientations {}) {
+            continue;
+        }
+
+        const QSize extent = spacer->sizeHint();
+
+        if ((horizontal ? extent.width() : extent.height()) > 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 }  // namespace
 
 class TestStatusBarSurface: public QObject
@@ -59,6 +98,9 @@ public:
                     {.name = "StatusBarMessageTextColor", .value = "#0000ff"},
                     {.name = "StatusBarMessageWarningTextColor", .value = "#ffff00"},
                     {.name = "StatusBarMessageErrorTextColor", .value = "#ff0000"},
+                    {.name = "StatusBarPadding",
+                     .value = "padding(left: 5px, top: 3px, right: 7px, bottom: 4px)"},
+                    {.name = "StatusBarItemSpacing", .value = "9px"},
                 },
                 {.name = "Status Bar Surface"}
             )
@@ -266,6 +308,88 @@ private Q_SLOTS:
         // The same message twice: only the level differs, so a bar that ignored it would paint
         // the identical image both times.
         QVERIFY(renderedBar(bar, MessageLevel::Error) != renderedBar(bar, MessageLevel::Default));
+    }
+
+    void test_theLayoutTakesThePaddingAndSpacingTokens()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        Gui::FCStatusBar bar;
+        bar.setStyle(&style);
+        bar.resize(400, 40);
+
+        auto* first = new QLabel(QStringLiteral("mm"), &bar);
+        bar.addPermanentWidget(first);
+        bar.addPermanentWidget(new QLabel(QStringLiteral("deg"), &bar));
+
+        // The rebuild posts the layout request rather than sending it, and the request is the
+        // hook. Delivering it here is what a real bar gets before its next paint.
+        QCoreApplication::sendPostedEvents(&bar, QEvent::LayoutRequest);
+
+        // A rebuild is what Qt does on every item added, so this is also the state the bar is
+        // left in after any later one.
+        QCOMPARE(bar.layout()->contentsMargins(), statusBarPadding);
+
+        QLayout* itemLayout = nullptr;
+        for (QLayout* candidate : bar.findChildren<QLayout*>()) {
+            if (candidate->indexOf(first) >= 0) {
+                itemLayout = candidate;
+            }
+        }
+
+        QVERIFY(itemLayout != nullptr);
+        QCOMPARE(itemLayout->spacing(), statusBarItemSpacing);
+
+        // Qt's own spacing would otherwise sit inside the padding and add to it, making the token
+        // a description of part of the inset rather than of the inset. Its strut has to survive
+        // the same pass: that is what holds the bar to the height of its tallest item.
+        bool spacingRemains = false;
+        bool strutSurvives = false;
+
+        for (int index = 0; index < itemLayout->count(); ++index) {
+            QLayoutItem* item = itemLayout->itemAt(index);
+            QSpacerItem* spacer = item->spacerItem();
+
+            if (spacer == nullptr || item->expandingDirections() != Qt::Orientations {}) {
+                continue;
+            }
+
+            if (spacer->sizeHint().width() > 0) {
+                spacingRemains = true;
+            }
+            else if (spacer->sizeHint().height() > 0) {
+                strutSurvives = true;
+            }
+        }
+
+        QVERIFY(!spacingRemains);
+        QVERIFY(strutSurvives);
+
+        // The size grip is enabled by default, and nothing in FreeCAD disables it. Its own gap
+        // is not part of the bar's inset, so the sweep must leave whichever layout holds the
+        // grip alone; this is the regression test for that.
+        QLayout* gripLayout = nullptr;
+        for (QLayout* candidate : bar.findChildren<QLayout*>()) {
+            for (int index = 0; index < candidate->count(); ++index) {
+                if (qobject_cast<QSizeGrip*>(candidate->itemAt(index)->widget()) != nullptr) {
+                    gripLayout = candidate;
+                }
+            }
+        }
+
+        QVERIFY(gripLayout != nullptr);
+        QVERIFY(hasFixedSpacer(gripLayout));
+
+        // Qt nests a vertical layout between the outer one and the item layout, and spends the
+        // bar's vertical inset there. Found the same way itemLayout was: by asking who holds it.
+        QLayout* verticalLayout = nullptr;
+        for (QLayout* candidate : bar.findChildren<QLayout*>()) {
+            if (candidate->indexOf(itemLayout) >= 0) {
+                verticalLayout = candidate;
+            }
+        }
+
+        QVERIFY(verticalLayout != nullptr);
+        QVERIFY(!hasFixedSpacer(verticalLayout));
     }
 };
 

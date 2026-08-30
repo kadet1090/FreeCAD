@@ -485,6 +485,12 @@ public:
         QColor fallback
     );
 
+    /// The padding @p widget's element is stated to take, or no margins where none is stated.
+    static QMargins stylePadding(const QWidget* widget, StyleParameters::StyleComponentElement element);
+
+    /// The gap @p widget's element is stated to leave between its children, or 0 where none is.
+    static int styleSpacing(const QWidget* widget, StyleParameters::StyleComponentElement element);
+
     /**
      * @brief Recomputes the inherited transparency of @p widget and everything below it.
      *

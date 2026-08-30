@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 #pragma once
 
+#include <QPointer>
 #include <QStatusBar>
 
 #include <FCGlobal.h>
 
 #include "StyleParameters/StyleContext.h"
+
+class QLayout;
 
 namespace Gui
 {
@@ -36,12 +39,19 @@ public:
 
 protected:
     void paintEvent(QPaintEvent* event) override;
+    bool event(QEvent* event) override;
 
 private:
     /// The band the message is drawn in: everything left of the first item that stays visible.
     QRect messageRect() const;
 
+    /// Writes the stated inset and item gap onto the layout Qt rebuilt, which reads no metric.
+    void applyLayoutTokens();
+
     StyleParameters::MessageLevel _messageLevel = StyleParameters::MessageLevel::Default;
+
+    /// The layout last written to, so a request that rebuilt nothing is not answered with a write.
+    QPointer<QLayout> _adjustedLayout;
 };
 
 }  // namespace Gui

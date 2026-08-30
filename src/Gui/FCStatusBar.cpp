@@ -3,8 +3,11 @@
 
 #include <algorithm>
 
+#include <QBoxLayout>
+#include <QEvent>
 #include <QPainter>
 #include <QPaintEvent>
+#include <QSizeGrip>
 #include <QStyleOption>
 
 #include "FreeCADStyle.h"
@@ -19,6 +22,66 @@ namespace
 constexpr int messageLeadingMargin = 6;
 constexpr int messageTrailingMargin = 12;
 constexpr int messageItemGap = 2;
+
+/// The layout the bar's items were put into, as against the outer one wrapping it and the grip.
+QLayout* itemLayoutOf(QWidget* bar)
+{
+    for (QLayout* candidate : bar->findChildren<QLayout*>()) {
+        // The outer layout holds the size grip, so it answers this question wrongly.
+        if (candidate == bar->layout()) {
+            continue;
+        }
+
+        for (int index = 0; index < candidate->count(); ++index) {
+            if (candidate->itemAt(index)->widget() != nullptr) {
+                return candidate;
+            }
+        }
+    }
+
+    return bar->layout();
+}
+
+/// Whether @p layout holds the bar's size grip, whose own gap is not part of the bar's inset.
+bool holdsSizeGrip(const QLayout* layout)
+{
+    for (int index = 0; index < layout->count(); ++index) {
+        if (qobject_cast<QSizeGrip*>(layout->itemAt(index)->widget()) != nullptr) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @brief Drops the spacing reformat() built into @p layout, keeping what carries meaning.
+ *
+ * The stretch parting the two item groups expands and is left alone. The strut is fixed like
+ * the spacing is, and holds the bar to the height of its tallest item, but Qt builds it across
+ * the layout's direction rather than along it — which is what tells the two apart.
+ */
+void removeFixedSpacing(QBoxLayout* layout)
+{
+    const QBoxLayout::Direction direction = layout->direction();
+    const bool horizontal = direction == QBoxLayout::LeftToRight
+        || direction == QBoxLayout::RightToLeft;
+
+    for (int index = layout->count() - 1; index >= 0; --index) {
+        QLayoutItem* item = layout->itemAt(index);
+        QSpacerItem* spacer = item->spacerItem();
+
+        if (spacer == nullptr || item->expandingDirections() != Qt::Orientations {}) {
+            continue;
+        }
+
+        const QSize extent = spacer->sizeHint();
+
+        if ((horizontal ? extent.width() : extent.height()) > 0) {
+            delete layout->takeAt(index);
+        }
+    }
+}
 }  // namespace
 
 FCStatusBar::FCStatusBar(QWidget* parent)
@@ -43,7 +106,8 @@ QRect FCStatusBar::messageRect() const
     int right = width() - messageTrailingMargin;
 
     // While a message shows, Qt hides every item that is not permanent, so what is still visible
-    // is what the message has to stay clear of.
+    // is what the message has to stay clear of. This is the same bound Qt's own first-permanent-
+    // item check would find, since status-bar items are inserted in geometric order.
     for (const QObject* child : children()) {
         const auto* item = qobject_cast<const QWidget*>(child);
 
@@ -80,6 +144,58 @@ void FCStatusBar::paintEvent(QPaintEvent*)
         FreeCADStyle::statusMessageColor(this, _messageLevel, palette().windowText().color())
     );
     painter.drawText(messageRect(), Qt::AlignLeading | Qt::AlignVCenter | Qt::TextSingleLine, message);
+}
+
+void FCStatusBar::applyLayoutTokens()
+{
+    QLayout* outer = layout();
+
+    // reformat() builds a new layout every time, so the one already adjusted is the one to leave
+    // alone: writing its margins again would invalidate it and post the request that called this.
+    if (outer == nullptr || _adjustedLayout == outer) {
+        return;
+    }
+
+    _adjustedLayout = outer;
+
+    // Every layout in the tree, not just these two: Qt nests a vertical layout between them and
+    // spends the bar's vertical inset there. Whichever one holds the size grip is skipped: with
+    // the grip enabled that is the outer layout and its gap belongs to the grip, not the bar's
+    // inset; with the grip disabled Qt builds no wrapper at all and the outer layout is the one
+    // whose spacers the token is meant to replace, so this test has to be made per layout rather
+    // than assumed to be the outer one.
+    for (QBoxLayout* box : findChildren<QBoxLayout*>()) {
+        if (holdsSizeGrip(box)) {
+            continue;
+        }
+
+        removeFixedSpacing(box);
+    }
+
+    outer->setContentsMargins(
+        FreeCADStyle::stylePadding(this, StyleParameters::StyleComponentElement::Root)
+    );
+    itemLayoutOf(this)->setSpacing(
+        FreeCADStyle::styleSpacing(this, StyleParameters::StyleComponentElement::Item)
+    );
+}
+
+bool FCStatusBar::event(QEvent* event)
+{
+    // reformat() deletes and rebuilds the layout on every item change, so the tokens have to be
+    // written again each time it does; the rebuild is what posts this.
+    if (event->type() == QEvent::LayoutRequest) {
+        applyLayoutTokens();
+    }
+
+    // A theme reload changes what the tokens resolve to without rebuilding anything, so the
+    // layout that was adjusted has to stop counting as adjusted.
+    if (event->type() == QEvent::StyleChange) {
+        _adjustedLayout = nullptr;
+        applyLayoutTokens();
+    }
+
+    return QStatusBar::event(event);
 }
 
 }  // namespace Gui

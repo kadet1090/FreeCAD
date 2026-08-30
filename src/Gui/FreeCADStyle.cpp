@@ -1815,6 +1815,28 @@ Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Al
     return color ? color->asValue<QColor>() : fallback;
 }
 
+/*static*/ QMargins FreeCADStyle::stylePadding(const QWidget* widget, StyleComponentElement element)
+{
+    const FreeCADStyle* style = styleOf(widget);
+
+    if (style == nullptr) {
+        return {};
+    }
+
+    return style->resolveBoxGeometry(contextOf(widget, nullptr, element)).padding.toMargins();
+}
+
+/*static*/ int FreeCADStyle::styleSpacing(const QWidget* widget, StyleComponentElement element)
+{
+    const FreeCADStyle* style = styleOf(widget);
+
+    if (style == nullptr) {
+        return 0;
+    }
+
+    return style->resolveBoxGeometry(contextOf(widget, nullptr, element)).spacing;
+}
+
 // ─── Context building ────────────────────────────────────────────────────────
 
 // The entry @p widget's dropdown currently holds, or nothing when nothing drives its selection.
