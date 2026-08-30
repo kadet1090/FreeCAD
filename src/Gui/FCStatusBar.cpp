@@ -19,12 +19,13 @@ namespace Gui
 namespace
 {
 // Qt lays the message out between these bounds, and keeps two pixels clear of the first item
-// beside it. Mirrored here because QStatusBarPrivate::messageRect() is private.
+// beside it — of the size grip it keeps none. Mirrored here because QStatusBarPrivate::
+// messageRect() is private.
 constexpr int messageLeadingMargin = 6;
 constexpr int messageTrailingMargin = 12;
 constexpr int messageItemGap = 2;
 
-/// The layout the bar's items were put into, as against the outer one wrapping it and the grip.
+/// The layout the bar's items were put into, or nothing while the bar is holding none.
 QLayout* itemLayoutOf(QWidget* bar)
 {
     for (QLayout* candidate : bar->findChildren<QLayout*>()) {
@@ -40,7 +41,7 @@ QLayout* itemLayoutOf(QWidget* bar)
         }
     }
 
-    return bar->layout();
+    return nullptr;
 }
 
 /// Whether @p layout holds the bar's size grip, whose own gap is not part of the bar's inset.
@@ -116,11 +117,13 @@ QRect FCStatusBar::messageRect() const
             continue;
         }
 
+        const int gap = qobject_cast<const QSizeGrip*>(item) == nullptr ? messageItemGap : 0;
+
         if (rightToLeft) {
-            left = std::max(left, item->x() + item->width() + messageItemGap);
+            left = std::max(left, item->x() + item->width() + gap);
         }
         else {
-            right = std::min(right, item->x() - messageItemGap);
+            right = std::min(right, item->x() - gap);
         }
     }
 
@@ -157,6 +160,17 @@ void FCStatusBar::applyLayoutTokens()
         return;
     }
 
+    const std::optional<QMargins> padding
+        = FreeCADStyle::stylePadding(this, StyleParameters::StyleComponentElement::Root);
+    const std::optional<int> spacing
+        = FreeCADStyle::styleSpacing(this, StyleParameters::StyleComponentElement::Item);
+
+    // A theme that speaks for neither gets Qt's layout exactly as Qt built it, spacers and all:
+    // a bar no theme describes has to look the way it looked before this component existed.
+    if (!padding && !spacing) {
+        return;
+    }
+
     _adjustedLayout = outer;
 
     // Every layout in the tree, not just these two: Qt nests a vertical layout between them and
@@ -173,12 +187,15 @@ void FCStatusBar::applyLayoutTokens()
         removeFixedSpacing(box);
     }
 
-    outer->setContentsMargins(
-        FreeCADStyle::stylePadding(this, StyleParameters::StyleComponentElement::Root)
-    );
-    itemLayoutOf(this)->setSpacing(
-        FreeCADStyle::styleSpacing(this, StyleParameters::StyleComponentElement::Item)
-    );
+    if (padding) {
+        outer->setContentsMargins(*padding);
+    }
+
+    if (spacing) {
+        if (QLayout* itemLayout = itemLayoutOf(this)) {
+            itemLayout->setSpacing(*spacing);
+        }
+    }
 
     applyHeightFloor();
 }

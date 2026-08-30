@@ -81,6 +81,19 @@ bool hasFixedSpacer(QLayout* layout)
     return false;
 }
 
+// The layout @p item was put into, found the way the bar itself has to find it: by asking every
+// layout in the tree who holds it.
+QLayout* layoutHolding(QWidget* bar, QWidget* item)
+{
+    for (QLayout* candidate : bar->findChildren<QLayout*>()) {
+        if (candidate->indexOf(item) >= 0) {
+            return candidate;
+        }
+    }
+
+    return nullptr;
+}
+
 }  // namespace
 
 class TestStatusBarSurface: public QObject
@@ -272,6 +285,56 @@ private Q_SLOTS:
         QCOMPARE(bar.minimumHeight(), statusBarFloor);
     }
 
+    void test_aBarWithNoStatedLayoutKeepsQtsOwn()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        Gui::FCStatusBar bar;
+        bar.setStyle(&style);
+        style.polish(&bar);
+
+        // The silence a theme without a StatusBar block leaves. FreeCAD Classic ships no
+        // parameters file at all, so neither of these is stated anywhere under it.
+        Gui::FreeCADStyle::setStyleOverride(
+            &bar,
+            QStringLiteral("StatusBarPadding"),
+            QStringLiteral("reset()")
+        );
+        Gui::FreeCADStyle::setStyleOverride(
+            &bar,
+            QStringLiteral("StatusBarItemSpacing"),
+            QStringLiteral("reset()")
+        );
+
+        // Adding an item is what makes Qt rebuild the layout from its own constants, so this is
+        // the layout such a theme leaves the bar holding.
+        auto* first = new QLabel(QStringLiteral("mm"), &bar);
+        bar.addPermanentWidget(first);
+        QCoreApplication::sendPostedEvents(&bar, QEvent::LayoutRequest);
+
+        QLayout* itemLayout = layoutHolding(&bar, first);
+
+        QVERIFY(itemLayout != nullptr);
+
+        // Qt's own inset, gap and spacers, untouched: the bar has to look exactly as it did
+        // before the component existed, not flush against its items and the window edge.
+        QCOMPARE(bar.layout()->contentsMargins(), QMargins());
+        QCOMPARE(itemLayout->spacing(), qtItemSpacing);
+        QVERIFY(hasFixedSpacer(itemLayout));
+    }
+
+    void test_aBarWithNoItemsLeavesTheGripLayoutAlone()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        Gui::FCStatusBar bar;
+        bar.setStyle(&style);
+        style.polish(&bar);
+
+        // Nothing has been added yet, so there is no item layout for a gap to go on. The outer
+        // layout is the one holding the size grip, and a gap written there parts it from the
+        // bar's edge.
+        QVERIFY(bar.layout()->spacing() != statusBarItemSpacing);
+    }
+
     void test_eachLevelResolvesItsOwnColour()  // NOLINT
     {
         using Gui::StyleParameters::MessageLevel;
@@ -396,12 +459,7 @@ private Q_SLOTS:
         // left in after any later one.
         QCOMPARE(bar.layout()->contentsMargins(), statusBarPadding);
 
-        QLayout* itemLayout = nullptr;
-        for (QLayout* candidate : bar.findChildren<QLayout*>()) {
-            if (candidate->indexOf(first) >= 0) {
-                itemLayout = candidate;
-            }
-        }
+        QLayout* itemLayout = layoutHolding(&bar, first);
 
         QVERIFY(itemLayout != nullptr);
         QCOMPARE(itemLayout->spacing(), statusBarItemSpacing);

@@ -485,13 +485,34 @@ public:
         QColor fallback
     );
 
-    /// The padding @p widget's element is stated to take, or no margins where none is stated.
-    static QMargins stylePadding(const QWidget* widget, StyleParameters::StyleComponentElement element);
+    /**
+     * @brief The padding @p widget's element is stated to take, or nothing where none is.
+     *
+     * Answers for the component contextOf() derives alone: unlike labelAlignment() this does not
+     * route through panelContext(), so a panel-hosted caller resolves without the Position
+     * variant.
+     */
+    static std::optional<QMargins> stylePadding(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    );
 
-    /// The gap @p widget's element is stated to leave between its children, or 0 where none is.
-    static int styleSpacing(const QWidget* widget, StyleParameters::StyleComponentElement element);
+    /**
+     * @brief The gap @p widget's element is stated to leave between its children, or nothing
+     * where none is stated.
+     *
+     * Answers for the component contextOf() derives alone, as stylePadding() does.
+     */
+    static std::optional<int> styleSpacing(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    );
 
-    /// The height floor @p widget's element is stated to keep, or nothing where none is stated.
+    /**
+     * @brief The height floor @p widget's element is stated to keep, or nothing where none is.
+     *
+     * Answers for the component contextOf() derives alone, as stylePadding() does.
+     */
     static std::optional<int> styleMinHeight(
         const QWidget* widget,
         StyleParameters::StyleComponentElement element

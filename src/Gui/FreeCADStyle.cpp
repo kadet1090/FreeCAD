@@ -1815,7 +1815,10 @@ Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Al
     return color ? color->asValue<QColor>() : fallback;
 }
 
-/*static*/ QMargins FreeCADStyle::stylePadding(const QWidget* widget, StyleComponentElement element)
+/*static*/ std::optional<QMargins> FreeCADStyle::stylePadding(
+    const QWidget* widget,
+    StyleComponentElement element
+)
 {
     const FreeCADStyle* style = styleOf(widget);
 
@@ -1823,18 +1826,35 @@ Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Al
         return {};
     }
 
-    return style->resolveBoxGeometry(contextOf(widget, nullptr, element)).padding.toMargins();
+    const auto padding
+        = style->resolve<Insets>(contextOf(widget, nullptr, element), StyleProperty::Padding);
+
+    if (!padding) {
+        return {};
+    }
+
+    return Base::convertTo<QMarginsF>(*padding).toMargins();
 }
 
-/*static*/ int FreeCADStyle::styleSpacing(const QWidget* widget, StyleComponentElement element)
+/*static*/ std::optional<int> FreeCADStyle::styleSpacing(
+    const QWidget* widget,
+    StyleComponentElement element
+)
 {
     const FreeCADStyle* style = styleOf(widget);
 
     if (style == nullptr) {
-        return 0;
+        return {};
     }
 
-    return style->resolveBoxGeometry(contextOf(widget, nullptr, element)).spacing;
+    const auto spacing
+        = style->resolve<Numeric>(contextOf(widget, nullptr, element), StyleProperty::Spacing);
+
+    if (!spacing) {
+        return {};
+    }
+
+    return static_cast<int>(*spacing);
 }
 
 /*static*/ std::optional<int> FreeCADStyle::styleMinHeight(
@@ -1848,7 +1868,14 @@ Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Al
         return {};
     }
 
-    return style->resolveBoxGeometry(contextOf(widget, nullptr, element)).minHeight;
+    const auto minHeight
+        = style->resolve<Numeric>(contextOf(widget, nullptr, element), StyleProperty::MinHeight);
+
+    if (!minHeight) {
+        return {};
+    }
+
+    return static_cast<int>(*minHeight);
 }
 
 // ─── Context building ────────────────────────────────────────────────────────
