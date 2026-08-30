@@ -352,6 +352,11 @@ ScrollBarThumbMinLength: 50px
 # which is stylesheet work QProxyStyle cannot reach.
 DialogBackground: "@Background.050"
 
+# That fill is opaque, so a task box presents a solid surface to the dialog inside it even
+# while the panel around it is see-through. Without this the whole dialog stays in the
+# transparent chain and its controls paint as overlay chrome.
+TaskBoxTransparentIsTransparent: "false"
+
 # The two halves of a split button are painted as separate boxes, so the token system zeroes
 # the corners where they meet and drops the trailing half's border there. FreeCADStyle needs
 # to know nothing about SplitButton for this to work.

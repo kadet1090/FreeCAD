@@ -8,6 +8,7 @@
 #include <Gui/Application.h>
 #include <Gui/FreeCADStyle.h>
 #include <Gui/StyleParameters/ParameterManager.h>
+#include <Gui/TaskView/TaskView.h>
 
 class TestStyleTransparency: public QObject
 {
@@ -42,6 +43,9 @@ public:
                     // Mirrors the production token: the property editor paints an opaque
                     // panel, so it presents an opaque surface to everything inside it.
                     {.name = "PropertyEditorTransparentIsTransparent", .value = "false"},
+                    // Mirrors the production token: a task box is filled by its own QSS, so
+                    // everything a task dialog puts inside it sits on an opaque surface.
+                    {.name = "TaskBoxTransparentIsTransparent", .value = "false"},
                 },
                 {.name = "Transparency Fixture"}
             )
@@ -293,6 +297,21 @@ private Q_SLOTS:
 
         QVERIFY(Gui::FreeCADStyle::isTransparent(editor));
         QVERIFY(!Gui::FreeCADStyle::isTransparent(viewport));
+    }
+
+    // A task box names itself so the token above can reach it. Without that name its content
+    // stays in the transparent chain, and a tab bar inside a task dialog paints as an overlay.
+    void test_taskBoxBreaksChainBelow()  // NOLINT
+    {
+        QWidget root;
+        auto* taskBox = new Gui::TaskView::TaskBox(&root);
+        auto* content = new QWidget(taskBox);
+
+        Gui::FreeCADStyle style;
+        style.updateTransparency(&root, true);
+
+        QVERIFY(Gui::FreeCADStyle::isTransparent(taskBox));
+        QVERIFY(!Gui::FreeCADStyle::isTransparent(content));
     }
 };
 
