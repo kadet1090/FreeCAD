@@ -897,6 +897,24 @@ protected:
     /// Insets a text edit's content by its padding token, through the document's own margin.
     void applyTextEditDocumentPadding(QWidget* widget, QTextDocument* document) const;
 
+    /// The edges on which @p option's cell continues into another column of the same row.
+    static Qt::Edges columnSeamsOf(const QStyleOptionViewItem& option, const QWidget* widget);
+
+    /// Opens a box on its @p seams, so the parts of one row read as a band rather than a string
+    /// of separate chips: the corner, the edge and the margin all go where the row continues.
+    static void openSeams(BoxGeometryDefinition& geometry, BoxStyleDefinition& style, Qt::Edges seams);
+
+    /// Draws the rule marking a seam along the leading edge of @p box, if the theme states one.
+    void drawSeamRule(
+        QPainter* painter,
+        const StyleParameters::StyleContext& context,
+        const QRect& box,
+        Qt::Edges seams
+    ) const;
+
+    /// What a column keeps between the seam before it and its own content.
+    int columnGapAt(const StyleParameters::StyleContext& context, Qt::Edges seams) const;
+
     void drawHeaderSection(QPainter* painter, const QStyleOptionHeader* option, const QWidget* widget) const;
 
     void drawComboBox(const QStyleOptionComboBox* option, QPainter* painter, const QWidget* widget) const;
@@ -1179,7 +1197,8 @@ protected:
     void drawSeparatorRule(
         QPainter* painter,
         const StyleParameters::StyleContext& context,
-        const QRect& band
+        const QRect& band,
+        Qt::Orientation orientation
     ) const;
 
     QSize menuSeparatorSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const;

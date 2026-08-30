@@ -1862,24 +1862,27 @@ void FreeCADStyle::drawMenuSeparator(
         ruleRect = drawMenuSectionLabel(painter, option, widget, ruleRect);
     }
 
-    drawSeparatorRule(painter, context, ruleRect);
+    drawSeparatorRule(painter, context, ruleRect, Qt::Horizontal);
 }
 
 void FreeCADStyle::drawSeparatorRule(
     QPainter* painter,
     const StyleContext& context,
-    const QRect& ruleRect
+    const QRect& ruleRect,
+    Qt::Orientation orientation
 ) const
 {
     const BoxStyleDefinition boxStyle = resolveBoxStyle(context);
 
     const int thickness = static_cast<int>(boxStyle.borderThickness.value_or(QMarginsF()).top());
     const auto color = resolve<Base::Color>(context, StyleProperty::BorderColor);
-    if (thickness <= 0 || !color || ruleRect.width() <= 0) {
+    if (thickness <= 0 || !color || ruleRect.isEmpty()) {
         return;
     }
 
-    const QRect line(ruleRect.left(), ruleRect.center().y() - (thickness / 2), ruleRect.width(), thickness);
+    const QRect line = orientation == Qt::Horizontal
+        ? QRect(ruleRect.left(), ruleRect.center().y() - (thickness / 2), ruleRect.width(), thickness)
+        : QRect(ruleRect.center().x() - (thickness / 2), ruleRect.top(), thickness, ruleRect.height());
     painter->fillRect(line, color->asValue<QColor>());
 }
 
@@ -2821,6 +2824,92 @@ QList<QLineF> FreeCADStyle::branchSegments(
     return segments;
 }
 
+Qt::Edges FreeCADStyle::columnSeamsOf(const QStyleOptionViewItem& option, const QWidget* widget)
+{
+    // Qt states a cell's place among the *visible* columns of its row, so a single-column row —
+    // and a spanning one — says OnlyOne and has no seam on either side.
+    switch (option.viewItemPosition) {
+        case QStyleOptionViewItem::Beginning:
+            return Qt::RightEdge;
+        case QStyleOptionViewItem::Middle:
+            return Qt::LeftEdge | Qt::RightEdge;
+        case QStyleOptionViewItem::End:
+            return Qt::LeftEdge;
+        case QStyleOptionViewItem::OnlyOne:
+            return {};
+        case QStyleOptionViewItem::Invalid:
+            break;
+    }
+
+    // A view asking what a cell should *measure* has not laid the row out yet and leaves the
+    // position invalid, so the columns have to be read from the header instead. Without this the
+    // width would come out one gap short of what the same cell is then painted with.
+    const auto* view = qobject_cast<const QTreeView*>(widget);
+    if (view == nullptr || view->header() == nullptr || !option.index.isValid()) {
+        return {};
+    }
+
+    const QHeaderView* header = view->header();
+    const int visual = header->visualIndex(option.index.column());
+
+    Qt::Edges seams;
+    for (int other = 0; other < header->count(); ++other) {
+        if (other == visual || header->isSectionHidden(header->logicalIndex(other))) {
+            continue;
+        }
+        seams |= other < visual ? Qt::LeftEdge : Qt::RightEdge;
+    }
+    return seams;
+}
+
+void FreeCADStyle::openSeams(BoxGeometryDefinition& geometry, BoxStyleDefinition& style, Qt::Edges seams)
+{
+    if (seams.testFlag(Qt::LeftEdge)) {
+        geometry.margin.setLeft(0);
+        style.borderRadius.setLeft(0);
+        if (style.borderThickness) {
+            style.borderThickness->setLeft(0);
+        }
+    }
+
+    if (seams.testFlag(Qt::RightEdge)) {
+        geometry.margin.setRight(0);
+        style.borderRadius.setRight(0);
+        if (style.borderThickness) {
+            style.borderThickness->setRight(0);
+        }
+    }
+}
+
+void FreeCADStyle::drawSeamRule(
+    QPainter* painter,
+    const StyleContext& context,
+    const QRect& box,
+    Qt::Edges seams
+) const
+{
+    // Drawn on the leading edge only, so a boundary between two parts carries one rule rather
+    // than each side drawing its own on top of the other.
+    if (!seams.testFlag(Qt::LeftEdge)) {
+        return;
+    }
+
+    StyleContext separatorContext = context;
+    separatorContext.element = StyleComponentElement::Separator;
+
+    drawSeparatorRule(
+        painter,
+        separatorContext,
+        QRect(box.left(), box.top(), 1, box.height()),
+        Qt::Vertical
+    );
+}
+
+int FreeCADStyle::columnGapAt(const StyleContext& context, Qt::Edges seams) const
+{
+    return seams.testFlag(Qt::LeftEdge) ? resolveBoxGeometry(context).columnGap : 0;
+}
+
 bool FreeCADStyle::isLeadingCell(const QStyleOptionViewItem* vopt)
 {
     return vopt->viewItemPosition == QStyleOptionViewItem::Beginning
@@ -3049,7 +3138,11 @@ std::optional<FreeCADStyle::ItemViewLayout> FreeCADStyle::itemViewLayout(
     const BoxGeometryDefinition geometry = resolveBoxGeometry(context);
 
     // The reserved inter-row gap belongs to the list background, not to the cell content.
-    const QRect content = geometry.contentRect(option->rect).adjusted(0, geometry.spacing, 0, 0);
+    QRect content = geometry.contentRect(option->rect).adjusted(0, geometry.spacing, 0, 0);
+
+    // A column that continues out of the one before it holds its content off that seam, so the
+    // two columns' contents keep their distance even where the band between them does not.
+    content.setLeft(content.left() + columnGapAt(context, columnSeamsOf(*option, widget)));
 
     const auto centredAt = [&content](int left, const QSize& size) {
         const int top = content.top() + ((content.height() - size.height()) / 2);
@@ -3156,6 +3249,10 @@ QSize FreeCADStyle::itemViewItemSizeFromContents(
             const int gaps = std::max(0, parts - 1) * geometry.iconSpacing;
             const int gutters = 2 * parts * itemViewTextGutter(option, widget);
             baseSize.setWidth(std::max(0, baseSize.width() - gutters + gaps));
+
+            // The column has to be wide enough for the gap its content is held off the seam by,
+            // or resizing it to contents would elide exactly that much of the label.
+            baseSize.rwidth() += columnGapAt(context, columnSeamsOf(*vopt, widget));
 
             // Qt's height is the tallest part, plus two pixels whenever that part is the icon
             // ("prevent icons from overlapping"). Both halves make the pitch depend on which
@@ -4685,8 +4782,16 @@ void FreeCADStyle::drawPrimitive(
         drawItemViewRow(painter, vopt, widget, RowLayer::Interaction);
 
         const StyleContext context = contextOf(widget, option, StyleComponentElement::Item);
-        const BoxGeometryDefinition itemGeometry = resolveBoxGeometry(context);
-        paintBox(painter, option->rect.adjusted(0, itemGeometry.spacing, 0, 0), context);
+        BoxGeometryDefinition itemGeometry = resolveBoxGeometry(context);
+        BoxStyleDefinition itemStyle = resolveBoxStyle(context);
+        const Qt::Edges seams = columnSeamsOf(*vopt, widget);
+        openSeams(itemGeometry, itemStyle, seams);
+
+        // Same inset paintBox() applies; taken here because the seams have already been opened
+        // in the geometry the inset comes from.
+        const QRect box = itemGeometry.borderRect(option->rect.adjusted(0, itemGeometry.spacing, 0, 0));
+        drawBoxBackground(painter, box, itemStyle);
+        drawSeamRule(painter, context, box, seams);
 
         return;
     }
@@ -4878,7 +4983,13 @@ void FreeCADStyle::drawControl(
     if (element == CE_ItemViewItem) {
         if (const auto separator = dropdownSeparatorContext(option, widget)) {
             const BoxGeometryDefinition geometry = resolveBoxGeometry(*separator);
-            drawSeparatorRule(painter, *separator, dropdownSeparatorRuleBand(option, widget, geometry));
+            drawSeparatorRule(
+                painter,
+                *separator,
+                dropdownSeparatorRuleBand(option, widget, geometry),
+                Qt::Horizontal
+            );
+            return;
             return;
         }
 
