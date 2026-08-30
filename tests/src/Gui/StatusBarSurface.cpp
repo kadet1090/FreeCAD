@@ -26,6 +26,11 @@ constexpr int statusBarFloor = 31;
 const QColor statusBarBackground = QColor(QStringLiteral("#202020"));
 const QColor statusBarEdgeColor = QColor(QStringLiteral("#00ff00"));
 
+const QColor messageColor = QColor(QStringLiteral("#0000ff"));
+const QColor warningColor = QColor(QStringLiteral("#ffff00"));
+const QColor errorColor = QColor(QStringLiteral("#ff0000"));
+const QColor fallbackColor = QColor(QStringLiteral("#123456"));
+
 }  // namespace
 
 class TestStatusBarSurface: public QObject
@@ -48,6 +53,9 @@ public:
                     {.name = "StatusBarBorderColor", .value = "#00ff00"},
                     {.name = "StatusBarBorderThickness", .value = "border_thickness(0px, top: 2px)"},
                     {.name = "StatusBarMinHeight", .value = "31px"},
+                    {.name = "StatusBarMessageTextColor", .value = "#0000ff"},
+                    {.name = "StatusBarMessageWarningTextColor", .value = "#ffff00"},
+                    {.name = "StatusBarMessageErrorTextColor", .value = "#ff0000"},
                 },
                 {.name = "Status Bar Surface"}
             )
@@ -121,6 +129,66 @@ private Q_SLOTS:
         style.polish(&bar);
 
         QCOMPARE(bar.minimumHeight(), statusBarFloor);
+    }
+
+    void test_eachLevelResolvesItsOwnColour()  // NOLINT
+    {
+        using Gui::StyleParameters::MessageLevel;
+
+        Gui::FreeCADStyle style;
+        QStatusBar bar;
+        bar.setStyle(&style);
+
+        QCOMPARE(
+            Gui::FreeCADStyle::statusMessageColor(&bar, MessageLevel::Default, fallbackColor),
+            messageColor
+        );
+        QCOMPARE(
+            Gui::FreeCADStyle::statusMessageColor(&bar, MessageLevel::Warning, fallbackColor),
+            warningColor
+        );
+        QCOMPARE(
+            Gui::FreeCADStyle::statusMessageColor(&bar, MessageLevel::Error, fallbackColor),
+            errorColor
+        );
+    }
+
+    void test_aLevelWithNoColourOfItsOwnFallsBackToTheMessageToken()  // NOLINT
+    {
+        using Gui::StyleParameters::MessageLevel;
+
+        Gui::FreeCADStyle style;
+        QStatusBar bar;
+        bar.setStyle(&style);
+
+        // The fixture states no Critical colour, so the severity variant has to fall through to
+        // the unqualified message token rather than to the caller's fallback.
+        QCOMPARE(
+            Gui::FreeCADStyle::statusMessageColor(&bar, MessageLevel::Critical, fallbackColor),
+            messageColor
+        );
+    }
+
+    void test_aStatedOverrideOutranksTheThemeColour()  // NOLINT
+    {
+        using Gui::StyleParameters::MessageLevel;
+
+        Gui::FreeCADStyle style;
+        QStatusBar bar;
+        bar.setStyle(&style);
+        style.polish(&bar);
+
+        // Exactly the call StatusBarObserver makes when the user has set an OutputWindow colour.
+        Gui::FreeCADStyle::setStyleOverride(
+            &bar,
+            QStringLiteral("StatusBarMessageErrorTextColor"),
+            QStringLiteral("#00ffff")
+        );
+
+        QCOMPARE(
+            Gui::FreeCADStyle::statusMessageColor(&bar, MessageLevel::Error, fallbackColor),
+            QColor(QStringLiteral("#00ffff"))
+        );
     }
 };
 

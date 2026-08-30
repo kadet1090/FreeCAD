@@ -478,6 +478,13 @@ public:
      */
     static Qt::Alignment labelAlignment(const QWidget* widget, Qt::Alignment fallback);
 
+    /// The colour a status message of @p level is stated to take, or @p fallback where none is.
+    static QColor statusMessageColor(
+        const QWidget* statusBar,
+        StyleParameters::MessageLevel level,
+        QColor fallback
+    );
+
     /**
      * @brief Recomputes the inherited transparency of @p widget and everything below it.
      *

@@ -1795,6 +1795,26 @@ Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Al
     return style->resolveAlignment(context, fallback);
 }
 
+/*static*/ QColor FreeCADStyle::statusMessageColor(
+    const QWidget* statusBar,
+    MessageLevel level,
+    QColor fallback
+)
+{
+    const FreeCADStyle* style = styleOf(statusBar);
+
+    if (style == nullptr) {
+        return fallback;
+    }
+
+    StyleContext context = contextOf(statusBar, nullptr, StyleComponentElement::Message);
+    context.variant.set(VariantSlot::MessageLevel, level);
+
+    const auto color = style->resolve<Base::Color>(context, StyleProperty::TextColor);
+
+    return color ? color->asValue<QColor>() : fallback;
+}
+
 // ─── Context building ────────────────────────────────────────────────────────
 
 // The entry @p widget's dropdown currently holds, or nothing when nothing drives its selection.
