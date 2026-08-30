@@ -155,6 +155,7 @@ public:
     void hideCompleter();
     void setExactMatch(bool enabled = true);
     QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
 protected:
     void keyPressEvent(QKeyEvent* event) override;
