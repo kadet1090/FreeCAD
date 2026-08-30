@@ -33,7 +33,9 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
+#include <QPointer>
 #include <QProcess>
+#include <QStyleOptionFrame>
 #include <QThread>
 #include <QTimer>
 #include <QToolTip>
@@ -338,6 +340,9 @@ class TreeWidgetItemDelegate: public QStyledItemDelegate
 
     QRect calculateItemRect(const QStyleOptionViewItem& option) const;
 
+    /// Geometry of the editor open on @p index, if it is that index that is being edited.
+    std::optional<QRect> editorRect(const QModelIndex& index) const;
+
 public:
     explicit TreeWidgetItemDelegate(QObject* parent = nullptr);
 
@@ -346,6 +351,14 @@ public:
         const QStyleOptionViewItem&,
         const QModelIndex& index
     ) const;
+
+    void destroyEditor(QWidget* editor, const QModelIndex& index) const override;
+
+    void updateEditorGeometry(
+        QWidget* editor,
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+    ) const override;
 
     virtual QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const;
 
@@ -356,6 +369,10 @@ public:
         const QStyleOptionViewItem& option,
         const QModelIndex& index
     ) const;
+
+private:
+    mutable QPointer<QWidget> activeEditor;
+    mutable QPersistentModelIndex activeEditorIndex;
 };
 
 }  // namespace Gui
@@ -382,6 +399,14 @@ QRect TreeWidgetItemDelegate::calculateItemRect(const QStyleOptionViewItem& opti
     return rect;
 }
 
+std::optional<QRect> TreeWidgetItemDelegate::editorRect(const QModelIndex& index) const
+{
+    if (activeEditor.isNull() || activeEditorIndex != index) {
+        return {};
+    }
+    return activeEditor->geometry();
+}
+
 void TreeWidgetItemDelegate::paint(
     QPainter* painter,
     const QStyleOptionViewItem& option,
@@ -404,6 +429,15 @@ void TreeWidgetItemDelegate::paint(
         // borderRect removes margin from the tight rect, creating visual breathing room
         // outside the painted background box without clipping content.
         opt.rect = geometry.borderRect(calculateItemRect(opt));
+
+        // While a name is being edited the label the box was sized to hug is covered by the
+        // editor, so the box has to close around the editor instead — otherwise the field
+        // hangs out of the item it belongs to.
+        if (const auto editorGeometry = editorRect(index)) {
+            const int right = editorGeometry->right() + static_cast<int>(geometry.padding.right());
+            opt.rect.setRight(std::min(right, geometry.borderRect(option.rect).right()));
+        }
+
         opt.viewItemPosition = QStyleOptionViewItem::OnlyOne;
     }
 
@@ -451,26 +485,69 @@ class DynamicQLineEdit: public ExpLineEdit
 public:
     DynamicQLineEdit(QWidget* parent = nullptr)
         : ExpLineEdit(parent)
-    {}
+    {
+        // The view fills the field in only after it has laid it out, and the user keeps typing
+        // after that; both change how much room the name needs.
+        connect(this, &QLineEdit::textChanged, this, &DynamicQLineEdit::resizeToContents);
+    }
 
     QSize sizeHint() const override
     {
         QSize size = QLineEdit::sizeHint();
-        QFontMetrics fm(font());
-        int availableWidth = parentWidget()->width() - geometry().x();  // Calculate available width
-        int margin = 2 * (style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1)
-            + 2 * style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing)
-            + TreeParams::getItemBackgroundPadding();
-        size.setWidth(std::min(fm.horizontalAdvance(text()) + margin, availableWidth));
+
+        const int availableWidth = parentWidget()->width() - geometry().x();
+        size.setWidth(
+            std::min(chromeWidth() + fontMetrics().horizontalAdvance(text()), availableWidth)
+        );
+
         return size;
     }
 
-    // resize on key presses
-    void keyPressEvent(QKeyEvent* event) override
+protected:
+    void resizeEvent(QResizeEvent* event) override
     {
-        ExpLineEdit::keyPressEvent(event);
-        setMinimumWidth(sizeHint().width());
+        ExpLineEdit::resizeEvent(event);
+
+        // The item behind draws its background box around this field, so its border moves
+        // with every character typed into it.
+        if (QWidget* viewport = parentWidget()) {
+            viewport->update();
+        }
     }
+
+private:
+    void resizeToContents()
+    {
+        if (initialWidth < 0) {
+            initialWidth = width();
+        }
+
+        // Never narrower than the view laid it out: over an opaque surface that width is the
+        // whole row, and a field pulling away from it would look like it lost its cell.
+        resize(std::max(initialWidth, sizeHint().width()), height());
+    }
+
+    /// Width the style spends on everything that is not the text: border, padding and the two
+    /// pixels QLineEdit insets its text by on each side.
+    int chromeWidth() const
+    {
+        static constexpr int lineEditTextInset = 4;
+
+        QStyleOptionFrame option;
+        initStyleOption(&option);
+
+        const QMargins textMargin = textMargins();
+        const QMargins contents = contentsMargins();
+        const QSize empty(
+            textMargin.left() + textMargin.right() + contents.left() + contents.right()
+                + lineEditTextInset,
+            0
+        );
+
+        return style()->sizeFromContents(QStyle::CT_LineEdit, &option, empty, this).width();
+    }
+
+    int initialWidth = -1;
 };
 
 QWidget* TreeWidgetItemDelegate::createEditor(
@@ -499,7 +576,50 @@ QWidget* TreeWidgetItemDelegate::createEditor(
         editor = new DynamicQLineEdit(parent);
     }
     editor->setReadOnly(prop.isReadOnly());
+
+    activeEditor = editor;
+    activeEditorIndex = index;
+
     return editor;
+}
+
+void TreeWidgetItemDelegate::destroyEditor(QWidget* editor, const QModelIndex& index) const
+{
+    activeEditor.clear();
+    activeEditorIndex = QPersistentModelIndex();
+
+    inherited::destroyEditor(editor, index);
+}
+
+void TreeWidgetItemDelegate::updateEditorGeometry(
+    QWidget* editor,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& index
+) const
+{
+    // Place the field over the label first: how wide it may grow depends on where it lands.
+    inherited::updateEditorGeometry(editor, option, index);
+
+    auto* tree = static_cast<TreeWidget*>(parent());
+    if (index.column() != 0 || !FreeCADStyle::isTransparent(tree)) {
+        return;
+    }
+
+    // The same option the box is painted from, so the field is measured against the geometry
+    // that box will actually have.
+    QStyleOptionViewItem opt = option;
+    initStyleOption(&opt, index);
+
+    using namespace StyleParameters;
+    auto* fcStyle = Application::Instance->freeCADStyle();
+    const StyleContext context = FreeCADStyle::contextOf(tree, &opt, StyleComponentElement::Item);
+    const FreeCADStyle::BoxGeometryDefinition geometry = fcStyle->resolveBoxGeometry(context);
+
+    // Over a transparent surface the item is a free-standing box hugging its content, so the
+    // field hugs the name and stops at the box's content edge rather than filling the row.
+    const int available = geometry.contentRect(opt.rect).right() + 1 - editor->x();
+    editor->setMaximumWidth(available);
+    editor->resize(std::min(editor->sizeHint().width(), available), editor->height());
 }
 
 QSize TreeWidgetItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
