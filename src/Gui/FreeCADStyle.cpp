@@ -5034,7 +5034,6 @@ void FreeCADStyle::drawControl(
                 Qt::Horizontal
             );
             return;
-            return;
         }
 
         if (const auto* vopt = qstyleoption_cast<const QStyleOptionViewItem*>(option)) {

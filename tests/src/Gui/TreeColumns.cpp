@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QHeaderView>
 #include <QImage>
+#include <QPainter>
 #include <QTest>
 #include <QTreeWidgetItem>
 
@@ -44,6 +45,9 @@ constexpr QRgb HeaderColor = qRgb(0, 255, 0);
 
 /// What a header section keeps between its label and its own edge, as stated in the fixture.
 constexpr int HeaderPaddingLeft = 5;
+
+/// What a hovered row is filled with, as stated in the fixture.
+constexpr QRgb HoveredColor = qRgb(0, 255, 0);
 
 /// The rule dividing one column from the next, as stated in the fixture.
 constexpr QRgb SeparatorColor = qRgb(255, 255, 0);
@@ -185,6 +189,7 @@ public:
                     // selection. Left resolving, it would paint past the last column.
                     {.name = "DocumentTreeRowTransparentBackground", .value = "reset()"},
                     {.name = "DocumentTreeItemTransparentColumnGap", .value = "12px"},
+                    {.name = "DocumentTreeItemTransparentHoveredBackground", .value = "#00ff00"},
                     {.name = "DocumentTreeSeparatorTransparentBorderColor", .value = "#ffff00"},
                     {.name = "DocumentTreeSeparatorTransparentBorderThickness", .value = "1px"},
 
@@ -402,6 +407,20 @@ private Q_SLOTS:
     // The delegate used to strip State_MouseOver from any cell whose rect did not contain the
     // pointer — comparing a viewport-space rect against view-space coordinates, so showing the
     // header put every comparison out by its height and nothing ever resolved hovered.
+    void test_aHoveredCellPaintsHovered()  // NOLINT
+    {
+        makeTransparent();
+        giveColumnsRoom();
+
+        const int column = lastVisibleColumn();
+        QCOMPARE(paintCell(column, QStyle::State_MouseOver), HoveredColor);
+
+        // The same cell at rest, so the assertion above cannot pass on the resting fill.
+        QCOMPARE(paintCell(column, QStyle::State_None), ItemColor);
+    }
+
+    // Only the seams open. The band's own ends keep the rounded corner and the edge that make
+    // it a box rather than a stripe.
     void test_theBandKeepsTheCornersAtItsOwnEnds()  // NOLINT
     {
         makeTransparent();
@@ -556,6 +575,40 @@ private:
     {
         const QModelIndex documentIndex = tree->model()->index(0, 0);
         return tree->model()->index(0, column, documentIndex);
+    }
+
+    /// Paints @p column's cell of the object's row through the delegate, with @p extra state on
+    /// top of the view's own, and returns the fill it laid down.
+    ///
+    /// Painted directly rather than by moving the pointer: a real hover reaches
+    /// TreeWidget::onItemEntered, which puts the item's status on the main window, and there is
+    /// no main window here to put it on.
+    QRgb paintCell(int column, QStyle::State extra) const
+    {
+        const QRect cell = columnRect(column);
+
+        QImage canvas(tree->viewport()->size(), QImage::Format_ARGB32);
+        canvas.fill(QColor(Unpainted));
+
+        QStyleOptionViewItem option;
+        option.initFrom(tree);
+        option.widget = tree;
+        option.rect = cell;
+
+        // initFrom() reports the pointer's real position, which decides this test's own answer.
+        option.state &= ~QStyle::State_MouseOver;
+        option.state |= extra;
+
+        // A trailing column of a row that has several: what the pointer is over when a band is
+        // supposed to light up as a whole.
+        option.viewItemPosition = QStyleOptionViewItem::End;
+
+        const QModelIndex index = objectIndex(column);
+        QPainter painter(&canvas);
+        tree->itemDelegateForIndex(index)->paint(&painter, option, index);
+        painter.end();
+
+        return canvas.pixel(cell.center().x(), cell.top() + 3);
     }
 
     /// The width the delegate asks for @p column, which is what resizing to contents reserves.

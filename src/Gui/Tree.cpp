@@ -482,11 +482,6 @@ void TreeWidgetItemDelegate::initStyleOption(QStyleOptionViewItem* option, const
 
     option->textElideMode = Qt::ElideMiddle;
 
-    const auto mousePos = option->widget->mapFromGlobal(QCursor::pos());
-    if (!option->rect.contains(mousePos)) {
-        option->state &= ~QStyle::State_MouseOver;
-    }
-
     // Reserve exactly what the icon will paint at the tree's icon height. QIcon never upscales
     // a pixmap icon, so deriving the width from a larger variant's aspect ratio would leave
     // dead space on both sides of it.
@@ -662,6 +657,7 @@ QSize TreeWidgetItemDelegate::sizeHint(const QStyleOptionViewItem& option, const
 
     // margin is the visual gap outside the painted background box — contributes to row height
     size.setHeight(size.height() + static_cast<int>(geometry.margin.top() + geometry.margin.bottom()));
+
     return size;
 }
 // ---------------------------------------------------------------------------
