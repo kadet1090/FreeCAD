@@ -32,7 +32,7 @@ constexpr uint64_t stateShift = 12;
 constexpr uint64_t propertyShift = 20;
 constexpr uint64_t overrideShift = 28;
 constexpr uint64_t variantShift = 36;
-constexpr uint64_t variantSlotWidth = 4;
+constexpr uint64_t variantSlotWidth = 3;
 
 }  // namespace
 
@@ -76,6 +76,20 @@ TEST(StyleContextTest, PacksEachDimensionAtItsDocumentedOffset)
     }
 }
 
+TEST(StyleContextTest, AVariantSlotAtItsWidestValueLeavesItsNeighbourAlone)
+{
+    // The slot is narrower than a byte, so a dimension packed at full width is where a slot
+    // would first bleed into the one above it. Checked on a middle slot, which has a neighbour
+    // on both sides.
+    const size_t slot = size_t(VariantSlot::Position);
+    const uint64_t widest = (uint64_t {1} << variantSlotWidth) - 1;
+
+    StyleContext context;
+    context.variant.slots.at(slot) = static_cast<uint8_t>(widest);
+
+    EXPECT_EQ(context.cacheKey(), widest << (variantShift + (variantSlotWidth * slot)));
+}
+
 TEST(StyleContextTest, TheKeyFieldsAreDisjoint)
 {
     // Summing the single-dimension keys agrees with the combined key only when no two fields share
@@ -101,9 +115,8 @@ TEST(StyleContextTest, TheKeyFieldsAreDisjoint)
     combined.componentOverride = probe;
     combined.variant = variant.variant;
 
-    const uint64_t sum = component.cacheKey() + state.cacheKey()
-        + override.cacheKey() + variant.cacheKey()
-        + StyleContext {}.cacheKey(StyleProperty::PlacementOffset);
+    const uint64_t sum = component.cacheKey() + state.cacheKey() + override.cacheKey()
+        + variant.cacheKey() + StyleContext {}.cacheKey(StyleProperty::PlacementOffset);
 
     EXPECT_EQ(combined.cacheKey(StyleProperty::PlacementOffset), sum);
 }

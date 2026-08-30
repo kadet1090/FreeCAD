@@ -377,13 +377,13 @@ private:
     static constexpr uint8_t variantBitOffset   = 36;  // VariantSlot::COUNT * variantSlotBitWidth
     // clang-format on
 
-    // The variant field is exactly full at 7 slots * 4 bits = 28, landing offset 36 on 64: there
-    // is no headroom left above it. An 8th VariantSlot does not fit without repacking — widening
-    // a field above, shrinking variantSlotBitWidth, or moving to a wider key — so budget that
-    // work in whenever VariantSlot::COUNT is about to grow past 7.
+    // The variant field is 28 bits, from offset 36 to the top of the key. At 3 bits a slot that
+    // is nine slots, of which eight are used, so the ceiling on new dimensions is the field
+    // rather than the key. A dimension needing more than eight values needs the width back, and
+    // with it a field below giving bits up.
 
     /// Width of one VariantSlot's field within the packed variant array.
-    static constexpr uint8_t variantSlotBitWidth = 4;
+    static constexpr uint8_t variantSlotBitWidth = 3;
 
     static uint64_t packVariant(const VariantKey& variant);
 };
