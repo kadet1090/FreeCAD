@@ -97,6 +97,7 @@
 #include "DockWindowManager.h"
 #include "DownloadManager.h"
 #include "FileDialog.h"
+#include "FreeCADStyle.h"
 #include "InputHintWidget.h"
 #include "FCMenuBar.h"
 #include "MenuManager.h"
@@ -339,6 +340,8 @@ struct MainWindowP
     QTimer saveStateTimer;
     QTimer restoreStateTimer;
     QMdiArea* mdiArea;
+    QTabBar* mdiTabBar {nullptr};
+    QMetaObject::Connection paneBackgroundConnection;
     QPointer<MDIView> activeView;
     QSignalMapper* windowMapper;
     SplashScreen* splashscreen;
@@ -434,12 +437,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f)
     d->mdiArea->setTabsMovable(true);
     d->mdiArea->setTabPosition(QTabWidget::South);
     d->mdiArea->setViewMode(QMdiArea::TabbedView);
-    auto tab = d->mdiArea->findChild<QTabBar*>();
-    if (tab) {
-        tab->setTabsClosable(true);
+    d->mdiTabBar = d->mdiArea->findChild<QTabBar*>();
+    if (d->mdiTabBar) {
+        d->mdiTabBar->setTabsClosable(true);
         // The tabs might be very wide
-        tab->setExpanding(false);
-        tab->setObjectName(QStringLiteral("mdiAreaTabBar"));
+        d->mdiTabBar->setExpanding(false);
+        d->mdiTabBar->setObjectName(QStringLiteral("mdiAreaTabBar"));
     }
     d->mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     d->mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -1154,19 +1157,18 @@ bool MainWindow::closeAllDocuments(bool close)
 
 void MainWindow::activateNextWindow()
 {
-    auto tab = d->mdiArea->findChild<QTabBar*>();
-    if (tab && tab->count() > 0) {
-        int index = (tab->currentIndex() + 1) % tab->count();
-        tab->setCurrentIndex(index);
+    if (d->mdiTabBar && d->mdiTabBar->count() > 0) {
+        int index = (d->mdiTabBar->currentIndex() + 1) % d->mdiTabBar->count();
+        d->mdiTabBar->setCurrentIndex(index);
     }
 }
 
 void MainWindow::activatePreviousWindow()
 {
-    auto tab = d->mdiArea->findChild<QTabBar*>();
-    if (tab && tab->count() > 0) {
-        int index = (tab->currentIndex() + tab->count() - 1) % tab->count();
-        tab->setCurrentIndex(index);
+    if (d->mdiTabBar && d->mdiTabBar->count() > 0) {
+        int index = (d->mdiTabBar->currentIndex() + d->mdiTabBar->count() - 1)
+            % d->mdiTabBar->count();
+        d->mdiTabBar->setCurrentIndex(index);
     }
 }
 
@@ -1507,6 +1509,19 @@ void MainWindow::removeWindow(Gui::MDIView* view, bool close)
     updateActions();
 }
 
+void MainWindow::updateTabPaneBackground()
+{
+    if (!d->mdiTabBar) {
+        return;
+    }
+
+    FreeCADStyle::setStyleOverride(
+        d->mdiTabBar,
+        QStringLiteral("CurrentPaneBackground"),
+        d->activeView ? d->activeView->paneBackground() : QString()
+    );
+}
+
 void MainWindow::tabChanged(MDIView* view)
 {
     Q_UNUSED(view)
@@ -1515,8 +1530,7 @@ void MainWindow::tabChanged(MDIView* view)
 
 void MainWindow::tabCloseRequested(int index)
 {
-    auto tab = d->mdiArea->findChild<QTabBar*>();
-    if (index < 0 || index >= tab->count()) {
+    if (index < 0 || index >= d->mdiTabBar->count()) {
         return;
     }
 
@@ -1585,6 +1599,14 @@ void MainWindow::setActiveWindow(MDIView* view)
     }
 
     d->activeView = view;
+
+    // The tab strip has no ancestor in common with the views, so it is told which surface its
+    // selected tab now abuts, and follows that view's own for as long as it stays active.
+    QObject::disconnect(d->paneBackgroundConnection);
+    d->paneBackgroundConnection
+        = connect(view, &MDIView::paneBackgroundChanged, this, &MainWindow::updateTabPaneBackground);
+    updateTabPaneBackground();
+
     Application::Instance->viewActivated(view);
 
     // activate/remember workbench by tab (if enabled)
