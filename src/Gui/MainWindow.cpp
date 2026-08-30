@@ -67,6 +67,8 @@
 #endif
 
 #include <algorithm>
+#include <map>
+#include <string_view>
 #include <vector>
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -2720,7 +2722,10 @@ void MainWindow::changeEvent(QEvent* e)
 void MainWindow::clearStatus()
 {
     d->currentStatusType = 100;
-    statusBar()->setStyleSheet(QStringLiteral("#statusBar{}"));
+
+    if (auto* bar = qobject_cast<FCStatusBar*>(statusBar())) {
+        bar->setMessageLevel(StyleParameters::MessageLevel::Default);
+    }
 }
 
 void MainWindow::statusMessageChanged()
@@ -2781,6 +2786,20 @@ void applyStatusBarItemEnabled(QWidget* widget, bool enabled)
     }
     else {
         widget->setVisible(enabled);
+    }
+}
+
+StyleParameters::MessageLevel messageLevelOf(int statusType)
+{
+    switch (statusType) {
+        case MainWindow::Err:
+            return StyleParameters::MessageLevel::Error;
+        case MainWindow::Wrn:
+            return StyleParameters::MessageLevel::Warning;
+        case MainWindow::Critical:
+            return StyleParameters::MessageLevel::Critical;
+        default:
+            return StyleParameters::MessageLevel::Default;
     }
 }
 }  // namespace
@@ -2950,19 +2969,8 @@ void MainWindow::showStatus(int type, const QString& message)
 
     QFontMetrics fm(statusBar()->font());
     QString msg = fm.elidedText(message, Qt::ElideMiddle, this->d->actionLabel->width());
-    switch (type) {
-        case MainWindow::Err:
-            statusBar()->setStyleSheet(d->status->err);
-            break;
-        case MainWindow::Wrn:
-            statusBar()->setStyleSheet(d->status->wrn);
-            break;
-        case MainWindow::Pane:
-            statusBar()->setStyleSheet(QStringLiteral("#statusBar{}"));
-            break;
-        default:
-            statusBar()->setStyleSheet(d->status->msg);
-            break;
+    if (auto* bar = qobject_cast<FCStatusBar*>(statusBar())) {
+        bar->setMessageLevel(messageLevelOf(type));
     }
     d->currentStatusType = -type;
     statusBar()->showMessage(msg.simplified(), timeout);
@@ -3084,9 +3092,6 @@ void MainWindow::setWindowTitle(const QString& string)
 StatusBarObserver::StatusBarObserver()
     : WindowParameter("OutputWindow")
 {
-    msg = QStringLiteral("#statusBar{color: #000000}");  // black
-    wrn = QStringLiteral("#statusBar{color: #ffaa00}");  // orange
-    err = QStringLiteral("#statusBar{color: #ff0000}");  // red
     Base::Console().attachObserver(this);
     getWindowParameter()->Attach(this);
     getWindowParameter()->NotifyAll();
@@ -3100,26 +3105,26 @@ StatusBarObserver::~StatusBarObserver()
 
 void StatusBarObserver::OnChange(Base::Subject<const char*>& rCaller, const char* sReason)
 {
-    ParameterGrp& rclGrp = ((ParameterGrp&)rCaller);
-    auto format = QStringLiteral("#statusBar{color: %1}");
-    if (strcmp(sReason, "colorText") == 0) {
-        unsigned long col = rclGrp.GetUnsigned(sReason);
-        this->msg = format.arg(Base::Color::fromPackedRGB<QColor>(col).name());
+    // The preference is the value; the token it lands on is what the status bar resolves. A
+    // colour the user never set pushes nothing, leaving the theme's own token in place.
+    static const std::map<std::string_view, QString> tokens = {
+        {"colorText", QStringLiteral("StatusBarMessageTextColor")},
+        {"colorWarning", QStringLiteral("StatusBarMessageWarningTextColor")},
+        {"colorError", QStringLiteral("StatusBarMessageErrorTextColor")},
+        {"colorCritical", QStringLiteral("StatusBarMessageCriticalTextColor")},
+    };
+
+    const auto token = tokens.find(sReason);
+    MainWindow* mainWindow = getMainWindow();
+
+    if (token == tokens.end() || mainWindow == nullptr) {
+        return;
     }
-    else if (strcmp(sReason, "colorWarning") == 0) {
-        unsigned long col = rclGrp.GetUnsigned(sReason);
-        this->wrn = format.arg(Base::Color::fromPackedRGB<QColor>(col).name());
-    }
-    else if (strcmp(sReason, "colorError") == 0) {
-        unsigned long col = rclGrp.GetUnsigned(sReason);
-        this->err = format.arg(Base::Color::fromPackedRGB<QColor>(col).name());
-    }
-    else if (strcmp(sReason, "colorCritical") == 0) {
-        unsigned long col = rclGrp.GetUnsigned(sReason);
-        this->critical = format.arg(
-            QColor((col >> 24) & 0xff, (col >> 16) & 0xff, (col >> 8) & 0xff).name()
-        );
-    }
+
+    auto& group = static_cast<ParameterGrp&>(rCaller);
+    const QColor color = Base::Color::fromPackedRGB<QColor>(group.GetUnsigned(sReason));
+
+    FreeCADStyle::setStyleOverride(mainWindow->statusBar(), token->second, color.name());
 }
 
 void StatusBarObserver::sendLog(

@@ -489,9 +489,6 @@ public:
     }
 
     friend class MainWindow;
-
-private:
-    QString msg, wrn, err, critical;
 };
 
 // -------------------------------------------------------------
