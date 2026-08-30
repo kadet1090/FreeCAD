@@ -336,6 +336,32 @@ private Q_SLOTS:
         QCOMPARE(Gui::FreeCADStyle::labelAlignment(title, fallback), fallback);
     }
 
+    // A splitter handle is a panel title strip, so where its title sits is the theme's to say -
+    // and where the theme says nothing, the dock-area rule it had before still answers.
+    void test_aSplitterHandleTitleTakesTheStatedAlignment()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        Gui::OverlaySplitter splitter(nullptr);
+        splitter.addWidget(new QWidget);
+        splitter.addWidget(new QWidget);
+
+        auto* strip = qobject_cast<Gui::OverlaySplitterHandle*>(splitter.handle(1));
+        QVERIFY(strip != nullptr);
+        strip->setStyle(&style);
+        style.polish(strip);
+
+        // Nothing stated yet: the rule the handle has always had.
+        QCOMPARE(strip->titleAlignment(), Qt::AlignLeft | Qt::AlignVCenter);
+
+        Gui::FreeCADStyle::setStyleOverride(
+            strip,
+            QStringLiteral("PanelTitleHorizontalAlign"),
+            QStringLiteral("\"right\"")
+        );
+
+        QCOMPARE(strip->titleAlignment(), Qt::AlignRight | Qt::AlignVCenter);
+    }
+
     // QWidget::setContentsMargins answers itself with a synchronous resize carrying the size the
     // widget already had (qwidget.cpp:7693). Writing the inset again in reply is what sends the
     // next one, and the panel body's padding turned that into a flood thousands deep.

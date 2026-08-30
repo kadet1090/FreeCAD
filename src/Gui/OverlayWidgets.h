@@ -504,6 +504,12 @@ protected:
     void timerEvent(QTimerEvent* te) override;
 
 private:
+    /// Where the title sits in the strip, once the theme has had its say.
+    Qt::Alignment titleAlignment() const;
+
+    /// Where it sits when the theme says nothing.
+    Qt::Alignment dockAreaAlignment() const;
+
     QPoint dragOffset;
     QSize dragSize;
     QLayoutItem* titleItem = nullptr;
@@ -567,7 +573,15 @@ public:
     void refreshIcons();
     QDockWidget* dockWidget();
 
-    /// Which end of the strip the title text hugs. The buttons take the other one.
+    /**
+     * @brief Which end of the strip the title text hugs. The buttons take the other one.
+     *
+     * The button layout is only reachable through a position-unqualified token
+     * (e.g. PanelTitleHorizontalAlign): it is fixed once, from this same call, before the
+     * strip has been given the geometry a position-qualified token (PanelTitleWestHorizontalAlign
+     * and friends) would need to answer differently. Such a token still reaches the painted
+     * text on every repaint, so stating one here only moves the text away from its buttons.
+     */
     Qt::Alignment titleAlignment() const;
 
     void showTitle(bool enable);
@@ -608,6 +622,9 @@ protected:
     void claimObjectName();
 
 private:
+    /// Which end of the strip the title hugs when no theme says otherwise.
+    Qt::Alignment dockAreaAlignment() const;
+
     QLayoutItem* titleItem = nullptr;
     int idx = -1;
     QAction actFloat;

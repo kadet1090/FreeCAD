@@ -2297,6 +2297,35 @@ void OverlayTitleBar::setTitleItem(QLayoutItem* item)
     titleItem = item;
 }
 
+Qt::Alignment OverlayTitleBar::titleAlignment() const
+{
+    return FreeCADStyle::labelAlignment(this, dockAreaAlignment());
+}
+
+Qt::Alignment OverlayTitleBar::dockAreaAlignment() const
+{
+    // A docked panel's title heads the content below it, so it starts where that content starts.
+    if (qobject_cast<QDockWidget*>(parentWidget()) != nullptr) {
+        return Qt::AlignLeft | Qt::AlignVCenter;
+    }
+
+    // A title sharing its strip with the tabs hugs the edge its own panel is docked against.
+    if (auto* tabWidget = qobject_cast<OverlayTabWidget*>(parentWidget())) {
+        switch (tabWidget->getDockArea()) {
+            case Qt::TopDockWidgetArea:
+            case Qt::RightDockWidgetArea:
+                return Qt::AlignRight;
+            case Qt::BottomDockWidgetArea:
+            case Qt::LeftDockWidgetArea:
+                return Qt::AlignLeft;
+            default:
+                break;
+        }
+    }
+
+    return Qt::AlignCenter;
+}
+
 void OverlayTitleBar::paintEvent(QPaintEvent*)
 {
     if (!titleItem) {
@@ -2304,36 +2333,22 @@ void OverlayTitleBar::paintEvent(QPaintEvent*)
     }
 
     QDockWidget* dock = qobject_cast<QDockWidget*>(parentWidget());
-    bool vertical = false;
-    // A docked panel's title heads the content below it, so it starts where that content
-    // starts. A tab widget's title shares its strip with the tabs and stays centred.
-    int flags = Qt::AlignLeft | Qt::AlignVCenter;
-    if (!dock) {
-        flags = Qt::AlignCenter;
-        OverlayTabWidget* tabWidget = qobject_cast<OverlayTabWidget*>(parentWidget());
-        if (tabWidget) {
-            switch (tabWidget->getDockArea()) {
-                case Qt::TopDockWidgetArea:
-                    vertical = true;
-                // fallthrough
-                case Qt::RightDockWidgetArea:
-                    flags = Qt::AlignRight;
-                    break;
-                case Qt::BottomDockWidgetArea:
-                    vertical = true;
-                // fallthrough
-                case Qt::LeftDockWidgetArea:
-                    flags = Qt::AlignLeft;
-                    break;
-                default:
-                    break;
-            }
-            dock = tabWidget->dockWidget(0);
-        }
+    auto* tabWidget = dock != nullptr ? nullptr : qobject_cast<OverlayTabWidget*>(parentWidget());
+
+    if (tabWidget != nullptr) {
+        dock = tabWidget->dockWidget(0);
     }
+
+    // A strip running down the side of the view carries its title turned to match.
+    const Qt::DockWidgetArea dockArea = tabWidget != nullptr ? tabWidget->getDockArea()
+                                                             : Qt::NoDockWidgetArea;
+    const bool vertical = dockArea == Qt::TopDockWidgetArea || dockArea == Qt::BottomDockWidgetArea;
+
     if (!dock) {
         return;
     }
+
+    const Qt::Alignment flags = titleAlignment();
 
     QPainter painter(this);
 
@@ -2366,11 +2381,12 @@ void OverlayTitleBar::paintEvent(QPaintEvent*)
         }
         title = dock->windowTitle();
     }
-    // The style puts the title's token colour in the palette; nothing else here reads a token.
+    // The style puts the title's token colour in the palette here; titleAlignment() above is
+    // what reads the alignment token.
     painter.setPen(palette().windowText().color());
 
     QString text = painter.fontMetrics().elidedText(title, Qt::ElideRight, r.width());
-    painter.drawText(r, flags, text);
+    painter.drawText(r, static_cast<int>(flags), text);
 }
 
 void OverlayTitleBar::timerEvent(QTimerEvent* ev)
@@ -2654,6 +2670,11 @@ void OverlaySplitterHandle::claimObjectName()
 
 Qt::Alignment OverlaySplitterHandle::titleAlignment() const
 {
+    return FreeCADStyle::labelAlignment(this, dockAreaAlignment());
+}
+
+Qt::Alignment OverlaySplitterHandle::dockAreaAlignment() const
+{
     // Heads the panel below it, so it starts where that panel's content starts, as the strip at
     // the top of a panel does. An overlay tab widget aligns it to its own edge instead.
     auto* tabWidget = qobject_cast<OverlayTabWidget*>(
@@ -2834,7 +2855,8 @@ void OverlaySplitterHandle::paintEvent(QPaintEvent* e)
     surfaceOption.initFrom(this);
     style()->drawPrimitive(QStyle::PE_Widget, &surfaceOption, &painter, this);
 
-    // The style puts the title's token colour in the palette; nothing else here reads a token.
+    // The style puts the title's token colour in the palette here; titleAlignment() below is
+    // what reads the alignment token.
     painter.setPen(palette().windowText().color());
 
     QRect r = titleItem->geometry();
