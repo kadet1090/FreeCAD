@@ -294,6 +294,8 @@ enum class StyleProperty : uint8_t
     IsTransparent,
     Placement,
     PlacementOffset,
+    HorizontalAlign,
+    VerticalAlign,
     COUNT,
 };
 

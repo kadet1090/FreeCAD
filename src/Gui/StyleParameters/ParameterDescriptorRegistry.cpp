@@ -243,6 +243,8 @@ const std::map<StyleProperty, std::string_view> propertyNames = {
     {StyleProperty::IsTransparent,      "IsTransparent"},
     {StyleProperty::Placement,          "Placement"},
     {StyleProperty::PlacementOffset,    "PlacementOffset"},
+    {StyleProperty::HorizontalAlign,    "HorizontalAlign"},
+    {StyleProperty::VerticalAlign,      "VerticalAlign"},
 };
 // clang-format on
 

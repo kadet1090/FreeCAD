@@ -463,6 +463,18 @@ public:
     static void refreshStyleOverrides(QWidget* widget);
 
     /**
+     * @brief The alignment @p widget's label is stated to take, or @p fallback where none is.
+     *
+     * Answers per axis: an axis no theme speaks for keeps its bits from @p fallback, so a
+     * caller with a rule of its own for where a label sits loses it only where a theme has
+     * spoken. A widget under any other style keeps @p fallback whole.
+     *
+     * State-independent: the answer never varies with hover, press or focus, regardless of
+     * whether @p widget is currently in one of those states.
+     */
+    static Qt::Alignment labelAlignment(const QWidget* widget, Qt::Alignment fallback);
+
+    /**
      * @brief Recomputes the inherited transparency of @p widget and everything below it.
      *
      * @param widget    Root of the subtree to update.
@@ -710,6 +722,12 @@ protected:
         return StyleParameters::valueAs<T>(resolve(context, property));
     }
 
+    /// The alignment @p context states, falling back per axis to @p fallback.
+    Qt::Alignment resolveAlignment(
+        const StyleParameters::StyleContext& context,
+        Qt::Alignment fallback
+    ) const;
+
     /**
      * @brief Paints a background, its border ring and its rounded corners into @p rect.
      *
@@ -797,6 +815,16 @@ protected:
      * strip off a tab widget rather than off a dock, and both are the same strip to a theme.
      */
     static std::optional<StyleParameters::StyleComponentElement> panelElementOf(const QWidget* widget);
+
+    /**
+     * @brief The FreeCADStyle actually in force for @p widget, or nullptr under any other style.
+     *
+     * QApplication::setStyleSheet wraps the application style in a QStyleSheetStyle the moment
+     * any stylesheet is set - which FreeCAD always does at startup - so widget->style() is that
+     * wrapper, not FreeCADStyle, for the whole running application. The wrapper reparents the
+     * style it wraps as a direct child QObject, which is the only public handle on it.
+     */
+    static const FreeCADStyle* styleOf(const QWidget* widget);
 
     /// The edge a dock panel attaches to, as a Position variant value.
     static StyleParameters::Position panelPositionOf(const QDockWidget* dock);

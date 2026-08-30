@@ -73,6 +73,8 @@
 #include "TaskView/TaskView.h"
 #include "Utilities.h"
 #include "FreeCADStyle.h"
+
+#include "StyleParameters/Alignment.h"
 #include "StyleParameters/ColorEffect.h"
 #include "StyleParameters/Corners.h"
 #include "StyleParameters/Edges.h"
@@ -555,6 +557,34 @@ std::array<T, 4> rotate4(std::array<T, 4> values, Position position)
     }
     // clang-format on
     // NOLINTEND(*-pro-bounds-avoid-unchecked-container-access)
+}
+
+Qt::Alignment toQtAlignment(StyleParameters::HorizontalAlign align)
+{
+    switch (align) {
+        case StyleParameters::HorizontalAlign::Left:
+            return Qt::AlignLeft;
+        case StyleParameters::HorizontalAlign::Center:
+            return Qt::AlignHCenter;
+        case StyleParameters::HorizontalAlign::Right:
+            return Qt::AlignRight;
+    }
+
+    return Qt::AlignLeft;
+}
+
+Qt::Alignment toQtAlignment(StyleParameters::VerticalAlign align)
+{
+    switch (align) {
+        case StyleParameters::VerticalAlign::Top:
+            return Qt::AlignTop;
+        case StyleParameters::VerticalAlign::Middle:
+            return Qt::AlignVCenter;
+        case StyleParameters::VerticalAlign::Bottom:
+            return Qt::AlignBottom;
+    }
+
+    return Qt::AlignTop;
 }
 
 /**
@@ -1712,6 +1742,47 @@ void FreeCADStyle::applyPanelTitleColor(QWidget* widget) const
     QPalette titlePalette = widget->palette();
     titlePalette.setColor(QPalette::WindowText, color->asValue<QColor>());
     widget->setPalette(titlePalette);
+}
+
+Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Alignment fallback) const
+{
+    const auto horizontal = resolve<HorizontalAlign>(context, StyleProperty::HorizontalAlign);
+    const auto vertical = resolve<VerticalAlign>(context, StyleProperty::VerticalAlign);
+
+    const Qt::Alignment horizontalFlags = horizontal ? toQtAlignment(*horizontal)
+                                                     : fallback & Qt::AlignHorizontal_Mask;
+    const Qt::Alignment verticalFlags = vertical ? toQtAlignment(*vertical)
+                                                 : fallback & Qt::AlignVertical_Mask;
+
+    return horizontalFlags | verticalFlags;
+}
+
+/*static*/ const FreeCADStyle* FreeCADStyle::styleOf(const QWidget* widget)
+{
+    const QStyle* widgetStyle = widget != nullptr ? widget->style() : nullptr;
+
+    if (const auto* style = qobject_cast<const FreeCADStyle*>(widgetStyle)) {
+        return style;
+    }
+
+    return Application::Instance->freeCADStyle();
+}
+
+/*static*/ Qt::Alignment FreeCADStyle::labelAlignment(const QWidget* widget, Qt::Alignment fallback)
+{
+    const FreeCADStyle* style = styleOf(widget);
+
+    if (style == nullptr) {
+        return fallback;
+    }
+
+    // A panel names its parts through a component the widget itself declares, and contextOf
+    // cannot build the position variant they resolve under.
+    const std::optional<StyleComponentElement> panelElement = panelElementOf(widget);
+    const StyleContext context = panelElement ? style->panelContext(widget, *panelElement)
+                                              : contextOf(widget);
+
+    return style->resolveAlignment(context, fallback);
 }
 
 // ─── Context building ────────────────────────────────────────────────────────

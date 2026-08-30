@@ -241,6 +241,101 @@ private Q_SLOTS:
         QCOMPARE(strip->font().weight(), 800);
     }
 
+    // A theme states each axis for itself, so one it says nothing about is left as the caller
+    // had it - which is what lets a widget keep a rule of its own for the other.
+    void test_aStatedAlignmentReplacesOnlyTheAxisItNames()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QWidget host;
+        QWidget* title = declaredTitleBar(&host);
+        title->setStyle(&style);
+        style.polish(title);
+
+        const Qt::Alignment fallback = Qt::AlignLeft | Qt::AlignBottom;
+        QCOMPARE(Gui::FreeCADStyle::labelAlignment(title, fallback), fallback);
+
+        Gui::FreeCADStyle::setStyleOverride(
+            title,
+            QStringLiteral("PanelTitleHorizontalAlign"),
+            QStringLiteral("\"center\"")
+        );
+
+        QCOMPARE(Gui::FreeCADStyle::labelAlignment(title, fallback), Qt::AlignHCenter | Qt::AlignBottom);
+
+        Gui::FreeCADStyle::setStyleOverride(
+            title,
+            QStringLiteral("PanelTitleVerticalAlign"),
+            QStringLiteral("\"top\"")
+        );
+
+        QCOMPARE(Gui::FreeCADStyle::labelAlignment(title, fallback), Qt::AlignHCenter | Qt::AlignTop);
+
+        // The mirror case: a theme that speaks only for the vertical axis must leave the
+        // horizontal one as the caller had it. Without this, nothing proves the horizontal
+        // fallback is masked rather than passed through whole.
+        QWidget* other = declaredTitleBar(&host);
+        other->setStyle(&style);
+        style.polish(other);
+
+        Gui::FreeCADStyle::setStyleOverride(
+            other,
+            QStringLiteral("PanelTitleVerticalAlign"),
+            QStringLiteral("\"top\"")
+        );
+
+        QCOMPARE(Gui::FreeCADStyle::labelAlignment(other, fallback), Qt::AlignLeft | Qt::AlignTop);
+    }
+
+    // Each keyword a theme can state has to land on its own Qt::Align* flag. A mutation that
+    // swaps two arms of toQtAlignment - e.g. Middle and Bottom - is a wrong alignment a theme
+    // author would see at once, and the three-case coverage above only exercises half the map.
+    void test_everyAlignmentKeywordMapsToItsOwnFlag()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        QWidget host;
+        QWidget* title = declaredTitleBar(&host);
+        title->setStyle(&style);
+        style.polish(title);
+
+        const auto horizontalFlag = [&](const QString& keyword) {
+            Gui::FreeCADStyle::setStyleOverride(
+                title,
+                QStringLiteral("PanelTitleHorizontalAlign"),
+                QStringLiteral("\"%1\"").arg(keyword)
+            );
+            return Gui::FreeCADStyle::labelAlignment(title, Qt::Alignment())
+                & Qt::AlignHorizontal_Mask;
+        };
+        const auto verticalFlag = [&](const QString& keyword) {
+            Gui::FreeCADStyle::setStyleOverride(
+                title,
+                QStringLiteral("PanelTitleVerticalAlign"),
+                QStringLiteral("\"%1\"").arg(keyword)
+            );
+            return Gui::FreeCADStyle::labelAlignment(title, Qt::Alignment()) & Qt::AlignVertical_Mask;
+        };
+
+        QCOMPARE(horizontalFlag(QStringLiteral("left")), Qt::Alignment(Qt::AlignLeft));
+        QCOMPARE(horizontalFlag(QStringLiteral("center")), Qt::Alignment(Qt::AlignHCenter));
+        QCOMPARE(horizontalFlag(QStringLiteral("right")), Qt::Alignment(Qt::AlignRight));
+
+        QCOMPARE(verticalFlag(QStringLiteral("top")), Qt::Alignment(Qt::AlignTop));
+        QCOMPARE(verticalFlag(QStringLiteral("middle")), Qt::Alignment(Qt::AlignVCenter));
+        QCOMPARE(verticalFlag(QStringLiteral("bottom")), Qt::Alignment(Qt::AlignBottom));
+    }
+
+    // Nothing about a label is this style's to answer for under another one, so the caller's
+    // own rule has to come back untouched rather than collapse to a default.
+    void test_aWidgetUnderAnotherStyleKeepsItsOwnAlignment()  // NOLINT
+    {
+        QWidget host;
+        QWidget* title = declaredTitleBar(&host);
+
+        const Qt::Alignment fallback = Qt::AlignRight | Qt::AlignBottom;
+
+        QCOMPARE(Gui::FreeCADStyle::labelAlignment(title, fallback), fallback);
+    }
+
     // QWidget::setContentsMargins answers itself with a synchronous resize carrying the size the
     // widget already had (qwidget.cpp:7693). Writing the inset again in reply is what sends the
     // next one, and the panel body's padding turned that into a flood thousands deep.
@@ -505,7 +600,8 @@ private Q_SLOTS:
     void test_bothPanelPartsAreStyledOnTheRealPolishPath()  // NOLINT
     {
         // Not restored afterwards: setStyle() deletes the style it replaces, so the previous
-        // pointer is dangling the moment this one is installed. This is the last check here.
+        // pointer is dangling the moment this one is installed. Only checks below this point
+        // may depend on the application style; nothing later restores it either.
         qApp->setStyle(new Gui::FreeCADStyle);
 
         QMainWindow window;
@@ -528,6 +624,37 @@ private Q_SLOTS:
         // depend on which way round the strip was laid out by the time this runs.
         QVERIFY(!title->testAttribute(Qt::WA_StyledBackground));
         QCOMPARE(title->palette().color(QPalette::WindowText), QColor(255, 0, 255));
+    }
+
+    // QApplication::setStyleSheet wraps the application style in a QStyleSheetStyle the moment
+    // any stylesheet is set - which Gui::Application does unconditionally at startup - so
+    // widget->style() answers with that wrapper, not FreeCADStyle, for the whole running
+    // application. Every check above reaches labelAlignment through a per-widget setStyle()
+    // call, which writes the widget's own style and never exercises the wrapper; this is the
+    // path a real panel title is actually painted through.
+    //
+    // Not restored afterwards, for the same reason the previous check is not: setStyle() deletes
+    // the style it replaces, so this has to be the last check here.
+    void test_labelAlignmentReachesThroughTheApplicationStyleSheetWrapper()  // NOLINT
+    {
+        qApp->setStyle(new Gui::FreeCADStyle);
+        qApp->setStyleSheet(QStringLiteral("QWidget { }"));
+
+        Gui::Application::Instance->styleParameterManager()->addSource(
+            new Gui::StyleParameters::InMemoryParameterSource(
+                {
+                    {.name = "PanelTitleHorizontalAlign", .value = "\"right\""},
+                },
+                {.name = "Wrapped Style Alignment Fixture"}
+            )
+        );
+        Gui::Application::Instance->freeCADStyle()->clearTokenCache();
+
+        QWidget host;
+        QWidget* title = declaredTitleBar(&host);
+
+        const Qt::Alignment fallback = Qt::AlignLeft | Qt::AlignVCenter;
+        QCOMPARE(Gui::FreeCADStyle::labelAlignment(title, fallback), Qt::AlignRight | Qt::AlignVCenter);
     }
 };
 
