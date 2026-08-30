@@ -3,14 +3,17 @@
 #include <QApplication>
 #include <QColor>
 #include <QImage>
+#include <QLabel>
 #include <QPainter>
 #include <QStatusBar>
 #include <QStyleOption>
 #include <QTest>
+#include <QWidget>
 
 #include "src/App/InitApplication.h"
 
 #include <Gui/Application.h>
+#include <Gui/FCStatusBar.h>
 #include <Gui/FreeCADStyle.h>
 #include <Gui/StyleParameters/ParameterManager.h>
 
@@ -77,6 +80,35 @@ private:
         QPainter painter(&canvas);
         style.drawPrimitive(QStyle::PE_PanelStatusBar, &option, &painter, widget);
         painter.end();
+
+        return canvas;
+    }
+
+    // Whether anything on the canvas was painted in exactly @p color. Glyph cores are solid at
+    // this font size, so an antialiased edge never has to be the thing under test.
+    static bool containsColor(const QImage& canvas, const QColor& color)
+    {
+        for (int row = 0; row < canvas.height(); ++row) {
+            for (int column = 0; column < canvas.width(); ++column) {
+                if (canvas.pixelColor(column, row) == color) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // A bar wide enough for a message, with one permanent item so messageRect() has a bound to
+    // find, rendered at a font size whose strokes are solid.
+    static QImage renderedBar(Gui::FCStatusBar& bar, Gui::StyleParameters::MessageLevel level)
+    {
+        bar.setMessageLevel(level);
+        bar.showMessage(QStringLiteral("Recompute failed"));
+
+        QImage canvas(bar.size(), QImage::Format_ARGB32);
+        canvas.fill(Qt::magenta);
+        bar.render(&canvas, QPoint(), QRegion(), QWidget::DrawWindowBackground);
 
         return canvas;
     }
@@ -189,6 +221,51 @@ private Q_SLOTS:
             Gui::FreeCADStyle::statusMessageColor(&bar, MessageLevel::Error, fallbackColor),
             QColor(QStringLiteral("#00ffff"))
         );
+    }
+
+    void test_theBarPaintsItsOwnSurface()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        Gui::FCStatusBar bar;
+        bar.setStyle(&style);
+        bar.resize(200, 30);
+
+        QImage canvas(bar.size(), QImage::Format_ARGB32);
+        canvas.fill(Qt::magenta);
+        bar.render(&canvas, QPoint(), QRegion(), QWidget::DrawWindowBackground);
+
+        QCOMPARE(canvas.pixelColor(100, 15), statusBarBackground);
+        QCOMPARE(canvas.pixelColor(100, 0), statusBarEdgeColor);
+    }
+
+    void test_theMessageIsPaintedInItsLevelsColour()  // NOLINT
+    {
+        using Gui::StyleParameters::MessageLevel;
+
+        Gui::FreeCADStyle style;
+        Gui::FCStatusBar bar;
+        bar.setStyle(&style);
+        bar.setFont(QFont(bar.font().family(), 20));
+        bar.resize(400, 40);
+        bar.addPermanentWidget(new QLabel(QStringLiteral("mm"), &bar));
+
+        QVERIFY(containsColor(renderedBar(bar, MessageLevel::Error), errorColor));
+        QVERIFY(containsColor(renderedBar(bar, MessageLevel::Warning), warningColor));
+    }
+
+    void test_theLevelChangesWhatIsPainted()  // NOLINT
+    {
+        using Gui::StyleParameters::MessageLevel;
+
+        Gui::FreeCADStyle style;
+        Gui::FCStatusBar bar;
+        bar.setStyle(&style);
+        bar.setFont(QFont(bar.font().family(), 20));
+        bar.resize(400, 40);
+
+        // The same message twice: only the level differs, so a bar that ignored it would paint
+        // the identical image both times.
+        QVERIFY(renderedBar(bar, MessageLevel::Error) != renderedBar(bar, MessageLevel::Default));
     }
 };
 

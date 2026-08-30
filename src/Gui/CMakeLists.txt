@@ -1361,6 +1361,7 @@ SET(FreeCADGui_CPP_SRCS
     FileHandler.cpp
     FileHandler.h
     FCMenuBar.cpp
+    FCStatusBar.cpp
     FreeCADStyle.cpp
     GuiApplication.cpp
     GuiApplicationNativeEventAware.cpp
@@ -1412,6 +1413,7 @@ SET(FreeCADGui_SRCS
     FreeCADGuiInit.py
     FreeCADGuiTest.py
     FCMenuBar.h
+    FCStatusBar.h
     FreeCADStyle.h
     GraphicsViewZoom.h
     GuiApplication.h

@@ -100,6 +100,7 @@
 #include "FreeCADStyle.h"
 #include "InputHintWidget.h"
 #include "FCMenuBar.h"
+#include "FCStatusBar.h"
 #include "MenuManager.h"
 #include "ModuleIO.h"
 #include "NotificationArea.h"
@@ -392,6 +393,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f)
     instance = this;
 
     setMenuBar(new FCMenuBar(this));
+    setStatusBar(new FCStatusBar(this));
 
     d->connParam = App::GetApplication().GetUserParameter().signalParamChanged.connect(
         [this](ParameterGrp* Param, ParameterGrp::ParamType, const char* Name, const char*) {
