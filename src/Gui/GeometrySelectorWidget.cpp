@@ -114,6 +114,7 @@ int defaultHistoryLength()
 QToolButton* makeActionButton(QWidget* parent, const QIcon& icon)
 {
     auto* button = new QToolButton(parent);
+    button->setProperty("controlSize", "internal");
     button->setAutoRaise(true);
     button->setIcon(icon);
     button->setIconSize(QSize(IconSize, IconSize));
