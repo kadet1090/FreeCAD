@@ -41,6 +41,14 @@ const QColor fallbackColor = QColor(QStringLiteral("#123456"));
 const QMargins statusBarPadding = QMargins(5, 3, 7, 4);
 constexpr int statusBarItemSpacing = 9;
 
+// A vertical inset stated in two unequal halves, so a bar that accounted for only one of them
+// would be off by a number the other cannot coincidentally supply.
+constexpr int statusBarInsetTop = 11;
+constexpr int statusBarInsetBottom = 13;
+
+// What Qt's own reformat() leaves between two items, and the margins it leaves around them.
+constexpr int qtItemSpacing = 6;
+
 // Whether @p layout still holds a fixed (non-expanding) spacer sized along its own direction —
 // the same fixed-vs-stretch test applyLayoutTokens() itself makes before deleting one.
 bool hasFixedSpacer(QLayout* layout)
@@ -141,6 +149,27 @@ private:
         return false;
     }
 
+    // The floor a bar settles on once @p padding is the inset it is stated to take, with the
+    // stated height floor taken out of the way so that what is measured is the inset alone.
+    static int minimumHeightUnder(Gui::FreeCADStyle& style, const QString& padding)
+    {
+        Gui::FCStatusBar bar;
+        bar.setStyle(&style);
+        style.polish(&bar);
+
+        Gui::FreeCADStyle::setStyleOverride(
+            &bar,
+            QStringLiteral("StatusBarMinHeight"),
+            QStringLiteral("reset()")
+        );
+        Gui::FreeCADStyle::setStyleOverride(&bar, QStringLiteral("StatusBarPadding"), padding);
+
+        QEvent styleChange(QEvent::StyleChange);
+        QCoreApplication::sendEvent(&bar, &styleChange);
+
+        return bar.minimumHeight();
+    }
+
     // A bar wide enough for a message, with one permanent item so messageRect() has a bound to
     // find, rendered at a font size whose strokes are solid.
     static QImage renderedBar(Gui::FCStatusBar& bar, Gui::StyleParameters::MessageLevel level)
@@ -202,6 +231,44 @@ private Q_SLOTS:
 
         style.polish(&bar);
 
+        QCOMPARE(bar.minimumHeight(), statusBarFloor);
+    }
+
+    void test_theStatedInsetReachesTheBarsOwnFloor()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+
+        const int inset = minimumHeightUnder(
+            style,
+            QStringLiteral("padding(left: 5px, top: %1px, right: 7px, bottom: %2px)")
+                .arg(statusBarInsetTop)
+                .arg(statusBarInsetBottom)
+        );
+        const int flat = minimumHeightUnder(
+            style,
+            QStringLiteral("padding(left: 5px, top: 0px, right: 7px, bottom: 0px)")
+        );
+
+        // The bar's own minimum is the only channel the main window reads: it sizes the bar from
+        // that and never from its size hint, and an explicit minimum outranks whatever the
+        // layout beneath asks for. An inset that misses this misses the window.
+        QCOMPARE(inset - flat, statusBarInsetTop + statusBarInsetBottom);
+    }
+
+    void test_theStatedFloorHoldsWhereTheInsetIsShorter()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+        Gui::FCStatusBar bar;
+        bar.setStyle(&style);
+        style.polish(&bar);
+
+        // An item arriving after the bar was polished makes the layout the last thing to speak
+        // for the bar's height, which is the order a real bar is filled in.
+        bar.addPermanentWidget(new QLabel(QStringLiteral("mm"), &bar));
+        QCoreApplication::sendPostedEvents(&bar, QEvent::LayoutRequest);
+
+        // The fixture's inset is well under the stated floor, which is therefore what the bar
+        // has to keep: accounting for the inset must not become a way of losing the floor.
         QCOMPARE(bar.minimumHeight(), statusBarFloor);
     }
 

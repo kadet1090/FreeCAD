@@ -48,6 +48,9 @@ private:
     /// Writes the stated inset and item gap onto the layout Qt rebuilt, which reads no metric.
     void applyLayoutTokens();
 
+    /// Counts what the layout now needs into the bar's own floor, which is what sizes the bar.
+    void applyHeightFloor();
+
     StyleParameters::MessageLevel _messageLevel = StyleParameters::MessageLevel::Default;
 
     /// The layout last written to, so a request that rebuilt nothing is not answered with a write.

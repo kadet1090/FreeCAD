@@ -1837,6 +1837,20 @@ Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Al
     return style->resolveBoxGeometry(contextOf(widget, nullptr, element)).spacing;
 }
 
+/*static*/ std::optional<int> FreeCADStyle::styleMinHeight(
+    const QWidget* widget,
+    StyleComponentElement element
+)
+{
+    const FreeCADStyle* style = styleOf(widget);
+
+    if (style == nullptr) {
+        return {};
+    }
+
+    return style->resolveBoxGeometry(contextOf(widget, nullptr, element)).minHeight;
+}
+
 // ─── Context building ────────────────────────────────────────────────────────
 
 // The entry @p widget's dropdown currently holds, or nothing when nothing drives its selection.

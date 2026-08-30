@@ -2,6 +2,7 @@
 #include "FCStatusBar.h"
 
 #include <algorithm>
+#include <optional>
 
 #include <QBoxLayout>
 #include <QEvent>
@@ -178,24 +179,38 @@ void FCStatusBar::applyLayoutTokens()
     itemLayoutOf(this)->setSpacing(
         FreeCADStyle::styleSpacing(this, StyleParameters::StyleComponentElement::Item)
     );
+
+    applyHeightFloor();
+}
+
+void FCStatusBar::applyHeightFloor()
+{
+    // The main window sizes the bar from its minimum and never from its size hint, and an
+    // explicit minimum outranks everything the layout beneath asks for. The inset just written
+    // therefore reaches the window only by being counted in here.
+    const std::optional<int> stated
+        = FreeCADStyle::styleMinHeight(this, StyleParameters::StyleComponentElement::Root);
+
+    setMinimumHeight(std::max(stated.value_or(0), minimumSizeHint().height()));
 }
 
 bool FCStatusBar::event(QEvent* event)
 {
-    // reformat() deletes and rebuilds the layout on every item change, so the tokens have to be
-    // written again each time it does; the rebuild is what posts this.
-    if (event->type() == QEvent::LayoutRequest) {
-        applyLayoutTokens();
-    }
+    // Qt answers a layout request by rebuilding the layout, so the tokens go onto whatever it
+    // leaves behind rather than onto the layout that is about to be thrown away.
+    const bool handled = QStatusBar::event(event);
 
     // A theme reload changes what the tokens resolve to without rebuilding anything, so the
     // layout that was adjusted has to stop counting as adjusted.
     if (event->type() == QEvent::StyleChange) {
         _adjustedLayout = nullptr;
+    }
+
+    if (event->type() == QEvent::LayoutRequest || event->type() == QEvent::StyleChange) {
         applyLayoutTokens();
     }
 
-    return QStatusBar::event(event);
+    return handled;
 }
 
 }  // namespace Gui
