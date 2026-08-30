@@ -531,6 +531,21 @@ public:
     static QFont untouchedFont(const QWidget* widget);
 
     /**
+     * @brief Gives @p widget the floor its component's MinHeight token asks for.
+     *
+     * A size hint is not enough to keep an input at its height: a layout given less room than
+     * it needs drops every minimum it knows and takes the space from its tallest items first,
+     * which is what leaves a spin box shorter than the label beside it. An explicit minimum is
+     * the one QWidget::setGeometry() honours regardless.
+     *
+     * Idempotent, and never lowers a minimum the widget was given elsewhere.
+     */
+    void applyWidgetMinimumHeight(QWidget* widget) const;
+
+    /// The minimum height @p widget would carry had the style never applied one to it.
+    static int untouchedMinimumHeight(const QWidget* widget);
+
+    /**
      * @brief The font @p base takes on under @p context.
      *
      * Where a token does not resolve the corresponding property of @p base is kept, so a caller
@@ -1320,6 +1335,10 @@ protected:
     static constexpr const char* styleFontMaskProperty         = "_fc_styleFontMask";
     /// What the mask currently on a scroll area was built from. Style-owned.
     static constexpr const char* scrollAreaMaskProperty        = "_fc_scrollAreaMask";
+    /// The minimum height the widget had before applyWidgetMinimumHeight(). Style-owned.
+    static constexpr const char* styleMinHeightBaseProperty    = "_fc_styleMinHeightBase";
+    /// The minimum height applyWidgetMinimumHeight() applied. Style-owned.
+    static constexpr const char* styleMinHeightProperty        = "_fc_styleMinHeight";
     // clang-format on
 
     /// Whether the surface behind @p widget is see-through, as its own tokens describe it.

@@ -91,6 +91,7 @@ public:
                     // row's centre line, which is where it is read back.
                     {.name = "DocumentTreeItemBorderRadius", .value = "0px"},
                     {.name = "DocumentTreeItemSpacing", .value = "0px"},
+                    {.name = "FormControlMinHeight", .value = "26px"},
                     {.name = "LineEditPadding", .value = "padding(horizontal: 4px, vertical: 2px)"},
                     {.name = "LineEditBorderThickness", .value = "1px"},
                 },
@@ -222,6 +223,22 @@ private Q_SLOTS:
 
         const QRect row = tree->visualItemRect(objectItem());
         QVERIFY(editor->geometry().right() >= row.right() - ItemPaddingRight);
+    }
+
+    // The view places the field inside the row it edits, so the field cannot stand on the floor
+    // a form control keeps against a layout: it would hang over the rows around it. The fixture
+    // states that floor taller than a row for exactly this reason.
+    void test_theFieldIsNoTallerThanTheRowItEdits()  // NOLINT
+    {
+        QLineEdit* editor = openEditor();
+        QVERIFY(editor);
+
+        const int row = tree->visualItemRect(objectItem()).height();
+
+        QVERIFY2(
+            editor->height() <= row,
+            qPrintable(QStringLiteral("field %1px in a %2px row").arg(editor->height()).arg(row))
+        );
     }
 
 private:

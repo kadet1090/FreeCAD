@@ -5288,6 +5288,79 @@ void FreeCADStyle::applyWidgetFont(QWidget* widget) const
     widget->setFont(applied);
 }
 
+namespace
+{
+
+/// Whether another widget places @p widget, against a rect of that widget's choosing, rather
+/// than a layout placing it.
+bool positionedByOwner(const QWidget* widget)
+{
+    const QWidget* parent = widget->parentWidget();
+
+    if (parent == nullptr) {
+        return false;
+    }
+
+    if (qobject_cast<const QAbstractSpinBox*>(parent) != nullptr
+        || qobject_cast<const QComboBox*>(parent) != nullptr) {
+        return true;
+    }
+
+    // An item view parents its editors and its index widgets to the viewport and gives each the
+    // row it belongs to. The row is measured from tokens of its own, and is the size to keep.
+    const auto* view = qobject_cast<const QAbstractItemView*>(parent->parentWidget());
+
+    return view != nullptr && view->viewport() == parent;
+}
+
+}  // namespace
+
+int FreeCADStyle::untouchedMinimumHeight(const QWidget* widget)
+{
+    const QVariant applied = widget->property(styleMinHeightProperty);
+
+    // Anything set on the widget since the last pass is the widget's own, and outranks what was
+    // put there for it.
+    if (!applied.isValid() || widget->minimumHeight() != applied.toInt()) {
+        return widget->minimumHeight();
+    }
+
+    return widget->property(styleMinHeightBaseProperty).toInt();
+}
+
+void FreeCADStyle::applyWidgetMinimumHeight(QWidget* widget) const
+{
+    if (widget == nullptr) {
+        return;
+    }
+
+    // A floor is a promise to a layout, and only a layout can keep it. The line edit inside a
+    // spin box is given what is left of the spin box once its padding is taken out, and an item
+    // view's editor is given the row it edits: a form control's height is taller than either,
+    // and standing on it would put the widget through the frame or the row around it.
+    if (positionedByOwner(widget)) {
+        return;
+    }
+
+    const int own = untouchedMinimumHeight(widget);
+    const std::optional<int> minHeight = resolveBoxGeometry(contextOf(widget)).minHeight;
+
+    if (!minHeight) {
+        if (widget->property(styleMinHeightProperty).isValid()) {
+            widget->setMinimumHeight(own);
+            widget->setProperty(styleMinHeightBaseProperty, {});
+            widget->setProperty(styleMinHeightProperty, {});
+        }
+        return;
+    }
+
+    const int floorHeight = std::max(own, *minHeight);
+
+    widget->setProperty(styleMinHeightBaseProperty, own);
+    widget->setProperty(styleMinHeightProperty, floorHeight);
+    widget->setMinimumHeight(floorHeight);
+}
+
 void FreeCADStyle::applyWidgetFonts(QWidget* widget) const
 {
     applyWidgetFont(widget);
@@ -5803,6 +5876,9 @@ void FreeCADStyle::recomputeOverrideSets(QWidget* widget) const
     // the override set itself; doing the same for the font costs one more idempotent call.
     applyWidgetFont(widget);
 
+    // A height token is baked into the widget the same way, and an override can name one.
+    applyWidgetMinimumHeight(widget);
+
     forEachChildWidget(widget, [this](QWidget* childWidget) { recomputeOverrideSets(childWidget); });
 }
 
@@ -5936,6 +6012,9 @@ void FreeCADStyle::polish(QWidget* widget)
     // itself, so the font lands before a tip is sized.
     applyWidgetFont(widget);
 
+    // Same reason: a layout reads the floor off the widget, never off the style.
+    applyWidgetMinimumHeight(widget);
+
     if (auto* scrollArea = qobject_cast<QAbstractScrollArea*>(widget)) {
         auto viewport = scrollArea->viewport();
 
@@ -6012,6 +6091,12 @@ void FreeCADStyle::unpolish(QWidget* widget)
         widget->setFont(untouchedFont(widget));
         widget->setProperty(styleFontBaseProperty, {});
         widget->setProperty(styleFontMaskProperty, {});
+    }
+
+    if (widget->property(styleMinHeightProperty).isValid()) {
+        widget->setMinimumHeight(untouchedMinimumHeight(widget));
+        widget->setProperty(styleMinHeightBaseProperty, {});
+        widget->setProperty(styleMinHeightProperty, {});
     }
 
     // Under another style the inset is a gap nothing fills and the attribute routes the whole
@@ -6146,6 +6231,10 @@ bool FreeCADStyle::eventFilter(QObject* obj, QEvent* event)
             // A repaint does not reconsider row geometry, and the tokens a row is measured
             // from may well be what the reload changed.
             scheduleItemViewRelayout(widget);
+
+            // The floor is a value on the widget rather than one it resolves as it paints, so
+            // it stays at what the previous theme stated until it is written again.
+            applyWidgetMinimumHeight(widget);
 
             // A panel's padding and its title colour reach the widget rather than the painter,
             // so a repaint alone would leave both at what the previous theme stated.

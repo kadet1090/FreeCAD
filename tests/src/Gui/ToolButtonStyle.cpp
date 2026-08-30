@@ -39,9 +39,12 @@ public:
                     {.name = "ButtonPadding", .value = "padding(11px)"},
                     {.name = "ToolButtonPadding", .value = "padding(4px)"},
 
+                    {.name = "FormControlMinHeight", .value = "@FormControlHeight"},
+
                     // The toolbar decides its buttons' height, so ToolBarButton stops the
                     // inherited FormControlHeight instead of restating it.
                     {.name = "ToolBarButtonHeight", .value = "reset()"},
+                    {.name = "ToolBarButtonMinHeight", .value = "reset()"},
                 },
                 {.name = "Tool Button Style"}
             )
@@ -88,6 +91,22 @@ private Q_SLOTS:
 
         button.setParent(nullptr);
         QCOMPARE(hintFor(&button).height(), formControlHeight);
+    }
+
+    /// The floor the style puts on the widget is reset with the height it comes from: a
+    /// toolbar sizes its buttons itself, and a minimum it cannot undo would fight it.
+    void aToolBarButtonTakesNoMinimumHeightFloor()
+    {
+        QToolBar toolBar;
+        auto* button = new QToolButton(&toolBar);
+        toolBar.addWidget(button);
+        QToolButton loose;
+
+        style.polish(button);
+        style.polish(&loose);
+
+        QCOMPARE(button->minimumHeight(), 0);
+        QCOMPARE(loose.minimumHeight(), formControlHeight);
     }
 
 private:

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include <QComboBox>
+#include <QLabel>
 #include <QLineEdit>
 #include <QSpinBox>
+#include <QVBoxLayout>
 #include <QStyleOptionComboBox>
 #include <QStyleOptionFrame>
 #include <QStyleOptionSpinBox>
@@ -41,6 +43,7 @@ public:
             new Gui::StyleParameters::InMemoryParameterSource(
                 {
                     {.name = "FormControlHeight", .value = "26px"},
+                    {.name = "FormControlMinHeight", .value = "@FormControlHeight"},
                     {.name = "FormControlPadding", .value = "padding(horizontal: 8px, vertical: 6px)"},
                     {.name = "LineEditHeight", .value = "@FormControlHeight"},
                     {.name = "LineEditPadding", .value = "@FormControlPadding"},
@@ -314,6 +317,113 @@ private Q_SLOTS:
                            .arg(editField.width())
                            .arg(contentWidth))
         );
+    }
+    // The floor is the height token, applied to the widget rather than only to its hint.
+    void test_aPolishedSpinBoxCarriesTheHeightTokenAsItsMinimum()  // NOLINT
+    {
+        const auto restore = overrideToken("FormControlMinHeight", "31px");
+
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QSpinBox spin;
+        style.polish(&spin);
+
+        QCOMPARE(spin.minimumHeight(), 31);
+    }
+
+    // The floor follows the size variant the widget carries. Taking the plain one would hand a
+    // compact control the standard height as a minimum, and grow it back to it.
+    void test_theFloorFollowsTheControlSizeVariant()  // NOLINT
+    {
+        const auto restore = overrideToken("FormControlInternalMinHeight", "18px");
+
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QSpinBox spin;
+        spin.setProperty("controlSize", "internal");
+        style.polish(&spin);
+
+        QCOMPARE(spin.minimumHeight(), 18);
+    }
+
+    // What the floor is for. A layout given less room than it needs honours no minimum it was
+    // told about, and takes the space back from its tallest items first — which is always the
+    // inputs. Only the minimum on the widget itself survives that, because QWidget::setGeometry()
+    // clamps against it.
+    void test_aSqueezedLayoutLeavesASpinBoxAtItsMinimumHeight()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+
+        QWidget window;
+        // A child rather than the window itself: a window is clamped to its own layout's
+        // minimum, so it can never be short enough to squeeze what it holds.
+        auto* page = new QWidget(&window);
+        auto* layout = new QVBoxLayout(page);
+        auto* spin = new QSpinBox;
+        // Per widget: Qt hands a style down to children only through a stylesheet proxy, and in
+        // the application this style is the application's own.
+        spin->setStyle(&freecadStyle);
+        layout->addWidget(spin);
+        layout->addWidget(new QLabel(QStringLiteral("Font size")));
+
+        window.resize(200, 200);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+        const int needed = page->minimumSizeHint().height();
+        page->setGeometry(0, 0, 200, needed - 10);
+
+        QVERIFY2(
+            page->height() < needed,
+            "the page was not actually squeezed, so the test proves nothing"
+        );
+        QTRY_COMPARE(spin->height(), 26);
+    }
+
+    // The editor inside a spin box is placed by the spin box, inside a rect that already had the
+    // control's padding taken out of it. A form control's floor there is taller than the room it
+    // is given, and would push the editor out through the frame around it.
+    void test_theEditorInsideASpinBoxTakesNoFloorOfItsOwn()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QSpinBox spin;
+
+        auto* editor = spin.findChild<QLineEdit*>();
+        QVERIFY(editor != nullptr);
+        style.polish(editor);
+
+        QCOMPARE(editor->minimumHeight(), 0);
+    }
+
+    // The floor belongs to the style, so it leaves with the style.
+    void test_unpolishTakesTheFloorBackOff()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QSpinBox spin;
+
+        style.polish(&spin);
+        QCOMPARE(spin.minimumHeight(), 26);
+
+        style.unpolish(&spin);
+        QCOMPARE(spin.minimumHeight(), 0);
+    }
+
+    // A placement site that has asked for something taller has a reason the style does not know,
+    // and polishing is not an occasion to overrule it.
+    void test_aTallerMinimumSetOnTheWidgetSurvivesBothPasses()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QSpinBox spin;
+        spin.setMinimumHeight(40);
+
+        style.polish(&spin);
+        QCOMPARE(spin.minimumHeight(), 40);
+
+        style.unpolish(&spin);
+        QCOMPARE(spin.minimumHeight(), 40);
     }
 };
 
