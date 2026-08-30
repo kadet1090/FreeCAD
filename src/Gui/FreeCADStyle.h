@@ -900,6 +900,9 @@ protected:
     /// The edges on which @p option's cell continues into another column of the same row.
     static Qt::Edges columnSeamsOf(const QStyleOptionViewItem& option, const QWidget* widget);
 
+    /// The edges on which @p option's section continues into another section of the header.
+    static Qt::Edges sectionSeamsOf(const QStyleOptionHeader& option);
+
     /// Opens a box on its @p seams, so the parts of one row read as a band rather than a string
     /// of separate chips: the corner, the edge and the margin all go where the row continues.
     static void openSeams(BoxGeometryDefinition& geometry, BoxStyleDefinition& style, Qt::Edges seams);

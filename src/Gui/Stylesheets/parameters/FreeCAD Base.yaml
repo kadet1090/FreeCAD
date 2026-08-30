@@ -622,6 +622,18 @@ DocumentTreeItemTransparentColumnGap: "@Spacing.150"
 DocumentTreeSeparatorTransparentBorderColor: "@DocumentTreeItemTransparentBorderColor"
 DocumentTreeSeparatorTransparentBorderThickness: "@SeparatorThickness"
 
+# Over a transparent surface the header is drawn the way the rows below it are: one band across
+# its sections, divided by the same rule and holding its labels off it by the same gap, rather
+# than an opaque strip with a line under it. Header inherits no component, so it borrows the
+# tree's look by name.
+HeaderItemTransparentBackground: "@DocumentTreeItemTransparentBackground"
+HeaderItemTransparentBorderColor: "@DocumentTreeItemTransparentBorderColor"
+HeaderItemTransparentBorderThickness: "@DocumentTreeItemTransparentBorderThickness"
+HeaderItemTransparentBorderRadius: "@DocumentTreeItemTransparentBorderRadius"
+HeaderItemTransparentPadding: "@DocumentTreeItemTransparentPadding"
+HeaderItemTransparentColumnGap: "@DocumentTreeItemTransparentColumnGap"
+HeaderSeparatorTransparentBorderColor: "@DocumentTreeSeparatorTransparentBorderColor"
+HeaderSeparatorTransparentBorderThickness: "@DocumentTreeSeparatorTransparentBorderThickness"
 
 # The strip under the tabs, which the active tab's own edge joins.
 TabBarBaseHeight: 4px

@@ -2433,7 +2433,15 @@ void FreeCADStyle::drawHeaderSection(
 ) const
 {
     const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
-    drawBoxBackground(painter, option->rect, resolveBoxStyle(itemContext));
+    const Qt::Edges seams = sectionSeamsOf(*option);
+
+    BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
+    BoxStyleDefinition style = resolveBoxStyle(itemContext);
+    openSeams(geometry, style, seams);
+
+    const QRect box = geometry.borderRect(option->rect);
+    drawBoxBackground(painter, box, style);
+    drawSeamRule(painter, itemContext, box, seams);
 }
 
 void FreeCADStyle::drawComboBox(
@@ -2860,6 +2868,21 @@ Qt::Edges FreeCADStyle::columnSeamsOf(const QStyleOptionViewItem& option, const 
         seams |= other < visual ? Qt::LeftEdge : Qt::RightEdge;
     }
     return seams;
+}
+
+Qt::Edges FreeCADStyle::sectionSeamsOf(const QStyleOptionHeader& option)
+{
+    switch (option.position) {
+        case QStyleOptionHeader::Beginning:
+            return Qt::RightEdge;
+        case QStyleOptionHeader::Middle:
+            return Qt::LeftEdge | Qt::RightEdge;
+        case QStyleOptionHeader::End:
+            return Qt::LeftEdge;
+        case QStyleOptionHeader::OnlyOneSection:
+            break;
+    }
+    return {};
 }
 
 void FreeCADStyle::openSeams(BoxGeometryDefinition& geometry, BoxStyleDefinition& style, Qt::Edges seams)
@@ -4434,7 +4457,14 @@ QSize FreeCADStyle::sizeFromContents(
             const StyleContext itemContext
                 = contextOf(widget, headerOption, StyleComponentElement::Item);
             const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
-            return geometry.sizeFromContents(QProxyStyle::sizeFromContents(type, option, size, widget));
+            QSize sectionSize = geometry.sizeFromContents(
+                QProxyStyle::sizeFromContents(type, option, size, widget)
+            );
+
+            // The section has to be wide enough for the gap its label is held off the seam by,
+            // or resizing it to contents would elide exactly that much of the text.
+            sectionSize.rwidth() += columnGapAt(itemContext, sectionSeamsOf(*headerOption));
+            return sectionSize;
         }
     }
 
@@ -4506,8 +4536,12 @@ QRect FreeCADStyle::subElementRect(SubElement element, const QStyleOption* optio
         }
         const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
         const BoxGeometryDefinition geometry = resolveBoxGeometry(itemContext);
+
         QStyleOptionHeader adjustedOption = *headerOption;
         adjustedOption.rect = geometry.contentRect(headerOption->rect);
+        adjustedOption.rect.setLeft(
+            adjustedOption.rect.left() + columnGapAt(itemContext, sectionSeamsOf(*headerOption))
+        );
         return QProxyStyle::subElementRect(element, &adjustedOption, widget);
     }
 
@@ -4969,11 +5003,21 @@ void FreeCADStyle::drawControl(
                 // palette is patched so its text picks up the token colour.
                 const StyleContext itemContext = contextOf(widget, option, StyleComponentElement::Item);
                 QStyleOptionHeader adjusted = *headerOption;
+                adjusted.rect = headerOption->rect;
                 if (const auto textColor = resolve<Base::Color>(itemContext, StyleProperty::TextColor)) {
                     adjusted.palette
                         .setColor(QPalette::All, QPalette::ButtonText, textColor->asValue<QColor>());
                 }
-                QProxyStyle::drawControl(CE_HeaderLabel, &adjusted, painter, widget);
+
+                // CE_HeaderLabel draws into whatever rect it is handed, so the label has to be
+                // asked for separately — handed the section, the text would sit against the
+                // box's own edge and the padding token would resolve for nothing.
+                QStyleOptionHeader label = adjusted;
+                label.rect = proxy()->subElementRect(SE_HeaderLabel, &adjusted, widget);
+
+                if (label.rect.isValid()) {
+                    QProxyStyle::drawControl(CE_HeaderLabel, &label, painter, widget);
+                }
             }
 
             return;

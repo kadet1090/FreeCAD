@@ -39,6 +39,12 @@ constexpr int ItemMargin = 3;
 /// The edge of an item box over a transparent surface, as stated in the fixture.
 constexpr QRgb ItemBorderColor = qRgb(0, 0, 255);
 
+/// The header section's fill over a transparent surface.
+constexpr QRgb HeaderColor = qRgb(0, 255, 0);
+
+/// What a header section keeps between its label and its own edge, as stated in the fixture.
+constexpr int HeaderPaddingLeft = 5;
+
 /// The rule dividing one column from the next, as stated in the fixture.
 constexpr QRgb SeparatorColor = qRgb(255, 255, 0);
 
@@ -137,7 +143,8 @@ std::optional<int> labelStart(QWidget& widget, const QRect& band, QRgb boxColour
 }  // namespace
 
 /// A transparent tree row is one band across its columns, divided by a rule and holding each
-/// column's content off the seam before it. One column on its own still hugs.
+/// column's content off the seam before it. One column on its own still hugs, and the header is
+/// drawn the way the rows below it are.
 class TestTreeColumns: public QObject
 {
     Q_OBJECT
@@ -180,6 +187,26 @@ public:
                     {.name = "DocumentTreeItemTransparentColumnGap", .value = "12px"},
                     {.name = "DocumentTreeSeparatorTransparentBorderColor", .value = "#ffff00"},
                     {.name = "DocumentTreeSeparatorTransparentBorderThickness", .value = "1px"},
+
+                    {.name = "DocumentTreeItemBackground", .value = "#ff00ff"},
+                    {.name = "DocumentTreeItemBorderRadius", .value = "0px"},
+                    {.name = "DocumentTreeItemBorderThickness", .value = "0px"},
+                    {.name = "DocumentTreeItemMargin", .value = "padding(0px)"},
+                    {.name = "DocumentTreeItemSpacing", .value = "0px"},
+
+                    {.name = "HeaderItemTransparentBackground", .value = "#00ff00"},
+                    {.name = "HeaderItemTransparentTextColor", .value = "#000000"},
+                    {.name = "HeaderItemTransparentPadding",
+                     .value = "padding(horizontal: 5px, vertical: 2px)"},
+                    {.name = "HeaderItemTransparentBorderRadius", .value = "0px"},
+                    {.name = "HeaderItemTransparentBorderThickness", .value = "0px"},
+                    {.name = "HeaderItemTransparentColumnGap", .value = "12px"},
+                    {.name = "HeaderSeparatorTransparentBorderColor", .value = "#ffff00"},
+                    {.name = "HeaderSeparatorTransparentBorderThickness", .value = "1px"},
+
+                    {.name = "HeaderItemBackground", .value = "#00ff00"},
+                    {.name = "HeaderItemBorderRadius", .value = "0px"},
+                    {.name = "HeaderItemBorderThickness", .value = "0px"},
 
                     {.name = "DocumentTreeItemBackground", .value = "#ff00ff"},
                     {.name = "DocumentTreeItemBorderRadius", .value = "0px"},
@@ -416,6 +443,80 @@ private Q_SLOTS:
 
     // The header used to hug its labels, which put a row of chips over a row of bands. It is
     // drawn the way the rows below it are.
+    // The header used to hug its labels, which put a row of chips over a row of bands. It is
+    // drawn the way the rows below it are.
+    void test_theHeaderIsOneBandAcrossItsSections()  // NOLINT
+    {
+        makeTransparent();
+        giveColumnsRoom();
+
+        const QRect band = headerSectionRect(0).united(headerSectionRect(lastVisibleColumn()));
+        for (const QRgb pixel : centreLine(*tree->header()->viewport(), band)) {
+            QVERIFY2(pixel != Unpainted, "the header band breaks somewhere across its sections");
+        }
+    }
+
+    void test_theHeaderSeamCarriesARule()  // NOLINT
+    {
+        makeTransparent();
+        giveColumnsRoom();
+
+        const int seam = headerSectionRect(1).left();
+        QCOMPARE(
+            pixelAt(*tree->header()->viewport(), QPoint(seam, headerSectionRect(1).center().y())),
+            SeparatorColor
+        );
+    }
+
+    // Docked, the header keeps the band across its whole section that every header draws.
+    void test_theHeaderKeepsTheWholeSectionWhenDocked()  // NOLINT
+    {
+        giveColumnsRoom();
+
+        const QRect section = headerSectionRect(0);
+        const auto band = colourSpan(*tree->header()->viewport(), section, HeaderColor);
+        QVERIFY(band);
+        QCOMPARE(spanWidth(*band), section.width());
+    }
+
+    void test_theHeaderLabelIsHeldOffTheSeam()  // NOLINT
+    {
+        makeTransparent();
+        giveColumnsRoom();
+
+        const QRect section = headerSectionRect(1);
+        // Scanned from past the rule, which is not the box's fill either.
+        const auto label
+            = labelStart(*tree->header()->viewport(), section.adjusted(1, 0, 0, 0), HeaderColor);
+        QVERIFY(label);
+        QVERIFY2(
+            *label >= section.left() + HeaderPaddingLeft + ColumnGap,
+            qPrintable(QStringLiteral("label at %1px in a section starting at %2px")
+                           .arg(*label)
+                           .arg(section.left()))
+        );
+    }
+
+    // CE_HeaderLabel draws into whatever rect it is handed, so a handler passing it the section
+    // leaves the label against the box's edge and the padding token resolving for nothing.
+    void test_theHeaderLabelKeepsTheBoxPadding()  // NOLINT
+    {
+        makeTransparent();
+        giveColumnsRoom();
+
+        const auto section = headerBox(0);
+        QVERIFY(section);
+
+        const auto label = labelStart(*tree->header()->viewport(), headerSectionRect(0), HeaderColor);
+        QVERIFY(label);
+        QVERIFY2(
+            *label >= section->first + HeaderPaddingLeft,
+            qPrintable(
+                QStringLiteral("label at %1px in a box starting at %2px").arg(*label).arg(section->first)
+            )
+        );
+    }
+
 private:
     void makeTransparent()
     {
@@ -520,6 +621,25 @@ private:
         return tree->visualRect(objectIndex(column));
     }
 
+
+    /// The section @p column occupies, in the header viewport's coordinates.
+    QRect headerSectionRect(int column) const
+    {
+        QHeaderView* header = tree->header();
+        return {
+            header->sectionViewportPosition(column),
+            0,
+            header->sectionSize(column),
+            header->viewport()->height()
+        };
+    }
+
+    std::optional<QPair<int, int>> headerBox(int column) const
+    {
+        // A header paints its sections on its own viewport, the way any scroll area does, so
+        // that is the widget the box has to be read off.
+        return colourSpan(*tree->header()->viewport(), headerSectionRect(column), HeaderColor);
+    }
 
     Gui::TreeWidget* tree = nullptr;
     App::Document* document = nullptr;
