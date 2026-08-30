@@ -81,7 +81,7 @@ TEST(StyleContextTest, AVariantSlotAtItsWidestValueLeavesItsNeighbourAlone)
     // The slot is narrower than a byte, so a dimension packed at full width is where a slot
     // would first bleed into the one above it. Checked on a middle slot, which has a neighbour
     // on both sides.
-    const size_t slot = size_t(VariantSlot::Position);
+    const size_t slot = static_cast<size_t>(VariantSlot::Position);
     const uint64_t widest = (uint64_t {1} << variantSlotWidth) - 1;
 
     StyleContext context;
