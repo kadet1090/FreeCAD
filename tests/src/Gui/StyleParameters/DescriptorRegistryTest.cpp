@@ -144,6 +144,53 @@ TEST(DescriptorRegistryTest, TooltipTokenNamesParseBackToTheComponent)
     EXPECT_EQ(parsed->component, "Tooltip");
 }
 
+TEST(DescriptorRegistryTest, StatusBarComponentBuildsItsTokenPrefixes)
+{
+    const ParameterDescriptorRegistry registry = builtinRegistry();
+
+    StyleContext context;
+    context.component = StyleComponent::StatusBar;
+
+    const auto prefixes = registry.buildPrefixes(context);
+
+    // Standalone like MenuBar: the bar is a surface of its own, so nothing it leaves unstated
+    // may be picked up from another component's tokens.
+    ASSERT_FALSE(prefixes.empty());
+    EXPECT_EQ(prefixes.front(), "StatusBar");
+    EXPECT_EQ(prefixes.size(), 1U);
+}
+
+TEST(DescriptorRegistryTest, AStatusMessageFallsBackToTheUnqualifiedMessageToken)
+{
+    const ParameterDescriptorRegistry registry = builtinRegistry();
+
+    StyleContext context;
+    context.component = StyleComponent::StatusBar;
+    context.element = StyleComponentElement::Message;
+    context.variant.set(VariantSlot::MessageLevel, MessageLevel::Error);
+
+    const auto prefixes = registry.buildPrefixes(context);
+
+    // The severity is a variant precisely so a theme that states one colour for every level
+    // is enough: the qualified name is tried first and the bare one catches what it misses.
+    ASSERT_EQ(prefixes.size(), 2U);
+    EXPECT_EQ(prefixes.at(0), "StatusBarMessageError");
+    EXPECT_EQ(prefixes.at(1), "StatusBarMessage");
+}
+
+TEST(DescriptorRegistryTest, TheMessageLevelVariantIsRecognisedOnTheStatusBar)
+{
+    const ParameterDescriptorRegistry registry = builtinRegistry();
+
+    const auto parsed = registry.parse("StatusBarCriticalTextColor");
+
+    ASSERT_TRUE(parsed.has_value());
+    EXPECT_EQ(parsed->component, "StatusBar");
+    EXPECT_EQ(parsed->property, "TextColor");
+    ASSERT_TRUE(parsed->variants.contains("MessageLevel"));
+    EXPECT_EQ(parsed->variants.at("MessageLevel"), "Critical");
+}
+
 TEST(DescriptorRegistryTest, HoveredOutranksSelectedInTheFallbackChain)
 {
     const ParameterDescriptorRegistry registry = builtinRegistry();

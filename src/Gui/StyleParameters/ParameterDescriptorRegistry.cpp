@@ -68,6 +68,7 @@ const std::map<StyleComponentElement, std::string_view> elementNames = {
     {StyleComponentElement::Arrow, "Arrow"},
     {StyleComponentElement::Shortcut, "Shortcut"},
     {StyleComponentElement::Title, "Title"},
+    {StyleComponentElement::Message, "Message"},
 };
 // clang-format on
 
@@ -104,6 +105,11 @@ const std::map<VariantSlot, std::map<uint8_t, std::string_view>> variantSlotName
     }},
     {VariantSlot::CheckType, {
         {static_cast<uint8_t>(CheckType::Exclusive), "Exclusive"},
+    }},
+    {VariantSlot::MessageLevel, {
+        {static_cast<uint8_t>(MessageLevel::Warning),  "Warning"},
+        {static_cast<uint8_t>(MessageLevel::Error),    "Error"},
+        {static_cast<uint8_t>(MessageLevel::Critical), "Critical"},
     }},
     {VariantSlot::TransparencyMode, {
         {static_cast<uint8_t>(TransparencyMode::Transparent), "Transparent"},
@@ -201,6 +207,7 @@ constexpr std::array<std::string_view, size_t(VariantSlot::COUNT)> variantSlotDi
     "RowType",     // VariantSlot::RowType
     "FrameType",   // VariantSlot::FrameType
     "CheckType",   // VariantSlot::CheckType
+    "MessageLevel", // VariantSlot::MessageLevel
     "TransparencyMode", // VariantSlot::TransparencyMode
 };
 // clang-format on
@@ -666,6 +673,12 @@ void populateBuiltinDescriptors(ParameterDescriptorRegistry& registry)
         .variants = {"State"},
         .inherits = {},
     }, StyleComponent::MenuBar);
+
+    registry.registerDescriptor({
+        .name     = "StatusBar",
+        .variants = {"MessageLevel", "State"},
+        .inherits = {},
+    }, StyleComponent::StatusBar);
 
     registry.registerDescriptor({
         .name     = "LineEdit",

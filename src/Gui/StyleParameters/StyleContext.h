@@ -69,6 +69,7 @@ enum class StyleComponent : uint8_t
     InternalButton,    // Flat action button painted inside a custom composite widget
     GeometrySelector,  // Gui::GeometrySelectorWidget composite field, inherits List
     Tooltip,           // QTipLabel and Gui::NotificationLabel: the surface behind tip text
+    StatusBar,         // QStatusBar: the strip along the bottom edge of the main window
     COUNT
 };
 
@@ -96,6 +97,7 @@ enum class StyleComponentElement : uint8_t
     Arrow,          // Submenu arrow of a menu item
     Shortcut,       // Accelerator column of a menu item
     Title,          // Title of a framed container, drawn on its top edge
+    Message,        // Transient message a status bar shows in place of its own items
     COUNT,
 };
 
@@ -192,6 +194,21 @@ enum class CheckType : uint8_t
 };
 
 /**
+ * @brief Severity of the transient message a status bar shows.
+ *
+ * Stated by the widget showing the message rather than read off a style option: Qt has no
+ * option for a status message, and the severity comes from the log level that produced it.
+ */
+enum class MessageLevel : uint8_t
+{
+    Default,
+    Warning,
+    Error,
+    Critical,
+    COUNT
+};
+
+/**
  * @brief Row parity variant for item-view components.
  *
  * Set to Alternate when QStyleOptionViewItem::Alternate is active so that alternate-row
@@ -229,6 +246,7 @@ enum class VariantSlot : uint8_t
     RowType,           // Alternate row parity for item-view components
     FrameType,         // Flat frame treatment for framed containers
     CheckType,         // Exclusive (radio) vs non-exclusive check state on a menu item
+    MessageLevel,      // Severity of the transient message a status bar shows
     TransparencyMode,  // Applies to every component, so it is declared last
     COUNT
 };
