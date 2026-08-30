@@ -1769,6 +1769,12 @@ Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Al
         return style;
     }
 
+    // A widget can be styled without a Gui::Application behind it: a bare QApplication::setStyle()
+    // in a test, or an embedding. Fail soft rather than dereferencing a null instance.
+    if (Application::Instance == nullptr) {
+        return nullptr;
+    }
+
     return Application::Instance->freeCADStyle();
 }
 
@@ -6013,9 +6019,11 @@ void FreeCADStyle::refreshStyleOverrides(QWidget* widget)
         return;
     }
 
-    // Nothing to recompute when this widget is not ours to style; the declaration stays on the
-    // widget and is picked up if a FreeCADStyle polishes it later.
-    if (const auto* style = qobject_cast<const FreeCADStyle*>(widget->style())) {
+    // Through styleOf() rather than a cast of widget->style(): a style sheet makes Qt wrap the
+    // application style in a QStyleSheetStyle, which is not a FreeCADStyle and not a proxy that
+    // can be unwrapped. FreeCAD always sets one, so the cast failed for every widget and this
+    // silently did nothing — leaving the declaration to wait for a polish that never comes.
+    if (const FreeCADStyle* style = styleOf(widget)) {
         style->recomputeOverrideSets(widget);
     }
 }

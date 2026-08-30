@@ -93,8 +93,11 @@ public:
         );
 
         // The production entry points read the widget's own style, so the application style
-        // has to be the one under test.
-        QApplication::setStyle(new Gui::FreeCADStyle);
+        // has to be the one under test. It has to be *the application's* instance rather than a
+        // fresh one: the static entry points fall back to Gui::Application's style when a widget
+        // cannot answer with a FreeCADStyle of its own, and with two instances in play one would
+        // store an override set the other still has memoised.
+        QApplication::setStyle(Gui::Application::Instance->freeCADStyle());
     }
 
 
@@ -707,6 +710,37 @@ private Q_SLOTS:
             "the inactive tab was not filled from TabBarTabBackground"
         );
         QCOMPARE(pixelsOfColour(canvas, restingTab, selectedFill), 0);
+    }
+
+    // Every setStyleOverride() caller depends on this, and it was silently dead in the running
+    // application: FreeCAD always installs a style sheet, so Qt wraps the application style in a
+    // QStyleSheetStyle, and QWidget::style() answers with that. It is not a FreeCADStyle and not
+    // a QProxyStyle either, so a cast of widget->style() fails for every widget and the recompute
+    // never ran. Only the declarations set before a polish -- PropertyView's -- kept working,
+    // which is why the suites above stayed green: none of them set a style sheet.
+    void test_anOverrideTakesEffectUnderAnApplicationStyleSheet()  // NOLINT
+    {
+        QWidget root;
+        QWidget* panel = makePanel(&root);
+        style()->polish(panel);
+
+        const QColor before = backgroundOf(panel);
+
+        qApp->setStyleSheet(QStringLiteral("QWidget { }"));
+        QVERIFY2(
+            qobject_cast<Gui::FreeCADStyle*>(panel->style()) == nullptr,
+            "the style sheet did not wrap the application style, so this proves nothing"
+        );
+
+        Gui::FreeCADStyle::setStyleOverride(
+            panel,
+            QStringLiteral("TestPaneBackground"),
+            QStringLiteral("#445566")
+        );
+        qApp->setStyleSheet(QString());
+
+        QVERIFY(before != QColor(0x44, 0x55, 0x66));
+        QCOMPARE(backgroundOf(panel), QColor(0x44, 0x55, 0x66));
     }
 
     // An empty expression means "no override", not "an override that evaluates to nothing".
