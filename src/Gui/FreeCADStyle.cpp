@@ -4272,6 +4272,10 @@ int FreeCADStyle::styleHint(
         return 0;
     }
 
+    if (hint == SH_Widget_Animation_Duration) {
+        return 0;
+    }
+
     if (hint == SH_GroupBox_TextLabelVerticalAlignment) {
         // Fusion answers AlignTop, which places the frame's top edge below the whole title band.
         // Our group box puts the title *on* that edge so the border can be notched out from
