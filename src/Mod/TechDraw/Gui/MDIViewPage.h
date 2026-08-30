@@ -108,6 +108,7 @@ public:
     void contextMenuEvent(QContextMenuEvent *event) override;
 
     void setScene(QGSPage* scene, QGVPage* view);
+    QString paneBackground() const override;
     void fixSceneDependencies();
 
     void setDimensionsSelectability(bool val);

@@ -519,7 +519,7 @@ void QGVPage::mouseReleaseEvent(QMouseEvent* event)
 
 TechDraw::DrawPage* QGVPage::getDrawPage() { return m_vpPage->getDrawPage(); }
 
-QColor QGVPage::getBackgroundColor()
+QColor QGVPage::getBackgroundColor() const
 {
     Base::Color fcColor;
     fcColor.setPackedValue(Preferences::getPreferenceGroup("Colors")->GetUnsigned("Background", 0x70707000));

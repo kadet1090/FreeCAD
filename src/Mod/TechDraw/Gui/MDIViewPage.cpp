@@ -159,6 +159,16 @@ void MDIViewPage::setScene(QGSPage* scene, QGVPage* viewWidget)
     QObject::connect(scene, &QGSPage::selectionChanged, this, &MDIViewPage::sceneSelectionChanged);
 }
 
+QString MDIViewPage::paneBackground() const
+{
+    // The page view fills the window, and its background is a preference rather than a token.
+    if (const auto* view = qobject_cast<const QGVPage*>(centralWidget())) {
+        return view->getBackgroundColor().name();
+    }
+
+    return Gui::MDIView::paneBackground();
+}
+
 void MDIViewPage::setDocumentObject(const std::string& name)
 {
     m_objectName = name;
