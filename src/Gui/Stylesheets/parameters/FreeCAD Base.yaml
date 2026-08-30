@@ -346,7 +346,7 @@ ScrollBarThumbBackground: "@Neutral.400"
 ScrollBarThumbHoveredBackground: "@Neutral.600"
 ScrollBarThumbBorderRadius: "@BaseRadius.medium"
 ScrollBarThumbMargin: "padding(@Spacing.100)"
-ScrollBarThumbMinLength: 50px
+ScrollBarThumbMinLength: 20px
 
 # The surface a task panel and a dialog sit on; read by the QSint content rule below,
 # which is stylesheet work QProxyStyle cannot reach.
