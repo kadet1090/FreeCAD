@@ -27,6 +27,10 @@ constexpr QRgb ItemColor = qRgb(255, 0, 0);
 /// What the box keeps between its content and its own right edge, as stated in the fixture.
 constexpr int ItemPaddingRight = 9;
 
+/// What the field is allowed to spend on itself: the fixture's border on each side, plus the two
+/// pixels QLineEdit insets its text by. Padding is not in it - the field stands in for a label.
+constexpr int FieldChrome = 2 * 1 + 4;
+
 /// The name the object under test carries, long enough that a field sized for it is
 /// unmistakably narrower than the row it sits in.
 const QString ObjectLabel = QStringLiteral("Body");
@@ -79,7 +83,10 @@ public:
                     {.name = "DocumentTreeItemBackground", .value = "#ff0000"},
                     {.name = "DocumentTreeItemPadding",
                      .value = "padding(left: 5px, right: 9px, vertical: 2px)"},
-                    {.name = "DocumentTreeItemMargin", .value = "margin(horizontal: 3px)"},
+                    // No margin, as the shipped themes state it: the delegate insets the box by
+                    // one before handing it over and paintBox() insets it again, so a non-zero
+                    // margin here would measure that double inset rather than this fix.
+                    {.name = "DocumentTreeItemMargin", .value = "padding(0px)"},
                     // A rounded corner would put the box's own edge somewhere other than on the
                     // row's centre line, which is where it is read back.
                     {.name = "DocumentTreeItemBorderRadius", .value = "0px"},
@@ -173,6 +180,37 @@ private Q_SLOTS:
             itemBoxRight(*tree->viewport(), item.center().y()),
             editor->geometry().right() + ItemPaddingRight
         );
+    }
+
+    // The box's padding is worth less than a character of the name: a field that does not fit
+    // takes the padding for itself, and the box closes tight on it.
+    void test_theFieldTakesTheBoxPaddingWhenTheNameDoesNotFit()  // NOLINT
+    {
+        makeTransparent();
+        QLineEdit* editor = openEditor();
+        QVERIFY(editor);
+
+        QTest::keyClicks(
+            editor,
+            QStringLiteral("a name far, far too long for a tree this narrow to ever show in full")
+        );
+
+        const QRect item = tree->visualItemRect(objectItem());
+        QCOMPARE(editor->geometry().right(), item.right());
+        QCOMPARE(itemBoxRight(*tree->viewport(), item.center().y()), editor->geometry().right());
+    }
+
+    // A form control's padding on top of the item's own would push the name right and cut its
+    // tail off, which is what an in-place rename must not do.
+    void test_theFieldSpendsNothingOnPaddingOfItsOwn()  // NOLINT
+    {
+        makeTransparent();
+        QLineEdit* editor = openEditor();
+        QVERIFY(editor);
+
+        editor->clear();
+
+        QCOMPARE(editor->width(), FieldChrome);
     }
 
     // Docked, the item is the full-width row every other item view draws, and the field keeps the

@@ -577,6 +577,15 @@ QWidget* TreeWidgetItemDelegate::createEditor(
     }
     editor->setReadOnly(prop.isReadOnly());
 
+    // The field stands in for the item's label rather than sitting next to one, so it spends
+    // nothing on padding of its own: the name keeps the room the label had, and a long one is
+    // no more cut off for being edited.
+    FreeCADStyle::setStyleOverride(
+        editor,
+        QStringLiteral("LineEditPadding"),
+        QStringLiteral("padding(0px)")
+    );
+
     activeEditor = editor;
     activeEditorIndex = index;
 
@@ -616,8 +625,10 @@ void TreeWidgetItemDelegate::updateEditorGeometry(
     const FreeCADStyle::BoxGeometryDefinition geometry = fcStyle->resolveBoxGeometry(context);
 
     // Over a transparent surface the item is a free-standing box hugging its content, so the
-    // field hugs the name and stops at the box's content edge rather than filling the row.
-    const int available = geometry.contentRect(opt.rect).right() + 1 - editor->x();
+    // field hugs the name rather than filling the row. It may run to the box's outer edge
+    // though: padding is worth less than a character of the name it would cut off, and the box
+    // closes on the field wherever it ends.
+    const int available = geometry.borderRect(opt.rect).right() + 1 - editor->x();
     editor->setMaximumWidth(available);
     editor->resize(std::min(editor->sizeHint().width(), available), editor->height());
 }
