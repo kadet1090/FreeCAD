@@ -117,6 +117,15 @@ void AbstractSplitView::setupSettings()
     viewSettings->ignoreDimensions = true;
     viewSettings->applySettings();
 
+    if (View3DInventorViewer* viewer = getViewer(0)) {
+        connect(
+            viewer,
+            &View3DInventorViewer::backgroundChanged,
+            this,
+            &AbstractSplitView::paneBackgroundChanged
+        );
+    }
+
     for (auto view : _viewer) {
         NaviCubeSettings naviSettings(
             App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/NaviCube"),
@@ -129,6 +138,16 @@ void AbstractSplitView::setupSettings()
 View3DInventorViewer* AbstractSplitView::getViewer(unsigned int n) const
 {
     return (_viewer.size() > n ? _viewer[n] : nullptr);
+}
+
+QString AbstractSplitView::paneBackground() const
+{
+    // Every viewer here is driven by the same settings, so any of them answers for the split.
+    if (const View3DInventorViewer* viewer = getViewer(0)) {
+        return viewer->paneBackgroundColor().name();
+    }
+
+    return MDIView::paneBackground();
 }
 
 void AbstractSplitView::onUpdate()

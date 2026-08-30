@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <QDir>
@@ -202,6 +203,31 @@ TEST_P(ShippedThemeTest, TheShippedFilesAreFoundAndNonEmpty)  // NOLINT
     // One from the theme's inherited "FreeCAD Base.yaml", one from "Design System.yaml".
     EXPECT_TRUE(manager->parameter("BaseWindowBackground").has_value());
     EXPECT_TRUE(manager->parameter("Spacing").has_value());
+}
+
+// MainWindow hands the tab strip whatever MDIView::paneBackground() answers with, and a name
+// no theme defines is stored without complaint and then resolves to nothing on every paint —
+// the seam silently reverts to the default pane colour. Nothing in the style suites sees that,
+// because none of them read these expressions. Each name below is stated verbatim by the view
+// named beside it; changing one without changing the other is what this catches.
+TEST_P(ShippedThemeTest, TheSurfacesTheMdiViewsNameAreDefined)  // NOLINT
+{
+    const auto manager = loadShippedTheme(GetParam());
+
+    // Gui::MDIView::paneBackground(), the answer every view that states no surface of its own
+    // keeps: Start, Spreadsheet, Image, Graphviz.
+    EXPECT_TRUE(manager->resolve("BaseWindowBackground").has_value());
+
+    // Gui::EditorView and Gui::TextDocumentEditorView, whose editor fills the view.
+    EXPECT_TRUE(manager->resolve("LineEditBackground").has_value());
+
+    // The token MainWindow overrides, and the tab fill that has to keep reading it for any of
+    // the above to reach the seam at all.
+    EXPECT_TRUE(manager->resolve("CurrentPaneBackground").has_value());
+    EXPECT_THAT(
+        manager->parameter("TabBarTabSelectedBackground")->value,
+        testing::HasSubstr("@CurrentPaneBackground")
+    );
 }
 
 // A theme that ships no parameters file at all is not hypothetical: the FreeCAD Classic

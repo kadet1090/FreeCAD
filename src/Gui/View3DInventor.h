@@ -134,6 +134,7 @@ public:
         return _viewer;
     }
     bool containsViewProvider(const ViewProvider*) const override;
+    QString paneBackground() const override;
 
 public Q_SLOTS:
     /// override the cursor in this view

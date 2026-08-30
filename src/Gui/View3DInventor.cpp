@@ -147,6 +147,8 @@ View3DInventor::View3DInventor(
     // apply the user settings
     applySettings();
 
+    connect(_viewer, &View3DInventorViewer::backgroundChanged, this, &View3DInventor::paneBackgroundChanged);
+
     stopSpinTimer = new QTimer(this);
     connect(stopSpinTimer, &QTimer::timeout, this, &View3DInventor::stopAnimating);
 
@@ -348,6 +350,12 @@ void View3DInventor::print(QPrinter* printer)
     QImage img = _viewer->renderToImage(options);
     p.drawImage(0, 0, img);
     p.end();
+}
+
+QString View3DInventor::paneBackground() const
+{
+    // A literal, not a token: the surface is the user's viewport colour, which no theme knows.
+    return _viewer->paneBackgroundColor().name();
 }
 
 bool View3DInventor::containsViewProvider(const ViewProvider* vp) const

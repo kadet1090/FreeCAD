@@ -130,6 +130,12 @@ void TextDocumentEditorView::saveToObject()
     textDocument->purgeTouched();
 }
 
+QString TextDocumentEditorView::paneBackground() const
+{
+    // The editor is the whole view, so its surface is what reaches the edge.
+    return QStringLiteral("@LineEditBackground");
+}
+
 QStringList TextDocumentEditorView::undoActions() const
 {
     QStringList undo;
