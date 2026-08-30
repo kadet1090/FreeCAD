@@ -230,6 +230,16 @@ TEST_P(ShippedThemeTest, TheSurfacesTheMdiViewsNameAreDefined)  // NOLINT
     );
 }
 
+// Every theme that ships a parameters file states the bar's own surface. A theme that ships none
+// is a different case and deliberately not covered here: PE_PanelStatusBar declines, the base
+// style paints the window background, and the bar looks exactly as it did before it was styled.
+TEST_P(ShippedThemeTest, TheStatusBarSurfaceIsDefined)  // NOLINT
+{
+    const auto manager = loadShippedTheme(GetParam());
+
+    EXPECT_TRUE(manager->resolve("StatusBarBackground").has_value());
+}
+
 // A theme that ships no parameters file at all is not hypothetical: the FreeCAD Classic
 // preference pack names one that does not exist. A dock panel paints its own body and title bar,
 // so without these two the panel chrome is not merely plain, it is absent - which is the whole

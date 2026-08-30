@@ -4905,6 +4905,20 @@ void FreeCADStyle::drawPrimitive(
         return;
     }
 
+    if (element == PE_PanelStatusBar) {
+        const StyleContext context = contextOf(widget, option);
+
+        // A theme that states no surface for the bar wants the base style's, not the hole an
+        // empty box would leave where the window background used to show.
+        if (!resolve(context, StyleProperty::Background)) {
+            QProxyStyle::drawPrimitive(element, option, painter, widget);
+            return;
+        }
+
+        drawComponent(painter, option->rect, context);
+        return;
+    }
+
     if (element == PE_IndicatorRadioButton) {
         StyleContext context = contextOf(widget, option, StyleComponentElement::Indicator);
 
@@ -5688,6 +5702,10 @@ StyleContext FreeCADStyle::contextOf(
         if (option && (option->state & QStyle::State_Sunken)) {
             context.state |= StyleState::Pressed;
         }
+    }
+    else if (qobject_cast<const QStatusBar*>(widget)) {
+        context.component = StyleComponent::StatusBar;
+        context.element = element;
     }
     else if (const auto* toolbar = qobject_cast<const QToolBar*>(widget)) {
         context.component = StyleComponent::ToolBar;
