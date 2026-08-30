@@ -232,7 +232,8 @@ PanelTitleTransparentBorderThickness: "1px"
 PanelTitleTransparentBorderRadius: "@BaseRadius.medium"
 PanelTitleTransparentPadding: "padding(@Spacing.075, right: @Spacing.150, left: @Spacing.200)"
 PanelTitleTransparentFontWeight: 800
-PanelTitleTransparentFontSize: 0.75rem
+PanelTitleTransparentFontSize: 0.875rem
+PanelTitleTransparentVerticalAlign: "middle"
 
 # A namespace set on the expression button inside a quantity field, so it resolves ahead of the
 # ToolButton chain. It is a fixed square that sits inside the line edit's frame, so it carries
