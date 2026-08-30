@@ -864,6 +864,10 @@ FreeCADStyle::BoxGeometryDefinition FreeCADStyle::resolveBoxGeometry(const Style
         result.spacing = static_cast<int>(*resolvedSpacing);
     }
 
+    if (const auto resolvedColumnGap = resolve<Numeric>(context, StyleProperty::ColumnGap)) {
+        result.columnGap = static_cast<int>(*resolvedColumnGap);
+    }
+
     boxGeometryCache.store(bin, key, result);
     return result;
 }

@@ -277,6 +277,7 @@ enum class StyleProperty : uint8_t
     Padding,
     Margin,
     Spacing,
+    ColumnGap,
     Overlap,
     IconSize,
     IconSpacing,

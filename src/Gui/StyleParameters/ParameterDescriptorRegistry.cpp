@@ -226,6 +226,7 @@ const std::map<StyleProperty, std::string_view> propertyNames = {
     {StyleProperty::Padding,            "Padding"},
     {StyleProperty::Margin,             "Margin"},
     {StyleProperty::Spacing,            "Spacing"},
+    {StyleProperty::ColumnGap,          "ColumnGap"},
     {StyleProperty::Overlap,            "Overlap"},
     {StyleProperty::IconSize,           "IconSize"},
     {StyleProperty::IconSpacing,        "IconSpacing"},

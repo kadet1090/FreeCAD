@@ -250,6 +250,10 @@ public:
          *  behind the rows. 0 = rows abut. */
         int spacing = 0;
 
+        /** Gap reserved to the left of a box that is not the leading column of its row, so
+         *  adjacent columns do not touch. 0 = columns abut. */
+        int columnGap = 0;
+
         /**
          * @brief Width delta to replace Qt's hardcoded icon–text gap with the token spacing.
          *
