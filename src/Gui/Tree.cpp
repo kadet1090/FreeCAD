@@ -368,7 +368,7 @@ public:
         QPainter* painter,
         const QStyleOptionViewItem& option,
         const QModelIndex& index
-    ) const;
+    ) const override;
 
 private:
     mutable QPointer<QWidget> activeEditor;
