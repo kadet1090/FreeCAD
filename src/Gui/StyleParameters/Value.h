@@ -269,7 +269,7 @@ struct GuiExport Tuple
      *        another type.
      */
     template<typename T>
-    const T* tryGet(const std::string& name) const;
+    const T* tryGet(std::string_view name) const;
 
     /**
      * @brief Returns the named element, or the empty value of type T when it cannot be produced.
