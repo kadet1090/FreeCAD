@@ -18,6 +18,7 @@ import tempfile
 
 import FreeCAD as App
 import FreeCADGui as Gui
+import Fitting
 from PySide import QtCore, QtGui, QtWidgets
 
 from PySide.QtSvg import QSvgRenderer
@@ -216,6 +217,12 @@ VIEW_DIR = App.Vector(
 )
 
 ICON_SIZE_MM = 24.0  # world extent of the icon canvas
+
+# Fitting.py cannot import this module (it stays FreeCAD/Qt-free), so its own
+# CANVAS constant is a second copy of the same number. Catch drift here rather
+# than let a changed ICON_SIZE_MM silently fit against the wrong canvas size.
+assert Fitting.CANVAS == ICON_SIZE_MM
+
 PNG_MULTIPLIER = 16  # PNG fill rendered at 24 * PNG_MULTIPLIER px per side
 GUIDES_PATH = os.path.join(os.path.dirname(__file__), "Resources", "guides.svg")
 
@@ -346,9 +353,68 @@ def compute_hlr_for_active():
     return _hlr_edges(compound)
 
 
+def edge_points(edges, deflection=0.02):
+    """Every visible edge flattened to camera-frame points.
+
+    Deliberately not `findShapeOutline`: that walks one outer wire, so two
+    disconnected solids silently contribute one of them. The hull of every
+    visible point is a superset and always correct. The deflection is finer than
+    the one used for path emission, because a coarse polygon underestimates a
+    circle's hull area."""
+    points = []
+    for kind in EDGE_KINDS:
+        for edge in edges.get(kind, {}).get("visible", []):
+            try:
+                sampled = edge.discretize(Deflection=deflection)
+            except Exception:
+                continue
+            points.extend((point.x, point.y) for point in sampled)
+    return points
+
+
+def silhouette_outline(edges, deflection=0.02):
+    """Points of the silhouette layer alone, which is what carries the corners
+    worth landing on the pixel grid. Empty when HLR could not build one."""
+    points = []
+    for edge in edges.get("silhouette", {}).get("visible", []):
+        try:
+            sampled = edge.discretize(Deflection=deflection)
+        except Exception:
+            continue
+        points.extend((point.x, point.y) for point in sampled)
+    return points
+
+
+def auto_fit(edges, keyline=Fitting.Keyline.AUTO):
+    """Framing for the given HLR result, or None when there is nothing to
+    frame.
+
+    The `silhouette` passed to `Fitting.fit` is currently the convex hull of
+    the silhouette layer, not an ordered outline ring, so snapping only ever
+    sees hull (convex) corners. A true ordered silhouette ring would
+    additionally let concave corners snap to the pixel grid; building one
+    needs endpoint matching across independent edges and is out of scope
+    here."""
+    points = edge_points(edges)
+    if not points:
+        return None
+    outline = Fitting.convex_hull(silhouette_outline(edges)) or None
+    return Fitting.fit(points, keyline=keyline, silhouette=outline)
+
+
 # ---------------------------------------------------------------------------
 # Rendering and SVG composition
 # ---------------------------------------------------------------------------
+
+def make_xfrm(zoom, pan):
+    """Camera mm -> SVG units for the 24-unit canvas. Y flips because SVG
+    counts downward and the camera frame counts up."""
+    half = ICON_SIZE_MM / 2
+
+    def xfrm(x, y):
+        return (half + (x - pan[0]) * zoom, half - (y - pan[1]) * zoom)
+    return xfrm
+
 
 def setup_icon_camera(view, world_size_mm=ICON_SIZE_MM, zoom=1.0, pan=(0.0, 0.0)):
     """Configure the active 3D view as an orthographic camera at the
@@ -649,6 +715,11 @@ class IconStudioPanel(QtWidgets.QDockWidget):
         self._pan = [0.0, 0.0]
         self._zoom = 1.0
 
+        # The zoom a fit last chose, so manual scrolling can be bounded around
+        # it rather than around an absolute range that a large model's fitted
+        # scale may already sit outside of.
+        self._fit_scale = 1.0
+
         self._compose_timer = QtCore.QTimer(self)
         self._compose_timer.setSingleShot(True)
         self._compose_timer.setInterval(120)
@@ -679,20 +750,40 @@ class IconStudioPanel(QtWidgets.QDockWidget):
             "and re-render the PNG fill from the active 3D view."
         )
         self.refresh_btn.clicked.connect(self._refresh_from_3d)
-        self.reset_btn = QtWidgets.QPushButton("Reset view")
-        self.reset_btn.setToolTip("Reset pan and zoom (drag preview to pan, scroll to zoom).")
-        self.reset_btn.clicked.connect(self._reset_view)
+        self.fit_btn = QtWidgets.QPushButton("Fit")
+        self.fit_btn.setToolTip(
+            "Frame the icon: equal optical area, corners inside the trim band, "
+            "straight runs on the pixel grid."
+        )
+        self.fit_btn.clicked.connect(self._apply_fit_and_render)
         self.save_btn = QtWidgets.QPushButton("Save SVG…")
         self.save_btn.clicked.connect(self._save)
         bar.addWidget(self.refresh_btn)
-        bar.addWidget(self.reset_btn)
+        bar.addWidget(self.fit_btn)
         bar.addWidget(self.save_btn)
         bar.addStretch()
         layout.addLayout(bar)
 
+        # Fit status line — written by _apply_fit, so it must exist before
+        # anything (the keyline combo below) can trigger that method.
+        self._fit_status = QtWidgets.QLabel("")
+        self._fit_status.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
+        layout.addWidget(self._fit_status)
+
         # Form controls
         form = QtWidgets.QFormLayout()
         form.setLabelAlignment(QtCore.Qt.AlignRight)
+
+        self.keyline_combo = QtWidgets.QComboBox()
+        for label, value in (("Auto", Fitting.Keyline.AUTO),
+                              ("Square 18x18", Fitting.Keyline.SQUARE),
+                              ("Circle d20", Fitting.Keyline.CIRCLE),
+                              ("Vertical 16x20", Fitting.Keyline.VERTICAL),
+                              ("Horizontal 20x16", Fitting.Keyline.HORIZONTAL),
+                              ("Area 320px²", Fitting.Keyline.AREA)):
+            self.keyline_combo.addItem(label, value)
+        self.keyline_combo.currentIndexChanged.connect(self._apply_fit_and_render)
+        form.addRow("Keyline:", self.keyline_combo)
 
         self.guides_edit = QtWidgets.QLineEdit(GUIDES_PATH)
         guides_browse = QtWidgets.QPushButton("…")
@@ -844,6 +935,7 @@ class IconStudioPanel(QtWidgets.QDockWidget):
                 App.Console.PrintError(f"IconStudio: HLR failed: {exc}\n")
                 self._cached_edges = _empty_edges()
 
+            self._apply_fit()
             self._refresh_png_only(update_preview=False)
         finally:
             QtWidgets.QApplication.restoreOverrideCursor()
@@ -879,15 +971,41 @@ class IconStudioPanel(QtWidgets.QDockWidget):
 
     def _on_zoom(self, steps):
         old = self._zoom
-        self._zoom = max(0.1, min(50.0, old * (1.15 ** steps)))
+        low = self._fit_scale * 0.1
+        high = self._fit_scale * 50.0
+        self._zoom = max(low, min(high, old * (1.15 ** steps)))
         if self._zoom != old:
             self._update_preview()
             self._png_timer.start()
 
-    def _reset_view(self):
-        self._pan = [0.0, 0.0]
-        self._zoom = 1.0
+    def _apply_fit(self):
+        """Frame the cached HLR result. Manual pan and zoom are a deviation from
+        this, not the other way round. Does not render — callers that need the
+        preview refreshed pair this with `_refresh_png_only` themselves, so a
+        caller that is about to render anyway (e.g. `_refresh_from_3d`) never
+        pays for a second pass."""
+        report = auto_fit(self._cached_edges, self._selected_keyline())
+        if report is None:
+            self._fit_status.setText("nothing to fit")
+            return
+        self._zoom = report.frame.scale
+        self._fit_scale = report.frame.scale
+        self._pan = [report.frame.center[0], report.frame.center[1]]
+        self._fit_status.setText(
+            "%s · x%.3f · ink %.1fx%.1f · %.0fpx² · trim %s · snap %.2fpx"
+            % (report.keyline.value, report.frame.scale,
+               report.ink_size[0], report.ink_size[1], report.ink_area,
+               "clamped" if report.trim_clamped else "ok",
+               report.snap_residual))
+
+    def _apply_fit_and_render(self):
+        """Slot for controls that request a fit on demand (Fit button, keyline
+        combo): frame, then render once."""
+        self._apply_fit()
         self._refresh_png_only()
+
+    def _selected_keyline(self):
+        return self.keyline_combo.currentData()
 
     def _apply_preview_bg(self, *_):
         """Push the chosen radio bg colour onto each size preview."""
@@ -900,15 +1018,8 @@ class IconStudioPanel(QtWidgets.QDockWidget):
         self._compose_timer.start()
 
     def _xfrm(self):
-        """Build the camera-mm → SVG-unit transform for the current pan/zoom.
-        Y-flip is folded in here; SVG's Y axis points down, camera's Y up."""
-        zoom = self._zoom
-        px, py = self._pan
-        half = ICON_SIZE_MM / 2
-
-        def xfrm(x, y):
-            return (half + (x - px) * zoom, half - (y - py) * zoom)
-        return xfrm
+        """Build the camera-mm → SVG-unit transform for the current pan/zoom."""
+        return make_xfrm(self._zoom, self._pan)
 
     def _make_svg(self, for_preview, force_hide_guides=False, force_hide_grid=False):
         edge_visibility = {k: cb.isChecked() for k, cb in self.edge_checks.items()}
@@ -987,13 +1098,21 @@ def show_dialog():
 
 
 def generate(output_path, **kwargs):
-    """One-shot SVG generation without UI. Kept for scripting use."""
+    """One-shot SVG generation without UI. Kept for scripting use.
+
+    Auto-fits before rendering, same as the panel does; pass a
+    `keyline=Fitting.Keyline...` kwarg to pin the keyline instead of letting
+    the classifier pick one."""
     edges = compute_hlr_for_active()
+    report = auto_fit(edges, kwargs.get("keyline", Fitting.Keyline.AUTO))
+    zoom = report.frame.scale if report else 1.0
+    pan = report.frame.center if report else (0.0, 0.0)
     png = os.path.join(tempfile.gettempdir(), "iconstudio_render.png")
     try:
-        render_png(png, kwargs.get("multiplier", PNG_MULTIPLIER))
+        render_png(png, kwargs.get("multiplier", PNG_MULTIPLIER), zoom=zoom, pan=pan)
     except Exception:
         png = None
+
     svg = compose_svg(
         edges,
         png_path=png,
@@ -1003,6 +1122,7 @@ def generate(output_path, **kwargs):
         show_guides=kwargs.get("show_guides", True),
         show_hidden=kwargs.get("show_hidden", False),
         edge_visibility=kwargs.get("edge_visibility"),
+        xfrm=make_xfrm(zoom, pan),
     )
     with open(output_path, "w", encoding="utf-8") as fh:
         fh.write(svg)

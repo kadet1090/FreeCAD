@@ -4,6 +4,7 @@ SET(IconStudioMain_SRCS
     Init.py
     InitGui.py
     IconStudio.py
+    Fitting.py
 )
 SOURCE_GROUP("" FILES ${IconStudioMain_SRCS})
 
@@ -12,7 +13,13 @@ SET(IconStudioResources
 )
 SOURCE_GROUP("Resources" FILES ${IconStudioResources})
 
-SET(all_files ${IconStudioMain_SRCS} ${IconStudioResources})
+SET(IconStudioTests_SRCS
+    IconStudioTests/__init__.py
+    IconStudioTests/TestFitting.py
+)
+SOURCE_GROUP("IconStudioTests" FILES ${IconStudioTests_SRCS})
+
+SET(all_files ${IconStudioMain_SRCS} ${IconStudioResources} ${IconStudioTests_SRCS})
 
 ADD_CUSTOM_TARGET(IconStudio ALL
     SOURCES ${all_files}
@@ -27,4 +34,8 @@ INSTALL(
 INSTALL(
     FILES ${IconStudioResources}
     DESTINATION Mod/IconStudio/Resources
+)
+INSTALL(
+    FILES ${IconStudioTests_SRCS}
+    DESTINATION Mod/IconStudio/IconStudioTests
 )
