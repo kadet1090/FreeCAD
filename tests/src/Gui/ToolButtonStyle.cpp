@@ -14,7 +14,6 @@
 // The fixture's own numbers, chosen so no two sums collide: a wrong token fails loudly
 // instead of coincidentally matching.
 constexpr int formControlHeight = 26;
-constexpr int buttonPadding = 11;
 constexpr int toolButtonPadding = 4;
 constexpr int contentWidth = 60;
 constexpr int contentHeight = 9;
