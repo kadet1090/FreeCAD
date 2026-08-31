@@ -690,6 +690,13 @@ WbTabBarBaseBackground: "reset()"
 WbTabBarTabBorderRadius: "border_radius(0px)"
 WbTabBarTabBorderThickness: "border_thickness(0px, left: 1px, right: 1px)"
 
+# The document tabs read the same way: one strip of them runs the width of the window under
+# the views rather than sitting on a base of its own, so they lose the strip and the rounded
+# corners and keep only the rules between neighbours.
+MdiTabBarBaseBackground: "reset()"
+MdiTabBarTabBorderRadius: "border_radius(0px)"
+MdiTabBarTabBorderThickness: "border_thickness(0px, left: 1px, right: 1px)"
+
 TabBarCloseButtonHeight: 14px
 TabBarCloseButtonWidth: 14px
 TabBarCloseButtonBorderRadius: "@BaseRadius.medium"

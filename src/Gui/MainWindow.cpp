@@ -447,6 +447,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f)
         // The tabs might be very wide
         d->mdiTabBar->setExpanding(false);
         d->mdiTabBar->setObjectName(QStringLiteral("mdiAreaTabBar"));
+
+        // Give the strip its own token namespace so it can say how it differs from an ordinary
+        // tab bar: it runs the width of the window under the views rather than sitting on a
+        // base of its own.
+        d->mdiTabBar->setProperty("component", QStringLiteral("MdiTabBar"));
     }
     d->mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     d->mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
