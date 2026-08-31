@@ -29,6 +29,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <variant>
 #include <vector>
@@ -257,7 +258,7 @@ struct GuiExport Tuple
      * @brief Finds an element by name.
      * @return Pointer to the value if found, nullptr otherwise.
      */
-    const Value* find(const std::string& name) const;
+    const Value* find(std::string_view name) const;
 
     /**
      * @brief Returns the number of elements in the tuple.

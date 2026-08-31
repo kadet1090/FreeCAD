@@ -346,11 +346,11 @@ class TreeWidgetItemDelegate: public QStyledItemDelegate
 public:
     explicit TreeWidgetItemDelegate(QObject* parent = nullptr);
 
-    virtual QWidget* createEditor(
+    QWidget* createEditor(
         QWidget* parent,
         const QStyleOptionViewItem&,
         const QModelIndex& index
-    ) const;
+    ) const override;
 
     void destroyEditor(QWidget* editor, const QModelIndex& index) const override;
 
@@ -362,7 +362,7 @@ public:
 
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
-    virtual void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const;
+    void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override;
 
     void paint(
         QPainter* painter,
