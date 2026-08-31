@@ -49,6 +49,10 @@ constexpr int statusBarInsetBottom = 13;
 // What Qt's own reformat() leaves between two items, and the margins it leaves around them.
 constexpr int qtItemSpacing = 6;
 
+// An item taller than any floor the fixture states, so a bar that only ever reached the floor
+// cannot accommodate it.
+constexpr int statusBarTallItem = 64;
+
 // Whether @p layout still holds a fixed (non-expanding) spacer sized along its own direction —
 // the same fixed-vs-stretch test applyLayoutTokens() itself makes before deleting one.
 bool hasFixedSpacer(QLayout* layout)
@@ -288,12 +292,16 @@ private Q_SLOTS:
     void test_aBarWithNoStatedLayoutKeepsQtsOwn()  // NOLINT
     {
         Gui::FreeCADStyle style;
-        Gui::FCStatusBar bar;
+
+        // Parented as the real bar is. Qt pushes a layout's own minimum onto a widget only when
+        // that widget is a window, so a bare one would answer for Qt what it answers for itself.
+        QWidget host;
+        Gui::FCStatusBar bar(&host);
         bar.setStyle(&style);
         style.polish(&bar);
 
         // The silence a theme without a StatusBar block leaves. FreeCAD Classic ships no
-        // parameters file at all, so neither of these is stated anywhere under it.
+        // parameters file at all, so none of these is stated anywhere under it.
         Gui::FreeCADStyle::setStyleOverride(
             &bar,
             QStringLiteral("StatusBarPadding"),
@@ -302,6 +310,11 @@ private Q_SLOTS:
         Gui::FreeCADStyle::setStyleOverride(
             &bar,
             QStringLiteral("StatusBarItemSpacing"),
+            QStringLiteral("reset()")
+        );
+        Gui::FreeCADStyle::setStyleOverride(
+            &bar,
+            QStringLiteral("StatusBarMinHeight"),
             QStringLiteral("reset()")
         );
 
@@ -320,6 +333,46 @@ private Q_SLOTS:
         QCOMPARE(bar.layout()->contentsMargins(), QMargins());
         QCOMPARE(itemLayout->spacing(), qtItemSpacing);
         QVERIFY(hasFixedSpacer(itemLayout));
+
+        // And no minimum of our own, which would outrank everything the layout asks for — the
+        // very thing that keeps a stated inset from reaching the window.
+        QCOMPARE(bar.minimumHeight(), 0);
+    }
+
+    void test_aBarStatingOnlyItsFloorStillReachesTheWindow()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+
+        QWidget host;
+        Gui::FCStatusBar bar(&host);
+        bar.setStyle(&style);
+        style.polish(&bar);
+
+        // Only the layout tokens are silenced. A component that states one of the three is not
+        // a component that states nothing, so declining must not swallow the floor with them.
+        Gui::FreeCADStyle::setStyleOverride(
+            &bar,
+            QStringLiteral("StatusBarPadding"),
+            QStringLiteral("reset()")
+        );
+        Gui::FreeCADStyle::setStyleOverride(
+            &bar,
+            QStringLiteral("StatusBarItemSpacing"),
+            QStringLiteral("reset()")
+        );
+
+        auto* tall = new QLabel(QStringLiteral("mm"), &bar);
+        tall->setFixedHeight(statusBarTallItem);
+        bar.addPermanentWidget(tall);
+        QCoreApplication::sendPostedEvents(&bar, QEvent::LayoutRequest);
+
+        // An explicit minimum outranks what the layout beneath asks for, so an item taller than
+        // the stated floor is given room only by that floor growing to hold it.
+        QVERIFY(bar.minimumHeight() >= statusBarTallItem);
+        QVERIFY(bar.minimumHeight() >= statusBarFloor);
+
+        // Qt's own spacing is still Qt's: a floor says nothing about where the items sit.
+        QVERIFY(hasFixedSpacer(layoutHolding(&bar, tall)));
     }
 
     void test_aBarWithNoItemsLeavesTheGripLayoutAlone()  // NOLINT

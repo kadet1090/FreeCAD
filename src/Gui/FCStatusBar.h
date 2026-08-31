@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 #pragma once
 
+#include <optional>
+
 #include <QPointer>
 #include <QStatusBar>
 
@@ -48,8 +50,8 @@ private:
     /// Writes the stated inset and item gap onto the layout Qt rebuilt, which reads no metric.
     void applyLayoutTokens();
 
-    /// Counts what the layout now needs into the bar's own floor, which is what sizes the bar.
-    void applyHeightFloor();
+    /// Counts @p stated and what the layout now needs into the bar's own floor, which sizes it.
+    void applyHeightFloor(std::optional<int> stated);
 
     StyleParameters::MessageLevel _messageLevel = StyleParameters::MessageLevel::Default;
 

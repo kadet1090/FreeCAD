@@ -84,6 +84,24 @@ void removeFixedSpacing(QBoxLayout* layout)
         }
     }
 }
+
+/// Drops it from every layout below @p bar whose spacing a stated inset and gap are replacing.
+void removeFixedSpacing(QWidget* bar)
+{
+    // Every layout in the tree, not just these two: Qt nests a vertical layout between them and
+    // spends the bar's vertical inset there. Whichever one holds the size grip is skipped: with
+    // the grip enabled that is the outer layout and its gap belongs to the grip, not the bar's
+    // inset; with the grip disabled Qt builds no wrapper at all and the outer layout is the one
+    // whose spacers the token is meant to replace, so this test has to be made per layout rather
+    // than assumed to be the outer one.
+    for (QBoxLayout* box : bar->findChildren<QBoxLayout*>()) {
+        if (holdsSizeGrip(box)) {
+            continue;
+        }
+
+        removeFixedSpacing(box);
+    }
+}
 }  // namespace
 
 FCStatusBar::FCStatusBar(QWidget* parent)
@@ -164,27 +182,21 @@ void FCStatusBar::applyLayoutTokens()
         = FreeCADStyle::stylePadding(this, StyleParameters::StyleComponentElement::Root);
     const std::optional<int> spacing
         = FreeCADStyle::styleSpacing(this, StyleParameters::StyleComponentElement::Item);
+    const std::optional<int> floorHeight
+        = FreeCADStyle::styleMinHeight(this, StyleParameters::StyleComponentElement::Root);
 
-    // A theme that speaks for neither gets Qt's layout exactly as Qt built it, spacers and all:
-    // a bar no theme describes has to look the way it looked before this component existed.
-    if (!padding && !spacing) {
+    // A theme that speaks for none of the three gets Qt's layout and Qt's own minimum exactly as
+    // Qt left them: a bar no theme describes has to look the way it looked before this component
+    // existed. An explicit minimum is the thing that stops a layout speaking for the bar's
+    // height, so a bar nothing is stated for must not be given one.
+    if (!padding && !spacing && !floorHeight) {
         return;
     }
 
     _adjustedLayout = outer;
 
-    // Every layout in the tree, not just these two: Qt nests a vertical layout between them and
-    // spends the bar's vertical inset there. Whichever one holds the size grip is skipped: with
-    // the grip enabled that is the outer layout and its gap belongs to the grip, not the bar's
-    // inset; with the grip disabled Qt builds no wrapper at all and the outer layout is the one
-    // whose spacers the token is meant to replace, so this test has to be made per layout rather
-    // than assumed to be the outer one.
-    for (QBoxLayout* box : findChildren<QBoxLayout*>()) {
-        if (holdsSizeGrip(box)) {
-            continue;
-        }
-
-        removeFixedSpacing(box);
+    if (padding || spacing) {
+        removeFixedSpacing(this);
     }
 
     if (padding) {
@@ -197,17 +209,14 @@ void FCStatusBar::applyLayoutTokens()
         }
     }
 
-    applyHeightFloor();
+    applyHeightFloor(floorHeight);
 }
 
-void FCStatusBar::applyHeightFloor()
+void FCStatusBar::applyHeightFloor(std::optional<int> stated)
 {
     // The main window sizes the bar from its minimum and never from its size hint, and an
-    // explicit minimum outranks everything the layout beneath asks for. The inset just written
-    // therefore reaches the window only by being counted in here.
-    const std::optional<int> stated
-        = FreeCADStyle::styleMinHeight(this, StyleParameters::StyleComponentElement::Root);
-
+    // explicit minimum outranks everything the layout beneath asks for. Both the stated floor
+    // and any inset written above therefore reach the window only by being counted in here.
     setMinimumHeight(std::max(stated.value_or(0), minimumSizeHint().height()));
 }
 
