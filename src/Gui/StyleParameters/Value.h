@@ -287,7 +287,7 @@ struct GuiExport Tuple
      * @brief Returns the named element of type T, reporting when it is absent or of another type.
      */
     template<typename T>
-    const T* tryGetOrReport(const std::string& name) const;
+    const T* tryGetOrReport(std::string_view name) const;
 };
 
 /// Convenience alias for Tuple::Element, used pervasively by tuple-shaped wrappers.
