@@ -487,8 +487,6 @@ public:
     {
         return "StatusBar";
     }
-
-    friend class MainWindow;
 };
 
 // -------------------------------------------------------------
