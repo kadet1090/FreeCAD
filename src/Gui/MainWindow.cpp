@@ -3111,7 +3111,7 @@ void StatusBarObserver::OnChange(Base::Subject<const char*>& rCaller, const char
         {"colorText", QStringLiteral("StatusBarMessageTextColor")},
         {"colorWarning", QStringLiteral("StatusBarMessageWarningTextColor")},
         {"colorError", QStringLiteral("StatusBarMessageErrorTextColor")},
-        {"colorCritical", QStringLiteral("StatusBarMessageCriticalTextColor")},
+        {"colorCriticalText", QStringLiteral("StatusBarMessageCriticalTextColor")},
     };
 
     const auto token = tokens.find(sReason);
