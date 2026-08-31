@@ -479,7 +479,7 @@ const T& Tuple::get(std::string_view name) const
 }
 
 template<typename T>
-T Tuple::get(const std::string& name, const T& fallback) const
+T Tuple::get(std::string_view name, const T& fallback) const
 {
     if (const T* value = tryGetOrReport<T>(name)) {
         return *value;
