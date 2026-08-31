@@ -364,7 +364,7 @@ public:
 
     virtual void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const;
 
-    virtual void paint(
+    void paint(
         QPainter* painter,
         const QStyleOptionViewItem& option,
         const QModelIndex& index
