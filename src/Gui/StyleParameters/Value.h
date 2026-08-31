@@ -445,7 +445,7 @@ inline const Tuple& styleDefault<Tuple>()
 }
 
 template<typename T>
-const T* Tuple::tryGetOrReport(const std::string& name) const
+const T* Tuple::tryGetOrReport(std::string_view name) const
 {
     if (const T* value = tryGet<T>(name)) {
         return value;
