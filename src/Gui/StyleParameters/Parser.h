@@ -205,8 +205,8 @@ private:
     std::unique_ptr<Expr> parseColor();
     bool peekParameter();
     std::unique_ptr<Expr> parseParameter();
-    bool peekFunction();
-    std::unique_ptr<Expr> parseFunctionCall();
+    bool peekIdentifier();
+    std::unique_ptr<Expr> parseIdentifier();
     bool peekKeyword(const char* keyword) const;
     bool peekBoolean();
     std::unique_ptr<Expr> parseBoolean();

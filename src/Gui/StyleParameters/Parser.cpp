@@ -754,8 +754,8 @@ std::unique_ptr<Expr> Parser::parseFactor()
     else if (peekBoolean()) {
         expr = parseBoolean();
     }
-    else if (peekFunction()) {
-        expr = parseFunctionCall();
+    else if (peekIdentifier()) {
+        expr = parseIdentifier();
     }
     else {
         expr = parseNumber();
@@ -874,27 +874,29 @@ std::unique_ptr<Expr> Parser::parseParameter()
     return std::make_unique<ParameterReference>(input.substr(start, pos - start));
 }
 
-bool Parser::peekFunction()
+bool Parser::peekIdentifier()
 {
     skipWhitespace();
     return pos < input.size() && isAlphaChar(input[pos]);
 }
 
-std::unique_ptr<Expr> Parser::parseFunctionCall()
+std::unique_ptr<Expr> Parser::parseIdentifier()
 {
     skipWhitespace();
     size_t start = pos;
     while (pos < input.size() && (isAlnumChar(input[pos]) || input[pos] == '_')) {
         ++pos;
     }
-    std::string functionName = input.substr(start, pos - start);
+    std::string identifier = input.substr(start, pos - start);
 
+    // An argument list makes the word a call; on its own it is a keyword, which is how tokens
+    // such as an alignment spell their value.
     if (!match('(')) {
-        THROWM(Base::ParserError, fmt::format("Expected '(' after function name, got '{}'", input[pos]));
+        return std::make_unique<StringLiteral>(std::move(identifier));
     }
 
     auto arguments = parseTuple();
-    return std::make_unique<FunctionCall>(functionName, std::move(*arguments));
+    return std::make_unique<FunctionCall>(identifier, std::move(*arguments));
 }
 
 bool Parser::peekNamedElement()

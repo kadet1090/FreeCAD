@@ -155,10 +155,49 @@ TEST_F(ParserTest, ParseBooleanInsideTuple)
 
 TEST_F(ParserTest, BooleanKeywordRequiresWordBoundary)
 {
-    // "trueish" must stay an identifier, so it is parsed as a function name and
-    // then rejected for the missing '(' — not silently read as `true` + "ish".
+    // "trueish" must stay one word, not be read as `true` followed by "ish".
     Parser parser("trueish");
-    EXPECT_THROW(parser.parse(), Base::ParserError);
+    const Value result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    ASSERT_TRUE(result.holds<std::string>());
+    EXPECT_EQ(result.get<std::string>(), "trueish");
+}
+
+TEST_F(ParserTest, ParseKeyword)
+{
+    Parser parser("middle");
+    const Value result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    ASSERT_TRUE(result.holds<std::string>());
+    EXPECT_EQ(result.get<std::string>(), "middle");
+}
+
+TEST_F(ParserTest, ParseKeywordInsideTuple)
+{
+    Parser parser("(horizontal: left, vertical: middle)");
+    const Value result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    ASSERT_TRUE(result.holds<Tuple>());
+    const auto& tuple = result.get<Tuple>();
+    EXPECT_EQ(tuple.get<std::string>("horizontal"), "left");
+    EXPECT_EQ(tuple.get<std::string>("vertical"), "middle");
+}
+
+TEST_F(ParserTest, ParseKeywordSurroundedByWhitespace)
+{
+    Parser parser("  middle  ");
+    const Value result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    ASSERT_TRUE(result.holds<std::string>());
+    EXPECT_EQ(result.get<std::string>(), "middle");
+}
+
+TEST_F(ParserTest, FunctionCallStillWinsOverKeyword)
+{
+    Parser parser("reset()");
+    const Value result = parser.parse()->evaluate({.manager = &manager, .context = {}});
+
+    EXPECT_TRUE(result.holds<None>());
 }
 
 
