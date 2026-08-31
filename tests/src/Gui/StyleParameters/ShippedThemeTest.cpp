@@ -41,6 +41,8 @@
 #include <Gui/StyleParameters/ParameterManager.h>
 #include <Gui/StyleParameters/Value.h>
 
+#include "DiagnosticsCapture.h"
+
 using namespace Gui::StyleParameters;
 
 // Alias to avoid ambiguity with ParameterGrp::Manager() from Base/Parameter.h.
@@ -332,6 +334,28 @@ TEST_P(ShippedThemeTest, EveryParameterReferenceResolves)  // NOLINT
     }
 
     EXPECT_TRUE(dangling.empty()) << "Unresolved parameter references:" << report;
+}
+
+// A parameter that does not parse still resolves: ParameterManager catches the ParserError,
+// reports it, and falls back to the raw text — so the theme keeps working and the token is
+// quietly wrong. Nothing else in the suite evaluates the shipped expressions, so a value the
+// grammar cannot read ships unnoticed until someone sees the console.
+TEST_P(ShippedThemeTest, EveryParameterEvaluates)  // NOLINT
+{
+    const auto manager = loadShippedTheme(GetParam());
+
+    DiagnosticsCapture diagnostics;
+
+    for (const Parameter& parameter : manager->parameters()) {
+        manager->resolve(parameter.name, {});
+    }
+
+    std::string report;
+    for (const std::string& message : diagnostics.messages()) {
+        report += "\n  " + message;
+    }
+
+    EXPECT_TRUE(diagnostics.messages().empty()) << "Style parameters that failed:" << report;
 }
 
 // A dangling reference produces a plausible-looking std::string, so "it resolved" is not
