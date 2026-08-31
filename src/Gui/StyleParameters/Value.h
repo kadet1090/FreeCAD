@@ -462,7 +462,7 @@ const T* Tuple::tryGetOrReport(std::string_view name) const
 }
 
 template<typename T>
-const T* Tuple::tryGet(const std::string& name) const
+const T* Tuple::tryGet(std::string_view name) const
 {
     const Value* value = find(name);
     return value ? value->tryGet<T>() : nullptr;
