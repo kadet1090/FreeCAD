@@ -275,7 +275,7 @@ struct GuiExport Tuple
      * @brief Returns the named element, or the empty value of type T when it cannot be produced.
      */
     template<typename T>
-    const T& get(const std::string& name) const;
+    const T& get(std::string_view name) const;
 
     /**
      * @brief Returns the named element, or the given fallback when it cannot be produced.
