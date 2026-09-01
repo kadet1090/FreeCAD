@@ -47,7 +47,6 @@
 #include "QuantitySpinBox.h"
 #include "QuantitySpinBox_p.h"
 #include "Command.h"
-#include "FreeCADStyle.h"
 #include "Dialogs/DlgExpressionInput.h"
 #include "Tools.h"
 #include "Widgets.h"
@@ -1014,19 +1013,6 @@ void QuantitySpinBox::stepBy(int steps)
     selectNumber();
 }
 
-const QStyle* QuantitySpinBox::sizingStyle() const
-{
-    // A style sheet wraps the application style in a QStyleSheetStyle, and that wrapper reserves
-    // a step-arrow column of its own on top of the one FreeCADStyle already charged for. Asking
-    // the style that lays this box out is what keeps the width it asks for and the width it
-    // fills the same number.
-    if (const QStyle* style = FreeCADStyle::styleOf(this)) {
-        return style;
-    }
-
-    return style();
-}
-
 int QuantitySpinBox::editorTextInset() const
 {
     const QLineEdit* editor = lineEdit();
@@ -1048,7 +1034,7 @@ QSize QuantitySpinBox::sizeForText(const QString& txt) const
     QStyleOptionSpinBox opt;
     initStyleOption(&opt);
     QSize hint(w, h);
-    QSize size = sizingStyle()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
+    QSize size = style()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
     return size;
 }
 
@@ -1102,7 +1088,7 @@ QSize QuantitySpinBox::sizeHintForDigits(int digits) const
     initStyleOption(&opt);
     QSize hint(w, lineEdit()->sizeHint().height());
 
-    QSize size = sizingStyle()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
+    QSize size = style()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
     return size;
 }
 

@@ -217,9 +217,6 @@ private:
     QString getUserString(const Base::Quantity& val, double& factor, QString& unitString) const;
     QString getUserString(const Base::Quantity& val) const;
 
-    /// The style that lays this box out, past any QStyleSheetStyle wrapping it.
-    const QStyle* sizingStyle() const;
-
     QSize sizeHintForDigits(int digits) const;
     int getMaxStrLength(int digits) const;
 

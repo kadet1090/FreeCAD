@@ -218,7 +218,10 @@ private Q_SLOTS:
         qApp->setStyleSheet(QStringLiteral("/* */"));
         spin.ensurePolished();
 
-        QVERIFY2(!qApp->styleSheet().isEmpty(), "no sheet installed, so the test proves nothing");
+        QVERIFY2(
+            qobject_cast<Gui::FreeCADStyle*>(spin.style()) == nullptr,
+            "the sheet did not wrap the style, so the test proves nothing"
+        );
         QCOMPARE(spin.sizeHint().width(), bare);
 
         // And the width has to come back without costing the buttons the rect Qt hit-tests step
@@ -378,13 +381,16 @@ private Q_SLOTS:
     void test_aStyleSheetDoesNotWidenAQuantitySpinBox()  // NOLINT
     {
         // The application style, not a per-widget one: a style set on a single widget is never
-        // wrapped, so setStyle() here would measure the same style twice and prove nothing.
+        // wrapped, so setStyle() here would measure the same style twice and prove nothing. And
+        // the application's own FreeCADStyle instance, not a standalone one: isWrappedFor() only
+        // ever finds a wrapped style by asking Application::Instance for it, so installing any
+        // other instance would leave the base style it detects behind the sheet unrecognised.
         const QString previous = QApplication::style()->name();
         const auto restore = qScopeGuard([&previous] {
             qApp->setStyleSheet(QString());
             QApplication::setStyle(QStyleFactory::create(previous));
         });
-        QApplication::setStyle(new Gui::FreeCADStyle);
+        Gui::Application::Instance->setStyle(QStringLiteral("FreeCAD"));
 
         Gui::QuantitySpinBox spin;
         spin.setUnit(Base::Unit::Length);
@@ -395,20 +401,8 @@ private Q_SLOTS:
         spin.ensurePolished();
 
         QVERIFY2(
-            Gui::FreeCADStyle::styleOf(&spin) != nullptr
-                && spin.style() != Gui::FreeCADStyle::styleOf(&spin),
+            qobject_cast<Gui::FreeCADStyle*>(spin.style()) == nullptr,
             "the sheet did not wrap the style, so the test proves nothing"
-        );
-
-        // QuantitySpinBox::sizingStyle() dodges the wrapper by asking styleOf() for the base
-        // style directly rather than sizing through spin.style(), so the compensation this style
-        // now applies fires with nothing for the (bypassed) wrapper to add back, undershooting by
-        // one column. Tracked to be resolved together with the sizingStyle() bypass it collides
-        // with; see the plan's T1/T4 conflict scan.
-        QEXPECT_FAIL(
-            "",
-            "sizingStyle() still steps past the wrapper; fixed alongside its removal",
-            Continue
         );
         QCOMPARE(spin.sizeHint().width(), bare);
     }

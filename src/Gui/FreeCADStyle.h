@@ -734,16 +734,6 @@ public:
     /// The rect a combo popup's container lays its list out in.
     std::optional<QRect> comboPopupContentsRect(const QStyleOption* option, const QWidget* widget) const;
 
-    /**
-     * @brief The FreeCADStyle actually in force for @p widget, or nullptr under any other style.
-     *
-     * QApplication::setStyleSheet wraps the application style in a QStyleSheetStyle the moment
-     * any stylesheet is set - which FreeCAD always does at startup - so widget->style() is that
-     * wrapper, not FreeCADStyle, for the whole running application. The wrapper reparents the
-     * style it wraps as a direct child QObject, which is the only public handle on it.
-     */
-    static const FreeCADStyle* styleOf(const QWidget* widget);
-
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
@@ -1036,6 +1026,16 @@ protected:
         SubControl subControl,
         const QWidget* widget
     ) const;
+
+    /**
+     * @brief The FreeCADStyle actually in force for @p widget, or nullptr under any other style.
+     *
+     * QApplication::setStyleSheet wraps the application style in a QStyleSheetStyle the moment
+     * any stylesheet is set - which FreeCAD always does at startup - so widget->style() is that
+     * wrapper, not FreeCADStyle, for the whole running application. The wrapper reparents the
+     * style it wraps as a direct child QObject, which is the only public handle on it.
+     */
+    static const FreeCADStyle* styleOf(const QWidget* widget);
 
     /// True when this style is in force for @p widget but reached through a wrapper. That is
     /// every widget in the running application: QApplication::setStyleSheet puts a
