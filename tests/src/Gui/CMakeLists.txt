@@ -69,6 +69,7 @@ setup_qt_test(GeometrySelectorPopup)
 setup_qt_test(WidgetFonts)
 setup_qt_test(ReportOutputFont)
 setup_qt_test(TextEditorFont)
+setup_qt_test(ElideLabel)
 
 target_link_libraries(Gui_tests_run PRIVATE
     GTest::gmock_main

@@ -951,10 +951,6 @@ public:
         auto* label = new ElideLabel(this);
         label->setText(referenceLabel(reference));
         label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        // The icon-to-text gap already comes entirely from this row's layout spacing
-        // (IconSpacing), matching the dropdown's itemViewLayout() exactly; ElideLabel's own
-        // legacy 4px text inset would stack on top of it and widen the gap past the dropdown's.
-        label->setTextInset(0);
         rowLayout->addWidget(label, 1);
 
         if (showRemove) {

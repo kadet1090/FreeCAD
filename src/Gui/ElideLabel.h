@@ -42,24 +42,10 @@ public:
     explicit ElideLabel(QWidget* parent = nullptr);
     ~ElideLabel() override = default;
 
-    /// Horizontal inset applied to the text on both sides at paint time. Defaults to 4px, the
-    /// value this label always hardcoded, kept only so existing consumers keep rendering
-    /// byte-identically. It exists purely for backwards compatibility: a consumer whose
-    /// surrounding layout already supplies its own icon/text spacing should set this to 0, and
-    /// once every consumer does that this property — and the default — can go away.
-    int textInset() const
-    {
-        return m_textInset;
-    }
-    void setTextInset(int inset);
-
 protected:
     void paintEvent(QPaintEvent* event) override;
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
-
-private:
-    int m_textInset = 4;
 };
 
 }  // namespace Gui

@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include <QAbstractItemModel>
-#include <QColor>
 #include <QEvent>
-#include <QImage>
 #include <QLayout>
 #include <QListView>
-#include <QPalette>
 #include <QPixmap>
 #include <QScopeGuard>
 #include <QSignalSpy>
@@ -22,7 +19,6 @@
 #include <Base/Parameter.h>
 
 #include <Gui/Application.h>
-#include <Gui/ElideLabel.h>
 #include <Gui/GeometryHighlighter.h>
 #include <Gui/GeometrySelectorPopup.h>
 #include <Gui/GeometrySelectorWidget.h>
@@ -198,44 +194,6 @@ private Q_SLOTS:
         QVERIFY(multi.findChild<QWidget*>(QStringLiteral("gsw_confirm")) != nullptr);
         QVERIFY(multi.findChild<QWidget*>(QStringLiteral("gsw_cancel")) != nullptr);
         multi.selection()->stopSelecting();
-    }
-
-    // A reference row's label paints its glyphs starting exactly at its own left edge — no extra
-    // inset survives beyond what the row's own layout already positions it at. This is the defect
-    // that shipped invisibly: ElideLabel insets the text it draws by a hardcoded amount *inside
-    // its own paintEvent*, which no widget-geometry assertion (layout margins, spacing, child
-    // geometry()) can ever see, since the label's rect itself was always positioned correctly —
-    // only what it painted inside that rect was off. So this renders the row's real ElideLabel
-    // and finds the actual x column the first glyph pixel lands on, rather than trusting any
-    // rect. It is compared against a control ElideLabel built with the same font/text/background
-    // and textInset() pinned to 0, instead of a hardcoded pixel column, so the assertion is not
-    // fragile against font hinting/side-bearing — only against a *shift* between the two, which is
-    // exactly what a regressed (non-zeroed) inset would introduce.
-    void test_referenceRowLabelPaintsWithNoExtraTextInset()  // NOLINT
-    {
-        Gui::GeometrySelectorWidget widget(Gui::GeometryQuantity::Single);
-        widget.selection()->setReferences({{.object = m_object, .subName = "Edge1"}});
-        widget.resize(300, widget.height());
-        QCoreApplication::processEvents();
-
-        auto* productionLabel = widget.findChild<Gui::ElideLabel*>();
-        QVERIFY(productionLabel != nullptr);
-        QVERIFY(!productionLabel->text().isEmpty());
-        QVERIFY(productionLabel->width() > 0);
-
-        Gui::ElideLabel control;
-        control.setFont(productionLabel->font());
-        control.setPalette(productionLabel->palette());
-        control.setText(productionLabel->text());
-        control.resize(productionLabel->size());
-        control.setTextInset(0);
-
-        const QColor textColor = productionLabel->palette().color(QPalette::WindowText);
-        const int productionColumn = firstGlyphColumn(*productionLabel, textColor);
-        const int controlColumn = firstGlyphColumn(control, textColor);
-        QVERIFY(productionColumn >= 0);
-        QVERIFY(controlColumn >= 0);
-        QCOMPARE(productionColumn, controlColumn);
     }
 
     // The widget names a component of its own, which chains to List — so it inherits the list
@@ -1498,24 +1456,6 @@ private:
         return Gui::GeometrySelectorOption::fromReferences(
                    {{.object = m_object, .subName = subName}}
         ).label;
-    }
-
-    // Renders @p widget over a ground @p textColor cannot produce, then scans left to right for
-    // the first column holding an exact @p textColor pixel — the leftmost point any glyph is
-    // actually painted, as opposed to any rect a layout merely positioned the widget at.
-    static int firstGlyphColumn(QWidget& widget, const QColor& textColor)
-    {
-        QImage canvas(widget.size(), QImage::Format_ARGB32);
-        canvas.fill(Qt::magenta);
-        widget.render(&canvas);
-        for (int x = 0; x < canvas.width(); ++x) {
-            for (int y = 0; y < canvas.height(); ++y) {
-                if (canvas.pixelColor(x, y) == textColor) {
-                    return x;
-                }
-            }
-        }
-        return -1;
     }
 
     std::string m_docName;
