@@ -331,6 +331,9 @@
            </item>
            <item>
             <widget class="Gui::PrefQuantitySpinBox" name="HoleCutDiameter">
+             <property name="controlSize" stdset="0">
+              <string notr="true">small</string>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -379,6 +382,9 @@
            </item>
            <item>
             <widget class="Gui::PrefQuantitySpinBox" name="HoleCutDepth">
+             <property name="controlSize" stdset="0">
+              <string notr="true">small</string>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -440,6 +446,9 @@ the screw's top below the surface</string>
             </property>
             <item>
              <widget class="Gui::ElideCheckBox" name="DrillPointAngled">
+              <property name="controlSize" stdset="0">
+               <string notr="true">small</string>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -453,6 +462,9 @@ the screw's top below the surface</string>
             </item>
             <item>
              <widget class="Gui::PrefQuantitySpinBox" name="DrillPointAngle">
+              <property name="controlSize" stdset="0">
+               <string notr="true">small</string>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -472,6 +484,9 @@ the screw's top below the surface</string>
             </item>
             <item>
              <widget class="Gui::ElideCheckBox" name="DrillForDepth">
+              <property name="controlSize" stdset="0">
+               <string notr="true">small</string>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -551,6 +566,9 @@ account for the depth of blind holes</string>
            </item>
            <item>
             <widget class="Gui::PrefQuantitySpinBox" name="HoleCutCountersinkAngle">
+             <property name="controlSize" stdset="0">
+              <string notr="true">small</string>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -596,6 +614,9 @@ account for the depth of blind holes</string>
            </item>
            <item>
             <widget class="Gui::PrefQuantitySpinBox" name="Depth">
+             <property name="controlSize" stdset="0">
+              <string notr="true">small</string>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -641,6 +662,9 @@ account for the depth of blind holes</string>
            </item>
            <item>
             <widget class="Gui::PrefQuantitySpinBox" name="Diameter">
+             <property name="controlSize" stdset="0">
+              <string notr="true">small</string>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -680,6 +704,9 @@ account for the depth of blind holes</string>
        </property>
        <item>
         <widget class="Gui::ElideCheckBox" name="Reversed">
+         <property name="controlSize" stdset="0">
+          <string notr="true">small</string>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -696,6 +723,9 @@ account for the depth of blind holes</string>
        </item>
        <item>
         <widget class="QCheckBox" name="Tapered">
+         <property name="controlSize" stdset="0">
+          <string notr="true">small</string>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -712,6 +742,9 @@ account for the depth of blind holes</string>
        </item>
        <item>
         <widget class="Gui::PrefQuantitySpinBox" name="TaperedAngle">
+         <property name="controlSize" stdset="0">
+          <string notr="true">small</string>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
