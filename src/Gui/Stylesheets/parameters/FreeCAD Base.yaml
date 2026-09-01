@@ -410,7 +410,7 @@ MenuBarItemDisabledTextColor: "@BaseDisabledTextColor"
 # window, so its separating edge sits on the top rather than the bottom. The floor keeps the bar
 # from changing height as items with taller content come and go.
 StatusBarBackground: "@BaseWindowBackground"
-StatusBarPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.050)"
+StatusBarPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.050, left: @Spacing.300)"
 StatusBarBorderColor: "@BaseBorderColor"
 StatusBarBorderThickness: "border_thickness(0px, top: 1px)"
 StatusBarItemSpacing: "@Spacing.150"
