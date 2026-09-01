@@ -321,6 +321,37 @@ private Q_SLOTS:
         );
     }
 
+    // FreeCAD sets a style sheet at startup, so QStyleSheetStyle wraps the application style for
+    // the whole running application — and its CT_SpinBox reserves a step-arrow column of its own
+    // on top of the one this style already charged for. A box that asked the wrapper would be
+    // that much wider than the theme budgeted, and the surplus lands in the editor, where it
+    // reads as a field holding several digits more than any token asked for.
+    void test_aStyleSheetDoesNotWidenAQuantitySpinBox()  // NOLINT
+    {
+        // The application style, not a per-widget one: a style set on a single widget is never
+        // wrapped, so setStyle() here would measure the same style twice and prove nothing.
+        const QString previous = QApplication::style()->name();
+        const auto restore = qScopeGuard([&previous] {
+            qApp->setStyleSheet(QString());
+            QApplication::setStyle(QStyleFactory::create(previous));
+        });
+        QApplication::setStyle(new Gui::FreeCADStyle);
+
+        Gui::QuantitySpinBox spin;
+        spin.setUnit(Base::Unit::Length);
+        spin.ensurePolished();
+        const int bare = spin.sizeHint().width();
+
+        qApp->setStyleSheet(QStringLiteral("/* */"));
+        spin.ensurePolished();
+
+        QVERIFY2(
+            Gui::FreeCADStyle::styleOf(&spin) != nullptr
+                && spin.style() != Gui::FreeCADStyle::styleOf(&spin),
+            "the sheet did not wrap the style, so the test proves nothing"
+        );
+        QCOMPARE(spin.sizeHint().width(), bare);
+    }
 
     // The sketcher's on-view parameter editor asks to be exactly as wide as its own text, so it
     // has no slack anywhere to fall back on, and what matters is the width left *inside* the

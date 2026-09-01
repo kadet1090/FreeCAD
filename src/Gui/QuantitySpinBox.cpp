@@ -20,6 +20,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#include <algorithm>
 #include <limits>
 #include <QApplication>
 #include <QDebug>
@@ -46,6 +47,7 @@
 #include "QuantitySpinBox.h"
 #include "QuantitySpinBox_p.h"
 #include "Command.h"
+#include "FreeCADStyle.h"
 #include "Dialogs/DlgExpressionInput.h"
 #include "Tools.h"
 #include "Widgets.h"
@@ -57,6 +59,14 @@ using namespace Base;
 
 namespace Gui
 {
+
+namespace
+{
+// Three is what a length or an angle a user actually types needs — 999 covers a part's own
+// dimensions, and anything past it scrolls in the editor rather than widening every panel it
+// sits in.
+constexpr int minimumExpectedDigits = 3;
+}  // namespace
 
 class QuantitySpinBoxPrivate
 {
@@ -347,10 +357,11 @@ void QuantitySpinBox::bind(const App::ObjectIdentifier& _path)
 
 void QuantitySpinBox::showIcon()
 {
-    addIconSpace(true);
+    // Reserve the space before measuring: the button is paid for out of the editor's right text
+    // margin, and a size taken before that margin exists is a size without room for the button.
+    ExpressionSpinBox::showIcon();
 
     adjustSize();
-    ExpressionSpinBox::showIcon();
 }
 
 QString QuantitySpinBox::boundToName() const
@@ -1003,6 +1014,19 @@ void QuantitySpinBox::stepBy(int steps)
     selectNumber();
 }
 
+const QStyle* QuantitySpinBox::sizingStyle() const
+{
+    // A style sheet wraps the application style in a QStyleSheetStyle, and that wrapper reserves
+    // a step-arrow column of its own on top of the one FreeCADStyle already charged for. Asking
+    // the style that lays this box out is what keeps the width it asks for and the width it
+    // fills the same number.
+    if (const QStyle* style = FreeCADStyle::styleOf(this)) {
+        return style;
+    }
+
+    return style();
+}
+
 int QuantitySpinBox::editorTextInset() const
 {
     const QLineEdit* editor = lineEdit();
@@ -1024,7 +1048,7 @@ QSize QuantitySpinBox::sizeForText(const QString& txt) const
     QStyleOptionSpinBox opt;
     initStyleOption(&opt);
     QSize hint(w, h);
-    QSize size = style()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
+    QSize size = sizingStyle()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
     return size;
 }
 
@@ -1037,6 +1061,14 @@ QSize QuantitySpinBox::sizeHint() const
         le->setMaxLength(getMaxStrLength(d->maxExpectedDigits));
     }
     return sizeHintForDigits(d->maxExpectedDigits);
+}
+
+QSize QuantitySpinBox::minimumSizeHint() const
+{
+    Q_D(const QuantitySpinBox);
+
+    // A box asked to prefer fewer digits than the floor allows for is taken at its word.
+    return sizeHintForDigits(std::min(minimumExpectedDigits, d->maxExpectedDigits));
 }
 
 QSize QuantitySpinBox::sizeHintForDigits(int digits) const
@@ -1070,7 +1102,7 @@ QSize QuantitySpinBox::sizeHintForDigits(int digits) const
     initStyleOption(&opt);
     QSize hint(w, lineEdit()->sizeHint().height());
 
-    QSize size = style()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
+    QSize size = sizingStyle()->sizeFromContents(QStyle::CT_SpinBox, &opt, hint, this);
     return size;
 }
 

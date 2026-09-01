@@ -17,6 +17,7 @@
 class QuantitySpinBoxWithLineEdit: public Gui::QuantitySpinBox
 {
 public:
+    using Gui::QuantitySpinBox::showIcon;
     using QAbstractSpinBox::lineEdit;
 };
 
@@ -49,6 +50,49 @@ private Q_SLOTS:
     {
         // some tests switch the unit schema, the next one has to start from the default again
         Base::UnitsApi::setSchema(Base::UnitsApi::getDefSchemaNum());
+    }
+
+    // Qt sizes a spin box's minimum from the text of its own range, which a quantity leaves
+    // unbounded, so the box states its own floor: three integer digits, the separator, the
+    // decimals and the unit. It stays put however many digits the box prefers to show — and a
+    // box that prefers fewer than three is taken at its word rather than widened to the floor.
+    void test_minimumWidthHoldsAtThreeDigits()  // NOLINT
+    {
+        Gui::QuantitySpinBox spin;
+        spin.setUnit(Base::Unit::Length);
+
+        spin.setMaxExpectedDigits(6);
+        const int floorWidth = spin.minimumSizeHint().width();
+        QVERIFY(floorWidth < spin.sizeHint().width());
+
+        spin.setMaxExpectedDigits(4);
+        QCOMPARE(spin.minimumSizeHint().width(), floorWidth);
+        QVERIFY(floorWidth < spin.sizeHint().width());
+
+        spin.setMaxExpectedDigits(3);
+        QCOMPARE(spin.minimumSizeHint().width(), floorWidth);
+        QCOMPARE(spin.minimumSizeHint().width(), spin.sizeHint().width());
+
+        spin.setMaxExpectedDigits(2);
+        QCOMPARE(spin.minimumSizeHint().width(), spin.sizeHint().width());
+        QVERIFY(spin.minimumSizeHint().width() < floorWidth);
+    }
+
+    // The expression button is paid for out of the editor's right text margin, which
+    // editorTextInset() reports. Reserving it a second time in the size hint made every bound
+    // field an icon wider than the space it actually gives the icon.
+    void test_showingTheExpressionIconCostsOneReservationNotTwo()  // NOLINT
+    {
+        QuantitySpinBoxWithLineEdit spin;
+        spin.setUnit(Base::Unit::Length);
+
+        const int widthBefore = spin.sizeHint().width();
+        const int insetBefore = spin.editorTextInset();
+
+        spin.showIcon();
+
+        QVERIFY(spin.editorTextInset() > insetBefore);
+        QCOMPARE(spin.sizeHint().width() - widthBefore, spin.editorTextInset() - insetBefore);
     }
 
     void test_SimpleBaseUnit()  // NOLINT
