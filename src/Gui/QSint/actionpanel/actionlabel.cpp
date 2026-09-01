@@ -33,6 +33,7 @@ ActionLabel::ActionLabel(QAction *action, QWidget *parent)
 void ActionLabel::init()
 {
     setProperty("class", "action");
+    setProperty("component", "ActionLabel");
     setCursor(Qt::PointingHandCursor);
     setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);

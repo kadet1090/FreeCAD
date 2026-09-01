@@ -743,3 +743,5 @@ TabWidgetTransparentBackground: "reset()"
 TabWidgetTransparentBorderColor: "reset()"
 TabWidgetTransparentBorderThickness: 0px
 TabWidgetTransparentPadding: "padding(bottom: @TabBarTabTransparentSpacing)"
+
+ActionLabelMinHeight: "reset()"
