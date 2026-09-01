@@ -50,6 +50,7 @@ public:
                     {.name = "LineEditPadding", .value = "@FormControlPadding"},
                     {.name = "FormControlArrowWidth", .value = "14px"},
                     {.name = "FormControlArrowHeight", .value = "12px"},
+                    {.name = "SelectPadding", .value = "@FormControlPadding"},
                 },
                 {.name = "Form Control Sizing"}
             )
@@ -477,8 +478,8 @@ private Q_SLOTS:
         );
     }
 
-    // Padding wider than the fixture's: the base style's arrow allowance is roomier than the
-    // arrow we actually draw, and that incidental slack is enough to hide a small shortfall.
+    // Padding wider than the fixture's, so a padding term dropped from the width calculation
+    // would show up as a shortfall rather than being absorbed by the fixture's own margin.
     void test_aComboBoxSizedToItsHintCanShowItsContent()  // NOLINT
     {
         const auto restore
@@ -510,6 +511,66 @@ private Q_SLOTS:
                            .arg(contentWidth))
         );
     }
+
+    // The two controls sit side by side in every task panel, so their arrows have to occupy the
+    // same column and leave their editors ending at the same offset. Before this, a combo box's
+    // arrow came from the base style and measured 12x14 against a spin box's 14x12.
+    void test_aComboBoxAndASpinBoxShareTheirArrowColumn()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+
+        QComboBox combo;
+        combo.addItem(QStringLiteral("An item"));
+        style.polish(&combo);
+        QStyleOptionComboBox comboOption;
+        comboOption.initFrom(&combo);
+        comboOption.frame = true;
+        comboOption.subControls = QStyle::SC_ComboBoxFrame | QStyle::SC_ComboBoxEditField
+            | QStyle::SC_ComboBoxArrow;
+        comboOption.rect = QRect(
+            QPoint(),
+            style.sizeFromContents(QStyle::CT_ComboBox, &comboOption, contentSize(), &combo)
+        );
+
+        QSpinBox spin;
+        style.polish(&spin);
+        QStyleOptionSpinBox spinOption;
+        spinOption.initFrom(&spin);
+        spinOption.frame = true;
+        spinOption.subControls = QStyle::SC_SpinBoxFrame | QStyle::SC_SpinBoxEditField
+            | QStyle::SC_SpinBoxUp | QStyle::SC_SpinBoxDown;
+        spinOption.buttonSymbols = QAbstractSpinBox::UpDownArrows;
+        spinOption.rect = QRect(
+            QPoint(),
+            style.sizeFromContents(QStyle::CT_SpinBox, &spinOption, contentSize(), &spin)
+        );
+
+        QCOMPARE(comboOption.rect.width(), spinOption.rect.width());
+
+        const QRect comboEdit = style.subControlRect(
+            QStyle::CC_ComboBox,
+            &comboOption,
+            QStyle::SC_ComboBoxEditField,
+            &combo
+        );
+        const QRect spinEdit
+            = style.subControlRect(QStyle::CC_SpinBox, &spinOption, QStyle::SC_SpinBoxEditField, &spin);
+
+        // Exactly the content it was sized for, not a pixel more: width reserved by a term
+        // nothing lays out in reaches the editor as invisible slack.
+        QCOMPARE(comboEdit.width(), contentWidth);
+        QCOMPARE(comboEdit.right(), spinEdit.right());
+
+        const QRect comboArrow
+            = style.subControlRect(QStyle::CC_ComboBox, &comboOption, QStyle::SC_ComboBoxArrow, &combo);
+        const QRect spinArrow
+            = style.subControlRect(QStyle::CC_SpinBox, &spinOption, QStyle::SC_SpinBoxUp, &spin);
+
+        QCOMPARE(comboArrow.width(), spinArrow.width());
+        QCOMPARE(comboArrow.left(), spinArrow.left());
+    }
+
     // The floor is the height token, applied to the widget rather than only to its hint.
     void test_aPolishedSpinBoxCarriesTheHeightTokenAsItsMinimum()  // NOLINT
     {

@@ -133,6 +133,16 @@ private:
         return qobject_cast<QListView*>(box.view());
     }
 
+    // A row's interaction fill, sampled where the fill is guaranteed and the label never is.
+    // Rows carry left-aligned text inset by DropdownListItemPadding, so the padding's own
+    // reserve along the trailing edge is background by construction — for any label short
+    // enough to fit the row without eliding, not merely for whichever word happens to be short
+    // today. Halfway into that reserve keeps clear of both the label and the row's own edge.
+    static QPoint backgroundSpotOf(const QRect& row)
+    {
+        return {row.right() - (itemPaddingHorizontal / 2), row.center().y()};
+    }
+
     // Short labels, so a correctly sized popup sits well under the cap and a failure can only
     // be about the row height, never about the content being genuinely too tall.
     static void populate(QComboBox& box)
@@ -784,8 +794,8 @@ private Q_SLOTS:
         view->setCurrentIndex(box.model()->index(0, 0));
 
         const QImage canvas = renderOf(*view);
-        const QPoint selected = view->visualRect(box.model()->index(1, 0)).center();
-        const QPoint resting = view->visualRect(box.model()->index(0, 0)).center();
+        const QPoint selected = backgroundSpotOf(view->visualRect(box.model()->index(1, 0)));
+        const QPoint resting = backgroundSpotOf(view->visualRect(box.model()->index(0, 0)));
 
         QCOMPARE(canvas.pixelColor(selected), QColor(0xff, 0x00, 0x00));
         QVERIFY(canvas.pixelColor(resting) != QColor(0xff, 0x00, 0x00));
@@ -1374,8 +1384,8 @@ private Q_SLOTS:
         const QRect chosenRow = view->visualRect(view->model()->index(2, 0));
         const QRect cursorRow = view->visualRect(view->model()->index(0, 0));
 
-        QCOMPARE(canvas.pixelColor(chosenRow.center()), QColor(0xff, 0x00, 0x00));
-        QCOMPARE(canvas.pixelColor(cursorRow.center()), QColor(0x00, 0x00, 0xff));
+        QCOMPARE(canvas.pixelColor(backgroundSpotOf(chosenRow)), QColor(0xff, 0x00, 0x00));
+        QCOMPARE(canvas.pixelColor(backgroundSpotOf(cursorRow)), QColor(0x00, 0x00, 0xff));
     }
 
     // The moment the feature exists for: opening the dropdown to see what is currently set,
@@ -1407,7 +1417,7 @@ private Q_SLOTS:
         const QImage canvas = renderOf(*view->viewport());
         const QRect chosenRow = view->visualRect(view->model()->index(2, 0));
 
-        QCOMPARE(canvas.pixelColor(chosenRow.center()), QColor(0xff, 0x00, 0x00));
+        QCOMPARE(canvas.pixelColor(backgroundSpotOf(chosenRow)), QColor(0xff, 0x00, 0x00));
     }
 
     // The exemption must not cost the chosen entry its pointer feedback. State_MouseOver is
@@ -1439,7 +1449,7 @@ private Q_SLOTS:
         // already sits at that global position, and the row is then never hovered. Only the
         // offscreen platform makes it reliable, so do not simplify this back.
         const QRect chosenRow = view->visualRect(view->model()->index(2, 0));
-        const QPointF cursorSpot = chosenRow.center();
+        const QPointF cursorSpot = backgroundSpotOf(chosenRow);
         QMouseEvent cursorArrival(
             QEvent::MouseMove,
             cursorSpot,
@@ -1453,7 +1463,7 @@ private Q_SLOTS:
 
         const QImage canvas = renderOf(*view->viewport());
 
-        QCOMPARE(canvas.pixelColor(chosenRow.center()), QColor(0x00, 0x00, 0xff));
+        QCOMPARE(canvas.pixelColor(backgroundSpotOf(chosenRow)), QColor(0x00, 0x00, 0xff));
     }
 
     // DropdownListItemHoveredTextColor is what stops a hovered row's label going white.
@@ -1515,7 +1525,13 @@ private Q_SLOTS:
 
         QComboBox comboBox;
         comboBox.setEditable(true);
-        comboBox.addItems({"first", "second", "third"});
+        // An editable combo's own closed width comes from its line edit, not from scanning item
+        // text, so a word wider than that default (unlike a non-editable combo, which always
+        // sizes to its widest item) makes Qt elide the label without widening the row to match —
+        // the row still reports its own unclipped natural width, past what the popup actually
+        // renders. Short, equal-length words keep every row's natural width at or under the
+        // popup's, so backgroundSpotOf always lands inside the canvas it samples.
+        comboBox.addItems({"cat", "dog", "bee"});
         comboBox.setCurrentIndex(-1);
         comboBox.show();
         QVERIFY(QTest::qWaitForWindowExposed(&comboBox));
@@ -1535,7 +1551,7 @@ private Q_SLOTS:
         for (int row = 0; row < 3; ++row) {
             const QRect rowRect = view->visualRect(view->model()->index(row, 0));
             QVERIFY2(
-                canvas.pixelColor(rowRect.center()) != QColor(0xff, 0x00, 0x00),
+                canvas.pixelColor(backgroundSpotOf(rowRect)) != QColor(0xff, 0x00, 0x00),
                 qPrintable(QStringLiteral("row %1 is marked as chosen").arg(row))
             );
         }
@@ -1544,7 +1560,7 @@ private Q_SLOTS:
         // engaged -1, so its popup keeps folding State_Selected into hover rather than falling
         // back on the plain item-view meaning.
         QCOMPARE(
-            canvas.pixelColor(view->visualRect(view->model()->index(0, 0)).center()),
+            canvas.pixelColor(backgroundSpotOf(view->visualRect(view->model()->index(0, 0)))),
             QColor(0x00, 0x00, 0xff)
         );
     }
@@ -1661,8 +1677,8 @@ private Q_SLOTS:
         const QRect chosenRow = replacementView->visualRect(replacementView->model()->index(2, 0));
         const QRect cursorRow = replacementView->visualRect(replacementView->model()->index(0, 0));
 
-        QCOMPARE(canvas.pixelColor(chosenRow.center()), QColor(0xff, 0x00, 0x00));
-        QCOMPARE(canvas.pixelColor(cursorRow.center()), QColor(0x00, 0x00, 0xff));
+        QCOMPARE(canvas.pixelColor(backgroundSpotOf(chosenRow)), QColor(0xff, 0x00, 0x00));
+        QCOMPARE(canvas.pixelColor(backgroundSpotOf(cursorRow)), QColor(0x00, 0x00, 0xff));
     }
 
     // A dropdown is not necessarily a combo box's. Adopting a bare view gives it and the frame

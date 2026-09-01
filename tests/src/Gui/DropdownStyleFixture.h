@@ -97,8 +97,9 @@ struct DropdownStyleFixture
         Gui::Application::Instance->styleParameterManager()->addSource(overrides);
     }
 
-    // Vertical half of DropdownListItemPadding, and the inter-row gap, as the fixture states
-    // them. Named so an assertion reads as the token it is pinning.
+    // Horizontal and vertical halves of DropdownListItemPadding, and the inter-row gap, as the
+    // fixture states them. Named so an assertion reads as the token it is pinning.
+    static constexpr int itemPaddingHorizontal = 7;
     static constexpr int itemPaddingVertical = 5;
     static constexpr int itemSpacing = 3;
 

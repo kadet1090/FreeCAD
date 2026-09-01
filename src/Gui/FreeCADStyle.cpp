@@ -2688,10 +2688,9 @@ QRect FreeCADStyle::comboBoxSubControlRect(
     const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
     const QRect outerRect = option->rect;
     const QRect contentRect = geometry.contentRect(outerRect);
-    const int arrowWidth = proxy()->pixelMetric(PM_MenuButtonIndicator, option, widget);
+    const QSize arrowSize = arrowColumnSize(option, widget);
 
-    const int arrowLeft = contentRect.right() - arrowWidth + 1;
-    const int editRight = arrowLeft - 1;
+    const int arrowLeft = contentRect.right() - arrowSize.width() + 1;
 
     switch (subControl) {
         case SC_ComboBoxFrame:
@@ -2700,11 +2699,11 @@ QRect FreeCADStyle::comboBoxSubControlRect(
             return {
                 contentRect.left(),
                 contentRect.top(),
-                editRight - contentRect.left() + 1,
+                arrowLeft - contentRect.left(),
                 contentRect.height()
             };
         case SC_ComboBoxArrow:
-            return {arrowLeft, contentRect.top(), arrowWidth, contentRect.height()};
+            return {arrowLeft, contentRect.top(), arrowSize.width(), contentRect.height()};
         default:
             return QProxyStyle::subControlRect(CC_ComboBox, option, subControl, widget);
     }
@@ -4567,14 +4566,18 @@ QSize FreeCADStyle::sizeFromContents(
     if (type == CT_ComboBox) {
         const auto* comboOption = qstyleoption_cast<const QStyleOptionComboBox*>(option);
         const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
-        QSize result = QProxyStyle::sizeFromContents(type, option, size, widget);
+
+        QSize contentSize = size;
+        contentSize.rwidth() += arrowColumnSize(option, widget).width();
+
         // QComboBox::sizeHint bakes iconSize.width() + Qt's own icon gap into the content size
         // it passes here when the current item has an icon. Replace that gap with the token
         // value, matching the layout drawComboBoxLabel uses.
         if (comboOption && !comboOption->currentIcon.isNull()) {
-            result.rwidth() += geometry.iconGapDelta();
+            contentSize.rwidth() += geometry.iconGapDelta();
         }
-        return geometry.sizeFromContents(result);
+
+        return geometry.sizeFromContents(contentSize);
     }
 
     if (type == CT_SpinBox) {
