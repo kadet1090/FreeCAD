@@ -2807,6 +2807,37 @@ void FreeCADStyle::drawSpinBox(
     }
 }
 
+QSize FreeCADStyle::spinBoxArrowSize(const QStyleOptionSpinBox* option, const QWidget* widget) const
+{
+    if (option->buttonSymbols == QAbstractSpinBox::NoButtons) {
+        // Not a default-constructed QSize: that one is (-1, -1), and this width is added to a
+        // content size.
+        return {0, 0};
+    }
+
+    const StyleContext arrow = contextOf(widget, option, StyleComponentElement::Arrow);
+
+    return {
+        resolve<int>(arrow, StyleProperty::Width).value_or(0),
+        resolve<int>(arrow, StyleProperty::Height).value_or(0)
+    };
+}
+
+QSize FreeCADStyle::spinBoxSizeFromContents(
+    const QStyleOptionSpinBox* option,
+    const QSize& size,
+    const QWidget* widget
+) const
+{
+    // Deliberately not through the base style. Fusion reserves an arrow column of its own, and
+    // a QStyleSheetStyle wrapping this one reserves a third on top of that; every pixel either
+    // of them adds is a pixel this style never lays anything out in.
+    QSize contentSize = size;
+    contentSize.rwidth() += spinBoxArrowSize(option, widget).width();
+
+    return resolveBoxGeometry(contextOf(widget, option)).sizeFromContents(contentSize);
+}
+
 QRect FreeCADStyle::spinBoxSubControlRect(
     const QStyleOptionSpinBox* option,
     SubControl subControl,
@@ -2818,13 +2849,10 @@ QRect FreeCADStyle::spinBoxSubControlRect(
     const QSize preferredSize = sizeFromContents(CT_SpinBox, option, {}, widget);
     const QRect contentRect = geometry.contentRect(outerRect, preferredSize);
 
-    // Borrow the button width from the base style; only the position changes.
-    const bool hasButtons = option->buttonSymbols != QAbstractSpinBox::NoButtons;
-    const QSize buttonSize = hasButtons
-        ? QProxyStyle::subControlRect(CC_SpinBox, option, SC_SpinBoxUp, widget).size()
-        : QSize {};
+    const QSize buttonSize = spinBoxArrowSize(option, widget);
+    const bool hasButtons = buttonSize.width() > 0;
 
-    const int buttonLeft = contentRect.right() - buttonSize.width();
+    const int buttonLeft = contentRect.right() - buttonSize.width() + 1;
     const int editRight = hasButtons ? buttonLeft - 1 : contentRect.right();
     const int centerY = contentRect.center().y();
 
@@ -4536,7 +4564,13 @@ QSize FreeCADStyle::sizeFromContents(
         return geometry.sizeFromContents(result);
     }
 
-    if (type == CT_LineEdit || type == CT_SpinBox) {
+    if (type == CT_SpinBox) {
+        if (const auto* spinOption = qstyleoption_cast<const QStyleOptionSpinBox*>(option)) {
+            return spinBoxSizeFromContents(spinOption, size, widget);
+        }
+    }
+
+    if (type == CT_LineEdit) {
         const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
         return geometry.sizeFromContents(QProxyStyle::sizeFromContents(type, option, size, widget));
     }

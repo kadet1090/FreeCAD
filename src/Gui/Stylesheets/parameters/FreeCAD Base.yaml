@@ -423,6 +423,11 @@ LineEditPadding: "@FormControlPadding"
 LineEditHeight: "@FormControlHeight"
 LineEditSmallHeight: "@FormControlSmallHeight"
 
+# The column a spin box's step arrows occupy inside the content box. FreeCADStyle reserves it
+# and lays the arrows out in it from this one number, so nothing is left over for the editor.
+LineEditArrowWidth: 14px
+LineEditArrowHeight: 12px
+
 LineEditFocusedBorderColor: "@Accent.500"
 LineEditHoveredBorderColorEffect: "@BaseHoveredBorderColorEffect"
 

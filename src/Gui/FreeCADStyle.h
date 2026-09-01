@@ -734,6 +734,16 @@ public:
     /// The rect a combo popup's container lays its list out in.
     std::optional<QRect> comboPopupContentsRect(const QStyleOption* option, const QWidget* widget) const;
 
+    /**
+     * @brief The FreeCADStyle actually in force for @p widget, or nullptr under any other style.
+     *
+     * QApplication::setStyleSheet wraps the application style in a QStyleSheetStyle the moment
+     * any stylesheet is set - which FreeCAD always does at startup - so widget->style() is that
+     * wrapper, not FreeCADStyle, for the whole running application. The wrapper reparents the
+     * style it wraps as a direct child QObject, which is the only public handle on it.
+     */
+    static const FreeCADStyle* styleOf(const QWidget* widget);
+
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
@@ -875,16 +885,6 @@ protected:
      */
     static std::optional<StyleParameters::StyleComponentElement> panelElementOf(const QWidget* widget);
 
-    /**
-     * @brief The FreeCADStyle actually in force for @p widget, or nullptr under any other style.
-     *
-     * QApplication::setStyleSheet wraps the application style in a QStyleSheetStyle the moment
-     * any stylesheet is set - which FreeCAD always does at startup - so widget->style() is that
-     * wrapper, not FreeCADStyle, for the whole running application. The wrapper reparents the
-     * style it wraps as a direct child QObject, which is the only public handle on it.
-     */
-    static const FreeCADStyle* styleOf(const QWidget* widget);
-
     /// The edge a dock panel attaches to, as a Position variant value.
     static StyleParameters::Position panelPositionOf(const QDockWidget* dock);
 
@@ -1019,6 +1019,17 @@ protected:
     ) const;
 
     void drawSpinBox(const QStyleOptionSpinBox* option, QPainter* painter, const QWidget* widget) const;
+
+    /// The column the step arrows occupy inside the content box, empty for a buttonless box.
+    /// The same number reserves the space and lays the arrows out in it, so no width is left
+    /// over for the editor to absorb.
+    QSize spinBoxArrowSize(const QStyleOptionSpinBox* option, const QWidget* widget) const;
+
+    QSize spinBoxSizeFromContents(
+        const QStyleOptionSpinBox* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
 
     QRect spinBoxSubControlRect(
         const QStyleOptionSpinBox* option,

@@ -9,6 +9,7 @@
 #include <QStyleOptionFrame>
 #include <QStyleOptionSpinBox>
 #include <QStyle>
+#include <QStyleFactory>
 #include <QTest>
 
 #include "src/App/InitApplication.h"
@@ -47,6 +48,8 @@ public:
                     {.name = "FormControlPadding", .value = "padding(horizontal: 8px, vertical: 6px)"},
                     {.name = "LineEditHeight", .value = "@FormControlHeight"},
                     {.name = "LineEditPadding", .value = "@FormControlPadding"},
+                    {.name = "LineEditArrowWidth", .value = "14px"},
+                    {.name = "LineEditArrowHeight", .value = "12px"},
                 },
                 {.name = "Form Control Sizing"}
             )
@@ -215,6 +218,77 @@ private Q_SLOTS:
         );
     }
 
+    // The column the step arrows sit in is the style's to size, not the base style's: Fusion
+    // reserves a wider one than the arrows FreeCADStyle actually draws, and a QStyleSheetStyle
+    // over the top reserves a third. Charging it to a token is what makes the reservation and
+    // the arrow rect the same number.
+    void test_theArrowColumnIsWorthExactlyItsToken()  // NOLINT
+    {
+        // A style per measurement: it caches every token it resolves, so one built before an
+        // override would answer from the value the override replaced.
+        const auto arrowColumn = [] {
+            Gui::FreeCADStyle freecadStyle;
+            QStyle& style = freecadStyle;
+            QSpinBox spin;
+            style.polish(&spin);
+
+            const auto width = [&](QAbstractSpinBox::ButtonSymbols symbols) {
+                QStyleOptionSpinBox option;
+                option.initFrom(&spin);
+                option.frame = true;
+                option.subControls = QStyle::SC_SpinBoxFrame | QStyle::SC_SpinBoxEditField
+                    | QStyle::SC_SpinBoxUp | QStyle::SC_SpinBoxDown;
+                option.buttonSymbols = symbols;
+
+                return style.sizeFromContents(QStyle::CT_SpinBox, &option, contentSize(), &spin).width();
+            };
+
+            return width(QAbstractSpinBox::UpDownArrows) - width(QAbstractSpinBox::NoButtons);
+        };
+
+        QCOMPARE(arrowColumn(), 14);
+
+        const auto restore = overrideToken("LineEditArrowWidth", "30px");
+        QCOMPARE(arrowColumn(), 30);
+    }
+
+    // The whole of the box has an owner: padding, the arrow column, and the editor between
+    // them. Any width nobody accounted for lands in the editor, where it reads as a field that
+    // will not shrink and holds several digits more than the theme ever budgeted for.
+    void test_theEditFieldKeepsEverythingButThePaddingAndTheArrowColumn()  // NOLINT
+    {
+        Gui::FreeCADStyle freecadStyle;
+        QStyle& style = freecadStyle;
+        QSpinBox spin;
+        style.polish(&spin);
+
+        QStyleOptionSpinBox option;
+        option.initFrom(&spin);
+        option.frame = true;
+        option.subControls = QStyle::SC_SpinBoxFrame | QStyle::SC_SpinBoxEditField
+            | QStyle::SC_SpinBoxUp | QStyle::SC_SpinBoxDown;
+        option.buttonSymbols = QAbstractSpinBox::UpDownArrows;
+
+        option.rect = QRect(
+            QPoint(),
+            style.sizeFromContents(QStyle::CT_SpinBox, &option, contentSize(), &spin)
+        );
+
+        const QRect editField
+            = style.subControlRect(QStyle::CC_SpinBox, &option, QStyle::SC_SpinBoxEditField, &spin);
+        const QRect arrow
+            = style.subControlRect(QStyle::CC_SpinBox, &option, QStyle::SC_SpinBoxUp, &spin);
+
+        QCOMPARE(editField.left(), paddingPerSide);
+        QCOMPARE(arrow.width(), 14);
+        QCOMPARE(arrow.right(), option.rect.right() - paddingPerSide);
+        QCOMPARE(editField.right(), arrow.left() - 1);
+
+        // Exactly the content it was sized for, not a pixel more: any width reserved by a term
+        // nothing lays out in reaches the editor as invisible slack.
+        QCOMPARE(editField.width(), contentWidth);
+    }
+
     // A spin box with no buttons — the sketcher's on-view parameter editor — sizes itself to
     // exactly its text, so it has no slack to absorb a shortfall.
     void test_aButtonlessSpinBoxSizedToItsHintCanShowItsContent()  // NOLINT
@@ -246,6 +320,7 @@ private Q_SLOTS:
                            .arg(contentWidth))
         );
     }
+
 
     // The sketcher's on-view parameter editor asks to be exactly as wide as its own text, so it
     // has no slack anywhere to fall back on, and what matters is the width left *inside* the
