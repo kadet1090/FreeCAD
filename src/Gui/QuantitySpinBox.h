@@ -174,8 +174,9 @@ public:
     /// The narrowest the box can be and still show a plausible value whole: three integer
     /// digits, the decimal separator, the configured decimals and the unit. Qt's own answer is
     /// the range's own text, which a quantity leaves unbounded, so it has to be stated here.
-    /// A layout only asks for it if the box is free to shrink — Qt gives every spin box a
-    /// QSizePolicy::Minimum, under which sizeHint() is the floor and this is never consulted.
+    /// A layout only asks for it if the box is free to shrink below its size hint — Qt's default
+    /// QSizePolicy::Minimum carries no shrink flag, so sizeHint() is the floor there and this
+    /// goes unconsulted, but a spin box given a shrink-capable policy (e.g. Maximum) leans on it.
     QSize minimumSizeHint() const override;
 
     bool event(QEvent* event) override;

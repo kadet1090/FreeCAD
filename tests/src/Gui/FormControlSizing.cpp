@@ -204,6 +204,16 @@ private Q_SLOTS:
 
         QSpinBox spin;
         spin.ensurePolished();
+
+        // Before the sheet goes on: proves the application style really is FreeCADStyle, not
+        // merely something other than FreeCADStyle. Without this, a setStyle() that silently
+        // no-ops would leave both measurements on Fusion, equal, and the test green while
+        // proving nothing.
+        QVERIFY2(
+            qobject_cast<Gui::FreeCADStyle*>(spin.style()) != nullptr,
+            "the application style is not FreeCADStyle, so the test proves nothing"
+        );
+
         const int bare = spin.sizeHint().width();
 
         QStyleOptionSpinBox option;
@@ -366,12 +376,49 @@ private Q_SLOTS:
 
         QCOMPARE(editField.left(), paddingPerSide);
         QCOMPARE(arrow.width(), 14);
+        // The fixture's FormControlArrowHeight, not the edit field's content height: the two
+        // happen to differ (12px vs. 18px) precisely so a rect that fell back to the content
+        // height instead of the token would be caught here.
+        QCOMPARE(arrow.height(), 12);
         QCOMPARE(arrow.right(), option.rect.right() - paddingPerSide);
         QCOMPARE(editField.right(), arrow.left() - 1);
 
         // Exactly the content it was sized for, not a pixel more: any width reserved by a term
         // nothing lays out in reaches the editor as invisible slack.
         QCOMPARE(editField.width(), contentWidth);
+
+        // A fixed 12 alone would also match a hardcoded fallback that happened to equal the
+        // fixture's number, so suppress the token itself with reset() — the sanctioned way to
+        // make a token resolve to nothing, in place of hand-editing the fixture — and check the
+        // rect falls back to arrowColumnSize()'s documented (0, 0), not to some other literal
+        // that would silently take its place. A style per measurement, same as the column-width
+        // tests above: FreeCADStyle caches every token it resolves, so reusing `style` here
+        // would still answer 12.
+        const auto restoreHeight = overrideToken("FormControlArrowHeight", "reset()");
+
+        Gui::FreeCADStyle unsetStyle;
+        QStyle& unsetQStyle = unsetStyle;
+        QSpinBox unsetSpin;
+        unsetQStyle.polish(&unsetSpin);
+
+        QStyleOptionSpinBox unsetOption;
+        unsetOption.initFrom(&unsetSpin);
+        unsetOption.frame = true;
+        unsetOption.subControls = QStyle::SC_SpinBoxFrame | QStyle::SC_SpinBoxEditField
+            | QStyle::SC_SpinBoxUp | QStyle::SC_SpinBoxDown;
+        unsetOption.buttonSymbols = QAbstractSpinBox::UpDownArrows;
+        unsetOption.rect = QRect(
+            QPoint(),
+            unsetQStyle.sizeFromContents(QStyle::CT_SpinBox, &unsetOption, contentSize(), &unsetSpin)
+        );
+
+        const QRect unsetArrow = unsetQStyle.subControlRect(
+            QStyle::CC_SpinBox,
+            &unsetOption,
+            QStyle::SC_SpinBoxUp,
+            &unsetSpin
+        );
+        QCOMPARE(unsetArrow.height(), 0);
     }
 
     // A spin box with no buttons — the sketcher's on-view parameter editor — sizes itself to
@@ -428,6 +475,16 @@ private Q_SLOTS:
         Gui::QuantitySpinBox spin;
         spin.setUnit(Base::Unit::Length);
         spin.ensurePolished();
+
+        // Before the sheet goes on: proves the application style really is FreeCADStyle, not
+        // merely something other than FreeCADStyle. Without this, a setStyle() that silently
+        // no-ops would leave both measurements on Fusion, equal, and the test green while
+        // proving nothing.
+        QVERIFY2(
+            qobject_cast<Gui::FreeCADStyle*>(spin.style()) != nullptr,
+            "the application style is not FreeCADStyle, so the test proves nothing"
+        );
+
         const int bare = spin.sizeHint().width();
 
         qApp->setStyleSheet(QStringLiteral("/* */"));

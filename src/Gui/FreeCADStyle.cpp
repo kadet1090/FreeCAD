@@ -240,6 +240,13 @@ namespace
 // states a width - a literal, with no pixel metric behind it. Asking the sheet not to add it
 // costs the buttons the rect Qt hit-tests step clicks against, so the style subtracts what it
 // knows will be added instead.
+//
+// This compensation is version-bound: a later Qt gates the addition behind
+// !rule.baseStyleCanDraw(), and FreeCAD's sheet gives spin boxes no rule, so on such a Qt nothing
+// is added here and this style would be subtracting 16px that was never charged. The runtime
+// this builds against does not yet carry that fix; if it ever does,
+// test_aStyleSheetDoesNotWidenASpinBox is what goes red, and that failure is the signal to remove
+// this subtraction rather than chase a version check.
 constexpr int styleSheetSpinButtonColumn = 16;
 
 struct ShadowCacheKey
