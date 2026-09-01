@@ -1010,10 +1010,10 @@ protected:
 
     void drawSpinBox(const QStyleOptionSpinBox* option, QPainter* painter, const QWidget* widget) const;
 
-    /// The column the step arrows occupy inside the content box, empty for a buttonless box.
-    /// The same number reserves the space and lays the arrows out in it, so no width is left
-    /// over for the editor to absorb.
-    QSize spinBoxArrowSize(const QStyleOptionSpinBox* option, const QWidget* widget) const;
+    /// The trailing column a control reserves for the glyph it paints there, empty when it
+    /// paints none. Reservation and placement both come from here, so they cannot drift apart -
+    /// which is how an arrow ends up a pixel outside the column that was paid for.
+    QSize arrowColumnSize(const QStyleOption* option, const QWidget* widget) const;
 
     QSize spinBoxSizeFromContents(
         const QStyleOptionSpinBox* option,

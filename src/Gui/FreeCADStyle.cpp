@@ -2819,9 +2819,10 @@ void FreeCADStyle::drawSpinBox(
     }
 }
 
-QSize FreeCADStyle::spinBoxArrowSize(const QStyleOptionSpinBox* option, const QWidget* widget) const
+QSize FreeCADStyle::arrowColumnSize(const QStyleOption* option, const QWidget* widget) const
 {
-    if (option->buttonSymbols == QAbstractSpinBox::NoButtons) {
+    if (const auto* spinOption = qstyleoption_cast<const QStyleOptionSpinBox*>(option);
+        spinOption != nullptr && spinOption->buttonSymbols == QAbstractSpinBox::NoButtons) {
         // Not a default-constructed QSize: that one is (-1, -1), and this width is added to a
         // content size.
         return {0, 0};
@@ -2845,7 +2846,7 @@ QSize FreeCADStyle::spinBoxSizeFromContents(
     // a QStyleSheetStyle wrapping this one reserves a third on top of that; every pixel either
     // of them adds is a pixel this style never lays anything out in.
     QSize contentSize = size;
-    contentSize.rwidth() += spinBoxArrowSize(option, widget).width();
+    contentSize.rwidth() += arrowColumnSize(option, widget).width();
 
     return resolveBoxGeometry(contextOf(widget, option)).sizeFromContents(contentSize);
 }
@@ -2861,7 +2862,7 @@ QRect FreeCADStyle::spinBoxSubControlRect(
     const QSize preferredSize = spinBoxSizeFromContents(option, {}, widget);
     const QRect contentRect = geometry.contentRect(outerRect, preferredSize);
 
-    const QSize buttonSize = spinBoxArrowSize(option, widget);
+    const QSize buttonSize = arrowColumnSize(option, widget);
     const bool hasButtons = buttonSize.width() > 0;
 
     const int buttonLeft = contentRect.right() - buttonSize.width() + 1;

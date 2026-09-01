@@ -48,8 +48,8 @@ public:
                     {.name = "FormControlPadding", .value = "padding(horizontal: 8px, vertical: 6px)"},
                     {.name = "LineEditHeight", .value = "@FormControlHeight"},
                     {.name = "LineEditPadding", .value = "@FormControlPadding"},
-                    {.name = "LineEditArrowWidth", .value = "14px"},
-                    {.name = "LineEditArrowHeight", .value = "12px"},
+                    {.name = "FormControlArrowWidth", .value = "14px"},
+                    {.name = "FormControlArrowHeight", .value = "12px"},
                 },
                 {.name = "Form Control Sizing"}
             )
@@ -302,6 +302,38 @@ private Q_SLOTS:
 
         const auto restore = overrideToken("LineEditArrowWidth", "30px");
         QCOMPARE(arrowColumn(), 30);
+    }
+
+    // One number moves every control's arrow column. A spin box and a combo box that disagree
+    // about it read as two different controls sitting in the same panel.
+    void test_theArrowColumnComesFromTheSharedToken()  // NOLINT
+    {
+        // A style per measurement: it caches every token it resolves, so one built before an
+        // override would answer from the value the override replaced.
+        const auto columnWidth = [] {
+            Gui::FreeCADStyle freecadStyle;
+            QStyle& style = freecadStyle;
+            QSpinBox spin;
+            style.polish(&spin);
+
+            const auto width = [&](QAbstractSpinBox::ButtonSymbols symbols) {
+                QStyleOptionSpinBox option;
+                option.initFrom(&spin);
+                option.frame = true;
+                option.subControls = QStyle::SC_SpinBoxFrame | QStyle::SC_SpinBoxEditField
+                    | QStyle::SC_SpinBoxUp | QStyle::SC_SpinBoxDown;
+                option.buttonSymbols = symbols;
+
+                return style.sizeFromContents(QStyle::CT_SpinBox, &option, contentSize(), &spin).width();
+            };
+
+            return width(QAbstractSpinBox::UpDownArrows) - width(QAbstractSpinBox::NoButtons);
+        };
+
+        QCOMPARE(columnWidth(), 14);
+
+        const auto restore = overrideToken("FormControlArrowWidth", "30px");
+        QCOMPARE(columnWidth(), 30);
     }
 
     // The whole of the box has an owner: padding, the arrow column, and the editor between

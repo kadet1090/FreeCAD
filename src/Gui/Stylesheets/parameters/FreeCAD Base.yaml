@@ -60,6 +60,12 @@ FormControlBorderRadius: "@BaseRadius.medium"
 FormControlBorderColor: "@BaseBorderColor"
 FormControlTextColor: "@BaseTextColor"
 
+# The trailing column a form control reserves for the glyph it paints there - a spin box's step
+# arrows, a dropdown's arrow. One number so the controls agree with each other; a component can
+# still override it.
+FormControlArrowWidth: 14px
+FormControlArrowHeight: 12px
+
 ButtonBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Background.100, @Background.200)"
 ButtonMinWidth: 100px
 ButtonPadding: "padding(horizontal: @Spacing.300, vertical: @Spacing.100)"
@@ -422,11 +428,6 @@ LineEditBorderThickness: "@FormControlBorderThickness"
 LineEditPadding: "@FormControlPadding"
 LineEditHeight: "@FormControlHeight"
 LineEditSmallHeight: "@FormControlSmallHeight"
-
-# The column a spin box's step arrows occupy inside the content box. FreeCADStyle reserves it
-# and lays the arrows out in it from this one number, so nothing is left over for the editor.
-LineEditArrowWidth: 14px
-LineEditArrowHeight: 12px
 
 LineEditFocusedBorderColor: "@Accent.500"
 LineEditHoveredBorderColorEffect: "@BaseHoveredBorderColorEffect"
