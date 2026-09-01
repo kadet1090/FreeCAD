@@ -236,6 +236,12 @@ FreeCADStyle::CornerRadii innerRadii(const FreeCADStyle::CornerRadii& outer, con
 namespace
 {
 
+// QStyleSheetStyle::defaultSize() reserves this for a spin box's step buttons whenever no rule
+// states a width - a literal, with no pixel metric behind it. Asking the sheet not to add it
+// costs the buttons the rect Qt hit-tests step clicks against, so the style subtracts what it
+// knows will be added instead.
+constexpr int styleSheetSpinButtonColumn = 16;
+
 struct ShadowCacheKey
 {
     int width, height;
@@ -1778,6 +1784,12 @@ Qt::Alignment FreeCADStyle::resolveAlignment(const StyleContext& context, Qt::Al
     return Application::Instance->freeCADStyle();
 }
 
+bool FreeCADStyle::isWrappedFor(const QWidget* widget) const
+{
+    return widget != nullptr && qobject_cast<const FreeCADStyle*>(widget->style()) == nullptr
+        && styleOf(widget) == this;
+}
+
 /*static*/ Qt::Alignment FreeCADStyle::labelAlignment(const QWidget* widget, Qt::Alignment fallback)
 {
     const FreeCADStyle* style = styleOf(widget);
@@ -2846,7 +2858,7 @@ QRect FreeCADStyle::spinBoxSubControlRect(
 {
     const BoxGeometryDefinition geometry = resolveBoxGeometry(contextOf(widget, option));
     const QRect outerRect = option->rect;
-    const QSize preferredSize = sizeFromContents(CT_SpinBox, option, {}, widget);
+    const QSize preferredSize = spinBoxSizeFromContents(option, {}, widget);
     const QRect contentRect = geometry.contentRect(outerRect, preferredSize);
 
     const QSize buttonSize = spinBoxArrowSize(option, widget);
@@ -4566,7 +4578,16 @@ QSize FreeCADStyle::sizeFromContents(
 
     if (type == CT_SpinBox) {
         if (const auto* spinOption = qstyleoption_cast<const QStyleOptionSpinBox*>(option)) {
-            return spinBoxSizeFromContents(spinOption, size, widget);
+            QSize result = spinBoxSizeFromContents(spinOption, size, widget);
+
+            // After the clamps rather than off the content size: the wrapper adds its column back
+            // on top of whatever MinWidth or Width decided, so those have to run first. Qt adds it
+            // only when the box has buttons, so this mirrors that.
+            if (isWrappedFor(widget) && spinOption->buttonSymbols != QAbstractSpinBox::NoButtons) {
+                result.rwidth() = std::max(0, result.width() - styleSheetSpinButtonColumn);
+            }
+
+            return result;
         }
     }
 

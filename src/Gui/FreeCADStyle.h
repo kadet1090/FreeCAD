@@ -1037,6 +1037,11 @@ protected:
         const QWidget* widget
     ) const;
 
+    /// True when this style is in force for @p widget but reached through a wrapper. That is
+    /// every widget in the running application: QApplication::setStyleSheet puts a
+    /// QStyleSheetStyle in front of the application style, and FreeCAD sets one at startup.
+    bool isWrappedFor(const QWidget* widget) const;
+
     /**
      * @brief Which of a row's two painted layers is being drawn.
      *
