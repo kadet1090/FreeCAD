@@ -38,7 +38,8 @@
 #include <QRegularExpressionMatch>
 #include <QScreen>
 #include <QScopeGuard>
-#include <QStatusBar>
+#include <QStyleHints>
+
 #include <QStyle>
 #include <QSurfaceFormat>
 #include <QTextStream>
@@ -252,7 +253,7 @@ public:
             const QString qssFile = QString::fromStdString(hGrp->GetASCII("StyleSheet"));
             const bool tiledBackground = hGrp->GetBool("TiledBackground", false);
 
-            Application::Instance->styleParameterManager()->reload();
+            Application::Instance->reloadTheme();
             Application::Instance->setStyleSheet(qssFile, tiledBackground);
             OverlayManager::instance()->refresh(nullptr, true);
         }
@@ -300,6 +301,9 @@ struct ApplicationP
     MacroManager* macroMngr;
     PreferencePackManager* prefPackManager;
     StyleParameters::ParameterManager* styleParameterManager;
+    /// The source whose file the "Theme" preference names. Held so a theme change can re-point it
+    /// without going through the parameter handler that installed it.
+    StyleParameters::YamlParameterSource* themeParametersSource {nullptr};
 
     ThemeReloadHandler* themeReloadHandler {nullptr};
 
@@ -482,28 +486,124 @@ StyleParameters::StyleParameterResolver* Application::createStyleParameterResolv
     return new StyleParameters::CachingParameterResolver(chainedResolver);
 }
 
+bool Application::isSystemInDarkMode()
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    // https://www.qt.io/blog/dark-mode-on-windows-11-with-qt-6.5
+    return QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+    // No colour scheme hint yet, so the palette is the only evidence: a dark desktop hands us
+    // light text on a dark window.
+    const QPalette defaultPalette;
+
+    return defaultPalette.color(QPalette::WindowText).lightness()
+        > defaultPalette.color(QPalette::Window).lightness();
+#else
+# ifdef FC_OS_MACOSX
+    auto key = CFSTR("AppleInterfaceStyle");
+    if (auto value = CFPreferencesCopyAppValue(key, kCFPreferencesAnyApplication)) {
+        const bool dark = CFGetTypeID(value) == CFStringGetTypeID()
+            && CFStringCompare(static_cast<CFStringRef>(value), CFSTR("Dark"), kCFCompareCaseInsensitive)
+                == kCFCompareEqualTo;
+        CFRelease(value);
+
+        return dark;
+    }
+# endif  // FC_OS_MACOSX
+
+    return false;
+#endif
+}
+
+std::string Application::themeParametersFilePath()
+{
+    const auto hMainWindowGrp = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/MainWindow"
+    );
+
+    if (const std::string& path = hMainWindowGrp->GetASCII("ThemeStyleParametersFile");
+        !path.empty()) {
+        return path;
+    }
+
+    return fmt::format("qss:parameters/{}.yaml", hMainWindowGrp->GetASCII("Theme", "Classic"));
+}
+
+/**
+ * @brief Re-points the theme parameter source at the file the "Theme" preference now names and
+ * reloads every source.
+ *
+ * The path is derived rather than remembered: a theme change is a change to that preference, and
+ * a reload that kept the old path would resolve every token against the theme just replaced.
+ */
+/**
+ * @brief Settles which theme is in force, for a profile that has never chosen one.
+ *
+ * A first run leaves "Theme" unset, and so does safe mode, which swaps the configuration out
+ * wholesale. The theme parameter source then names a file that does not exist, every token the
+ * theme layer defines resolves to nothing, and the interface is laid out against the handful the
+ * defaults carry rather than the several hundred a theme does.
+ *
+ * This must run before the main window is built. The tokens a widget reads at polish time - its
+ * font, its height floor, a panel's surface - are read once, when it is first polished, and no
+ * later reload re-reads them; a theme settled afterwards would leave every widget already built
+ * holding the values it had before. It is also why the window state the pack writes is left for
+ * the main window to read on its way up rather than reloaded here.
+ */
+void Application::applyDefaultTheme()
+{
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/MainWindow"
+    );
+
+    // An explicit choice is never second-guessed, including a deliberate Classic.
+    if (!hGrp->GetASCII("Theme").empty()) {
+        return;
+    }
+
+    const char* pack = isSystemInDarkMode() ? "FreeCAD Dark" : "FreeCAD Light";
+
+    try {
+        d->prefPackManager->apply(pack, PreferencePackManager::WindowState::LeaveAlone);
+    }
+    catch (const std::exception& error) {
+        // Not worth refusing to start over: the theme layer stays unloaded and the interface is
+        // plain, which is what this profile would have had anyway.
+        Base::Console().warning("Could not apply the default theme \"%s\": %s\n", pack, error.what());
+        return;
+    }
+
+    reloadTheme();
+}
+
+void Application::reloadTheme()
+{
+    if (d->themeParametersSource != nullptr) {
+        d->themeParametersSource->changeFilePath(themeParametersFilePath());
+    }
+
+    d->styleParameterManager->reload();
+
+    // Nothing else invalidates it, and every token the style has already resolved was resolved
+    // against the theme just replaced.
+    if (d->freeCADStyle) {
+        d->freeCADStyle->clearTokenCache();
+    }
+}
+
 void Application::initStyleParameterManager()
 {
     static ParamHandlers handlers;
 
-    const auto deduceParametersFilePath = []() -> std::string {
-        const auto hMainWindowGrp = App::GetApplication().GetParameterGroupByPath(
-            "User parameter:BaseApp/Preferences/MainWindow"
-        );
-
-        if (const std::string& path = hMainWindowGrp->GetASCII("ThemeStyleParametersFile");
-            !path.empty()) {
-            return path;
-        }
-
-        return fmt::format("qss:parameters/{}.yaml", hMainWindowGrp->GetASCII("Theme", "Classic"));
-    };
+    const auto deduceParametersFilePath = &Application::themeParametersFilePath;
 
     auto themeParametersSource = new StyleParameters::YamlParameterSource(
         deduceParametersFilePath(),
         {.name = QT_TR_NOOP("Theme Parameters"),
          .options = StyleParameters::ParameterSourceOption::UserEditable}
     );
+
+    d->themeParametersSource = themeParametersSource;
 
     auto designSystemParametersSource = new StyleParameters::YamlParameterSource(
         "qss:parameters/Design System.yaml",
@@ -520,11 +620,7 @@ void Application::initStyleParameterManager()
     auto reloadStylesheetHandler = handlers.addDelayedHandler(
         "BaseApp/Preferences/MainWindow",
         {"ThemeStyleParametersFiles", "Theme", "StyleSheet"},
-        [themeParametersSource, deduceParametersFilePath]([[maybe_unused]] ParameterGrp::handle) {
-            // Update the theme parameters file path before triggering the reload so the
-            // handler picks up the new path when it calls styleParameterManager()->reload().
-            themeParametersSource->changeFilePath(deduceParametersFilePath());
-
+        []([[maybe_unused]] ParameterGrp::handle) {
             ThemeReloadEvent event;
             QApplication::sendEvent(qApp, &event);
         }
@@ -2751,7 +2847,12 @@ void Application::runApplication()
     process.execute();
 
     Application app(true);
+
+    // Before the main window: widgets read their polish-time tokens once, as they are built.
+    app.applyDefaultTheme();
+
     MainWindow mw;
+
     mw.setProperty("QuitOnClosed", true);
 
     // Destroy deferred views while their GUI and Python owners are still alive.
@@ -2774,6 +2875,7 @@ void Application::runApplication()
 
     // gets called once we start the event loop
     QTimer::singleShot(0, &mw, SLOT(delayedStartup()));
+
 
     // run the Application event loop
     Base::Console().log("Init: Entering event loop\n");

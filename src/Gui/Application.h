@@ -72,6 +72,22 @@ public:
     /// Initializes default configuration for Style Parameter Manager
     void initStyleParameterManager();
 
+    /// Re-points the theme parameter source at the file the "Theme" preference names, then
+    /// reloads every source. Call after anything that changes which theme is in force.
+    void reloadTheme();
+
+    /// Settles which theme is in force for a profile that has never chosen one. Must run
+    /// before the main window is built - polish-time tokens are read once, as each widget
+    /// is built, and no later reload re-reads them.
+    void applyDefaultTheme();
+
+    /// The parameter file the "Theme" preference currently names.
+    static std::string themeParametersFilePath();
+
+    /// Whether the desktop asks for a dark colour scheme. Light is the answer wherever the
+    /// platform does not say.
+    static bool isSystemInDarkMode();
+
     /// Builds the resolver chain a ParameterManager resolves names through.
     static Gui::StyleParameters::StyleParameterResolver* createStyleParameterResolver();
 
