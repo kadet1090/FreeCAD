@@ -369,14 +369,14 @@ std::map<std::string, PreferencePack> Gui::PreferencePackManager::preferencePack
     return _preferencePacks;
 }
 
-bool PreferencePackManager::apply(const std::string& preferencePackName) const
+bool PreferencePackManager::apply(const std::string& preferencePackName, WindowState windowState) const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     if (auto preferencePack = _preferencePacks.find(preferencePackName);
         preferencePack != _preferencePacks.end()) {
         BackupCurrentConfig();
         bool wasApplied = preferencePack->second.apply();
-        if (wasApplied) {
+        if (wasApplied && windowState == WindowState::Reload) {
             // If the visibility state of the dock windows was changed we have to manually reload
             // their state
             Gui::DockWindowManager* pDockMgr = Gui::DockWindowManager::instance();
