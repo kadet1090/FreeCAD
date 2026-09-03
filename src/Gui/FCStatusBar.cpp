@@ -182,14 +182,15 @@ void FCStatusBar::applyLayoutTokens()
         = FreeCADStyle::stylePadding(this, StyleParameters::StyleComponentElement::Root);
     const std::optional<int> spacing
         = FreeCADStyle::styleSpacing(this, StyleParameters::StyleComponentElement::Item);
-    const std::optional<int> floorHeight
-        = FreeCADStyle::styleMinHeight(this, StyleParameters::StyleComponentElement::Root);
+    const std::optional<int> height
+        = FreeCADStyle::styleHeight(this, StyleParameters::StyleComponentElement::Root);
 
-    // A theme that speaks for none of the three gets Qt's layout and Qt's own minimum exactly as
+    // A theme that speaks for none of the three gets Qt's layout and Qt's own bounds exactly as
     // Qt left them: a bar no theme describes has to look the way it looked before this component
-    // existed. An explicit minimum is the thing that stops a layout speaking for the bar's
-    // height, so a bar nothing is stated for must not be given one.
-    if (!padding && !spacing && !floorHeight) {
+    // existed. What an earlier theme imposed is handed back rather than left standing, so that
+    // changing theme is not a way of keeping the height of the theme before it.
+    if (!padding && !spacing && !height) {
+        releaseHeight();
         return;
     }
 
@@ -209,15 +210,31 @@ void FCStatusBar::applyLayoutTokens()
         }
     }
 
-    applyHeightFloor(floorHeight);
+    applyHeight(height);
 }
 
-void FCStatusBar::applyHeightFloor(std::optional<int> stated)
+void FCStatusBar::releaseHeight()
 {
-    // The main window sizes the bar from its minimum and never from its size hint, and an
-    // explicit minimum outranks everything the layout beneath asks for. Both the stated floor
-    // and any inset written above therefore reach the window only by being counted in here.
-    setMinimumHeight(std::max(stated.value_or(0), minimumSizeHint().height()));
+    setMaximumHeight(QWIDGETSIZE_MAX);
+    setMinimumHeight(0);
+}
+
+void FCStatusBar::applyHeight(std::optional<int> stated)
+{
+    if (stated) {
+        // Held at both ends rather than floored. Qt sizes the bar to its tallest item, and which
+        // item that is depends on the profile: a workbench's toolbar docked into the bar, a
+        // widget a module added, an item still hidden. A bar stated to be one height has to be
+        // that height whoever is standing in it.
+        setFixedHeight(*stated);
+        return;
+    }
+
+    // The main window sizes the bar from its minimum and never from its size hint, so an inset
+    // written above reaches the window only by being counted in here. The ceiling a previous
+    // theme set is lifted first: a theme that states no height leaves the bar sizing itself.
+    setMaximumHeight(QWIDGETSIZE_MAX);
+    setMinimumHeight(minimumSizeHint().height());
 }
 
 bool FCStatusBar::event(QEvent* event)

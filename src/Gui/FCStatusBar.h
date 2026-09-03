@@ -50,8 +50,11 @@ private:
     /// Writes the stated inset and item gap onto the layout Qt rebuilt, which reads no metric.
     void applyLayoutTokens();
 
-    /// Counts @p stated and what the layout now needs into the bar's own floor, which sizes it.
-    void applyHeightFloor(std::optional<int> stated);
+    /// Holds the bar at @p stated, or lets it size itself where no height is stated.
+    void applyHeight(std::optional<int> stated);
+
+    /// Hands back the bounds an earlier theme imposed, leaving the bar sized as Qt sizes it.
+    void releaseHeight();
 
     StyleParameters::MessageLevel _messageLevel = StyleParameters::MessageLevel::Default;
 

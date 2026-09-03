@@ -407,14 +407,15 @@ MenuBarItemPressedTextColor: "@BaseTextColor"
 MenuBarItemDisabledTextColor: "@BaseDisabledTextColor"
 
 # The status bar is the menu bar's opposite number: the same surface at the other end of the
-# window, so its separating edge sits on the top rather than the bottom. The floor keeps the bar
-# from changing height as items with taller content come and go.
+# window, so its separating edge sits on the top rather than the bottom. Its height is stated
+# rather than left to its contents: what stands in the bar differs by workbench and by profile,
+# and a bar sized to its tallest item changes height as they come and go.
 StatusBarBackground: "@BaseWindowBackground"
 StatusBarPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.050, left: @Spacing.300)"
 StatusBarBorderColor: "@BaseBorderColor"
 StatusBarBorderThickness: "border_thickness(0px, top: 1px)"
 StatusBarItemSpacing: "@Spacing.150"
-StatusBarMinHeight: 26px
+StatusBarHeight: 36px
 
 StatusBarMessageTextColor: "@BaseTextColor"
 StatusBarMessageWarningTextColor: "@WarningColor"

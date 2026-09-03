@@ -28,7 +28,7 @@ namespace
 // loudly instead of coincidentally matching. The edge is 2px rather than 1px so a pixel
 // sampled on it sits solidly inside the border rather than on a boundary.
 constexpr int statusBarEdge = 2;
-constexpr int statusBarFloor = 31;
+constexpr int statusBarHeight = 31;
 
 const QColor statusBarBackground = QColor(QStringLiteral("#202020"));
 const QColor statusBarEdgeColor = QColor(QStringLiteral("#00ff00"));
@@ -49,8 +49,8 @@ constexpr int statusBarInsetBottom = 13;
 // What Qt's own reformat() leaves between two items, and the margins it leaves around them.
 constexpr int qtItemSpacing = 6;
 
-// An item taller than any floor the fixture states, so a bar that only ever reached the floor
-// cannot accommodate it.
+// An item taller than the height the fixture states, so a bar that took its height from its
+// tallest item could not come out at the stated one.
 constexpr int statusBarTallItem = 64;
 
 // Whether @p layout still holds a fixed (non-expanding) spacer sized along its own direction —
@@ -119,7 +119,7 @@ public:
                     {.name = "StatusBarBackground", .value = "#202020"},
                     {.name = "StatusBarBorderColor", .value = "#00ff00"},
                     {.name = "StatusBarBorderThickness", .value = "border_thickness(0px, top: 2px)"},
-                    {.name = "StatusBarMinHeight", .value = "31px"},
+                    {.name = "StatusBarHeight", .value = "31px"},
                     {.name = "StatusBarMessageTextColor", .value = "#0000ff"},
                     {.name = "StatusBarMessageWarningTextColor", .value = "#ffff00"},
                     {.name = "StatusBarMessageErrorTextColor", .value = "#ff0000"},
@@ -166,8 +166,8 @@ private:
         return false;
     }
 
-    // The floor a bar settles on once @p padding is the inset it is stated to take, with the
-    // stated height floor taken out of the way so that what is measured is the inset alone.
+    // The minimum a bar settles on once @p padding is the inset it is stated to take, with the
+    // stated height taken out of the way so that what is measured is the inset alone.
     static int minimumHeightUnder(Gui::FreeCADStyle& style, const QString& padding)
     {
         Gui::FCStatusBar bar;
@@ -176,7 +176,7 @@ private:
 
         Gui::FreeCADStyle::setStyleOverride(
             &bar,
-            QStringLiteral("StatusBarMinHeight"),
+            QStringLiteral("StatusBarHeight"),
             QStringLiteral("reset()")
         );
         Gui::FreeCADStyle::setStyleOverride(&bar, QStringLiteral("StatusBarPadding"), padding);
@@ -241,17 +241,22 @@ private Q_SLOTS:
         QCOMPARE(canvas.pixelColor(40, 0), QColor(Qt::magenta));
     }
 
-    void test_theBarKeepsTheStatedHeightFloor()  // NOLINT
+    void test_theBarIsHeldAtTheStatedHeight()  // NOLINT
     {
         Gui::FreeCADStyle style;
-        QStatusBar bar;
 
+        QWidget host;
+        Gui::FCStatusBar bar(&host);
+        bar.setStyle(&style);
         style.polish(&bar);
 
-        QCOMPARE(bar.minimumHeight(), statusBarFloor);
+        // Both ends, not a floor: the main window reads the bar's minimum, and the ceiling is
+        // what stops the layout beneath spending anything it is given above the stated height.
+        QCOMPARE(bar.minimumHeight(), statusBarHeight);
+        QCOMPARE(bar.maximumHeight(), statusBarHeight);
     }
 
-    void test_theStatedInsetReachesTheBarsOwnFloor()  // NOLINT
+    void test_theStatedInsetReachesTheBarsOwnMinimum()  // NOLINT
     {
         Gui::FreeCADStyle style;
 
@@ -272,7 +277,7 @@ private Q_SLOTS:
         QCOMPARE(inset - flat, statusBarInsetTop + statusBarInsetBottom);
     }
 
-    void test_theStatedFloorHoldsWhereTheInsetIsShorter()  // NOLINT
+    void test_aTallItemDoesNotChangeTheStatedHeight()  // NOLINT
     {
         Gui::FreeCADStyle style;
         Gui::FCStatusBar bar;
@@ -280,13 +285,45 @@ private Q_SLOTS:
         style.polish(&bar);
 
         // An item arriving after the bar was polished makes the layout the last thing to speak
-        // for the bar's height, which is the order a real bar is filled in.
-        bar.addPermanentWidget(new QLabel(QStringLiteral("mm"), &bar));
+        // for the bar's height, which is the order a real bar is filled in. Qt sizes the bar to
+        // its tallest item, so this is what a stated height has to outrank: which item is the
+        // tallest depends on the workbench, and a bar sized that way changes height as they
+        // come and go.
+        auto* tall = new QLabel(QStringLiteral("mm"), &bar);
+        tall->setFixedHeight(statusBarTallItem);
+        bar.addPermanentWidget(tall);
         QCoreApplication::sendPostedEvents(&bar, QEvent::LayoutRequest);
 
-        // The fixture's inset is well under the stated floor, which is therefore what the bar
-        // has to keep: accounting for the inset must not become a way of losing the floor.
-        QCOMPARE(bar.minimumHeight(), statusBarFloor);
+        QCOMPARE(bar.minimumHeight(), statusBarHeight);
+        QCOMPARE(bar.maximumHeight(), statusBarHeight);
+    }
+
+    void test_aThemeThatDropsTheHeightHandsTheBarBack()  // NOLINT
+    {
+        Gui::FreeCADStyle style;
+
+        QWidget host;
+        Gui::FCStatusBar bar(&host);
+        bar.setStyle(&style);
+        style.polish(&bar);
+
+        // Held by the fixture's stated height first, so what follows is a change of theme rather
+        // than a bar that never had one.
+        QCOMPARE(bar.maximumHeight(), statusBarHeight);
+
+        // The theme that replaces it states an inset but no height, which is the whole of what
+        // makes this different from the silent case: the bar still has tokens to answer, so the
+        // ceiling has to be lifted on the way past rather than by declining to act at all.
+        Gui::FreeCADStyle::setStyleOverride(
+            &bar,
+            QStringLiteral("StatusBarHeight"),
+            QStringLiteral("reset()")
+        );
+
+        QEvent styleChange(QEvent::StyleChange);
+        QCoreApplication::sendEvent(&bar, &styleChange);
+
+        QCOMPARE(bar.maximumHeight(), QWIDGETSIZE_MAX);
     }
 
     void test_aBarWithNoStatedLayoutKeepsQtsOwn()  // NOLINT
@@ -314,7 +351,7 @@ private Q_SLOTS:
         );
         Gui::FreeCADStyle::setStyleOverride(
             &bar,
-            QStringLiteral("StatusBarMinHeight"),
+            QStringLiteral("StatusBarHeight"),
             QStringLiteral("reset()")
         );
 
@@ -334,12 +371,14 @@ private Q_SLOTS:
         QCOMPARE(itemLayout->spacing(), qtItemSpacing);
         QVERIFY(hasFixedSpacer(itemLayout));
 
-        // And no minimum of our own, which would outrank everything the layout asks for — the
-        // very thing that keeps a stated inset from reaching the window.
+        // And neither bound of our own: a minimum would outrank everything the layout asks for,
+        // and a ceiling left behind by a theme that stated a height would hold the bar at a
+        // height the theme now in force says nothing about.
         QCOMPARE(bar.minimumHeight(), 0);
+        QCOMPARE(bar.maximumHeight(), QWIDGETSIZE_MAX);
     }
 
-    void test_aBarStatingOnlyItsFloorStillReachesTheWindow()  // NOLINT
+    void test_aBarStatingOnlyItsHeightStillReachesTheWindow()  // NOLINT
     {
         Gui::FreeCADStyle style;
 
@@ -349,7 +388,7 @@ private Q_SLOTS:
         style.polish(&bar);
 
         // Only the layout tokens are silenced. A component that states one of the three is not
-        // a component that states nothing, so declining must not swallow the floor with them.
+        // a component that states nothing, so declining must not swallow the height with them.
         Gui::FreeCADStyle::setStyleOverride(
             &bar,
             QStringLiteral("StatusBarPadding"),
@@ -366,12 +405,12 @@ private Q_SLOTS:
         bar.addPermanentWidget(tall);
         QCoreApplication::sendPostedEvents(&bar, QEvent::LayoutRequest);
 
-        // An explicit minimum outranks what the layout beneath asks for, so an item taller than
-        // the stated floor is given room only by that floor growing to hold it.
-        QVERIFY(bar.minimumHeight() >= statusBarTallItem);
-        QVERIFY(bar.minimumHeight() >= statusBarFloor);
+        // An explicit height outranks what the layout beneath asks for, so an item taller than
+        // the bar is held to the bar rather than the other way round.
+        QCOMPARE(bar.minimumHeight(), statusBarHeight);
+        QCOMPARE(bar.maximumHeight(), statusBarHeight);
 
-        // Qt's own spacing is still Qt's: a floor says nothing about where the items sit.
+        // Qt's own spacing is still Qt's: a height says nothing about where the items sit.
         QVERIFY(hasFixedSpacer(layoutHolding(&bar, tall)));
     }
 
@@ -493,6 +532,12 @@ private Q_SLOTS:
         QVERIFY(renderedBar(bar, MessageLevel::Error) != renderedBar(bar, MessageLevel::Default));
     }
 
+    // Qt activates the layout while answering the request, and the tokens are written after
+    // that - so the children are placed against the margins the layout had *before* this ran.
+    // Nothing else re-lays them out: the invalidate that setContentsMargins() posts is a request
+    // for a layout pass that, for a bar whose items have stopped changing, never comes. The bar
+    // then paints with its inset recorded and none of it honoured, which is a status bar whose
+    // items sit flush against the window edge while every margin reads correctly.
     void test_theLayoutTakesThePaddingAndSpacingTokens()  // NOLINT
     {
         Gui::FreeCADStyle style;
