@@ -509,6 +509,16 @@ public:
     );
 
     /**
+     * @brief The height @p widget's element is stated to hold, or nothing where none is stated.
+     *
+     * Answers for the component contextOf() derives alone, as stylePadding() does.
+     */
+    static std::optional<int> styleHeight(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    );
+
+    /**
      * @brief The height floor @p widget's element is stated to keep, or nothing where none is.
      *
      * Answers for the component contextOf() derives alone, as stylePadding() does.

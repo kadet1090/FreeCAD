@@ -1876,6 +1876,27 @@ bool FreeCADStyle::isWrappedFor(const QWidget* widget) const
     return static_cast<int>(*spacing);
 }
 
+/*static*/ std::optional<int> FreeCADStyle::styleHeight(
+    const QWidget* widget,
+    StyleComponentElement element
+)
+{
+    const FreeCADStyle* style = styleOf(widget);
+
+    if (style == nullptr) {
+        return {};
+    }
+
+    const auto height
+        = style->resolve<Numeric>(contextOf(widget, nullptr, element), StyleProperty::Height);
+
+    if (!height) {
+        return {};
+    }
+
+    return static_cast<int>(*height);
+}
+
 /*static*/ std::optional<int> FreeCADStyle::styleMinHeight(
     const QWidget* widget,
     StyleComponentElement element
