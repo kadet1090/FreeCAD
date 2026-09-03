@@ -493,7 +493,7 @@ MenuOverlap: 0px
 
 # MenuItemIconSpacing is every inter-column gap; MenuItemSpacing is the gap between rows, and
 # MenuItemMargin insets the highlight beyond what MenuPadding already does.
-MenuItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.075, right: @Spacing.300)"
+MenuItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050, right: @Spacing.300)"
 MenuItemIconSpacing: "@ListItemIconSpacing"
 MenuItemSpacing: "@Spacing.050"
 MenuItemMargin: "padding(0px)"
@@ -502,7 +502,7 @@ MenuItemTextColor: "@BaseTextColor"
 MenuItemHoveredBackground: "@ListRowPressedBackground"
 MenuItemPressedBackgroundEffect: "@ButtonPressedBackgroundEffect"
 MenuItemDisabledTextColor: "@ListDisabledTextColor"
-MenuItemMinWidth: 240px
+MenuItemMinWidth: 120px
 
 MenuShortcutSpacing: "@Spacing.400"
 MenuShortcutTextColor: "@BaseDisabledTextColor"
@@ -610,7 +610,7 @@ DropdownListSeparatorMargin: "padding(horizontal: @Spacing.100)"
 DropdownListSeparatorBorderColor: "@SeparatorColor"
 DropdownListSeparatorBorderThickness: "@SeparatorThickness"
 
-TreeItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.100)"
+TreeItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.075)"
 
 # The connector lines in the indent column. Set the thickness to reset() to drop them; the
 # expand arrow is drawn either way.
