@@ -48,7 +48,7 @@ public:
     using Observer = std::function<void(const std::string&)>;
 
     /// Keeps an observer registered until destroyed.
-    class Subscription
+    class GuiExport Subscription
     {
     public:
         Subscription() = default;

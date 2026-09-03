@@ -544,7 +544,7 @@ private:
 };
 
 /// Splitter for OverlayTabWidget
-class OverlaySplitter: public QSplitter
+class GuiExport OverlaySplitter: public QSplitter
 {
     Q_OBJECT
 public:
@@ -557,7 +557,7 @@ protected:
 
 
 /// Splitter handle for dragging the splitter
-class OverlaySplitterHandle: public QSplitterHandle
+class GuiExport OverlaySplitterHandle: public QSplitterHandle
 {
     Q_OBJECT
 public:

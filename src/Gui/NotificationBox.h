@@ -28,6 +28,8 @@
 #include <QPoint>
 #include <QString>
 
+#include <FCGlobal.h>
+
 namespace Gui
 {
 
@@ -47,7 +49,7 @@ namespace Gui
  * This class interface and its implementation are based on QT's
  * QToolTip.
  */
-class NotificationBox
+class GuiExport NotificationBox
 {
 public:
     NotificationBox() = delete;
