@@ -26,6 +26,8 @@
 #include <unordered_map>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <QIcon>
+#include <QPixmap>
 #include <QStyledItemDelegate>
 #include <QTreeWidget>
 
@@ -53,6 +55,36 @@ class DocumentItem;
 class Command;
 
 GuiExport bool isTreeViewDragging();
+
+/// Geometry of a tree object's icon, in logical pixels.
+struct VisibilityIconLayout
+{
+    int spacing = 0;         ///< Gap between the visibility marker and the object icon.
+    qreal pixelRatio = 1.0;  ///< Ratio of the display the icon is rasterised for.
+};
+
+/**
+ * @brief The size @p icon occupies in logical pixels on a display of @p pixelRatio.
+ *
+ * QIcon::actualSize reports a pixmap-backed icon in device pixels, so it is neither a size to
+ * lay out with nor one to ask the icon for: handed its own device size back as a request, QIcon
+ * answers with a ratio-1 pixmap that the caller then stretches by the display ratio. Assumes the
+ * icon was rasterised for @p pixelRatio, which is what the tree builds its icons at.
+ */
+GuiExport QSize logicalIconSize(const QIcon& icon, qreal pixelRatio, QIcon::State state);
+
+/**
+ * @brief A tree object's icon: the visibility marker and the object's own icon side by side.
+ *
+ * A null @p marker leaves its cell empty, so an object whose visibility cannot be toggled still
+ * lines up with the rows around it.
+ */
+GuiExport QPixmap composeVisibilityIcon(
+    const QIcon& marker,
+    const QIcon& icon,
+    QIcon::State state,
+    const VisibilityIconLayout& layout
+);
 
 /** Tree view that allows drag & drop of document objects.
  * @author Werner Mayer

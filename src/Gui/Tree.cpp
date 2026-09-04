@@ -482,11 +482,15 @@ void TreeWidgetItemDelegate::initStyleOption(QStyleOptionViewItem* option, const
 
     option->textElideMode = Qt::ElideMiddle;
 
-    // Reserve exactly what the icon will paint at the tree's icon height. QIcon never upscales
-    // a pixmap icon, so deriving the width from a larger variant's aspect ratio would leave
-    // dead space on both sides of it.
-    const QSize iconSize = option->icon.actualSize(QSize(0xffff, TreeWidget::getIconSize()));
+    // Reserve exactly what the icon will paint, and no more: QIcon never upscales a pixmap icon,
+    // so a row told to hold the tree's full icon height would leave dead space around a smaller
+    // one. Only an icon taller than the row is scaled down to fit it.
+    QSize iconSize = logicalIconSize(option->icon, tree->devicePixelRatioF(), QIcon::Off);
     if (!iconSize.isEmpty()) {
+        const int rowIconHeight = TreeWidget::getIconSize();
+        if (iconSize.height() > rowIconHeight) {
+            iconSize.scale(QSize(0xffff, rowIconHeight), Qt::KeepAspectRatio);
+        }
         option->decorationSize = iconSize;
     }
 }
@@ -6525,6 +6529,43 @@ void DocumentObjectItem::generateIcon(int currentStatus, QIcon::Mode mode, QIcon
     icon.addPixmap(pxOff, QIcon::Normal, QIcon::Off);
 }
 
+QSize Gui::logicalIconSize(const QIcon& icon, qreal pixelRatio, QIcon::State state)
+{
+    return (QSizeF(icon.actualSize(QSize(0xFFFF, 0xFFFF), QIcon::Normal, state)) / pixelRatio).toSize();
+}
+
+QPixmap Gui::composeVisibilityIcon(
+    const QIcon& marker,
+    const QIcon& icon,
+    QIcon::State state,
+    const VisibilityIconLayout& layout
+)
+{
+    // The cell is the icon's own size, never a size the caller nominates: asked for more than it
+    // holds, QIcon answers with a ratio-1 pixmap, and the composite would then stretch a raster
+    // already at its final resolution — visibly so at a fractional display ratio, where the
+    // stretch is neither an integer nor undone by the tree scaling the composite back down.
+    const QSize cell = logicalIconSize(icon, layout.pixelRatio, state);
+    const QPixmap object = icon.pixmap(cell, layout.pixelRatio, QIcon::Normal, state);
+
+    const QSize compositeSize(2 * cell.width() + layout.spacing, cell.height());
+
+    QPixmap composite(compositeSize * layout.pixelRatio);
+    composite.setDevicePixelRatio(layout.pixelRatio);
+    composite.fill(Qt::transparent);
+
+    QPainter painter;
+    painter.begin(&composite);
+    painter.setPen(Qt::NoPen);
+    if (!marker.isNull()) {
+        painter.drawPixmap(QRect(QPoint(), cell), marker.pixmap(cell, layout.pixelRatio));
+    }
+    painter.drawPixmap(QRect(QPoint(cell.width() + layout.spacing, 0), cell), object);
+    painter.end();
+
+    return composite;
+}
+
 QIcon DocumentObjectItem::getVisibilityIcon(int currentStatus, QIcon& original_icon)
 {
     // Themed icons: IconManager recolours them from the current theme on every render, so they
@@ -6536,35 +6577,23 @@ QIcon DocumentObjectItem::getVisibilityIcon(int currentStatus, QIcon& original_i
         QStringLiteral(":/icons/tabler/outline/eye-closed.svg")
     );
 
-    // Prepend the visibility pixmap to the final icon pixmaps and use these as the icon.
+    const TreeWidget* tree = this->getTree();
+    const VisibilityIconLayout layout {
+        .spacing = tree->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing),
+        .pixelRatio = tree->devicePixelRatioF(),
+    };
+
+    const QIcon marker = object()->canToggleVisibility()
+        ? ((currentStatus & Status::Visible) ? visible : invisible)
+        : QIcon();
+
     QIcon new_icon;
-    auto style = this->getTree()->style();
-    int const spacing = style->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
-    // Everything below is laid out in logical pixels and rasterised at the screen's ratio. Sizing
-    // the composite from the source pixmap's device dimensions instead would make it twice its
-    // intended size on a scaled display, and leave it a ratio-1 image for Qt to resample.
-    const qreal pixelRatio = this->getTree()->devicePixelRatioF();
-
     for (auto state : {QIcon::On, QIcon::Off}) {
-        const QSize sourceSize = original_icon.actualSize(QSize(0xFFFF, 0xFFFF), QIcon::Normal, state);
-        const QPixmap px_org = original_icon.pixmap(sourceSize, pixelRatio, QIcon::Normal, state);
-
-        const QSize compositeSize(2 * sourceSize.width() + spacing, sourceSize.height());
-        QPixmap px(compositeSize * pixelRatio);
-        px.setDevicePixelRatio(pixelRatio);
-        px.fill(Qt::transparent);
-
-        QPainter pt;
-        pt.begin(&px);
-        pt.setPen(Qt::NoPen);
-        if (object()->canToggleVisibility()) {
-            const QIcon& visibility = (currentStatus & Status::Visible) ? visible : invisible;
-            pt.drawPixmap(QRect(QPoint(), sourceSize), visibility.pixmap(sourceSize, pixelRatio));
-        }
-        pt.drawPixmap(QRect(QPoint(sourceSize.width() + spacing, 0), sourceSize), px_org);
-        pt.end();
-
-        new_icon.addPixmap(px, QIcon::Normal, state);
+        new_icon.addPixmap(
+            composeVisibilityIcon(marker, original_icon, state, layout),
+            QIcon::Normal,
+            state
+        );
     }
     return new_icon;
 }
