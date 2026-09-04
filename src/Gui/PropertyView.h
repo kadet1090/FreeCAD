@@ -22,9 +22,10 @@
 
 #pragma once
 
+#include "FCGlobal.h"
+
 #include "DockWindow.h"
 #include "Selection.h"
-
 
 class QPixmap;
 class QTabWidget;
@@ -54,7 +55,7 @@ class ViewProvider;
 
 /** The property view class.
  */
-class PropertyView: public QWidget, public Gui::SelectionObserver
+class GuiExport PropertyView: public QWidget, public Gui::SelectionObserver
 {
     Q_OBJECT
 

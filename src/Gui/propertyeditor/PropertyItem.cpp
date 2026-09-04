@@ -1122,7 +1122,8 @@ PropertyFloatItem::PropertyFloatItem() = default;
 QString PropertyFloatItem::toString(const QVariant& prop) const
 {
     double value = prop.toDouble();
-    QString data = QLocale().toString(value, 'f', decimals());
+    // show the actual value, not the 2 decimal UI version
+    QString data = QLocale().toString(value, 'g', highPrec);
 
     if (hasExpression()) {
         data += QStringLiteral("  ( %1 )").arg(QString::fromStdString(getExpressionString()));
@@ -1157,7 +1158,8 @@ QWidget* PropertyFloatItem::createEditor(
 {
     auto sb = new Gui::DoubleSpinBox(parent);
     sb->setFrame(static_cast<bool>(frameOption));
-    sb->setDecimals(decimals());
+    sb->setDecimals(highPrec);  // let users type in the full number, not just 2 decimals. Dont
+                                // truncate what they type.
     QObject::connect(sb, qOverload<double>(&Gui::DoubleSpinBox::valueChanged), method);
 
     if (isBound()) {
@@ -1299,7 +1301,8 @@ PropertyFloatConstraintItem::PropertyFloatConstraintItem() = default;
 QString PropertyFloatConstraintItem::toString(const QVariant& prop) const
 {
     double value = prop.toDouble();
-    return QLocale().toString(value, 'f', decimals());
+    // same as above, show the real value not 2 decimals
+    return QLocale().toString(value, 'g', highPrec);
 }
 
 QVariant PropertyFloatConstraintItem::value(const App::Property* prop) const
@@ -1327,7 +1330,8 @@ QWidget* PropertyFloatConstraintItem::createEditor(
 ) const
 {
     auto sb = new Gui::DoubleSpinBox(parent);
-    sb->setDecimals(decimals());
+    sb->setDecimals(highPrec);  // let users type in the full number, not just 2 decimals. Dont
+                                // truncate what they type.
     sb->setFrame(static_cast<bool>(frameOption));
     QObject::connect(sb, qOverload<double>(&Gui::DoubleSpinBox::valueChanged), method);
 
@@ -1632,13 +1636,14 @@ PropertyEditorWidget::PropertyEditorWidget(QWidget* parent)
     lineEdit->setReadOnly(true);
     layout->addWidget(lineEdit);
 
-    button = new QPushButton(QStringLiteral("…"), this);
+    button = new QToolButton(this);
+    button->setText(QStringLiteral("…"));
 #if defined(Q_OS_MACOS)
     button->setAttribute(Qt::WA_LayoutUsesWidgetRect);  // layout size from QMacStyle was not correct
 #endif
     layout->addWidget(button);
 
-    connect(button, &QPushButton::clicked, this, &PropertyEditorWidget::buttonClick);
+    connect(button, &QToolButton::clicked, this, &PropertyEditorWidget::buttonClick);
 
     // QAbstractItemView will call selectAll() if a QLineEdit is the focus
     // proxy. Since the QLineEdit here is read-only and not meant for editing,
@@ -1650,12 +1655,6 @@ PropertyEditorWidget::PropertyEditorWidget(QWidget* parent)
 }
 
 PropertyEditorWidget::~PropertyEditorWidget() = default;
-
-void PropertyEditorWidget::resizeEvent(QResizeEvent* e)
-{
-    button->setFixedWidth(e->size().height());
-    button->setFixedHeight(e->size().height());
-}
 
 void PropertyEditorWidget::showValue(const QVariant& d)
 {
@@ -4690,9 +4689,14 @@ LinkLabel::LinkLabel(QWidget* parent, const App::Property* prop)
     label->setTextFormat(Qt::RichText);
     // Below is necessary for the hytperlink to be clickable without losing focus
     label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    // A label reports its whole text as its minimum width, so in a cell too narrow for it the
+    // layout has to take the shortfall out of both children — and the button, whose content is
+    // one glyph, loses it entirely and renders as an empty frame. Let the label absorb all of it.
+    label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     layout->addWidget(label);
 
-    editButton = new QPushButton(QStringLiteral("…"), this);
+    editButton = new QToolButton(this);
+    editButton->setText(QStringLiteral("…"));
 #if defined(Q_OS_MACOS)
     editButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);  // layout size from QMacStyle was not correct
 #endif
@@ -4705,7 +4709,7 @@ LinkLabel::LinkLabel(QWidget* parent, const App::Property* prop)
     // setLayout(layout);
 
     connect(label, &QLabel::linkActivated, this, &LinkLabel::onLinkActivated);
-    connect(editButton, &QPushButton::clicked, this, &LinkLabel::onEditClicked);
+    connect(editButton, &QToolButton::clicked, this, &LinkLabel::onEditClicked);
 }
 
 LinkLabel::~LinkLabel() = default;
@@ -4788,11 +4792,6 @@ void LinkLabel::onLinkChanged()
             updatePropertyLink();
         }
     }
-}
-
-void LinkLabel::resizeEvent(QResizeEvent* e)
-{
-    editButton->setFixedWidth(e->size().height());
 }
 
 // --------------------------------------------------------------------
@@ -4920,11 +4919,11 @@ QWidget* PropertyMapItem::
     label->setPalette(palette);
     layout->addWidget(label);
 
-    auto button = new QPushButton(QStringLiteral("…"), parent);
-    button->setFixedWidth(button->height());
+    auto button = new QToolButton(parent);
+    button->setText(QStringLiteral("…"));
     layout->addWidget(button);
 
-    connect(button, &QPushButton::clicked, this, [this, method, editor, label]() {
+    connect(button, &QToolButton::clicked, this, [this, method, editor, label]() {
         QDialog dialog(editor);
         dialog.setWindowTitle(tr("Map"));
 

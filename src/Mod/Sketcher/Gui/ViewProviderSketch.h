@@ -812,6 +812,7 @@ protected:
     //@{
     /// get called by the container whenever a property has been changed
     void onChanged(const App::Property* prop) override;
+    void onTemporaryVisibilityChanged(bool visible) override;
     //@}
 
     /// hook after property restoring to change some property statuses
@@ -824,6 +825,11 @@ protected:
         const SbVec3f& pickPoint
     ) const override;
     bool getDetailPath(const char* subname, SoFullPath* pPath, bool append, SoDetail*& det) const override;
+    /// For an internal face, its bounding internal edges; delegated for anything else.
+    std::vector<std::string> getBoundaryElements(const char* subName) const override;
+    /// Strips the internal-geometry namespace prefix, so e.g. "InternalFace1" maps onto
+    /// "Face1" — the name the internal shape's own scene-graph nodes filter colours on.
+    std::string mapElementNameForColor(const std::string& elementName) const override;
 
     Base::BoundBox3d _getBoundingBox(
         const char* subname = nullptr,

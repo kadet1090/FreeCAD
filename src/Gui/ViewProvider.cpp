@@ -1059,6 +1059,11 @@ bool ViewProvider::getDetailPath(const char* subname, SoFullPath* pPath, bool ap
     return true;
 }
 
+std::vector<std::string> ViewProvider::getBoundaryElements(const char* /*subName*/) const
+{
+    return {};
+}
+
 const std::string& ViewProvider::hiddenMarker()
 {
     return App::DocumentObject::hiddenMarker();

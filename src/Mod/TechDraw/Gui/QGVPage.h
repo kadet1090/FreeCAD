@@ -97,6 +97,9 @@ public:
 
     TechDraw::DrawPage* getDrawPage();
 
+    /// The surface the page is drawn over, a user preference rather than a theme colour.
+    QColor getBackgroundColor() const;
+
     void makeGrid(int width, int height, double step);
     void showGrid(bool state) { m_showGrid = state; }
     void updateViewport() { viewport()->repaint(); }
@@ -148,8 +151,6 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
-
-    QColor getBackgroundColor();
 
     QPixmap prepareCursorPixmap(const char* iconName, QPoint& hotspot);
 

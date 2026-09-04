@@ -5,6 +5,9 @@ SET(Stylesheets_Files
 )
 
 SET(Parameters_Files
+    "parameters/Design System.yaml"
+    "parameters/defaults.yaml"
+    "parameters/FreeCAD Base.yaml"
     "parameters/FreeCAD Dark.yaml"
     "parameters/FreeCAD Light.yaml"
 )
@@ -38,11 +41,17 @@ ADD_CUSTOM_TARGET(Stylesheets_data ALL
 
 fc_copy_sources(Stylesheets_data "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_DATADIR}/Gui/Stylesheets"
                                   ${Stylesheets_Files}
-                                  ${Parameters_Files}
                                   ${Images_Files}
                                   ${Images_Files2}
                                   ${Overlay_Stylesheets_Files}
                                   ${Overlay_icons})
+
+# The theme parameters are a UserEditable parameter source: the Theme Editor persists edits
+# straight into whichever copy the application loaded, which is this one. That leaves the build
+# copy newer than the source, so an ordinary copy rule would consider itself up to date and the
+# edited copy would shadow the source for good.
+fc_copy_sources_always(Stylesheets_data "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_DATADIR}/Gui/Stylesheets"
+                                  ${Parameters_Files})
 
 INSTALL(
     FILES

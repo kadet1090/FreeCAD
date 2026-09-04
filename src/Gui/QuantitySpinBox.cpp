@@ -20,6 +20,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#include <algorithm>
 #include <limits>
 #include <QApplication>
 #include <QDebug>
@@ -57,6 +58,14 @@ using namespace Base;
 
 namespace Gui
 {
+
+namespace
+{
+// Three is what a length or an angle a user actually types needs — 999 covers a part's own
+// dimensions, and anything past it scrolls in the editor rather than widening every panel it
+// sits in.
+constexpr int minimumExpectedDigits = 3;
+}  // namespace
 
 class QuantitySpinBoxPrivate
 {
@@ -347,10 +356,11 @@ void QuantitySpinBox::bind(const App::ObjectIdentifier& _path)
 
 void QuantitySpinBox::showIcon()
 {
-    addIconSpace(true);
+    // Reserve the space before measuring: the button is paid for out of the editor's right text
+    // margin, and a size taken before that margin exists is a size without room for the button.
+    ExpressionSpinBox::showIcon();
 
     adjustSize();
-    iconLabel->show();
 }
 
 QString QuantitySpinBox::boundToName() const
@@ -560,19 +570,80 @@ void QuantitySpinBox::normalize()
 
 bool QuantitySpinBox::isNormalized()
 {
-    static const QRegularExpression operators(
-        QStringLiteral("[+\\-/*]"),
-        QRegularExpression::CaseInsensitiveOption
-    );
-
     Q_D(const QuantitySpinBox);
 
-    // this check is two level
-    // 1. We consider every string that does not contain operators as normalized
-    // 2. If it does contain operators we check if it differs from normalized input - as some
-    //    operators like - can be allowed even in normalized case.
-    return !d->validStr.contains(operators)
-        || d->validStr.toStdString() == d->quantity.getUserString();
+    // check if the input is exactly the same as the normalized string
+    if (d->validStr.toStdString() == d->quantity.getUserString()) {
+        return true;
+    }
+
+    // check if the input is simplified to a solution or if further calculation
+    // has to be done
+
+    try {
+        auto expr = ExpressionParser::parse(
+            getPath().getDocumentObject(),
+            d->validStr.toUtf8().constData()
+        );
+
+        // plain numbers
+        if (freecad_cast<NumberExpression*>(expr.get())) {
+            return true;
+        }
+
+        auto operatorExpr = freecad_cast<OperatorExpression*>(expr.get());
+        if (!operatorExpr) {
+            return false;
+        }
+
+        if (operatorExpr->getOperator() == OperatorExpression::UNIT
+            && freecad_cast<UnitExpression*>(operatorExpr->getRight())
+            && freecad_cast<NumberExpression*>(operatorExpr->getLeft())) {
+            // numbers without sign but with unit
+            return true;
+        }
+
+        if ((operatorExpr->getOperator() != OperatorExpression::NEG
+             && operatorExpr->getOperator() != OperatorExpression::POS)) {
+            return false;
+        }
+
+        // numbers with positive or negative sign without unit
+        if (freecad_cast<NumberExpression*>(operatorExpr->getLeft())) {
+            return true;
+        }
+
+        auto innerOperatorExpr = freecad_cast<OperatorExpression*>(operatorExpr->getLeft());
+        if (!innerOperatorExpr) {
+            return false;
+        }
+
+        if (innerOperatorExpr->getOperator() != OperatorExpression::UNIT) {
+            return false;
+        }
+        if (!freecad_cast<UnitExpression*>(innerOperatorExpr->getRight())) {
+            return false;
+        }
+
+        // numbers with positive or negative sign and unit
+        auto left = innerOperatorExpr->getLeft();
+        if (freecad_cast<NumberExpression*>(left)) {
+            return true;
+        }
+        auto leftOp = freecad_cast<OperatorExpression*>(left);
+        if (leftOp
+            && (leftOp->getOperator() == OperatorExpression::NEG
+                || leftOp->getOperator() == OperatorExpression::POS)
+            && freecad_cast<NumberExpression*>(leftOp->getLeft())) {
+            return true;
+        }
+    }
+    catch (const Base::Exception&) {
+        // The exception is intentionally ignored here and should be handled,
+        // when the value is assigned
+        return false;
+    }
+    return false;
 }
 
 void QuantitySpinBox::setValue(const Base::Quantity& value)
@@ -942,13 +1013,22 @@ void QuantitySpinBox::stepBy(int steps)
     selectNumber();
 }
 
+int QuantitySpinBox::editorTextInset() const
+{
+    const QLineEdit* editor = lineEdit();
+    const QMargins textMargins = editor->textMargins();
+
+    return textMargins.left() + textMargins.right()
+        + style()->pixelMetric(QStyle::PM_TextCursorWidth, nullptr, editor);
+}
+
 QSize QuantitySpinBox::sizeForText(const QString& txt) const
 {
     const QFontMetrics fm(fontMetrics());
     int h = lineEdit()->sizeHint().height();
     int w = QtTools::horizontalAdvance(fm, txt);
 
-    w += 2;  // cursor blinking space
+    w += editorTextInset();
     w += iconHeight;
 
     QStyleOptionSpinBox opt;
@@ -969,6 +1049,14 @@ QSize QuantitySpinBox::sizeHint() const
     return sizeHintForDigits(d->maxExpectedDigits);
 }
 
+QSize QuantitySpinBox::minimumSizeHint() const
+{
+    Q_D(const QuantitySpinBox);
+
+    // A box asked to prefer fewer digits than the floor allows for is taken at its word.
+    return sizeHintForDigits(std::min(minimumExpectedDigits, d->maxExpectedDigits));
+}
+
 QSize QuantitySpinBox::sizeHintForDigits(int digits) const
 {
     Q_D(const QuantitySpinBox);
@@ -986,7 +1074,13 @@ QSize QuantitySpinBox::sizeHintForDigits(int digits) const
 
     const QFontMetrics fm(fontMetrics());
     int w = qMax(0, QtTools::horizontalAdvance(fm, longestString));
-    w += 4;  // cursor blinking space
+    if (d->adjustableWidth) {
+        // A run of digits stands in badly for the text actually shown: a unit suffix like "mm"
+        // is wider than the digits it replaces. A box sized to fit exactly what it displays has
+        // nowhere to absorb the difference, so measure the real thing.
+        w = qMax(w, QtTools::horizontalAdvance(fm, lineEdit()->text()));
+    }
+    w += editorTextInset();
     if (d->addIconSpace) {
         w += iconHeight;
     }

@@ -22,11 +22,13 @@
  ***************************************************************************/
 
 #include "ParameterManager.h"
+#include "Diagnostics.h"
 #include "Parser.h"
 
 #include <QFile>
 #include <fstream>
 #include <yaml-cpp/yaml.h>
+#include <fmt/format.h>
 #include <fmt/ranges.h>
 
 #include <QRegularExpression>
@@ -44,6 +46,30 @@ namespace Gui::StyleParameters
 
 namespace
 {
+
+/// Opens a YAML file at the given path (supports "qss:" Qt search-path scheme) and
+/// returns the parsed root node. Returns an empty node and logs a warning on failure.
+YAML::Node loadYamlFile(const std::string& path)
+{
+    QFile file(QString::fromStdString(path));
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        FC_WARN("StyleParameters: Unable to open file " << path);
+        return YAML::Node {};
+    }
+    QTextStream stream(&file);
+    return YAML::Load(stream.readAll().toStdString());
+}
+
+/// Resolves a relative path against a base file path by replacing the last path
+/// component of 'base' with 'relative'. Preserves any scheme prefix (e.g. "qss:").
+std::string resolveRelativePath(const std::string& base, const std::string& relative)
+{
+    auto slashPos = base.rfind('/');
+    if (slashPos == std::string::npos) {
+        return relative;
+    }
+    return base.substr(0, slashPos + 1) + relative;
+}
 
 /// Converts a YAML node to a StyleParameters expression string.
 /// Scalars are returned as-is; sequences become unnamed tuples "(a, b, ...)";
@@ -77,13 +103,53 @@ std::string yamlNodeToExpression(const YAML::Node& node)
     return "";
 }
 
+/// Formats a gradient tuple as QSS qlineargradient() or qradialgradient().
+std::string gradientToQss(const Tuple& tuple, const auto& formatValue)
+{
+    const char* functionName = tuple.kind == TupleKind::LinearGradient ? "qlineargradient"
+                                                                       : "qradialgradient";
+
+    std::vector<std::string> parts;
+
+    // Geometry params (all named elements except "stops")
+    for (const auto& [name, value] : tuple.elements) {
+        if (!name || *name == "stops") {
+            continue;
+        }
+        parts.push_back(fmt::format("{}:{}", *name, formatValue(*value)));
+    }
+
+    // Stops
+    const auto* stopsValue = tuple.find("stops");
+    if (stopsValue && stopsValue->holds<Tuple>()) {
+        const auto& stopsTuple = stopsValue->get<Tuple>();
+        for (size_t index = 0; index < stopsTuple.size(); ++index) {
+            const auto& stopEntry = stopsTuple.at(index).get<Tuple>();
+            parts.push_back(
+                fmt::format("stop:{} {}", formatValue(stopEntry.at(0)), formatValue(stopEntry.at(1)))
+            );
+        }
+    }
+
+    return fmt::format("{}({})", functionName, fmt::join(parts, ", "));
+}
+
 /// Formats a Value for QSS output.
-/// Tuples become space-separated values (e.g. "10px 5px 10px 5px"),
-/// all other types delegate to toString().
+/// Gradient tuples use qlineargradient()/qradialgradient() syntax.
+/// Other tuples become space-separated values (e.g. "10px 5px 10px 5px").
+/// All other types delegate to toString().
 std::string toQss(const Value& value)
 {
+    if (value.holds<None>()) {
+        return "";
+    }
+
     if (value.holds<Tuple>()) {
         const auto& tuple = value.get<Tuple>();
+
+        if (tuple.kind == TupleKind::LinearGradient || tuple.kind == TupleKind::RadialGradient) {
+            return gradientToQss(tuple, [](const Value& val) { return toQss(val); });
+        }
 
         std::vector<std::string> parts;
         parts.reserve(tuple.elements.size());
@@ -227,38 +293,81 @@ void YamlParameterSource::changeFilePath(const std::string& path)
 
 void YamlParameterSource::reload()
 {
-    QFile file(QString::fromStdString(filePath));
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        FC_TRACE("StyleParameters: Unable to open file " << filePath);
-        return;
-    }
-
     if (filePath.starts_with(":/")) {
         this->metadata.options |= ReadOnly;
     }
 
-    QTextStream in(&file);
-    std::string content = in.readAll().toStdString();
+    const YAML::Node root = loadYamlFile(filePath);
 
-    YAML::Node root = YAML::Load(content);
-    parameters.clear();
+    inheritPaths.clear();
+    if (root["_inherits"]) {
+        const auto& inheritsNode = root["_inherits"];
+        if (inheritsNode.IsScalar()) {
+            inheritPaths.push_back(inheritsNode.as<std::string>());
+        }
+        else if (inheritsNode.IsSequence()) {
+            for (const auto& entry : inheritsNode) {
+                inheritPaths.push_back(entry.as<std::string>());
+            }
+        }
+    }
+
+    std::map<std::string, ParameterEntry> ownEntries;
     for (auto it = root.begin(); it != root.end(); ++it) {
         const auto key = it->first.as<std::string>();
+        if (key.starts_with("_")) {
+            continue;
+        }
         const auto value = yamlNodeToExpression(it->second);
-
-        parameters[key] = Parameter {
-            .name = key,
-            .value = value,
+        ownEntries[key] = ParameterEntry {
+            .parameter = {.name = key, .value = value},
+            .inherited = false,
         };
     }
+
+    rebuildMergedView(ownEntries);
+}
+
+void YamlParameterSource::rebuildMergedView(const std::map<std::string, ParameterEntry>& ownEntries)
+{
+    parameters.clear();
+
+    for (const auto& relativePath : inheritPaths) {
+        const YAML::Node inheritedRoot = loadYamlFile(resolveRelativePath(filePath, relativePath));
+        for (auto it = inheritedRoot.begin(); it != inheritedRoot.end(); ++it) {
+            const auto key = it->first.as<std::string>();
+            if (key.starts_with("_")) {
+                continue;  // skip meta-keys; recursive _inherits not supported
+            }
+            const auto value = yamlNodeToExpression(it->second);
+            parameters[key] = ParameterEntry {
+                .parameter = {.name = key, .value = value},
+                .inherited = true,
+            };
+        }
+    }
+
+    for (const auto& [name, entry] : ownEntries) {
+        parameters[name] = entry;
+    }
+}
+
+void YamlParameterSource::rebuildMergedView()
+{
+    std::map<std::string, ParameterEntry> ownEntries;
+    for (const auto& [name, entry] : parameters) {
+        if (!entry.inherited) {
+            ownEntries[name] = entry;
+        }
+    }
+    rebuildMergedView(ownEntries);
 }
 
 std::list<Parameter> YamlParameterSource::all() const
 {
     std::list<Parameter> result;
-    for (const auto& param : parameters | std::views::values) {
-        result.push_back(param);
+    for (const auto& [name, entry] : parameters) {
+        result.push_back(entry.parameter);
     }
     return result;
 }
@@ -266,7 +375,7 @@ std::list<Parameter> YamlParameterSource::all() const
 std::optional<Parameter> YamlParameterSource::get(const std::string& name) const
 {
     if (auto it = parameters.find(name); it != parameters.end()) {
-        return it->second;
+        return it->second.parameter;
     }
 
     return std::nullopt;
@@ -274,19 +383,36 @@ std::optional<Parameter> YamlParameterSource::get(const std::string& name) const
 
 void YamlParameterSource::define(const Parameter& param)
 {
-    parameters[param.name] = param;
+    parameters[param.name] = ParameterEntry {.parameter = param, .inherited = false};
 }
 
 void YamlParameterSource::remove(const std::string& name)
 {
     parameters.erase(name);
+    rebuildMergedView();  // restore inherited value for 'name' if present in a parent file
 }
 
 void YamlParameterSource::flush()
 {
     YAML::Node root;
-    for (const auto& [name, param] : parameters) {
-        root[name] = param.value;
+
+    if (!inheritPaths.empty()) {
+        if (inheritPaths.size() == 1) {
+            root["_inherits"] = inheritPaths.front();
+        }
+        else {
+            YAML::Node sequence(YAML::NodeType::Sequence);
+            for (const auto& path : inheritPaths) {
+                sequence.push_back(path);
+            }
+            root["_inherits"] = sequence;
+        }
+    }
+
+    for (const auto& [name, entry] : parameters) {
+        if (!entry.inherited) {
+            root[name] = entry.parameter.value;
+        }
     }
 
     QFile file(QString::fromStdString(filePath));
@@ -299,11 +425,44 @@ void YamlParameterSource::flush()
     out << QString::fromStdString(YAML::Dump(root));
 }
 
-ParameterManager::ParameterManager() = default;
+ParameterManager::ParameterManager()
+{
+    populateBuiltinDescriptors(_descriptorRegistry);
+}
+
+OverrideRegistry& ParameterManager::overrideRegistry()
+{
+    return _overrideRegistry;
+}
+
+const OverrideRegistry& ParameterManager::overrideRegistry() const
+{
+    return _overrideRegistry;
+}
+
+void ParameterManager::setResolver(StyleParameterResolver* resolver)
+{
+    _resolver = resolver;
+}
+
+ParameterDescriptorRegistry& ParameterManager::descriptorRegistry()
+{
+    return _descriptorRegistry;
+}
+
+const ParameterDescriptorRegistry& ParameterManager::descriptorRegistry() const
+{
+    return _descriptorRegistry;
+}
 
 void ParameterManager::reload()
 {
     _resolved.clear();
+    _overrideResolved.clear();
+    Diagnostics::clear();
+    if (_resolver) {
+        _resolver->refresh();
+    }
 }
 
 std::string ParameterManager::replacePlaceholders(
@@ -311,72 +470,96 @@ std::string ParameterManager::replacePlaceholders(
     ResolveContext context
 ) const
 {
-    // Matches @TokenName (group name) or @{expression} (group expression)
-    static const QRegularExpression regex("@(?:(?P<name>\\w+)|({(?P<expression>(?>[^{}]+|(?2))+)}))");
+    // Structural backstop, mirroring resolve()'s outermost catch: no future edit to this
+    // function, nor to the callback it drives, should be able to let an exception escape into
+    // replacePlaceholders's callers — Application.cpp's QSS substitution is unguarded. On
+    // failure the original expression is returned unchanged rather than an empty string, since
+    // a caller substituting into QSS is better served by the untouched source than by silence.
+    try {
+        // Matches @TokenName (group name) or @{expression} (group expression)
+        static const QRegularExpression regex(
+            "@(?:(?P<name>\\w+)|({(?P<expression>(?>[^{}]+|(?2))+)}))"
+        );
 
-    auto substituteWithCallback =
-        [](const QRegularExpression& regex,
-           const QString& input,
-           const std::function<QString(const QRegularExpressionMatch&)>& callback) {
-            QRegularExpressionMatchIterator it = regex.globalMatch(input);
+        auto substituteWithCallback =
+            [](const QRegularExpression& regex,
+               const QString& input,
+               const std::function<QString(const QRegularExpressionMatch&)>& callback) {
+                QRegularExpressionMatchIterator it = regex.globalMatch(input);
 
-            QString result;
-            qsizetype lastIndex = 0;
+                QString result;
+                qsizetype lastIndex = 0;
 
-            while (it.hasNext()) {
-                QRegularExpressionMatch match = it.next();
+                while (it.hasNext()) {
+                    QRegularExpressionMatch match = it.next();
 
-                qsizetype start = match.capturedStart();
-                qsizetype end = match.capturedEnd();
+                    qsizetype start = match.capturedStart();
+                    qsizetype end = match.capturedEnd();
 
-                result += input.mid(lastIndex, start - lastIndex);
-                result += callback(match);
+                    result += input.mid(lastIndex, start - lastIndex);
+                    result += callback(match);
 
-                lastIndex = end;
-            }
-
-            // Append any remaining text after the last match
-            result += input.mid(lastIndex);
-
-            return result;
-        };
-
-    // clang-format off
-    return substituteWithCallback(
-        regex,
-        QString::fromStdString(expression),
-        [&](const QRegularExpressionMatch& match) -> QString {
-            // Group 1: @TokenName
-            if (!match.captured("name").isEmpty()) {
-                auto tokenName = match.captured(1).toStdString();
-                auto tokenValue = resolve(tokenName, context);
-
-                if (!tokenValue) {
-                    Base::Console().warning("Requested non-existent style parameter token '%s'.\n", tokenName);
-                    return QStringLiteral("");
+                    lastIndex = end;
                 }
 
-                context.visited.erase(tokenName);
-                return QString::fromStdString(toQss(*tokenValue));
-            }
+                // Append any remaining text after the last match
+                result += input.mid(lastIndex);
 
-            // Group 2: @{expression}
-            auto exprBody = match.captured("expression").toStdString();
-            try {
-                Value result = evaluate(exprBody, context);
-                return QString::fromStdString(toQss(result));
-            }
-            catch (Base::Exception& e) {
-                Base::Console().warning(
-                    "Failed to evaluate inline expression '@{%s}': %s\n",
-                    exprBody,
-                    e.what()
-                );
-                return QStringLiteral("");
-            }
+                return result;
+            };
+
+        // clang-format off
+        return substituteWithCallback(
+            regex,
+            QString::fromStdString(expression),
+            [&](const QRegularExpressionMatch& match) -> QString {
+                // Group 1: @TokenName
+                if (!match.captured("name").isEmpty()) {
+                    auto tokenName = match.captured(1).toStdString();
+
+                    try {
+                        auto tokenValue = resolve(tokenName, context);
+
+                        if (!tokenValue) {
+                            Diagnostics::report("Requested non-existent style parameter token '{}'", tokenName);
+                            return QStringLiteral("");
+                        }
+
+                        context.visited.erase(tokenName);
+                        return QString::fromStdString(toQss(*tokenValue));
+                    }
+                    catch (...) {
+                        Diagnostics::report("Failed to resolve style parameter token '{}'", tokenName);
+                        return QStringLiteral("");
+                    }
+                }
+
+                // Group 2: @{expression}
+                auto exprBody = match.captured("expression").toStdString();
+                try {
+                    Value result = evaluate(exprBody, context);
+                    return QString::fromStdString(toQss(result));
+                }
+                catch (const Base::Exception& exception) {
+                    Diagnostics::report(
+                        "Failed to evaluate inline expression '@{{{}}}': {}",
+                        exprBody,
+                        exception.what()
+                    );
+                    return QStringLiteral("");
+                }
+                catch (...) {
+                    Diagnostics::report("Failed to evaluate inline expression '@{{{}}}'", exprBody);
+                    return QStringLiteral("");
+                }
+        }
+        ).toStdString();
+        // clang-format on
     }
-    ).toStdString();
-    // clang-format on
+    catch (...) {
+        Diagnostics::report("Failed to substitute style parameter placeholders in '{}'", expression);
+        return expression;
+    }
 }
 
 std::list<Parameter> ParameterManager::parameters() const
@@ -402,40 +585,184 @@ std::optional<std::string> ParameterManager::expression(const std::string& name)
     return {};
 }
 
+std::optional<Value> ParameterManager::resolve(const std::string& name) const
+{
+    if (_resolver) {
+        return _resolver->resolve(name, this);
+    }
+    return resolve(name, ResolveContext {});
+}
+
 std::optional<Value> ParameterManager::resolve(const std::string& name, ResolveContext context) const
 {
-    std::optional<Parameter> maybeParameter = this->parameter(name);
+    if (context.overrides != OverrideRegistry::emptyId) {
+        return resolveOverridden(name, std::move(context));
+    }
 
-    if (!maybeParameter) {
+    return resolveFlat(name, std::move(context));
+}
+
+std::optional<Value> ParameterManager::resolveFlat(const std::string& name, ResolveContext context) const
+{
+    Diagnostics::ResolutionScope scope(name);
+
+    try {
+        std::optional<Parameter> maybeParameter;
+        try {
+            maybeParameter = this->parameter(name);
+        }
+        catch (...) {
+            Diagnostics::report("Failed to retrieve style parameter '{}' from its source", name);
+            return std::nullopt;
+        }
+
+        if (!maybeParameter) {
+            return std::nullopt;
+        }
+
+        if (context.visited.contains(name)) {
+            Diagnostics::report("The style parameter '{}' contains a circular reference", name);
+            return expression(name);
+        }
+
+        const Parameter& token = *maybeParameter;
+
+        if (!_resolved.contains(token.name)) {
+            context.visited.insert(token.name);
+            try {
+                _resolved[token.name] = evaluate(token.value, context);
+            }
+            catch (const Base::Exception& exception) {
+                Diagnostics::report(
+                    "Style parameter '{}' could not be evaluated: {}",
+                    token.name,
+                    exception.what()
+                );
+                // Fall back to treating the value as a generic string.
+                try {
+                    _resolved[token.name] = replacePlaceholders(token.value, context);
+                }
+                catch (...) {
+                    _resolved[token.name] = token.value;
+                }
+            }
+            context.visited.erase(token.name);
+        }
+
+        return _resolved[token.name];
+    }
+    catch (...) {
+        // Structural backstop: no future edit to this function, nor any call site it reaches
+        // (parameter(), expression(), evaluate()) that is not already individually guarded
+        // above, should be able to let an exception escape resolve().
+        Diagnostics::report("Failed to resolve style parameter '{}'", name);
+        return std::nullopt;
+    }
+}
+
+std::optional<Value> ParameterManager::resolveOverridden(
+    const std::string& name,
+    ResolveContext context
+) const
+{
+    auto& cache = _overrideResolved[context.overrides];
+    if (const auto cached = cache.find(name); cached != cache.end()) {
+        return cached->second;
+    }
+
+    const OverrideSet& overrideSet = _overrideRegistry.get(context.overrides);
+    const auto declared = overrideSet.find(name);
+    const bool overridden = declared != overrideSet.end();
+
+    std::optional<std::string> source;
+    if (overridden) {
+        source = declared->second;
+    }
+    else if (const auto maybeParameter = this->parameter(name)) {
+        source = maybeParameter->value;
+    }
+
+    if (!source) {
+        cache[name] = std::nullopt;
         return std::nullopt;
     }
 
+    // The overridden path never reaches resolveFlat, so it needs its own cycle guard. Checked
+    // after the source lookup so the ordering matches resolveFlat's, and left uncached because
+    // the fallback describes this resolution attempt rather than the token's settled value.
     if (context.visited.contains(name)) {
-        Base::Console().warning("The style parameter '%s' contains circular-reference.\n", name);
+        Diagnostics::report("The style parameter '{}' contains a circular reference", name);
         return expression(name);
     }
 
-    const Parameter& token = *maybeParameter;
+    context.visited.insert(name);
+    const std::optional<Value> result = overridden ? evaluateOverride(name, *source, context)
+                                                   : evaluateOrSubstitute(*source, context);
+    context.visited.erase(name);
 
-    if (!_resolved.contains(token.name)) {
-        context.visited.insert(token.name);
-        try {
-            _resolved[token.name] = evaluate(token.value, context);
-        }
-        catch (Base::Exception&) {
-            // in case of being unable to parse it, we need to treat it as a generic value
-            _resolved[token.name] = replacePlaceholders(token.value, context);
-        }
-        context.visited.erase(token.name);
+    cache[name] = result;
+    return result;
+}
+
+std::optional<Value> ParameterManager::evaluateOrSubstitute(
+    const std::string& expression,
+    const ResolveContext& context
+) const
+{
+    try {
+        return evaluate(expression, context);
+    }
+    catch (const Base::Exception&) {
+        // Not an expression — treat it as a generic value.
+        return replacePlaceholders(expression, context);
+    }
+}
+
+std::optional<Value> ParameterManager::evaluateOverride(
+    const std::string& name,
+    const std::string& expression,
+    const ResolveContext& context
+) const
+{
+    try {
+        return evaluate(expression, context);
+    }
+    catch (const Base::Exception& exception) {
+        Base::Console().warning(
+            "The style override for '%s' could not be evaluated (%s); ignoring it.\n",
+            name,
+            exception.what()
+        );
     }
 
-    return _resolved[token.name];
+    // Substituting placeholders here — what an ordinary parameter falls back to — would put a
+    // literal string where the caller expects a brush. Fall back to the theme instead.
+    if (const auto maybeParameter = this->parameter(name)) {
+        return evaluateOrSubstitute(maybeParameter->value, context);
+    }
+
+    return std::nullopt;
 }
+
 
 Value ParameterManager::evaluate(const std::string& expression, ResolveContext context) const
 {
-    Parser parser(expression);
-    return parser.parse()->evaluate({.manager = this, .context = std::move(context)});
+    try {
+        Parser parser(expression);
+        return parser.parse()->evaluate({.manager = this, .context = std::move(context)});
+    }
+    catch (const Base::Exception&) {
+        throw;
+    }
+    catch (const std::exception& exception) {
+        THROWM(
+            Base::ExpressionError,
+            fmt::format("Failed to evaluate '{}': {}", expression, exception.what())
+        );
+    }
+    catch (...) {
+        THROWM(Base::ExpressionError, fmt::format("Failed to evaluate '{}'", expression));
+    }
 }
 
 std::optional<Parameter> ParameterManager::parameter(const std::string& name) const

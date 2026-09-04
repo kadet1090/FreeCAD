@@ -54,6 +54,9 @@ public:
     App::PropertyBool UseCustomVector;
     App::PropertyVector Direction;
     App::PropertyBool AlongSketchNormal;
+    App::PropertyEnumeration StartType;
+    App::PropertyLength StartOffset;
+    App::PropertyLinkSub StartReference;
     App::PropertyLength Offset;
     App::PropertyLength Offset2;
     App::PropertyLinkSub ReferenceAxis;
@@ -61,6 +64,8 @@ public:
     static App::PropertyQuantityConstraint::Constraints signedLengthConstraint;
     static double maxAngle;
     static App::PropertyAngle::Constraints floatAngle;
+
+    double getStartOffset() const;
 
     /** @name methods override feature */
     //@{
@@ -80,6 +85,20 @@ protected:
     Base::Vector3d computeDirection(const Base::Vector3d& sketchVector, bool inverse);
     bool hasTaperedAngle() const;
     void onChanged(const App::Property* prop) override;
+    void onBeforeChange(const App::Property* prop) override;
+
+    /// Keeps a "Sketch normal"-style ReferenceAxis valid when the Profile is
+    /// swapped, by re-pointing the sketch's virtual axis at the new profile.
+    void keepReferenceAxisWithProfile();
+
+    /// Re-shows the profile object that was in use before Profile changed, once it is no
+    /// longer consumed as any feature's profile, so a swapped-away sketch becomes pickable
+    /// again. Driven by the property alone, so it applies to task-dialog and property-view
+    /// edits alike.
+    void showDetachedPreviousProfile();
+
+    /// Whether @p profile is still referenced as the Profile of a feature other than this one.
+    bool isProfileConsumedElsewhere(App::DocumentObject* profile) const;
 
 
     /// Options for buildExtrusion()
@@ -120,6 +139,11 @@ protected:
         const TopoShape& base,      // The base shape for context (global CS)
         TopLoc_Location& invObjLoc  // MUST be passed. Cannot be re-accessed, see #26677
     );
+
+private:
+    /// The Profile value captured in onBeforeChange, read by onChanged to identify the
+    /// object that was swapped away. Transient — never serialised.
+    App::DocumentObject* previousProfile = nullptr;
 };
 
 }  // namespace PartDesign

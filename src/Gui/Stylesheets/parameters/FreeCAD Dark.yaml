@@ -1,48 +1,31 @@
-3DViewBackgroundRefColor: "@BackgroundColor"
-ButtonBackgroundHooverColor: "@ButtonTopBackgroundColor"
-ButtonBorderColor: "@GeneralBorderColor"
-ButtonBorderHooverColor: "@GeneralBorderColor"
-ButtonBottomBackgroundColor: "@PrimaryColorLighten2"
-ButtonTopBackgroundColor: "@PrimaryColorLighten3"
-CheckedButtonBottomBackgroundColor: "darken(@ButtonBottomBackgroundColor, 5)"
-CheckedButtonTopBackgroundColor: "darken(@ButtonTopBackgroundColor, 5)"
-DefaultButtonBottomBackgroundColor: "blend(@ButtonBottomBackgroundColor, @AccentColor, 10)"
-DefaultButtonTopBackgroundColor: "blend(@ButtonTopBackgroundColor, @AccentColor, 10)"
-DefaultButtonBorderColor: "blend(@ButtonBorderColor, @AccentColor, 20)"
-ToolButtonCheckedBorderColor: "@PrimaryColorLighten5"
-ToolButtonCheckedBackground: "@CheckedButtonTopBackgroundColor"
-CheckBoxBackgroundColor: "@TextEditFieldBackgroundColor"
-CheckBoxBorderColor: "@GeneralBorderColor"
-DialogBackgroundColor: "@PrimaryColorLighten3"
-GeneralAlternateBackgroundColor: "@PrimaryColorLighten2"
-GeneralBackgroundColor: "@PrimaryColor"
-GeneralBackgroundHoverColor: "@PrimaryColorLighten4"
-GeneralBorderColor: "@PrimaryColorDarken5"
-GeneralBorderHoverColor: "@PrimaryColorLighten6"
-GeneralDisabledBackgroundColor: "@PrimaryColorDarken3"
-GeneralGridLinesColor: "@PrimaryColorLighten3"
-GeneralHeaderBackgroundColor: "@PrimaryColor"
-GroupboxBackgroundColor: "@PrimaryColorLighten4"
-GroupboxBorderColor: "lighten(@GroupboxBackgroundColor,20)"
-IconsLocationFolderName: "images_classic"
-InputFieldBorderRadius: "3px"
-MenuBackgroundColor: "@PrimaryColorDarken4"
-PrimaryColor: "#191919"
-PrimaryColorDarken1: "darken(@PrimaryColor,5)"
-PrimaryColorDarken2: "darken(@PrimaryColor,8)"
-PrimaryColorDarken3: "darken(@PrimaryColor,15)"
-PrimaryColorDarken4: "darken(@PrimaryColor,20)"
-PrimaryColorDarken5: "darken(@PrimaryColor,200)"
-PrimaryColorDarken6: "darken(@PrimaryColor,5890)"
-PrimaryColorLighten1: "lighten(@PrimaryColor,20)"
-PrimaryColorLighten2: "lighten(@PrimaryColor,40)"
-PrimaryColorLighten3: "lighten(@PrimaryColor,80)"
-PrimaryColorLighten4: "lighten(@PrimaryColor,100)"
-PrimaryColorLighten5: "lighten(@PrimaryColor,300)"
-PrimaryColorLighten6: "lighten(@PrimaryColor,5890)"
-RadioButtonBackgroundColor: "@CheckBoxBackgroundColor"
-RadioButtonBorderColor: "@GeneralBorderColor"
-ScrollbarBackgroundColor: "@GeneralDisabledBackgroundColor"
+_inherits:
+  - FreeCAD Base.yaml
+
+# The whole dark theme is these five statements. Both scales are re-anchored: Neutral runs
+# dark-to-light from a dark base, and Contrast.900 - which BaseTextColor reads - becomes
+# near-white from a light one.
+BaseNeutral: "#343a40"
+BaseContrast: "#f1f3f5"
+
+# Base maps Background.000-200 onto the light end of the Neutral scale. Dark flips that to the
+# dark end, so every surface built from a Background step - inputs, panels, hover states -
+# lands in the range the theme expects without being named individually.
+Background:
+  000: "@Neutral.900"
+  050: "@Neutral.850"
+  100: "@Neutral.800"
+  150: "@Neutral.750"
+  200: "@Neutral.700"
+
+BaseTextColor: "@Contrast.400"
+
+# A button stands off a dark surface by being lighter than it, so it is built from the Neutral
+# scale directly rather than from the Background steps the light theme reads.
+ButtonBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Neutral.300, @Neutral.400)"
+
+# On a dark surface, hover has to brighten a border rather than darken it.
+BaseHoveredBorderColorEffect: "effect(lighten: 0.08)"
+
 SketcherConflictingConstraintsColor: "#fc6c6c"
 SketcherEmptySketchColor: "#ffffff"
 SketcherFullyConstrainedColor: "#8cff5b"
@@ -51,16 +34,3 @@ SketcherPartiallyRedundantConstraintsColor: "#77cbff"
 SketcherRedundantConstraintsColor: "#ffa256"
 SketcherSolverFailedColor: "#ff9090"
 SketcherUnderConstrainedColor: "#ffffff"
-StylesheetIconsColor: "white"
-TabbarBackgroundColor: "@PrimaryColorDarken5"
-InActiveTabBackgroundColor: "@PrimaryColorDarken2"
-ActiveTabBackgroundColor: "@3DViewBackgroundRefColor"
-TextDisabledColor: "darken(@TextForegroundColor,120)"
-TextEditFieldBackgroundColor: "@PrimaryColor"
-TextForegroundColor: "#ffffff"
-TextSelectBackgroundColor: "darken(@AccentColor,100)"
-TextUrlColor: "#0095ff"
-ToolbarButtonsPadding: "2px"
-AccentColor: "@ThemeAccentColor1"
-AccentBackgroundColor: "blend(@GeneralBackgroundColor,@AccentColor,60)"
-AccentHoverColor: "blend(@GeneralBackgroundHoverColor,@AccentColor,30)"

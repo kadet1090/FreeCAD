@@ -43,11 +43,11 @@
         <string notr="true">padding-right: 0px; margin-right: 0px</string>
        </property>
        <property name="text">
-        <string notr="true"></string>
+        <string notr="true"/>
        </property>
       </widget>
      </item>
-   <item>
+     <item>
       <widget class="QToolButton" name="filterButton">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -65,7 +65,7 @@
         <string>Filter</string>
        </property>
        <property name="popupMode">
-        <enum>QToolButton::MenuButtonPopup</enum>
+        <enum>QToolButton::ToolButtonPopupMode::MenuButtonPopup</enum>
        </property>
       </widget>
      </item>
@@ -90,7 +90,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="Resources/Sketcher.qrc">
+        <iconset>
          <normaloff>:/icons/Std_ToggleVisibility.svg</normaloff>:/icons/Std_ToggleVisibility.svg</iconset>
        </property>
       </widget>
@@ -114,7 +114,7 @@
          <normaloff>:/icons/dialogs/Sketcher_Settings.svg</normaloff>:/icons/dialogs/Sketcher_Settings.svg</iconset>
        </property>
        <property name="popupMode">
-        <enum>QToolButton::MenuButtonPopup</enum>
+        <enum>QToolButton::ToolButtonPopupMode::InstantPopup</enum>
        </property>
       </widget>
      </item>
@@ -130,8 +130,8 @@
      </property>
      <property name="iconSize">
       <size>
-       <width>24</width>
-       <height>24</height>
+       <width>20</width>
+       <height>20</height>
       </size>
      </property>
      <property name="modelColumn">

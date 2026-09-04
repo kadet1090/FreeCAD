@@ -57,6 +57,7 @@ public:
     }
     QStringList undoActions() const override;
     QStringList redoActions() const override;
+    QString paneBackground() const override;
 
 protected:
     void showEvent(QShowEvent* event) override;

@@ -35,6 +35,7 @@
 
 #include "CallTips.h"
 #include "TextEdit.h"
+#include "FreeCADStyle.h"
 #include "SyntaxHighlighter.h"
 #include "Tools.h"
 #include <Base/Color.h>
@@ -469,21 +470,31 @@ void TextEditor::OnChange(Base::Subject<const char*>& rCaller, const char* sReas
     ParameterGrp::handle hPrefGrp = getWindowParameter();
     if (strcmp(sReason, "FontSize") == 0 || strcmp(sReason, "Font") == 0) {
 #ifdef FC_OS_LINUX
-        int fontSize = hPrefGrp->GetInt("FontSize", 15);
+        const int fontSize = hPrefGrp->GetInt("FontSize", 15);
 #else
-        int fontSize = hPrefGrp->GetInt("FontSize", 10);
+        const int fontSize = hPrefGrp->GetInt("FontSize", 10);
 #endif
-        QFont font;
-        auto fontName = hPrefGrp->GetASCII("Font");
-        if (fontName.empty()) {
-            font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-            font.setPointSize(fontSize);
-        }
-        else {
-            font = QFont(QString::fromStdString(fontName), fontSize);
-        }
-        setFont(font);
-        lineNumberArea->setFont(font);
+        const std::string family = hPrefGrp->GetASCII("Font");
+
+        // A family reaches the token system as a quoted literal: an override is not given the
+        // raw-text fallback an ordinary parameter gets, so an unquoted name would be discarded.
+        // Parser::parseStringLiteral has no escape for the quote character itself, so a font name
+        // containing an apostrophe truncates the expression, throws Base::ParserError, and the
+        // preference silently falls back through the token chain instead of erroring visibly. This
+        // is a pre-existing parser limitation, not something introduced here; no choice of quote
+        // character avoids it.
+        const QString familyExpression = family.empty()
+            ? QStringLiteral("'%1'").arg(QFontDatabase::systemFont(QFontDatabase::FixedFont).family())
+            : QStringLiteral("'%1'").arg(QString::fromStdString(family));
+
+        FreeCADStyle::setStyleOverride(this, QStringLiteral("TextEditFontFamily"), familyExpression);
+        FreeCADStyle::setStyleOverride(
+            this,
+            QStringLiteral("TextEditFontSize"),
+            QStringLiteral("%1pt").arg(fontSize)
+        );
+        // setStyleOverride() reapplies font() synchronously, so this reads the resolved font.
+        lineNumberArea->setFont(font());
     }
     else {
         QMap<QString, QColor>::Iterator it = d->colormap.find(QString::fromLatin1(sReason));

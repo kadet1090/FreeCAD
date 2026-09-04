@@ -34,75 +34,10 @@
         <property name="text">
          <string>Coordinate system</string>
         </property>
-        <property name="buddy">
-         <cstring>positionModeComboBox</cstring>
-        </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="positionModeComboBox">
-        <item>
-         <property name="text">
-          <string>Local coordinate system</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Global coordinate system</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="customCSReferenceLabel">
-        <property name="visible">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Reference</string>
-        </property>
-        <property name="buddy">
-         <cstring>customCSLineEdit</cstring>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QWidget" name="customCSPickerWidget" native="true">
-        <property name="visible">
-         <bool>false</bool>
-        </property>
-        <layout class="QVBoxLayout" name="customCSPickerLayout">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLineEdit" name="customCSLineEdit">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pickCoordinateSystemReferenceButton">
-           <property name="text">
-            <string>Pick Reference</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+       <widget class="Gui::GeometrySelectorWidget" name="coordinateSystemSelector" native="true"/>
       </item>
      </layout>
     </widget>
@@ -285,7 +220,7 @@
            <bool>true</bool>
           </property>
           <property name="checked">
-            <bool>false</bool>
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -510,7 +445,7 @@
        <number>9</number>
       </property>
       <item row="0" column="1">
-       <widget class="QComboBox" name="placementComboBox"/>
+       <widget class="Gui::GeometrySelectorWidget" name="transformOriginSelector" native="true"/>
       </item>
       <item row="5" column="0" colspan="2">
        <widget class="QLabel" name="snappingLabel">
@@ -576,51 +511,6 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="referenceLabel">
-        <property name="text">
-         <string>Reference</string>
-        </property>
-        <property name="buddy">
-         <cstring>referenceLineEdit</cstring>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QWidget" name="referencePickerWidget" native="true">
-        <layout class="QVBoxLayout" name="referencePickerLayout">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLineEdit" name="referenceLineEdit">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pickTransformOriginButton">
-           <property name="text">
-            <string>Pick Reference</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
       <item row="6" column="1">
        <widget class="Gui::QuantitySpinBox" name="translationIncrementSpinBox">
         <property name="minimum">
@@ -637,10 +527,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Mode</string>
-        </property>
-        <property name="buddy">
-         <cstring>placementComboBox</cstring>
+         <string>Reference</string>
         </property>
        </widget>
       </item>
@@ -771,16 +658,15 @@
    <extends>QAbstractSpinBox</extends>
    <header>Gui/QuantitySpinBox.h</header>
   </customwidget>
+  <customwidget>
+   <class>Gui::GeometrySelectorWidget</class>
+   <extends>QWidget</extends>
+   <header>Gui/GeometrySelectorWidget.h</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>placementComboBox</tabstop>
-  <tabstop>referenceLineEdit</tabstop>
-  <tabstop>pickTransformOriginButton</tabstop>
   <tabstop>translationIncrementSpinBox</tabstop>
   <tabstop>rotationIncrementSpinBox</tabstop>
-  <tabstop>positionModeComboBox</tabstop>
-  <tabstop>customCSLineEdit</tabstop>
-  <tabstop>pickCoordinateSystemReferenceButton</tabstop>
   <tabstop>alignRotationCheckBox</tabstop>
   <tabstop>xPositionSpinBox</tabstop>
   <tabstop>yPositionSpinBox</tabstop>

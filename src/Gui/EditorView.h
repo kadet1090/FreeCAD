@@ -99,6 +99,7 @@ public:
 
     QStringList undoActions() const override;
     QStringList redoActions() const override;
+    QString paneBackground() const override;
     QString fileName() const;
 
 protected:

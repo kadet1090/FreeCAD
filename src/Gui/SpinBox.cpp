@@ -100,7 +100,7 @@ ExpressionSpinBox::ExpressionSpinBox(QAbstractSpinBox* sb)
     lineedit->setAlignment(Qt::AlignVCenter);
 
     makeLabel(lineedit);
-    QObject::connect(iconLabel, &ExpressionLabel::clicked, [this]() { this->openFormulaDialog(); });
+    QObject::connect(iconLabel, &QAbstractButton::clicked, [this]() { this->openFormulaDialog(); });
 
     lineedit->installEventFilter(new SpinBoxPrivate::ExpressionResetDoubleClickFilter(*this, spinbox));
     // FocusOut filter goes on the spinbox, not lineedit
@@ -146,11 +146,7 @@ void ExpressionSpinBox::restoreExpression()
 
 int ExpressionSpinBox::getMargin()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-    return lineedit->style()->pixelMetric(QStyle::PM_LineEditIconMargin, nullptr, lineedit) / 2;
-#else
-    return lineedit->style()->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, lineedit);
-#endif
+    return iconMargin(lineedit);
 }
 
 void ExpressionSpinBox::bind(const App::ObjectIdentifier& _path)
@@ -162,6 +158,8 @@ void ExpressionSpinBox::bind(const App::ObjectIdentifier& _path)
 
 void ExpressionSpinBox::showIcon()
 {
+    reserveIconSpace(lineedit);
+
     iconLabel->show();
 }
 
@@ -175,7 +173,7 @@ void ExpressionSpinBox::showInvalidExpression(const QString& tip)
     p.setColor(QPalette::Active, QPalette::Text, Qt::red);
     lineedit->setPalette(p);
     iconLabel->setToolTip(tip);
-    iconLabel->setPixmap(getIcon(":/icons/button_invalid.svg", QSize(iconHeight, iconHeight)));
+    iconLabel->setIcon(QIcon(getIcon(":/icons/button_invalid.svg", QSize(iconHeight, iconHeight))));
 }
 
 void ExpressionSpinBox::showValidExpression(ExpressionSpinBox::Number number)
@@ -203,7 +201,8 @@ void ExpressionSpinBox::showExpression(Number number)
         }
 
         spinbox->setReadOnly(true);
-        iconLabel->setPixmap(getIcon(":/icons/bound-expression.svg", QSize(iconHeight, iconHeight)));
+        iconLabel->restoreNormalIcon();
+        iconLabel->setChecked(true);
 
         QPalette p(lineedit->palette());
         p.setColor(QPalette::Text, Qt::lightGray);
@@ -215,8 +214,8 @@ void ExpressionSpinBox::showExpression(Number number)
 void ExpressionSpinBox::clearExpression()
 {
     spinbox->setReadOnly(false);
-    QPixmap pixmap = getIcon(":/icons/bound-expression-unset.svg", QSize(iconHeight, iconHeight));
-    iconLabel->setPixmap(pixmap);
+    iconLabel->restoreNormalIcon();
+    iconLabel->setChecked(false);
 
     QPalette p(lineedit->palette());
     p.setColor(QPalette::Active, QPalette::Text, defaultPalette.color(QPalette::Text));
@@ -266,8 +265,7 @@ void ExpressionSpinBox::onChange()
 
 void ExpressionSpinBox::resizeWidget()
 {
-    int iconWidth = iconLabel->width() + getMargin();
-    iconLabel->move(lineedit->width() - iconWidth, (lineedit->height() - iconLabel->height()) / 2);
+    positionIcon(lineedit);
     updateExpression();
 }
 
@@ -641,6 +639,13 @@ bool DoubleSpinBox::apply(const std::string& propName)
 void DoubleSpinBox::setNumberExpression(App::NumberExpression* expr)
 {
     setValue(expr->getValue());
+}
+
+QString DoubleSpinBox::textFromValue(double value) const
+{
+    // Qt's default formatting acts weird with floats (e.g. 6.7876564999999998)
+    // Using 'g' + 16 sig digs to keeps it clean and readable
+    return QLocale().toString(value, 'g', 16);
 }
 
 void DoubleSpinBox::resizeEvent(QResizeEvent* event)

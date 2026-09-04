@@ -353,10 +353,54 @@ void ExpressionWidget::makeLabel(QLineEdit* le)
     /* Icon for f(x) */
     QFontMetrics fm(le->font());
     iconHeight = fm.height();
-    iconLabel = new ExpressionLabel(le);
+    iconLabel = new ExpressionButton(le);
+
+    QIcon icon;
+    icon.addPixmap(
+        getIcon(":/icons/bound-expression-unset.svg", QSize(iconHeight, iconHeight)),
+        QIcon::Normal,
+        QIcon::Off
+    );
+    icon.addPixmap(
+        getIcon(":/icons/bound-expression.svg", QSize(iconHeight, iconHeight)),
+        QIcon::Normal,
+        QIcon::On
+    );
     iconLabel->setCursor(Qt::ArrowCursor);
-    QPixmap pixmap = getIcon(":/icons/bound-expression-unset.svg", QSize(iconHeight, iconHeight));
-    iconLabel->setPixmap(pixmap);
+    iconLabel->setNormalIcon(icon);
+    iconLabel->setIconSize(QSize(iconHeight, iconHeight));
     iconLabel->hide();
     iconLabel->setExpressionText(QString());
+}
+
+int ExpressionWidget::iconMargin(const QWidget* widget)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+    return widget->style()->pixelMetric(QStyle::PM_LineEditIconMargin, nullptr, widget) / 2;
+#else
+    return widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, widget);
+#endif
+}
+
+void ExpressionWidget::positionIcon(const QWidget* lineEdit)
+{
+    // The button's size hint carries the form control height the design system asks of every
+    // button, which is not the size the button was given: it is fixed to a square just large
+    // enough for the icon. Only its real geometry can centre it against the edit's edge.
+    const int margin = iconMargin(lineEdit);
+
+    iconLabel->move(
+        lineEdit->width() - iconLabel->width() - margin,
+        (lineEdit->height() - iconLabel->height()) / 2
+    );
+}
+
+void ExpressionWidget::reserveIconSpace(QLineEdit* lineEdit)
+{
+    // Text margins, not contents margins: a line edit paints its panel over its contents rect,
+    // so insetting that would pull the field's own background out from under the button.
+    QMargins margins = lineEdit->textMargins();
+    margins.setRight(iconLabel->width() + 2 * iconMargin(lineEdit));
+
+    lineEdit->setTextMargins(margins);
 }

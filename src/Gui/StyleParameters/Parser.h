@@ -80,6 +80,28 @@ struct GuiExport Number: public Expr
     Value evaluate([[maybe_unused]] const EvaluationContext& context) const override;
 };
 
+struct GuiExport Boolean: public Expr
+{
+    bool value;
+
+    explicit Boolean(bool value)
+        : value(value)
+    {}
+
+    Value evaluate([[maybe_unused]] const EvaluationContext& context) const override;
+};
+
+struct GuiExport StringLiteral: public Expr
+{
+    std::string value;
+
+    explicit StringLiteral(std::string value)
+        : value(std::move(value))
+    {}
+
+    Value evaluate([[maybe_unused]] const EvaluationContext& context) const override;
+};
+
 struct GuiExport Color: public Expr
 {
     Base::Color color;
@@ -161,6 +183,8 @@ class GuiExport Parser
 {
     static constexpr auto rgbFunction = "rgb(";
     static constexpr auto rgbaFunction = "rgba(";
+    static constexpr auto trueKeyword = "true";
+    static constexpr auto falseKeyword = "false";
 
     std::string input;
     size_t pos = 0;
@@ -181,8 +205,13 @@ private:
     std::unique_ptr<Expr> parseColor();
     bool peekParameter();
     std::unique_ptr<Expr> parseParameter();
-    bool peekFunction();
-    std::unique_ptr<Expr> parseFunctionCall();
+    bool peekIdentifier();
+    std::unique_ptr<Expr> parseIdentifier();
+    bool peekKeyword(const char* keyword) const;
+    bool peekBoolean();
+    std::unique_ptr<Expr> parseBoolean();
+    bool peekStringLiteral() const;
+    std::unique_ptr<Expr> parseStringLiteral();
     int parseInt();
     std::unique_ptr<Expr> parseNumber();
     std::string parseUnit();

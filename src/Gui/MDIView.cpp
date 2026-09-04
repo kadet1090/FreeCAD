@@ -382,6 +382,13 @@ QSize MDIView::minimumSizeHint() const
     return {400, 300};
 }
 
+QString MDIView::paneBackground() const
+{
+    // What a view with no surface of its own leaves along that edge: the window background the
+    // style puts on QPalette::Window.
+    return QStringLiteral("@BaseWindowBackground");
+}
+
 
 void MDIView::changeEvent(QEvent* e)
 {

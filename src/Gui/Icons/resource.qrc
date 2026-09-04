@@ -11,6 +11,7 @@
         <file>background.png</file>
         <file>bound-expression-unset.svg</file>
         <file>bound-expression.svg</file>
+        <file>bound-expression-symbol.svg</file>
         <file>breakpoint.svg</file>
         <file>bulb.svg</file>
         <file>button_add_all.svg</file>
@@ -282,13 +283,18 @@
         <file>TreeItemVisible.svg</file>
         <file>umf-measurement.svg</file>
         <file>Unlink.svg</file>
+        <file>user-input/mouse-double-left.svg</file>
         <file>user-input/mouse-left.svg</file>
         <file>user-input/mouse-middle.svg</file>
         <file>user-input/mouse-move.svg</file>
+        <file>user-input/mouse-move-left.svg</file>
+        <file>user-input/mouse-move-middle.svg</file>
+        <file>user-input/mouse-move-right.svg</file>
         <file>user-input/mouse-right.svg</file>
         <file>user-input/mouse-scroll-down.svg</file>
         <file>user-input/mouse-scroll-up.svg</file>
         <file>user-input/mouse-scroll.svg</file>
+        <file>user-input/mouse.svg</file>
         <file>user.svg</file>
         <file>utilities-terminal.svg</file>
         <file>VarSet.svg</file>
@@ -320,6 +326,18 @@
         <file>zoom-in.svg</file>
         <file>zoom-out.svg</file>
         <file>zoom-selection.svg</file>
+        <file>tabler/outline/package-import.svg</file>
+        <file>tabler/outline/check.svg</file>
+        <file>tabler/outline/plus.svg</file>
+        <file>tabler/outline/replace.svg</file>
+        <file>tabler/outline/trash.svg</file>
+        <file>tabler/outline/adjustments-check.svg</file>
+        <file>tabler/outline/eye-off.svg</file>
+        <file>tabler/outline/refresh.svg</file>
+        <file>tabler/outline/settings.svg</file>
+        <file>tabler/outline/adjustments.svg</file>
+        <file>tabler/outline/eye.svg</file>
+        <file>tabler/outline/eye-closed.svg</file>
     </qresource>
     <qresource prefix="/icons/FreeCAD-default">
         <file>index.theme</file>
@@ -352,6 +370,7 @@
         <file>preferences-workbenches.svg</file>
         <file>utilities-terminal.svg</file>
         <file>bound-expression.svg</file>
+        <file>bound-expression-symbol.svg</file>
         <file>bound-expression-unset.svg</file>
         <file>breakpoint.svg</file>
         <file>debug-marker.svg</file>

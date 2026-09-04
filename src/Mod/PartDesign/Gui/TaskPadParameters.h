@@ -36,8 +36,9 @@ class Property;
 
 namespace Gui
 {
+class GeometrySelectorWidget;
 class ViewProvider;
-}
+}  // namespace Gui
 
 namespace PartDesignGui
 {
@@ -57,6 +58,14 @@ private:
     void onModeChanged(int index, Side side) override;
     void translateModeList(QComboBox* box, int index) override;
     void updateUI(Side side) override;
+
+    Gui::GeometrySelectorWidget* profileSelector {nullptr};
+
+    /// Transparent-preview and final-feature visibility captured when a profile pick
+    /// begins, restored when it ends, so selection mode can temporarily show only the
+    /// previous feature.
+    bool previewShownBeforeSelecting {false};
+    bool finalShownBeforeSelecting {false};
 };
 
 /// simulation dialog for the TaskView

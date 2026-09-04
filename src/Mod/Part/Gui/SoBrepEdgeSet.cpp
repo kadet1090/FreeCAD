@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
 #include <Inventor/SoPickedPoint.h>
 #include <Inventor/SoPrimitiveVertex.h>
 #include <Inventor/actions/SoGetBoundingBoxAction.h>
@@ -32,6 +33,7 @@
 #include <Inventor/details/SoLineDetail.h>
 #include <Inventor/elements/SoCoordinateElement.h>
 #include <Inventor/elements/SoDepthBufferElement.h>
+#include <Inventor/elements/SoDrawStyleElement.h>
 #include <Inventor/elements/SoLazyElement.h>
 #include <Inventor/elements/SoMaterialBindingElement.h>
 #include <Inventor/elements/SoOverrideElement.h>
@@ -69,10 +71,29 @@ enum class OverlayDepthMode
     DrawOnTop,
 };
 
+/// Picks the depth mode a selection overlay has to use for the pass it is drawn in.
+///
+/// An on-top annotation replays its path with depth testing turned off in GL only,
+/// so a node that re-establishes a depth-respecting state during that replay would
+/// let the scene geometry occlude the overlay again.
+static OverlayDepthMode selectionDepthMode(const SoGLRenderAction* action)
+{
+    return (action && action->isRenderingDelayedPaths()) ? OverlayDepthMode::DrawOnTop
+                                                         : OverlayDepthMode::RespectDepth;
+}
+
 static void applyOverlayPrimitiveState(SoState* state, SoNode* node)
 {
     if (!state || !node) {
         return;
+    }
+
+    // A highlight has to survive geometry that has been suppressed with an
+    // INVISIBLE draw style, because the overlay is the whole reason such a node
+    // is in the graph at all. Any other draw style is left alone, so nothing
+    // that renders its base geometry normally sees a change here.
+    if (SoDrawStyleElement::get(state) == SoDrawStyleElement::INVISIBLE) {
+        SoDrawStyleElement::set(state, node, SoDrawStyleElement::LINES);
     }
 
     SoLazyElement::setLightModel(state, SoLazyElement::BASE_COLOR);
@@ -550,6 +571,8 @@ void SoBrepEdgeSet::renderSelection(SoGLRenderAction* action, SelContextPtr ctx,
 
     int num = (int)ctx->sl.size();
     if (num > 0) {
+        const OverlayDepthMode depthMode = selectionDepthMode(action);
+
         if (ctx->sl[0] < 0) {
             renderOverlayLines(
                 action,
@@ -557,7 +580,7 @@ void SoBrepEdgeSet::renderSelection(SoGLRenderAction* action, SelContextPtr ctx,
                 this->coordIndex.getValues(0),
                 this->coordIndex.getNum(),
                 ctx->selectionColor,
-                OverlayDepthMode::RespectDepth
+                depthMode
             );
         }
         else {
@@ -574,7 +597,7 @@ void SoBrepEdgeSet::renderSelection(SoGLRenderAction* action, SelContextPtr ctx,
                     ctx->sl.data(),
                     num,
                     ctx->selectionColor,
-                    OverlayDepthMode::RespectDepth
+                    depthMode
                 );
             }
         }

@@ -436,14 +436,13 @@ public:
     QVariant value() const;
 
     QLabel* getLabel() const;
-    QPushButton* getButton() const;
+    QToolButton* getButton() const;
 
 public Q_SLOTS:
     void setValue(const QVariant&);
 
 protected:
     virtual void showValue(const QVariant& data);
-    void resizeEvent(QResizeEvent*) override;
 
 protected Q_SLOTS:
     virtual void browse();
@@ -454,7 +453,7 @@ Q_SIGNALS:
 
 private:
     QLabel* label;
-    QPushButton* button;
+    QToolButton* button;
     QVariant _val;
 };
 
@@ -530,6 +529,7 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
+    void changeEvent(QEvent* event) override;
 
 private Q_SLOTS:
     void updateLineNumberAreaWidth(int newBlockCount);
@@ -588,14 +588,11 @@ Q_SIGNALS:
 private Q_SLOTS:
     void changeText();
 
-protected:
-    void resizeEvent(QResizeEvent*) override;
-
 private:
     InputType type;
     QString plainText;
     QLineEdit* lineEdit;
-    QPushButton* button;
+    QToolButton* button;
 };
 
 /**

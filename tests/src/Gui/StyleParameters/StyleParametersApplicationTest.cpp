@@ -40,7 +40,20 @@ protected:
     static void SetUpTestSuite()
     {
         tests::initApplication();
-        app = new Application(true);
+        // GUIenabled=false: this suite only needs the style-parameter manager (created and
+        // initialised regardless of the flag), and the GUI path additionally wires slots to the
+        // persistent App::Application document signals. Those connections outlive this suite and
+        // fire on the freed application when a later headless suite (e.g. GeometrySelectionTest)
+        // creates a document, so keeping them out is what stops the cross-suite crash.
+        app = new Application(false);
+    }
+
+    static void TearDownTestSuite()
+    {
+        // The constructor sets the global Gui::Application::Instance; deleting the app restores it
+        // to nullptr so later headless suites see the no-running-application world they assume.
+        delete app;
+        app = nullptr;
     }
 
     void SetUp() override

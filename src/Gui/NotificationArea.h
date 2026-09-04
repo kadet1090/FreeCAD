@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include <QPushButton>
 #include <QString>
+#include <QToolButton>
 
 #include <map>
 #include <memory>
@@ -41,7 +41,7 @@ namespace Gui
 
 struct NotificationAreaP;
 
-class NotificationArea: public QPushButton
+class NotificationArea: public QToolButton
 {
     enum class TrayIcon
     {

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>247</width>
+    <width>249</width>
     <height>219</height>
    </rect>
   </property>
@@ -25,6 +25,9 @@
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string notr="true">Group box</string>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
@@ -64,7 +67,6 @@
          <widget class="QPushButton" name="buttonCustomAppearance">
           <property name="text">
            <string>Appearance</string>
-
           </property>
          </widget>
         </item>
@@ -120,7 +122,7 @@
      <item row="0" column="2">
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>

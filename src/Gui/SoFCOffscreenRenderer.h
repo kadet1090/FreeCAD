@@ -85,6 +85,14 @@ protected:
 
 public:
     /**
+     * Renders the scene into the internal buffer. Offscreen output is deliberately free
+     * of the 3D annotation overlay, so anything the traversal deferred for it is dropped
+     * rather than carried over to the next render.
+     */
+    SbBool render(SoNode* scene);
+    /// @copydoc render(SoNode*)
+    SbBool render(SoPath* scene);
+    /**
      * Writes the rendered image buffer directly into a QImage object
      * instead of an image file.
      */

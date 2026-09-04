@@ -28,6 +28,8 @@
 #include <QPoint>
 #include <QString>
 
+#include <FCGlobal.h>
+
 namespace Gui
 {
 
@@ -47,7 +49,7 @@ namespace Gui
  * This class interface and its implementation are based on QT's
  * QToolTip.
  */
-class NotificationBox
+class GuiExport NotificationBox
 {
 public:
     NotificationBox() = delete;
@@ -107,8 +109,6 @@ public:
     static void setPalette(const QPalette&);
     /// Returns the font of the notification.
     static QFont font();
-    /// Sets the font to be used in the notification.
-    static void setFont(const QFont&);
 };
 
 inline NotificationBox::Options operator|(NotificationBox::Options lhs, NotificationBox::Options rhs)

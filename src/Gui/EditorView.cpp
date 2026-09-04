@@ -620,6 +620,12 @@ void EditorView::contentsChange(int position, int charsRemoved, int charsAdded)
     d->redos.clear();
 }
 
+QString EditorView::paneBackground() const
+{
+    // The editor fills the view, so its surface is what the edge reads as.
+    return QStringLiteral("@LineEditBackground");
+}
+
 /**
  * Get the undo history.
  */

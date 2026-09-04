@@ -1140,6 +1140,14 @@ QSize ExpressionTextEdit::sizeHint() const
     return QSize(200, 30);
 }
 
+// A scroll area asks its scroll bars how short it may be, and a scroll bar is several times the
+// single line this field is meant to be. Without a minimum of its own the size hint above is
+// unreachable, because a layout takes whichever of the two is larger.
+QSize ExpressionTextEdit::minimumSizeHint() const
+{
+    return sizeHint();
+}
+
 void ExpressionTextEdit::setDocumentObject(const App::DocumentObject* currentDocObj)
 {
     if (completer) {

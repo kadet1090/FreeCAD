@@ -61,6 +61,7 @@
 
 #include "SoFCOffscreenRenderer.h"
 #include "BitmapFactory.h"
+#include "Inventor/So3DAnnotation.h"
 
 
 using namespace Gui;
@@ -91,6 +92,22 @@ SoFCOffscreenRenderer::SoFCOffscreenRenderer(SoGLRenderAction* action)
 {}
 
 SoFCOffscreenRenderer::~SoFCOffscreenRenderer() = default;
+
+SbBool SoFCOffscreenRenderer::render(SoNode* scene)
+{
+    const SbBool result = SoOffscreenRenderer::render(scene);
+    SoDelayedAnnotationsElement::discardDelayedPaths(getGLRenderAction()->getState());
+
+    return result;
+}
+
+SbBool SoFCOffscreenRenderer::render(SoPath* scene)
+{
+    const SbBool result = SoOffscreenRenderer::render(scene);
+    SoDelayedAnnotationsElement::discardDelayedPaths(getGLRenderAction()->getState());
+
+    return result;
+}
 
 void SoFCOffscreenRenderer::writeToImage(QImage& img) const
 {
@@ -694,6 +711,11 @@ SbBool SoQtOffscreenRenderer::renderFromBase(SoBase* base)
     }
 
     this->renderaction->removePreRenderCallback(pre_render_cb, nullptr);
+
+    // No overlay pass runs here, so the annotations the traversal deferred would sit on
+    // the render action untouched until it dies. Let them go instead.
+    SoDelayedAnnotationsElement::discardDelayedPaths(this->renderaction->getState());
+
     framebuffer->release();
 
     this->renderaction->setCacheContext(oldcontext);  // restore old

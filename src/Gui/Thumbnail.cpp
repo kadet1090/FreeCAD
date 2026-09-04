@@ -21,6 +21,10 @@
  ***************************************************************************/
 
 
+#include <algorithm>
+#include <array>
+#include <cmath>
+
 #include <QApplication>
 #include <QBuffer>
 #include <QByteArray>
@@ -37,18 +41,50 @@
 #endif
 #include <zipios++/zipfile.h>
 
+#include <Inventor/SbBox3f.h>
+#include <Inventor/SbMatrix.h>
+#include <Inventor/SbVec3f.h>
+#include <Inventor/nodes/SoOrthographicCamera.h>
+
 #include "Thumbnail.h"
 #include "BitmapFactory.h"
+#include "Camera.h"
 #include "View3DInventorViewer.h"
 
 
 using namespace Gui;
 
+namespace
+{
+std::array<SbVec3f, 8> cornersOf(const SbBox3f& box)
+{
+    const SbVec3f low = box.getMin();
+    const SbVec3f high = box.getMax();
+    return {
+        SbVec3f(low[0], low[1], low[2]),
+        SbVec3f(high[0], low[1], low[2]),
+        SbVec3f(low[0], high[1], low[2]),
+        SbVec3f(high[0], high[1], low[2]),
+        SbVec3f(low[0], low[1], high[2]),
+        SbVec3f(high[0], low[1], high[2]),
+        SbVec3f(low[0], high[1], high[2]),
+        SbVec3f(high[0], high[1], high[2]),
+    };
+}
+}  // namespace
+
 Thumbnail::Thumbnail(int s)
     : size(s)
-{}
+    , camera(new SoOrthographicCamera)
+{
+    camera->ref();
+    camera->orientation.setValue(Camera::rotation(Camera::Isometric));
+}
 
-Thumbnail::~Thumbnail() = default;
+Thumbnail::~Thumbnail()
+{
+    camera->unref();
+}
 
 void Thumbnail::setViewer(View3DInventorViewer* v)
 {
@@ -63,6 +99,45 @@ void Thumbnail::setSize(int s)
 void Thumbnail::setFileName(const char* fn)
 {
     this->uri = QUrl::fromLocalFile(QString::fromUtf8(fn));
+}
+
+void Thumbnail::fitToBox(SoOrthographicCamera& camera, const SbBox3f& box, float aspect)
+{
+    if (box.isEmpty()) {
+        return;
+    }
+
+    SbMatrix intoCameraSpace;
+    intoCameraSpace.setRotate(camera.orientation.getValue().inverse());
+
+    // The eight corners of an axis-aligned box stay symmetric about its center under rotation,
+    // so their projected extents are all the fit needs.
+    const SbVec3f center = box.getCenter();
+    float halfWidth = 0.0F;
+    float halfHeight = 0.0F;
+    for (const SbVec3f& corner : cornersOf(box)) {
+        SbVec3f projected;
+        intoCameraSpace.multVecMatrix(corner - center, projected);
+        halfWidth = std::max(halfWidth, std::abs(projected[0]));
+        halfHeight = std::max(halfHeight, std::abs(projected[1]));
+    }
+
+    const float halfExtent = std::max(halfHeight, halfWidth / aspect);
+    if (halfExtent <= 0.0F) {
+        // A box that projects to a single point offers no frame to fit, and sizing one from it
+        // would leave the view volume degenerate.
+        return;
+    }
+
+    // Coin aims the camera and sets the clipping planes correctly, but sizes the frame from
+    // the circumscribing sphere, which leaves a lot of the image empty.
+    //
+    // Coin puts the clipping planes exactly tangent to the bounding sphere at a slack of 1,
+    // which leaves no room for geometry that is rendered but excluded from the bounding box —
+    // a sketch's edit-mode cross axes, for one. A slack of 2 clears the sphere by its own
+    // radius on both sides. Orthographic projection is happy with a negative near distance.
+    camera.viewBoundingBox(box, aspect, 2.0F);
+    camera.height = 2.0F * halfExtent * fitMargin;
 }
 
 unsigned int Thumbnail::getMemSize() const
@@ -95,11 +170,23 @@ void Thumbnail::SaveDocFile(Base::Writer& writer) const
             qWarning("Cannot create a thumbnail from non-GUI thread");
         }
         else {
-            View3DInventorViewer::RenderImageOptions options;
-            options.width = this->size;
-            options.height = this->size;
-            options.samples = 4;
-            options.intent = View3DInventorViewer::RenderIntent::RasterCapture;
+            // An empty document leaves the box empty and fitToBox no-ops, so it yields a fully
+            // transparent thumbnail rather than falling back to a stale one of geometry that
+            // has since been deleted.
+            SbBox3f box;
+            this->viewer->getSceneBoundBox(box);
+            fitToBox(*this->camera, box, 1.0F);
+
+            const View3DInventorViewer::RenderImageOptions options {
+                .width = this->size,
+                .height = this->size,
+                .samples = 4,
+                .background = QColor(0, 0, 0, 0),
+                .intent = View3DInventorViewer::RenderIntent::RasterCapture,
+                .includeViewerLighting = true,
+                .camera = this->camera,
+                .trueAlpha = true,
+            };
             img = this->viewer->renderToImage(options);
             created = !img.isNull();
         }

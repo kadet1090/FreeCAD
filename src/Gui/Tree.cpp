@@ -33,7 +33,9 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
+#include <QPointer>
 #include <QProcess>
+#include <QStyleOptionFrame>
 #include <QThread>
 #include <QTimer>
 #include <QToolTip>
@@ -56,10 +58,13 @@
 #include <App/SuppressibleExtension.h>
 
 #include "Tree.h"
+#include "Application.h"
 #include "BitmapFactory.h"
 #include "Command.h"
 #include "Document.h"
 #include "ExpressionCompleter.h"
+#include "FreeCADStyle.h"
+#include "IconManager.h"
 #include "Macro.h"
 #include "MainWindow.h"
 #include "MenuManager.h"
@@ -87,7 +92,6 @@ namespace sp = std::placeholders;
 
 std::unique_ptr<QPixmap> TreeWidget::documentPixmap;
 std::unique_ptr<QPixmap> TreeWidget::documentPartialPixmap;
-static QBrush _TreeItemBackground;
 std::set<TreeWidget*> TreeWidget::Instances;
 static TreeWidget* _LastSelectedTreeWidget;
 const int TreeWidget::DocumentType = 1000;
@@ -100,11 +104,6 @@ static bool isVisibilityIconEnabled()
     return TreeParams::getVisibilityIcon();
 }
 
-static bool isOnlyNameColumnDisplayed()
-{
-    return TreeParams::getHideInternalNames() && TreeParams::getHideColumn();
-}
-
 static bool isSelectionCheckBoxesEnabled()
 {
     return TreeParams::getCheckBoxesSelection();
@@ -112,19 +111,6 @@ static bool isSelectionCheckBoxesEnabled()
 
 void TreeParams::onItemBackgroundChanged()
 {
-    if (getItemBackground()) {
-        Base::Color color;
-        color.setPackedValue(getItemBackground());
-        QColor col;
-        col.setRedF(color.r);
-        col.setGreenF(color.g);
-        col.setBlueF(color.b);
-        col.setAlphaF(color.a);
-        _TreeItemBackground = QBrush(col);
-    }
-    else {
-        _TreeItemBackground = QBrush();
-    }
     refreshTreeViews();
 }
 
@@ -352,75 +338,85 @@ class TreeWidgetItemDelegate: public QStyledItemDelegate
 {
     typedef QStyledItemDelegate inherited;
 
-    // Beware, big scary hack incoming!
-    //
-    // This is artificial QTreeWidget that is not rendered and its sole goal is to be the source
-    // of style information that can be manipulated using QSS. From Qt6.5 tree branches also
-    // have rendered background using ::item sub-control. Whole row also gets background from
-    // the same sub-control. Only way to prevent this is to disable background of ::item,
-    // this however limits our ability to style tree items. As solution we create this widget
-    // that will be for painter to read information and draw proper backgrounds only when asked.
-    //
-    // More information: https://github.com/FreeCAD/FreeCAD/pull/13807
-    QTreeView* artificial;
-
     QRect calculateItemRect(const QStyleOptionViewItem& option) const;
+
+    /// Geometry of the editor open on @p index, if it is that index that is being edited.
+    std::optional<QRect> editorRect(const QModelIndex& index) const;
 
 public:
     explicit TreeWidgetItemDelegate(QObject* parent = nullptr);
 
-    virtual QWidget* createEditor(
+    QWidget* createEditor(
         QWidget* parent,
         const QStyleOptionViewItem&,
         const QModelIndex& index
-    ) const;
+    ) const override;
 
-    virtual QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const;
+    void destroyEditor(QWidget* editor, const QModelIndex& index) const override;
 
-    virtual void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const;
+    void updateEditorGeometry(
+        QWidget* editor,
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+    ) const override;
 
-    virtual void paint(
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override;
+
+    void paint(
         QPainter* painter,
         const QStyleOptionViewItem& option,
         const QModelIndex& index
-    ) const;
+    ) const override;
+
+private:
+    mutable QPointer<QWidget> activeEditor;
+    mutable QPersistentModelIndex activeEditorIndex;
 };
 
 }  // namespace Gui
 
+namespace
+{
+
+/// Whether @p option's row shows a single column, and so is one cell wide.
+bool isSingleColumnRow(const QStyleOptionViewItem& option)
+{
+    return option.viewItemPosition == QStyleOptionViewItem::OnlyOne
+        || option.viewItemPosition == QStyleOptionViewItem::Invalid;
+}
+
+}  // namespace
+
 TreeWidgetItemDelegate::TreeWidgetItemDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
-{
-    artificial = new QTreeView(qobject_cast<QWidget*>(parent));
-    artificial->setObjectName(QStringLiteral("DocumentTreeItems"));
-    artificial->setFixedSize(0, 0);  // ensure that it does not render
-}
+{}
 
 
 QRect TreeWidgetItemDelegate::calculateItemRect(const QStyleOptionViewItem& option) const
 {
-    auto tree = static_cast<TreeWidget*>(parent());
-    auto style = tree->style();
+    auto* tree = static_cast<TreeWidget*>(parent());
+    auto* fcStyle = static_cast<QStyle*>(Application::Instance->freeCADStyle());
+
+    // The style lays the cell out from the Item tokens, so ask it for the width that layout
+    // needs rather than re-deriving it here — the background box then hugs the content exactly.
+    const int tightWidth
+        = fcStyle->sizeFromContents(QStyle::CT_ItemViewItem, &option, QSize(), tree).width();
 
     QRect rect = option.rect;
-
-    const int margin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, &option, artificial) + 1;
-
-    // 2 margin for text, 2 margin for decoration (icon) = 4 times margin
-    int width = 4 * margin + option.fontMetrics.boundingRect(option.text).width()
-        + option.decorationSize.width() + TreeParams::getItemBackgroundPadding();
-
-    if (TreeParams::getCheckBoxesSelection()) {
-        // another 2 margin for checkbox
-        width += 2 * margin + style->pixelMetric(QStyle::PM_IndicatorWidth)
-            + style->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
+    if (tightWidth < rect.width()) {
+        rect.setWidth(tightWidth);
     }
-
-    if (width < rect.width()) {
-        rect.setWidth(width);
-    }
-
     return rect;
+}
+
+std::optional<QRect> TreeWidgetItemDelegate::editorRect(const QModelIndex& index) const
+{
+    if (activeEditor.isNull() || activeEditorIndex != index) {
+        return {};
+    }
+    return activeEditor->geometry();
 }
 
 void TreeWidgetItemDelegate::paint(
@@ -432,44 +428,51 @@ void TreeWidgetItemDelegate::paint(
     QStyleOptionViewItem opt = option;
     initStyleOption(&opt, index);
 
-    auto tree = static_cast<TreeWidget*>(parent());
-    auto style = tree->style();
+    auto* tree = static_cast<TreeWidget*>(parent());
+    auto* fcStyle = Application::Instance->freeCADStyle();
 
-    // If only the first column is shown, we'll trim the color background when
-    // rendering as transparent overlay.
-    bool trimColumnSize = isOnlyNameColumnDisplayed();
+    // Only over a transparent surface does an item become a free-standing box hugging its own
+    // content; docked, the tree keeps the full-width row every other item view draws.
+    //
+    // And only while the row is one cell wide. Hugging each cell of a multi-column row leaves a
+    // string of disconnected islands with no reading order, so those cells keep their columns
+    // instead and the style joins them into one band.
+    if (FreeCADStyle::isTransparent(tree) && isSingleColumnRow(opt)) {
+        using namespace StyleParameters;
+        const StyleContext context = FreeCADStyle::contextOf(tree, &opt, StyleComponentElement::Item);
+        const FreeCADStyle::BoxGeometryDefinition geometry = fcStyle->resolveBoxGeometry(context);
 
-    if (index.column() == 0) {
-        if (tree->testAttribute(Qt::WA_NoSystemBackground)
-            && (trimColumnSize
-                || (opt.backgroundBrush.style() == Qt::NoBrush
-                    && _TreeItemBackground.style() != Qt::NoBrush))) {
-            QRect rect = calculateItemRect(option);
+        // borderRect removes margin from the tight rect, creating visual breathing room
+        // outside the painted background box without clipping content.
+        opt.rect = geometry.borderRect(calculateItemRect(opt));
 
-            if (trimColumnSize && opt.backgroundBrush.style() == Qt::NoBrush) {
-                painter->fillRect(rect, _TreeItemBackground);
-            }
-            else if (!opt.state.testFlag(QStyle::State_Selected)) {
-                painter->fillRect(rect, _TreeItemBackground);
-            }
+        // While a name is being edited the label the box was sized to hug is covered by the
+        // editor, so the box has to close around the editor instead — otherwise the field
+        // hangs out of the item it belongs to.
+        if (const auto editorGeometry = editorRect(index)) {
+            const int right = editorGeometry->right() + static_cast<int>(geometry.padding.right());
+            opt.rect.setRight(std::min(right, geometry.borderRect(option.rect).right()));
         }
+
+        opt.viewItemPosition = QStyleOptionViewItem::OnlyOne;
     }
-    style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, artificial);
+
+    static_cast<QStyle*>(fcStyle)->drawControl(QStyle::CE_ItemViewItem, &opt, painter, tree);
 }
 
 void TreeWidgetItemDelegate::initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const
 {
     inherited::initStyleOption(option, index);
 
-    auto tree = static_cast<TreeWidget*>(parent());
-    auto item = tree->itemFromIndex(index);
+    auto* tree = static_cast<TreeWidget*>(parent());
+    auto* item = tree->itemFromIndex(index);
 
     if (!item) {
         return;
     }
 
-    // Clear State_Enabled for invisible objects so QSS ::item:disabled rules can
-    // override the overlay stylesheet's blanket ::item { color } for text fading.
+    // Clear State_Enabled for invisible objects so FreeCADStyle can apply the
+    // disabled token (faded text) to items whose visibility is turned off.
     if (item->type() == TreeWidget::ObjectType) {
         if (auto* docItem = static_cast<DocumentObjectItem*>(item);
             docItem->object() && !docItem->isVisibleInTree()) {
@@ -478,27 +481,17 @@ void TreeWidgetItemDelegate::initStyleOption(QStyleOptionViewItem* option, const
     }
 
     option->textElideMode = Qt::ElideMiddle;
-    auto mousePos = option->widget->mapFromGlobal(QCursor::pos());
-    auto isHovered = option->rect.contains(mousePos);
-    if (!isHovered) {
-        option->state &= ~QStyle::State_MouseOver;
-    }
 
-    QSize size = option->icon.actualSize(QSize(0xffff, 0xffff));
-
-    if (size.height() > 0) {
-        option->decorationSize = QSize(
-            size.width() * TreeWidget::getIconSize() / size.height(),
-            TreeWidget::getIconSize()
-        );
-    }
-
-    if (isOnlyNameColumnDisplayed()) {
-        option->rect = calculateItemRect(*option);
-
-        // we need to extend this shape a bit, 3px on each side
-        // this value was obtained experimentally
-        option->rect.setWidth(option->rect.width() + 3 * 2);
+    // Reserve exactly what the icon will paint, and no more: QIcon never upscales a pixmap icon,
+    // so a row told to hold the tree's full icon height would leave dead space around a smaller
+    // one. Only an icon taller than the row is scaled down to fit it.
+    QSize iconSize = logicalIconSize(option->icon, tree->devicePixelRatioF(), QIcon::Off);
+    if (!iconSize.isEmpty()) {
+        const int rowIconHeight = TreeWidget::getIconSize();
+        if (iconSize.height() > rowIconHeight) {
+            iconSize.scale(QSize(0xffff, rowIconHeight), Qt::KeepAspectRatio);
+        }
+        option->decorationSize = iconSize;
     }
 }
 
@@ -507,26 +500,69 @@ class DynamicQLineEdit: public ExpLineEdit
 public:
     DynamicQLineEdit(QWidget* parent = nullptr)
         : ExpLineEdit(parent)
-    {}
+    {
+        // The view fills the field in only after it has laid it out, and the user keeps typing
+        // after that; both change how much room the name needs.
+        connect(this, &QLineEdit::textChanged, this, &DynamicQLineEdit::resizeToContents);
+    }
 
     QSize sizeHint() const override
     {
         QSize size = QLineEdit::sizeHint();
-        QFontMetrics fm(font());
-        int availableWidth = parentWidget()->width() - geometry().x();  // Calculate available width
-        int margin = 2 * (style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1)
-            + 2 * style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing)
-            + TreeParams::getItemBackgroundPadding();
-        size.setWidth(std::min(fm.horizontalAdvance(text()) + margin, availableWidth));
+
+        const int availableWidth = parentWidget()->width() - geometry().x();
+        size.setWidth(
+            std::min(chromeWidth() + fontMetrics().horizontalAdvance(text()), availableWidth)
+        );
+
         return size;
     }
 
-    // resize on key presses
-    void keyPressEvent(QKeyEvent* event) override
+protected:
+    void resizeEvent(QResizeEvent* event) override
     {
-        ExpLineEdit::keyPressEvent(event);
-        setMinimumWidth(sizeHint().width());
+        ExpLineEdit::resizeEvent(event);
+
+        // The item behind draws its background box around this field, so its border moves
+        // with every character typed into it.
+        if (QWidget* viewport = parentWidget()) {
+            viewport->update();
+        }
     }
+
+private:
+    void resizeToContents()
+    {
+        if (initialWidth < 0) {
+            initialWidth = width();
+        }
+
+        // Never narrower than the view laid it out: over an opaque surface that width is the
+        // whole row, and a field pulling away from it would look like it lost its cell.
+        resize(std::max(initialWidth, sizeHint().width()), height());
+    }
+
+    /// Width the style spends on everything that is not the text: border, padding and the two
+    /// pixels QLineEdit insets its text by on each side.
+    int chromeWidth() const
+    {
+        static constexpr int lineEditTextInset = 4;
+
+        QStyleOptionFrame option;
+        initStyleOption(&option);
+
+        const QMargins textMargin = textMargins();
+        const QMargins contents = contentsMargins();
+        const QSize empty(
+            textMargin.left() + textMargin.right() + contents.left() + contents.right()
+                + lineEditTextInset,
+            0
+        );
+
+        return style()->sizeFromContents(QStyle::CT_LineEdit, &option, empty, this).width();
+    }
+
+    int initialWidth = -1;
 };
 
 QWidget* TreeWidgetItemDelegate::createEditor(
@@ -555,14 +591,77 @@ QWidget* TreeWidgetItemDelegate::createEditor(
         editor = new DynamicQLineEdit(parent);
     }
     editor->setReadOnly(prop.isReadOnly());
+
+    // The field stands in for the item's label rather than sitting next to one, so it spends
+    // nothing on padding of its own: the name keeps the room the label had, and a long one is
+    // no more cut off for being edited.
+    FreeCADStyle::setStyleOverride(
+        editor,
+        QStringLiteral("LineEditPadding"),
+        QStringLiteral("padding(0px)")
+    );
+
+    activeEditor = editor;
+    activeEditorIndex = index;
+
     return editor;
+}
+
+void TreeWidgetItemDelegate::destroyEditor(QWidget* editor, const QModelIndex& index) const
+{
+    activeEditor.clear();
+    activeEditorIndex = QPersistentModelIndex();
+
+    inherited::destroyEditor(editor, index);
+}
+
+void TreeWidgetItemDelegate::updateEditorGeometry(
+    QWidget* editor,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& index
+) const
+{
+    // Place the field over the label first: how wide it may grow depends on where it lands.
+    inherited::updateEditorGeometry(editor, option, index);
+
+    auto* tree = static_cast<TreeWidget*>(parent());
+    if (index.column() != 0 || !FreeCADStyle::isTransparent(tree)) {
+        return;
+    }
+
+    // The same option the box is painted from, so the field is measured against the geometry
+    // that box will actually have.
+    QStyleOptionViewItem opt = option;
+    initStyleOption(&opt, index);
+
+    using namespace StyleParameters;
+    auto* fcStyle = Application::Instance->freeCADStyle();
+    const StyleContext context = FreeCADStyle::contextOf(tree, &opt, StyleComponentElement::Item);
+    const FreeCADStyle::BoxGeometryDefinition geometry = fcStyle->resolveBoxGeometry(context);
+
+    // Over a transparent surface the item is a free-standing box hugging its content, so the
+    // field hugs the name rather than filling the row. It may run to the box's outer edge
+    // though: padding is worth less than a character of the name it would cut off, and the box
+    // closes on the field wherever it ends.
+    const int available = geometry.borderRect(opt.rect).right() + 1 - editor->x();
+    editor->setMaximumWidth(available);
+    editor->resize(std::min(editor->sizeHint().width(), available), editor->height());
 }
 
 QSize TreeWidgetItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     QSize size = QStyledItemDelegate::sizeHint(option, index);
-    int spacing = std::max(0, static_cast<int>(TreeParams::getItemSpacing()));
-    size.setHeight(size.height() + spacing);
+
+    auto* tree = static_cast<TreeWidget*>(parent());
+    auto* fcStyle = Application::Instance->freeCADStyle();
+
+    using namespace StyleParameters;
+    const StyleContext context = FreeCADStyle::contextOf(tree, &option, StyleComponentElement::Item);
+    const FreeCADStyle::BoxGeometryDefinition geometry = fcStyle->resolveBoxGeometry(context);
+
+    // margin is the visual gap outside the painted background box — contributes to row height
+    size.setHeight(size.height() + static_cast<int>(geometry.margin.top() + geometry.margin.bottom()));
+
     return size;
 }
 // ---------------------------------------------------------------------------
@@ -582,6 +681,8 @@ TreeWidget::TreeWidget(const char* name, QWidget* parent)
     if (!_LastSelectedTreeWidget) {
         _LastSelectedTreeWidget = this;
     }
+
+    setProperty("component", "DocumentTree");
 
     this->setDragEnabled(true);
     this->setAcceptDrops(true);
@@ -6398,16 +6499,27 @@ void DocumentObjectItem::generateIcon(int currentStatus, QIcon::Mode mode, QIcon
 
     QPixmap pxOn, pxOff;
 
+    // Rasterise at the screen's pixel ratio: the plain QIcon::pixmap(int, int) overload renders
+    // at ratio 1 whatever the display is, and the tree then hands Qt a pixmap it can only stretch.
+    const qreal pixelRatio = getTree()->devicePixelRatioF();
+    const QSize iconSize(w, w);
+
     // if needed show small pixmap inside
     if (!px.isNull()) {
-        pxOff = BitmapFactory()
-                    .merge(icon_org.pixmap(w, w, mode, QIcon::Off), px, BitmapFactoryInst::TopRight);
-        pxOn = BitmapFactory()
-                   .merge(icon_org.pixmap(w, w, mode, QIcon::On), px, BitmapFactoryInst::TopRight);
+        pxOff = BitmapFactory().merge(
+            icon_org.pixmap(iconSize, pixelRatio, mode, QIcon::Off),
+            px,
+            BitmapFactoryInst::TopRight
+        );
+        pxOn = BitmapFactory().merge(
+            icon_org.pixmap(iconSize, pixelRatio, mode, QIcon::On),
+            px,
+            BitmapFactoryInst::TopRight
+        );
     }
     else {
-        pxOff = icon_org.pixmap(w, w, mode, QIcon::Off);
-        pxOn = icon_org.pixmap(w, w, mode, QIcon::On);
+        pxOff = icon_org.pixmap(iconSize, pixelRatio, mode, QIcon::Off);
+        pxOn = icon_org.pixmap(iconSize, pixelRatio, mode, QIcon::On);
     }
 
     setIconOverlays(currentStatus, pxOff);
@@ -6417,42 +6529,71 @@ void DocumentObjectItem::generateIcon(int currentStatus, QIcon::Mode mode, QIcon
     icon.addPixmap(pxOff, QIcon::Normal, QIcon::Off);
 }
 
+QSize Gui::logicalIconSize(const QIcon& icon, qreal pixelRatio, QIcon::State state)
+{
+    return (QSizeF(icon.actualSize(QSize(0xFFFF, 0xFFFF), QIcon::Normal, state)) / pixelRatio).toSize();
+}
+
+QPixmap Gui::composeVisibilityIcon(
+    const QIcon& marker,
+    const QIcon& icon,
+    QIcon::State state,
+    const VisibilityIconLayout& layout
+)
+{
+    // The cell is the icon's own size, never a size the caller nominates: asked for more than it
+    // holds, QIcon answers with a ratio-1 pixmap, and the composite would then stretch a raster
+    // already at its final resolution — visibly so at a fractional display ratio, where the
+    // stretch is neither an integer nor undone by the tree scaling the composite back down.
+    const QSize cell = logicalIconSize(icon, layout.pixelRatio, state);
+    const QPixmap object = icon.pixmap(cell, layout.pixelRatio, QIcon::Normal, state);
+
+    const QSize compositeSize(2 * cell.width() + layout.spacing, cell.height());
+
+    QPixmap composite(compositeSize * layout.pixelRatio);
+    composite.setDevicePixelRatio(layout.pixelRatio);
+    composite.fill(Qt::transparent);
+
+    QPainter painter;
+    painter.begin(&composite);
+    painter.setPen(Qt::NoPen);
+    if (!marker.isNull()) {
+        painter.drawPixmap(QRect(QPoint(), cell), marker.pixmap(cell, layout.pixelRatio));
+    }
+    painter.drawPixmap(QRect(QPoint(cell.width() + layout.spacing, 0), cell), object);
+    painter.end();
+
+    return composite;
+}
+
 QIcon DocumentObjectItem::getVisibilityIcon(int currentStatus, QIcon& original_icon)
 {
-    static QPixmap pxVisible, pxInvisible;
-    if (pxVisible.isNull()) {
-        pxVisible = BitmapFactory().pixmap("TreeItemVisible");
-    }
-    if (pxInvisible.isNull()) {
-        pxInvisible = BitmapFactory().pixmap("TreeItemInvisible");
-    }
+    // Themed icons: IconManager recolours them from the current theme on every render, so they
+    // must not be cached as pixmaps here or they would survive a theme change unchanged.
+    static const QIcon visible = IconManager::instance().icon(
+        QStringLiteral(":/icons/tabler/outline/eye.svg")
+    );
+    static const QIcon invisible = IconManager::instance().icon(
+        QStringLiteral(":/icons/tabler/outline/eye-closed.svg")
+    );
 
-    // Prepend the visibility pixmap to the final icon pixmaps and use these as the icon.
+    const TreeWidget* tree = this->getTree();
+    const VisibilityIconLayout layout {
+        .spacing = tree->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing),
+        .pixelRatio = tree->devicePixelRatioF(),
+    };
+
+    const QIcon marker = object()->canToggleVisibility()
+        ? ((currentStatus & Status::Visible) ? visible : invisible)
+        : QIcon();
+
     QIcon new_icon;
-    auto style = this->getTree()->style();
-    int const spacing = style->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
     for (auto state : {QIcon::On, QIcon::Off}) {
-        QPixmap px_org = original_icon.pixmap(0xFFFF, 0xFFFF, QIcon::Normal, state);
-
-        QPixmap px(2 * px_org.width() + spacing, px_org.height());
-        px.fill(Qt::transparent);
-
-        QPainter pt;
-        pt.begin(&px);
-        pt.setPen(Qt::NoPen);
-        if (object()->canToggleVisibility()) {
-            pt.drawPixmap(
-                0,
-                0,
-                px_org.width(),
-                px_org.height(),
-                (currentStatus & Status::Visible) ? pxVisible : pxInvisible
-            );
-        }
-        pt.drawPixmap(px_org.width() + spacing, 0, px_org.width(), px_org.height(), px_org);
-        pt.end();
-
-        new_icon.addPixmap(px, QIcon::Normal, state);
+        new_icon.addPixmap(
+            composeVisibilityIcon(marker, original_icon, state, layout),
+            QIcon::Normal,
+            state
+        );
     }
     return new_icon;
 }

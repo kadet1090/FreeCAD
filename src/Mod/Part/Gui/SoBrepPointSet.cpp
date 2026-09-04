@@ -25,15 +25,19 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
+#include <boost/algorithm/string/predicate.hpp>
 #include <Inventor/actions/SoGetBoundingBoxAction.h>
 #include <Inventor/actions/SoGLRenderAction.h>
 #include <Inventor/details/SoPointDetail.h>
 #include <Inventor/elements/SoCoordinateElement.h>
 #include <Inventor/elements/SoDepthBufferElement.h>
+#include <Inventor/elements/SoDrawStyleElement.h>
 #include <Inventor/elements/SoLazyElement.h>
 #include <Inventor/elements/SoMaterialBindingElement.h>
 #include <Inventor/elements/SoOverrideElement.h>
 #include <Inventor/elements/SoPointSizeElement.h>
+#include <Inventor/elements/SoShapeStyleElement.h>
 #include <Inventor/elements/SoTextureEnabledElement.h>
 #include <Inventor/errors/SoDebugError.h>
 #include <Inventor/misc/SoState.h>
@@ -41,6 +45,7 @@
 
 #include <Gui/Selection/SoFCUnifiedSelection.h>
 #include <Gui/Inventor/So3DAnnotation.h>
+#include <Base/Color.h>
 
 #include "ViewProviderExt.h"
 #include "SoBrepPointSet.h"
@@ -59,10 +64,29 @@ enum class OverlayDepthMode
     DrawOnTop,
 };
 
+/// Picks the depth mode a selection overlay has to use for the pass it is drawn in.
+///
+/// An on-top annotation replays its path with depth testing turned off in GL only,
+/// so a node that re-establishes a depth-respecting state during that replay would
+/// let the scene geometry occlude the overlay again.
+static OverlayDepthMode selectionDepthMode(const SoGLRenderAction* action)
+{
+    return (action && action->isRenderingDelayedPaths()) ? OverlayDepthMode::DrawOnTop
+                                                         : OverlayDepthMode::RespectDepth;
+}
+
 static void applyOverlayPrimitiveState(SoState* state, SoNode* node)
 {
     if (!state || !node) {
         return;
+    }
+
+    // A highlight has to survive geometry that has been suppressed with an
+    // INVISIBLE draw style, because the overlay is the whole reason such a node
+    // is in the graph at all. Any other draw style is left alone, so nothing
+    // that renders its base geometry normally sees a change here.
+    if (SoDrawStyleElement::get(state) == SoDrawStyleElement::INVISIBLE) {
+        SoDrawStyleElement::set(state, node, SoDrawStyleElement::POINTS);
     }
 
     SoLazyElement::setLightModel(state, SoLazyElement::BASE_COLOR);
@@ -100,7 +124,7 @@ static void renderOverlayPoints(
     SoIndexedPointSet* pointSet,
     const int32_t* indices,
     int numIndices,
-    const SbColor& color,
+    const Base::Color& color,
     OverlayDepthMode depthMode
 )
 {
@@ -129,9 +153,17 @@ static void renderOverlayPoints(
     applyOverlayPrimitiveState(state, pointSet);
     applyOverlayDepthState(state, depthMode);
 
-    SoLazyElement::setEmissive(state, &color);
-    uint32_t packedColor = color.getPackedValue(0.0);
-    SoLazyElement::setPacked(state, pointSet, 1, &packedColor, false);
+    const SbColor sbColor(color.r, color.g, color.b);
+    const float transparency = std::max(0.0f, 1.0f - color.a);
+    const bool hasTransparency = transparency > 0.0f;
+    if (hasTransparency) {
+        SoShapeStyleElement::setTransparencyType(state, SoGLRenderAction::BLEND);
+        SoLazyElement::setTransparencyType(state, SoGLRenderAction::BLEND);
+    }
+
+    SoLazyElement::setEmissive(state, &sbColor);
+    uint32_t packedColor = sbColor.getPackedValue(transparency);
+    SoLazyElement::setPacked(state, pointSet, 1, &packedColor, hasTransparency);
 
     float ps = SoPointSizeElement::get(state);
     if (ps < 4.0f) {
@@ -147,6 +179,87 @@ static void renderOverlayPoints(
     pointSet->GLRender(action);
 
     state->pop();
+}
+
+static void renderOverlayPoints(
+    SoGLRenderAction* action,
+    SoIndexedPointSet* pointSet,
+    const int32_t* indices,
+    int numIndices,
+    const SbColor& color,
+    OverlayDepthMode depthMode
+)
+{
+    renderOverlayPoints(
+        action,
+        pointSet,
+        indices,
+        numIndices,
+        Base::Color(color[0], color[1], color[2], 1.0f),
+        depthMode
+    );
+}
+
+/// Groups a point set's coordinate range by per-element colour override and draws
+/// each group as an overlay, mirroring SoBrepEdgeSet::renderColorOverrides.
+///
+/// Unlike edges and faces, SoBrepPointSet has no coordIndex sections to split: a
+/// point's colour-map key is simply its coordinate index offset from startIndex
+/// (see ViewProviderPartExt::getElement, which numbers "VertexN" the same way).
+static void renderColorOverrides(
+    SoGLRenderAction* action,
+    SoIndexedPointSet* pointSet,
+    int startIndex,
+    int count,
+    const std::map<int, Base::Color>& colors
+)
+{
+    if (!action || !pointSet || count <= 0 || colors.empty()) {
+        return;
+    }
+
+    struct ColorGroup
+    {
+        Base::Color color;
+        std::vector<int32_t> indices;
+    };
+
+    std::map<uint32_t, ColorGroup> colorGroups;
+    const auto wildcard = colors.find(-1);
+
+    for (int i = 0; i < count; ++i) {
+        const Base::Color* color = nullptr;
+        auto it = colors.find(i);
+        if (it != colors.end()) {
+            color = &it->second;
+        }
+        else if (wildcard != colors.end()) {
+            color = &wildcard->second;
+        }
+
+        if (!color) {
+            continue;
+        }
+
+        const SbColor sbColor(color->r, color->g, color->b);
+        const uint32_t key = sbColor.getPackedValue(std::max(0.0f, 1.0f - color->a));
+        auto& group = colorGroups[key];
+        if (group.indices.empty()) {
+            group.color = *color;
+        }
+        group.indices.push_back(startIndex + i);
+    }
+
+    for (const auto& [_, group] : colorGroups) {
+        renderOverlayPoints(
+            action,
+            pointSet,
+            group.indices.data(),
+            static_cast<int>(group.indices.size()),
+            group.color,
+            OverlayDepthMode::DrawOnTop
+        );
+    }
 }
 
 void SoBrepPointSet::initClass()
@@ -191,13 +304,14 @@ void SoBrepPointSet::GLRender(SoGLRenderAction* action)
     }
     SelContextPtr ctx2;
     SelContextPtr ctx = Gui::SoFCSelectionRoot::getRenderContext<SelContext>(this, selContext, ctx2);
-    if (ctx2 && ctx2->selectionIndex.empty()) {
+    if (ctx2 && ctx2->selectionIndex.empty() && ctx2->colors.empty()) {
         return;
     }
     if (selContext2->checkGlobal(ctx)) {
         ctx = selContext2;
     }
 
+    bool hasColorOverride = (ctx2 && !ctx2->colors.empty());
 
     bool hasContextHighlight = ctx && ctx->isHighlighted() && !ctx->isHighlightAll()
         && ctx->highlightIndex >= 0;
@@ -265,10 +379,16 @@ void SoBrepPointSet::GLRender(SoGLRenderAction* action)
             renderSelection(action, ctx);
         }
     }
-    if (ctx2 && !ctx2->selectionIndex.empty()) {
+    if (hasColorOverride) {
+        renderColorOverrides(action, overlayPointSet, this->startIndex.getValue(), num, ctx2->colors);
+    }
+    else if (ctx2 && !ctx2->selectionIndex.empty()) {
         renderSelection(action, ctx2, false);
     }
-    else if (Gui::SoDelayedAnnotationsElement::isProcessingDelayedPaths) {
+    else if (
+        Gui::Selection().isClarifySelectionActive()
+        && Gui::SoDelayedAnnotationsElement::isProcessingDelayedPaths
+    ) {
         state->push();
         SoDepthBufferElement::set(state, FALSE, FALSE, SoDepthBufferElement::ALWAYS, SbVec2f(0.0f, 1.0f));
         inherited::GLRender(action);
@@ -407,6 +527,8 @@ void SoBrepPointSet::renderSelection(SoGLRenderAction* action, SelContextPtr ctx
         return;
     }
 
+    const OverlayDepthMode depthMode = selectionDepthMode(action);
+
     int startIndex = this->startIndex.getValue();
     if (ctx->isSelectAll()) {
         std::vector<int32_t> pointIndices;
@@ -420,7 +542,7 @@ void SoBrepPointSet::renderSelection(SoGLRenderAction* action, SelContextPtr ctx
             pointIndices.data(),
             static_cast<int>(pointIndices.size()),
             ctx->selectionColor,
-            OverlayDepthMode::RespectDepth
+            depthMode
         );
     }
     else {
@@ -443,7 +565,7 @@ void SoBrepPointSet::renderSelection(SoGLRenderAction* action, SelContextPtr ctx
             pointIndices.data(),
             static_cast<int>(pointIndices.size()),
             ctx->selectionColor,
-            OverlayDepthMode::RespectDepth
+            depthMode
         );
 
         if (warn) {
@@ -491,6 +613,47 @@ void SoBrepPointSet::doAction(SoAction* action)
     else if (action->getTypeId() == Gui::SoSelectionElementAction::getClassTypeId()) {
         Gui::SoSelectionElementAction* selaction = static_cast<Gui::SoSelectionElementAction*>(action);
         switch (selaction->getType()) {
+            case Gui::SoSelectionElementAction::Color:
+                if (selaction->isSecondary()) {
+                    const auto& colors = selaction->getColors();
+
+                    // Case 1: The color map is empty. This is a "clear" command.
+                    if (colors.empty()) {
+                        // We must find and remove any existing secondary context for this node.
+                        if (Gui::SoFCSelectionRoot::removeActionContext(action, this)) {
+                            touch();
+                        }
+                        return;
+                    }
+
+                    // Case 2: The color map is NOT empty. This is a "set color" command.
+                    static std::string element("Vertex");
+                    bool hasVertexColors = false;
+                    for (const auto& [name, color] : colors) {
+                        if (name.empty() || boost::starts_with(name, element)) {
+                            hasVertexColors = true;
+                            break;
+                        }
+                    }
+
+                    if (hasVertexColors) {
+                        auto ctx = Gui::SoFCSelectionRoot::getActionContext<SelContext>(action, this);
+                        selCounter.checkAction(selaction, ctx);
+                        // Unlike SoBrepFaceSet's partial-render path, renderColorOverrides()
+                        // never consults ctx->selectionIndex/isSelectAll(), so a select-all
+                        // here cannot make this node draw more than the coloured points.
+                        // It is still needed: SoBrepPointSet::getBoundingBox() early-returns
+                        // an empty box when selectionIndex is empty, so without selectAll()
+                        // a colour-only highlight would silently drop out of the object's
+                        // bounding box.
+                        ctx->selectAll();
+
+                        if (ctx->setColors(colors, element)) {
+                            touch();
+                        }
+                    }
+                }
+                return;
             case Gui::SoSelectionElementAction::All: {
                 SelContextPtr ctx = Gui::SoFCSelectionRoot::getActionContext(action, this, selContext);
                 selCounter.checkAction(selaction, ctx);
@@ -511,6 +674,7 @@ void SoBrepPointSet::doAction(SoAction* action)
                         = Gui::SoFCSelectionRoot::getActionContext(action, this, selContext, false);
                     if (ctx) {
                         ctx->selectionIndex.clear();
+                        ctx->colors.clear();
                         touch();
                     }
                 }

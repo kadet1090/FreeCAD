@@ -24,9 +24,16 @@
 
 #include <Precision.hxx>
 
+#include <QLabel>
+#include <QVBoxLayout>
 
+#include <Gui/GeometrySelection.h>
+#include <Gui/GeometrySelectorWidget.h>
 #include <Mod/PartDesign/App/FeaturePad.h>
+#include <Mod/PartDesign/App/FeatureSketchBased.h>
 
+#include "EnumFlags.h"
+#include "ReferenceSelection.h"
 #include "ui_TaskPadPocketParameters.h"
 #include "TaskPadParameters.h"
 
@@ -58,6 +65,41 @@ TaskPadParameters::TaskPadParameters(ViewProviderPad* PadView, QWidget* parent, 
     ui->taperEdit2->setParamGrpPath(QByteArray("User parameter:BaseApp/History/PadTaperAngle2"));
 
     setupDialog();
+
+    // Profile selector — inserted above the shared extrude parameters proxy
+    profileSelector = ui->profileGeometrySelector;
+    profileSelector->setQuantity(GeometryQuantity::AllowMultiple);
+
+    auto* core = profileSelector->selection();
+
+    core->bind(getObject<PartDesign::ProfileBased>()->Profile);
+
+    // While picking a profile, hide this Pad's transparent result preview and its
+    // final solid so the profile is selected against the geometry that precedes it
+    // (the visibility swap DressUp/Fillet use). The profile preview is left off too:
+    // during a pick session the geometry highlighter's overlay is what tells the user
+    // which reference is selected, so nothing else needs to draw the profile. The prior
+    // visibility is snapshotted and restored on exit so the Preview box's own
+    // checkboxes are respected.
+    connect(core, &Gui::GeometrySelection::selectionModeEntered, this, [this] {
+        auto* viewObject = getViewObject<PartDesignGui::ViewProviderSketchBased>();
+        if (!viewObject) {
+            return;
+        }
+        previewShownBeforeSelecting = viewObject->isPreviewEnabled();
+        finalShownBeforeSelecting = viewObject->isVisible();
+        viewObject->showPreview(false);
+        viewObject->showPreviousFeature(true);
+    });
+    connect(core, &Gui::GeometrySelection::selectionModeExited, this, [this] {
+        auto* viewObject = getViewObject<PartDesignGui::ViewProviderSketchBased>();
+        if (!viewObject) {
+            return;
+        }
+        viewObject->showPreview(previewShownBeforeSelecting);
+        viewObject->showPreviousFeature(!finalShownBeforeSelecting);
+    });
+    connect(core, &Gui::GeometrySelection::referencesChanged, this, [this] { onProfileChanged(); });
 
     // if it is a newly created object use the last value of the history
     if (newObj) {
@@ -114,9 +156,8 @@ void TaskPadParameters::onModeChanged(int index, Side side)
             break;
         case Mode::ToFace:
             sideCtrl.Type->setValue("UpToFace");
-            if (sideCtrl.lineFaceName->text().isEmpty()) {
-                sideCtrl.buttonFace->setChecked(true);
-                handleLineFaceNameClick(sideCtrl.lineFaceName);  // sets placeholder text
+            if (sideCtrl.faceSelector->selection()->references().empty()) {
+                sideCtrl.faceSelector->selection()->startSelecting();
             }
             break;
         case Mode::ToShape:

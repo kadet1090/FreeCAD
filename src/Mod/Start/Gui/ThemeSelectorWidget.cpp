@@ -21,11 +21,9 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QString>
-#include <QStyleHints>
 #include <QToolButton>
 
 
@@ -36,46 +34,11 @@
 #include <Gui/PreferencePackManager.h>
 #include <Gui/Utilities.h>
 
+#include <QGuiApplication>
+
 #include <FCConfig.h>
 
-#ifdef FC_OS_MACOSX
-# include <CoreFoundation/CoreFoundation.h>
-#endif
-
 using namespace StartGui;
-
-
-static bool isSystemInDarkMode()
-{
-    // Auto-detect system setting and default to light mode
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-    // https://www.qt.io/blog/dark-mode-on-windows-11-with-qt-6.5
-    const auto scheme = QGuiApplication::styleHints()->colorScheme();
-    return scheme == Qt::ColorScheme::Dark;
-#elif QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-    // https://www.qt.io/blog/dark-mode-on-windows-11-with-qt-6.5
-    const QPalette defaultPalette;
-    const auto text = defaultPalette.color(QPalette::WindowText);
-    const auto window = defaultPalette.color(QPalette::Window);
-    return text.lightness() > window.lightness();
-#else
-# ifdef FC_OS_MACOSX
-    auto key = CFSTR("AppleInterfaceStyle");
-    if (auto value = CFPreferencesCopyAppValue(key, kCFPreferencesAnyApplication)) {
-        // If the value is "Dark", Dark Mode is enabled
-        if (CFGetTypeID(value) == CFStringGetTypeID()) {
-            if (CFStringCompare((CFStringRef)value, CFSTR("Dark"), kCFCompareCaseInsensitive)
-                == kCFCompareEqualTo) {
-                CFRelease(value);
-                return true;
-            }
-        }
-        CFRelease(value);
-    }
-# endif  // FC_OS_MACOSX
-#endif   // QT_VERSION >= 6.4+
-    return false;
-}
 
 
 static bool shouldHideClassicTheme()
@@ -98,9 +61,6 @@ ThemeSelectorWidget::ThemeSelectorWidget(QWidget* parent)
     , _buttons {nullptr, nullptr, nullptr}
 {
     setObjectName(QLatin1String("ThemeSelectorWidget"));
-    if (shouldHideClassicTheme()) {
-        preselectThemeFromSystemSettings();
-    }
     setupUi();
     qApp->installEventFilter(this);
 }
@@ -138,6 +98,9 @@ void ThemeSelectorWidget::setupButtons(QBoxLayout* layout)
         button->setText(theme.second);
         button->setIcon(iconMap[theme.first]);
         button->setIconSize(iconMap[theme.first].actualSize(QSize(256, 256)));
+        button->setMinimumHeight(
+            button->iconSize().height() + fontMetrics().boundingRect(theme.second).height() + 16
+        );
         if (theme.first == Theme::Classic && styleSheetName.isEmpty()) {
             button->setChecked(true);
         }
@@ -192,22 +155,6 @@ void ThemeSelectorWidget::onLinkActivated(const QString& link)
     Gui::Application::Instance->commandManager().runCommandByName("Std_AddonMgr");
 }
 
-void ThemeSelectorWidget::preselectThemeFromSystemSettings()
-{
-    if (Gui::isInternalGuiTestRun()) {
-        return;
-    }
-
-    auto nullStyle("<N/A>");
-    auto hGrp = App::GetApplication().GetParameterGroupByPath(
-        "User parameter:BaseApp/Preferences/MainWindow"
-    );
-    auto styleSheetName = QString::fromStdString(hGrp->GetASCII("StyleSheet", nullStyle));
-    if (styleSheetName == QString::fromStdString(nullStyle)) {
-        auto theme = isSystemInDarkMode() ? Theme::Dark : Theme::Light;
-        themeChanged(theme);
-    }
-}
 
 void ThemeSelectorWidget::themeChanged(Theme newTheme)
 {

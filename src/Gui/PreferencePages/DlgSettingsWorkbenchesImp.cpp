@@ -27,6 +27,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QPushButton>
+#include <QToolButton>
 #include <sstream>
 
 #include <Gui/Application.h>
@@ -35,6 +36,8 @@
 
 #include "DlgSettingsWorkbenchesImp.h"
 #include "ui_DlgSettingsWorkbenches.h"
+
+#include <IconManager.h>
 
 
 using namespace Gui::Dialog;
@@ -76,7 +79,7 @@ private:
     QLabel* textLabel;
     QLabel* shortcutLabel;
     QLabel* loadLabel;
-    QPushButton* loadButton;
+    QToolButton* loadButton;
 };
 }  // namespace Gui::Dialog
 
@@ -111,14 +114,15 @@ wbListItem::wbListItem(
     QWidget* subWidget = new QWidget(this);
     // 2: Workbench Icon
     auto wbIcon = Application::Instance->workbenchIcon(wbName);
-    iconLabel = new QLabel(wbDisplayName, this);
+    iconLabel = new QLabel(this);
     iconLabel->setPixmap(wbIcon.scaled(
         QSize(20, 20),
         Qt::AspectRatioMode::KeepAspectRatio,
         Qt::TransformationMode::SmoothTransformation
     ));
+    iconLabel->setFixedSize(20, 20);
+    iconLabel->setAlignment(Qt::AlignCenter);
     iconLabel->setToolTip(wbTooltip);
-    iconLabel->setContentsMargins(5, 0, 0, 5);  // Left, top, right, bottom
     iconLabel->setEnabled(enableCheckBox->isChecked());
 
     // 3: Workbench Display Name
@@ -140,7 +144,7 @@ wbListItem::wbListItem(
     subLayout->addWidget(textLabel);
     subLayout->addWidget(shortcutLabel);
     subLayout->setAlignment(Qt::AlignLeft);
-    subLayout->setContentsMargins(5, 0, 0, 5);
+    subLayout->setContentsMargins(5, 0, 0, 0);
     subWidget->setMinimumSize(250, 0);
     subWidget->setAttribute(Qt::WA_TranslucentBackground);
 
@@ -160,29 +164,37 @@ wbListItem::wbListItem(
     }
 
     // 6: Load button/loaded indicator
-    loadLabel = new QLabel(tr("Loaded"), this);
-    loadLabel->setAlignment(Qt::AlignCenter);
-    loadLabel->setEnabled(enableCheckBox->isChecked());
-    loadButton = new QPushButton(tr("Load"), this);
+    loadLabel = new QLabel(tr("Not Loaded"), this);
+    loadLabel->setFixedWidth(80);
+    loadLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+    loadButton = new QToolButton(this);
+    loadButton->setText(tr("Load"));
+    loadButton->setIcon(IconManager::instance().icon(":/icons/tabler/outline/package-import.svg"));
+    loadButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    loadButton->setProperty("controlSize", "small");
     loadButton->setToolTip(
         tr("To preserve resources, FreeCAD does not load workbenches until they are used. Loading "
            "them may provide access to additional preferences related to their functionality.")
     );
     loadButton->setEnabled(enableCheckBox->isChecked());
-    connect(loadButton, &QPushButton::clicked, this, [this]() { onLoadClicked(); });
+    connect(loadButton, &QToolButton::clicked, this, [this]() { onLoadClicked(); });
     if (WorkbenchManager::instance()->getWorkbench(wbName.toStdString())) {
         loadButton->setVisible(false);
+        loadLabel->setText(tr("Loaded"));
     }
     else {
-        loadLabel->setVisible(false);
+        loadLabel->setDisabled(true);
+        loadLabel->setText(tr("Not loaded"));
     }
 
     auto layout = new QHBoxLayout(this);
     layout->addWidget(enableCheckBox);
     layout->addWidget(subWidget);
     layout->addWidget(autoloadCheckBox);
-    layout->addWidget(loadButton);
+    layout->addSpacing(40);
     layout->addWidget(loadLabel);
+    layout->addStretch();
+    layout->addWidget(loadButton);
     layout->setAlignment(Qt::AlignLeft);
     layout->setContentsMargins(10, 0, 0, 0);
 }
@@ -233,7 +245,6 @@ void wbListItem::onWbToggled(bool checked)
     iconLabel->setEnabled(checked);
     textLabel->setEnabled(checked);
     shortcutLabel->setEnabled(checked);
-    loadLabel->setEnabled(checked);
     loadButton->setEnabled(checked);
     autoloadCheckBox->setEnabled(checked);
 
@@ -459,7 +470,6 @@ void DlgSettingsWorkbenchesImp::addWorkbench(const QString& wbName, bool enabled
         = new wbListItem(wbName, enabled, isStartupWb, autoLoad, ui->wbList->count(), this);
     connect(widget, &wbListItem::wbToggled, this, &DlgSettingsWorkbenchesImp::wbToggled);
     const auto wItem = new QListWidgetItem();
-    wItem->setSizeHint(widget->sizeHint());
     ui->wbList->addItem(wItem);
     ui->wbList->setItemWidget(wItem, widget);
 }

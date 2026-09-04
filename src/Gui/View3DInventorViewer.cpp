@@ -1989,6 +1989,8 @@ void View3DInventorViewer::setGradientBackground(View3DInventorViewer::Backgroun
             }
             break;
     }
+
+    Q_EMIT backgroundChanged();
 }
 
 View3DInventorViewer::Background View3DInventorViewer::getGradientBackground() const
@@ -2007,6 +2009,7 @@ View3DInventorViewer::Background View3DInventorViewer::getGradientBackground() c
 void View3DInventorViewer::setGradientBackgroundColor(const SbColor& fromColor, const SbColor& toColor)
 {
     pcBackGround->setColorGradient(fromColor, toColor);
+    Q_EMIT backgroundChanged();
 }
 
 void View3DInventorViewer::setGradientBackgroundColor(
@@ -2016,6 +2019,20 @@ void View3DInventorViewer::setGradientBackgroundColor(
 )
 {
     pcBackGround->setColorGradient(fromColor, toColor, midColor);
+    Q_EMIT backgroundChanged();
+}
+
+QColor View3DInventorViewer::paneBackgroundColor() const
+{
+    if (getGradientBackground() == Background::NoGradient) {
+        return backgroundColor();
+    }
+
+    // toColor is the far stop of both gradients: the bottom of a linear one, the outer ring of
+    // a radial one. The middle stop never reaches the edge, so it is not asked for here.
+    const SbColor& outer = pcBackGround->toColor.getValue();
+
+    return QColor::fromRgbF(outer[0], outer[1], outer[2]);
 }
 
 void View3DInventorViewer::setEnabledFPSCounter(bool on)
@@ -2224,6 +2241,7 @@ void View3DInventorViewer::setAxisCross(bool on)
             axisCrossKit->axisLength = axisCrossLength;
 
             auto annotation = new So3DAnnotation();
+            annotation->layer = static_cast<int>(AnnotationLayer::Handle);
             annotation->addChild(axisCrossKit);
 
             axisGroup = new SoSkipBoundingGroup;
@@ -2978,7 +2996,7 @@ void View3DInventorViewer::setRenderType(RenderType type)
                 fboFormat.setAttachment(QOpenGLFramebufferObject::Depth);
                 auto fbo = new QOpenGLFramebufferObject(width, height, fboFormat);
                 if (fbo->format().samples() > 0 && hasFramebufferBlitSupport()) {
-                    if (!renderToFramebuffer(fbo)) {
+                    if (!renderToFramebuffer(fbo, RenderImageOptions {})) {
                         delete fbo;
                         break;
                     }
@@ -2998,7 +3016,7 @@ void View3DInventorViewer::setRenderType(RenderType type)
                         fallbackFormat.setAttachment(QOpenGLFramebufferObject::Depth);
                         fbo = new QOpenGLFramebufferObject(width, height, fallbackFormat);
                     }
-                    if (!renderToFramebuffer(fbo)) {
+                    if (!renderToFramebuffer(fbo, RenderImageOptions {})) {
                         delete fbo;
                         break;
                     }
@@ -3061,7 +3079,11 @@ QImage View3DInventorViewer::renderToImage(const RenderImageOptions& options)
     // is to use a certain background color using GL_RGB as texture
     // format and in the output image search for the above color and
     // replaces it with the color requested by the user.
-    fboFormat.setInternalTextureFormat(getInternalTextureFormat());
+    // The InternalTextureFormat preference cannot express "must carry alpha", so a true-alpha
+    // capture picks the format itself.
+    fboFormat.setInternalTextureFormat(
+        options.trueAlpha ? static_cast<GLenum>(GL_RGBA8) : getInternalTextureFormat()
+    );
 
     QOpenGLFramebufferObject fbo(width, height, fboFormat);
     if (!fbo.isValid()) {
@@ -3090,22 +3112,28 @@ QImage View3DInventorViewer::renderToImage(const RenderImageOptions& options)
     );
 
     if (overrideBackground) {
-        // force an opaque background color
         alpha = opaqueBackground.alpha();
-        if (alpha < maxAlpha) {
+        if (alpha < maxAlpha && !options.trueAlpha) {
+            // force an opaque background color for the keying pass to match against
             opaqueBackground.setRgb(maxAlpha, maxAlpha, maxAlpha);
         }
         setBackgroundColor(opaqueBackground);
         setGradientBackground(Background::NoGradient);
     }
 
-    if (!renderToFramebuffer(&fbo, options.includeViewerLighting)) {
+    if (!renderToFramebuffer(&fbo, options)) {
         return {};
     }
     img = fbo.toImage();
     if (img.isNull()) {
         Base::Console().warning("renderToImage failed to read the framebuffer\n");
         return {};
+    }
+
+    if (options.trueAlpha) {
+        // The framebuffer already carries per-pixel alpha, so neither the colour-keying pass
+        // nor the flatten-onto-black pass applies.
+        return img;
     }
 
     // if background color isn't opaque manipulate the image
@@ -3136,7 +3164,30 @@ QImage View3DInventorViewer::renderToImage(const RenderImageOptions& options)
     return img;
 }
 
-bool View3DInventorViewer::renderToFramebuffer(QOpenGLFramebufferObject* fbo, bool includeViewerLighting)
+SoSeparator* View3DInventorViewer::buildCaptureRoot(const RenderImageOptions& options) const
+{
+    // Taking pcViewProviderRoot rather than the render manager's scene graph leaves the
+    // placement indicator and the rotation center out of the capture along with the camera
+    // the user is looking through.
+    auto root = new SoSeparator;
+
+    if (options.includeViewerLighting) {
+        root->addChild(getHeadlight());
+        root->addChild(getBacklight());
+        root->addChild(getFillLight());
+        root->addChild(environment);
+    }
+
+    root->addChild(options.camera);
+    root->addChild(pcViewProviderRoot);
+
+    return root;
+}
+
+bool View3DInventorViewer::renderToFramebuffer(
+    QOpenGLFramebufferObject* fbo,
+    const RenderImageOptions& options
+)
 {
     static_cast<QOpenGLWidget*>(this->viewport())->makeCurrent();  // NOLINT
     if (!fbo->bind()) {
@@ -3172,7 +3223,13 @@ bool View3DInventorViewer::renderToFramebuffer(QOpenGLFramebufferObject* fbo, bo
     // while creating a new render action has it set to GL_LEQUAL. So, in order to get
     // the exact same result set it explicitly to GL_LESS.
     glDepthFunc(GL_LESS);
-    if (includeViewerLighting) {
+    if (options.camera) {
+        SoSeparator* captureRoot = buildCaptureRoot(options);
+        captureRoot->ref();
+        auto releaseCaptureRoot = qScopeGuard([captureRoot]() { captureRoot->unref(); });
+        gl.apply(captureRoot);
+    }
+    else if (options.includeViewerLighting) {
         gl.apply(this->getSoRenderManager()->getSceneGraph());
     }
     else {
@@ -3189,6 +3246,10 @@ bool View3DInventorViewer::renderToFramebuffer(QOpenGLFramebufferObject* fbo, bo
     if (shouldRenderDecorations(currentRenderIntent()) && this->axiscrossEnabled) {
         this->drawAxisCross();
     }
+
+    // This capture path draws no overlay, so the annotations it collected along the way
+    // have no consumer. Release them before the local action goes away with them.
+    SoDelayedAnnotationsElement::discardDelayedPaths(gl.getState());
 
     return true;
 }
@@ -3304,28 +3365,12 @@ void View3DInventorViewer::renderDelayedAnnotations(SoGLRenderAction* glra)
         return;
     }
 
-    class ScopedAnnotationRender
-    {
-    public:
-        ScopedAnnotationRender()
-        {
-            So3DAnnotation::render = true;
-        }
-
-        ~ScopedAnnotationRender()
-        {
-            So3DAnnotation::render = false;
-        }
-    } annotationRender;
-
+    // Scoped so that the flag is restored even if the replay throws; leaving it set
+    // would make every later frame draw annotations inline, without any layering.
+    Base::StateLocker annotationRender(So3DAnnotation::render, true);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    if (Gui::Selection().isClarifySelectionActive()) {
-        Gui::SoDelayedAnnotationsElement::processDelayedPathsWithPriority(state, glra);
-    }
-    else {
-        glra->apply(Gui::SoDelayedAnnotationsElement::getDelayedPaths(state));
-    }
+    Gui::SoDelayedAnnotationsElement::processDelayedPathsWithPriority(state, glra);
 }
 
 void View3DInventorViewer::renderGLActionScene(const QColor& backgroundColor, SoGLRenderAction* glra)

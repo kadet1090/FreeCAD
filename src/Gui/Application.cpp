@@ -38,7 +38,8 @@
 #include <QRegularExpressionMatch>
 #include <QScreen>
 #include <QScopeGuard>
-#include <QStatusBar>
+#include <QStyleHints>
+
 #include <QStyle>
 #include <QSurfaceFormat>
 #include <QTextStream>
@@ -153,6 +154,7 @@
 #include "QtWidgets.h"
 
 #include <FreeCADStyle.h>
+#include <ThemeReloadEvent.h>
 #include <OverlayManager.h>
 #include <ParamHandler.h>
 #include <Base/ServiceProvider.h>
@@ -227,6 +229,39 @@ public:
 };
 
 // Pimpl class
+/**
+ * @brief Performs the theme reload when a ThemeReloadEvent reaches qApp.
+ *
+ * Installed on qApp so any caller can trigger a reload by sending the event, without a
+ * reference to Application and without depending on what qApp->style() currently is.
+ */
+class ThemeReloadHandler: public QObject
+{
+public:
+    ThemeReloadHandler()
+        : QObject(qApp)
+    {
+        qApp->installEventFilter(this);
+    }
+
+    bool eventFilter(QObject*, QEvent* event) override
+    {
+        if (event->type() == ThemeReloadEvent::registeredType()) {
+            const auto hGrp = App::GetApplication().GetParameterGroupByPath(
+                "User parameter:BaseApp/Preferences/MainWindow"
+            );
+            const QString qssFile = QString::fromStdString(hGrp->GetASCII("StyleSheet"));
+            const bool tiledBackground = hGrp->GetBool("TiledBackground", false);
+
+            Application::Instance->reloadTheme();
+            Application::Instance->setStyleSheet(qssFile, tiledBackground);
+            OverlayManager::instance()->refresh(nullptr, true);
+        }
+
+        return false;
+    }
+};
+
 struct ApplicationP
 {
     explicit ApplicationP(bool GUIenabled)
@@ -239,6 +274,10 @@ struct ApplicationP
             macroMngr = nullptr;
         }
 
+        // Built up front even where the application runs under another style: components ask
+        // for it to resolve tokens and paint boxes, not only to be the style in force.
+        freeCADStyle = new FreeCADStyle();
+        freeCADStyle->setParent(qApp);
         // Create the Theme Manager
         prefPackManager = new PreferencePackManager();
         // Create the Style Parameter Manager
@@ -257,9 +296,16 @@ struct ApplicationP
     Gui::Document* activeDocument {nullptr};
     std::vector<Gui::Document*> editDocuments;
 
+    QPointer<FreeCADStyle> freeCADStyle;
+
     MacroManager* macroMngr;
     PreferencePackManager* prefPackManager;
     StyleParameters::ParameterManager* styleParameterManager;
+    /// The source whose file the "Theme" preference names. Held so a theme change can re-point it
+    /// without going through the parameter handler that installed it.
+    StyleParameters::YamlParameterSource* themeParametersSource {nullptr};
+
+    ThemeReloadHandler* themeReloadHandler {nullptr};
 
     /// List of all registered views
     std::list<Gui::BaseView*> passive;
@@ -429,22 +475,127 @@ void qtInvokeOnMain(std::function<void()>&& fn, bool blocking)
 
 }  // namespace Gui
 
+StyleParameters::StyleParameterResolver* Application::createStyleParameterResolver()
+{
+    auto* naiveResolver = new StyleParameters::NaiveParameterResolver();
+    auto* inheritingResolver = new StyleParameters::InheritingParameterResolver();
+    auto* chainedResolver = new StyleParameters::ChainedParameterResolver({
+        naiveResolver,
+        inheritingResolver,
+    });
+    return new StyleParameters::CachingParameterResolver(chainedResolver);
+}
+
+bool Application::isSystemInDarkMode()
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    // https://www.qt.io/blog/dark-mode-on-windows-11-with-qt-6.5
+    return QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+    // No colour scheme hint yet, so the palette is the only evidence: a dark desktop hands us
+    // light text on a dark window.
+    const QPalette defaultPalette;
+
+    return defaultPalette.color(QPalette::WindowText).lightness()
+        > defaultPalette.color(QPalette::Window).lightness();
+#else
+# ifdef FC_OS_MACOSX
+    auto key = CFSTR("AppleInterfaceStyle");
+    if (auto value = CFPreferencesCopyAppValue(key, kCFPreferencesAnyApplication)) {
+        const bool dark = CFGetTypeID(value) == CFStringGetTypeID()
+            && CFStringCompare(static_cast<CFStringRef>(value), CFSTR("Dark"), kCFCompareCaseInsensitive)
+                == kCFCompareEqualTo;
+        CFRelease(value);
+
+        return dark;
+    }
+# endif  // FC_OS_MACOSX
+
+    return false;
+#endif
+}
+
+std::string Application::themeParametersFilePath()
+{
+    const auto hMainWindowGrp = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/MainWindow"
+    );
+
+    if (const std::string& path = hMainWindowGrp->GetASCII("ThemeStyleParametersFile");
+        !path.empty()) {
+        return path;
+    }
+
+    return fmt::format("qss:parameters/{}.yaml", hMainWindowGrp->GetASCII("Theme", "Classic"));
+}
+
+/**
+ * @brief Re-points the theme parameter source at the file the "Theme" preference now names and
+ * reloads every source.
+ *
+ * The path is derived rather than remembered: a theme change is a change to that preference, and
+ * a reload that kept the old path would resolve every token against the theme just replaced.
+ */
+/**
+ * @brief Settles which theme is in force, for a profile that has never chosen one.
+ *
+ * A first run leaves "Theme" unset, and so does safe mode, which swaps the configuration out
+ * wholesale. The theme parameter source then names a file that does not exist, every token the
+ * theme layer defines resolves to nothing, and the interface is laid out against the handful the
+ * defaults carry rather than the several hundred a theme does.
+ *
+ * This must run before the main window is built. The tokens a widget reads at polish time - its
+ * font, its height floor, a panel's surface - are read once, when it is first polished, and no
+ * later reload re-reads them; a theme settled afterwards would leave every widget already built
+ * holding the values it had before. It is also why the window state the pack writes is left for
+ * the main window to read on its way up rather than reloaded here.
+ */
+void Application::applyDefaultTheme()
+{
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
+        "User parameter:BaseApp/Preferences/MainWindow"
+    );
+
+    // An explicit choice is never second-guessed, including a deliberate Classic.
+    if (!hGrp->GetASCII("Theme").empty()) {
+        return;
+    }
+
+    const char* pack = isSystemInDarkMode() ? "FreeCAD Dark" : "FreeCAD Light";
+
+    try {
+        d->prefPackManager->apply(pack, PreferencePackManager::WindowState::LeaveAlone);
+    }
+    catch (const std::exception& error) {
+        // Not worth refusing to start over: the theme layer stays unloaded and the interface is
+        // plain, which is what this profile would have had anyway.
+        Base::Console().warning("Could not apply the default theme \"%s\": %s\n", pack, error.what());
+        return;
+    }
+
+    reloadTheme();
+}
+
+void Application::reloadTheme()
+{
+    if (d->themeParametersSource != nullptr) {
+        d->themeParametersSource->changeFilePath(themeParametersFilePath());
+    }
+
+    d->styleParameterManager->reload();
+
+    // Nothing else invalidates it, and every token the style has already resolved was resolved
+    // against the theme just replaced.
+    if (d->freeCADStyle) {
+        d->freeCADStyle->clearTokenCache();
+    }
+}
+
 void Application::initStyleParameterManager()
 {
     static ParamHandlers handlers;
 
-    const auto deduceParametersFilePath = []() -> std::string {
-        const auto hMainWindowGrp = App::GetApplication().GetParameterGroupByPath(
-            "User parameter:BaseApp/Preferences/MainWindow"
-        );
-
-        if (const std::string& path = hMainWindowGrp->GetASCII("ThemeStyleParametersFile");
-            !path.empty()) {
-            return path;
-        }
-
-        return fmt::format("qss:parameters/{}.yaml", hMainWindowGrp->GetASCII("Theme", "Classic"));
-    };
+    const auto deduceParametersFilePath = &Application::themeParametersFilePath;
 
     auto themeParametersSource = new StyleParameters::YamlParameterSource(
         deduceParametersFilePath(),
@@ -452,18 +603,26 @@ void Application::initStyleParameterManager()
          .options = StyleParameters::ParameterSourceOption::UserEditable}
     );
 
+    d->themeParametersSource = themeParametersSource;
+
+    auto designSystemParametersSource = new StyleParameters::YamlParameterSource(
+        "qss:parameters/Design System.yaml",
+        {.name = QT_TR_NOOP("Design System Parameters"),
+         .options = StyleParameters::ParameterSourceOption::UserEditable}
+    );
+
+    auto defaultParametersSource = new StyleParameters::YamlParameterSource(
+        "qss:parameters/defaults.yaml",
+        {.name = QT_TR_NOOP("Default Parameters"),
+         .options = StyleParameters::ParameterSourceOption::UserEditable}
+    );
+
     auto reloadStylesheetHandler = handlers.addDelayedHandler(
         "BaseApp/Preferences/MainWindow",
         {"ThemeStyleParametersFiles", "Theme", "StyleSheet"},
-        [themeParametersSource, deduceParametersFilePath, this](ParameterGrp::handle hGrp) {
-            themeParametersSource->changeFilePath(deduceParametersFilePath());
-            styleParameterManager()->reload();
-
-            std::string sheet = hGrp->GetASCII("StyleSheet");
-            bool tiledBG = hGrp->GetBool("TiledBackground", false);
-
-            setStyleSheet(QString::fromStdString(sheet), tiledBG);
-            OverlayManager::instance()->refresh(nullptr, true);
+        []([[maybe_unused]] ParameterGrp::handle) {
+            ThemeReloadEvent event;
+            QApplication::sendEvent(qApp, &event);
         }
     );
 
@@ -488,6 +647,10 @@ void Application::initStyleParameterManager()
         )
     );
 
+    Base::registerServiceImplementation<StyleParameters::ParameterSource>(designSystemParametersSource);
+
+    Base::registerServiceImplementation<StyleParameters::ParameterSource>(defaultParametersSource);
+
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(themeParametersSource);
 
     Base::registerServiceImplementation<StyleParameters::ParameterSource>(
@@ -506,6 +669,16 @@ void Application::initStyleParameterManager()
     }
 
     Base::registerServiceImplementation(d->styleParameterManager);
+
+    StyleParameters::populateBuiltinDescriptors(d->styleParameterManager->descriptorRegistry());
+    d->styleParameterManager->setResolver(createStyleParameterResolver());
+
+    // Installed after FreeCADStyle so this handler runs first: event filters are called in
+    // LIFO order, and the style's own handling assumes the parameters have already reloaded.
+    // Only created when a QApplication exists, since qApp is null in headless contexts.
+    if (qApp) {
+        d->themeReloadHandler = new ThemeReloadHandler();
+    }
 }
 
 // clang-format off
@@ -806,7 +979,10 @@ void Application::open(const char* FileName, const char* Module)
                         "User parameter:BaseApp/Preferences/View"
                     );
                     if (hGrp->GetBool("AutoFitToView", true)) {
-                        Command::doCommand(Command::Gui, "Gui.SendMsgToActiveView(\"ViewFit\")");
+                        Command::doCommand(
+                            Command::Gui,
+                            "Gui.getMainWindow().getActiveWindow().sendMessage(\"ViewFit\")"
+                        );
                     }
                 }
             }
@@ -2238,6 +2414,20 @@ Gui::StyleParameters::ParameterManager* Application::styleParameterManager()
     return d->styleParameterManager;
 }
 
+Gui::FreeCADStyle* Application::freeCADStyle()
+{
+    // QApplication::setStyle takes ownership and deletes whatever style it replaces, so selecting
+    // any other style destroys this one out from under every caller here. Hold it weakly and build
+    // a fresh one on demand: callers reach for it to resolve tokens and paint boxes whether or not
+    // it is the style currently in force.
+    if (d->freeCADStyle.isNull()) {
+        d->freeCADStyle = new FreeCADStyle();
+        d->freeCADStyle->setParent(qApp);
+    }
+
+    return d->freeCADStyle;
+}
+
 
 //**************************************************************************
 // Init, Destruct and singleton
@@ -2657,7 +2847,12 @@ void Application::runApplication()
     process.execute();
 
     Application app(true);
+
+    // Before the main window: widgets read their polish-time tokens once, as they are built.
+    app.applyDefaultTheme();
+
     MainWindow mw;
+
     mw.setProperty("QuitOnClosed", true);
 
     // Destroy deferred views while their GUI and Python owners are still alive.
@@ -2680,6 +2875,7 @@ void Application::runApplication()
 
     // gets called once we start the event loop
     QTimer::singleShot(0, &mw, SLOT(delayedStartup()));
+
 
     // run the Application event loop
     Base::Console().log("Init: Entering event loop\n");
@@ -2892,9 +3088,9 @@ QString Application::replaceVariablesInQss(const QString& qssText)
 
 void Application::setStyle(const QString& name)
 {
-    const auto createStyleFromName = [](const QString& name) -> QStyle* {
+    const auto createStyleFromName = [this](const QString& name) -> QStyle* {
         if (name == QStringLiteral("FreeCAD")) {
-            return new FreeCADStyle();
+            return freeCADStyle();
         }
 
         if (name.compare(QStringLiteral("System"), Qt::CaseInsensitive) == 0) {
@@ -2909,11 +3105,19 @@ void Application::setStyle(const QString& name)
         return qobject_cast<FreeCADStyle*>(style) != nullptr;
     };
 
+    auto* style = createStyleFromName(name);
+
+    // setStyle deletes the style it replaces, so handing it the one already in force would
+    // destroy the object and then install the dangling pointer.
+    if (style != nullptr && style == qApp->style()) {
+        return;
+    }
+
     if (auto* current = qApp->style(); current && requiresEventFilter(current)) {
         qApp->removeEventFilter(current);
     }
 
-    if (auto* style = createStyleFromName(name)) {
+    if (style != nullptr) {
         qApp->setStyle(style);
 
         if (requiresEventFilter(style)) {

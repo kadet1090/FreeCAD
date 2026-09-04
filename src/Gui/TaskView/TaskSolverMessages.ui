@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>TaskSolverMessages</class>
  <widget class="QWidget" name="TaskSolverMessages">
@@ -52,11 +52,14 @@
       <string>Forces the recomputation of the active document</string>
      </property>
      <property name="text">
-      <string/>
+      <string>update</string>
      </property>
      <property name="icon">
       <iconset>
        <normaloff>:/icons/view-refresh.svg</normaloff>:/icons/view-refresh.svg</iconset>
+     </property>
+     <property name="toolButtonStyle">
+      <enum>Qt::ToolButtonStyle::ToolButtonTextBesideIcon</enum>
      </property>
     </widget>
    </item>
@@ -79,7 +82,7 @@
        <normaloff>:/icons/preferences-general.svg</normaloff>:/icons/preferences-general.svg</iconset>
      </property>
      <property name="popupMode">
-      <enum>QToolButton::MenuButtonPopup</enum>
+      <enum>QToolButton::ToolButtonPopupMode::InstantPopup</enum>
      </property>
     </widget>
    </item>
@@ -87,12 +90,12 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Gui::StatefulLabel</class>
+   <class>Gui::UrlLabel</class>
    <extends>QLabel</extends>
    <header>Gui/Widgets.h</header>
   </customwidget>
   <customwidget>
-   <class>Gui::UrlLabel</class>
+   <class>Gui::StatefulLabel</class>
    <extends>QLabel</extends>
    <header>Gui/Widgets.h</header>
   </customwidget>

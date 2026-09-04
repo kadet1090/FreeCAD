@@ -29,6 +29,7 @@
 
 #include <App/Application.h>
 
+#include "FreeCADStyle.h"
 #include "StyleParameters/ParameterManager.h"
 
 class QCloseEvent;
@@ -70,6 +71,25 @@ public:
 
     /// Initializes default configuration for Style Parameter Manager
     void initStyleParameterManager();
+
+    /// Re-points the theme parameter source at the file the "Theme" preference names, then
+    /// reloads every source. Call after anything that changes which theme is in force.
+    void reloadTheme();
+
+    /// Settles which theme is in force for a profile that has never chosen one. Must run
+    /// before the main window is built - polish-time tokens are read once, as each widget
+    /// is built, and no later reload re-reads them.
+    void applyDefaultTheme();
+
+    /// The parameter file the "Theme" preference currently names.
+    static std::string themeParametersFilePath();
+
+    /// Whether the desktop asks for a dark colour scheme. Light is the answer wherever the
+    /// platform does not say.
+    static bool isSystemInDarkMode();
+
+    /// Builds the resolver chain a ParameterManager resolves names through.
+    static Gui::StyleParameters::StyleParameterResolver* createStyleParameterResolver();
 
     /** @name methods for support of files */
     //@{
@@ -269,6 +289,10 @@ public:
 
     Gui::PreferencePackManager* prefPackManager();
     Gui::StyleParameters::ParameterManager* styleParameterManager();
+
+    /// The style, whether or not it is the one in force — components resolve tokens and paint
+    /// boxes through it directly. Never null; rebuilt if another style replaced and deleted it.
+    Gui::FreeCADStyle* freeCADStyle();
 
     /** @name Init, Destruct an Access methods */
     //@{

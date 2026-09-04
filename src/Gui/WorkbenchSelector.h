@@ -51,7 +51,6 @@ Q_OBJECT  // NOLINT
     public: explicit WorkbenchComboBox(WorkbenchGroup* aGroup, QWidget* parent = nullptr);
     ~WorkbenchComboBox() override = default;
     WorkbenchComboBox(WorkbenchComboBox&& rhs) = delete;
-    void showPopup() override;
     void setVisible(bool visible) override;
 
     WorkbenchComboBox operator=(WorkbenchComboBox&& rhs) = delete;
@@ -74,7 +73,10 @@ class GuiExport WorkbenchTabWidget: public QWidget
     public:
         explicit WbTabBar(QWidget* parent)
             : QTabBar(parent)
-        {}
+        {
+            setDrawBase(false);
+            setProperty("component", "WbTabBar");
+        }
 
         QSize tabSizeHint(int index) const override
         {

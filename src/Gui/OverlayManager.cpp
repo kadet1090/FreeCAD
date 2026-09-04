@@ -121,7 +121,10 @@ public:
             return;
         }
 
-        if (strcmp(sReason, "StyleSheet") == 0 || strcmp(sReason, "OverlayActiveStyleSheet") == 0) {
+        // Theme is in here because the overlay layout now reads a token: without it a theme
+        // switch leaves the old padding in place until something else forces a refresh.
+        if (strcmp(sReason, "StyleSheet") == 0 || strcmp(sReason, "OverlayActiveStyleSheet") == 0
+            || strcmp(sReason, "Theme") == 0) {
             OverlayManager::instance()->refresh(nullptr, true);
         }
     }
@@ -133,11 +136,10 @@ public:
         QString overlayStylesheetFileName = detectOverlayStyleSheetFileName();
         loadFromFile(overlayStylesheetFileName);
 
-        // If after loading the result is still empty we need to apply some defaults
-        if (activeStyleSheet.isEmpty()) {
-            activeStyleSheet = _default;
-        }
-
+        // No overlay stylesheet means no stylesheet. There used to be a fallback here assigning
+        // a *file name* as the sheet's *content*. Qt cannot parse that, and its recovery is to
+        // retry the text wrapped in "* { }" - which does parse, so the name became a universal
+        // rule silently matching every widget under the overlay, with no warning to show for it.
         activeStyleSheet = Application::Instance->replaceVariablesInQss(activeStyleSheet);
     }
 
@@ -148,24 +150,15 @@ public:
 private:
     QString detectOverlayStyleSheetFileName() const
     {
-        QString mainStyleSheet = QString::fromUtf8(handle->GetASCII("StyleSheet").c_str());
         QString overlayStyleSheet = QString::fromUtf8(
             handle->GetASCII("OverlayActiveStyleSheet").c_str()
         );
 
-        if (overlayStyleSheet.isEmpty()) {
-            // User did not choose any stylesheet, we need to choose one based on main stylesheet
-            if (mainStyleSheet.contains(QStringLiteral("light"), Qt::CaseInsensitive)) {
-                overlayStyleSheet = QStringLiteral("overlay:Light Theme + Dark Background.qss");
-            }
-            else {
-                // by default FreeCAD uses somewhat dark background for 3D View.
-                // if user has not explicitly selected light theme, the "Dark Outline" looks best
-                overlayStyleSheet = QStringLiteral("overlay:Dark Theme + Dark Background.qss");
-            }
-        }
-        else if (!overlayStyleSheet.isEmpty() && !QFile::exists(overlayStyleSheet)) {
-            // User did choose one of predefined stylesheets, we need to qualify it with namespace
+        // A bare name is one of the shipped sheets, which live behind the "overlay:" search path.
+        // Naming nothing means nothing: the two files this used to guess at when the setting was
+        // unset have not existed for some time, so guessing only ever produced a path that failed
+        // to load.
+        if (!overlayStyleSheet.isEmpty() && !QFile::exists(overlayStyleSheet)) {
             overlayStyleSheet = QStringLiteral("overlay:%1").arg(overlayStyleSheet);
         }
 
@@ -184,11 +177,7 @@ private:
             activeStyleSheet = QTextStream(&file).readAll();
         }
     }
-
-    static const QString _default;
 };
-
-const QString OverlayStyleSheet::_default = QStringLiteral("overlay:Light Theme + Dark Background.qss");
 
 // -----------------------------------------------------------
 
@@ -652,6 +641,14 @@ public:
             h -= tabbar->height();
         }
 
+        // Panels are laid out inside the view rather than against it: shrink the box they share
+        // and shift every rect it produces. Each panel then keeps the gap on the edges it
+        // actually touches, and none of it appears between one panel and the next.
+        const QMargins viewPadding = OverlayTabWidget::viewPadding();
+        const QPoint viewOrigin(viewPadding.left(), viewPadding.top());
+        w -= viewPadding.left() + viewPadding.right();
+        h -= viewPadding.top() + viewPadding.bottom();
+
         int naviCubeSize = NaviCube::getNaviCubeSize();
         int naviCorner = OverlayParams::getDockOverlayCheckNaviCube()
             ? App::GetApplication()
@@ -683,7 +680,9 @@ public:
         // Bottom width is maintain the same to reduce QTextEdit re-layout
         // which may be expensive if there are lots of text, e.g. for
         // ReportView or PythonConsole.
-        _bottom.tabWidget->setRect(QRect(ofs.width(), h - rect.height(), bw, rect.height()));
+        _bottom.tabWidget->setRect(
+            QRect(ofs.width(), h - rect.height(), bw, rect.height()).translated(viewOrigin)
+        );
 
         if (_bottom.tabWidget->count() && _bottom.tabWidget->isVisible()
             && _bottom.tabWidget->getState() <= OverlayTabWidget::State::Normal) {
@@ -703,7 +702,9 @@ public:
         }
         int lh = std::max(h - ofs.width() - delta, 10);
 
-        _left.tabWidget->setRect(QRect(ofs.height(), ofs.width(), rect.width(), lh));
+        _left.tabWidget->setRect(
+            QRect(ofs.height(), ofs.width(), rect.width(), lh).translated(viewOrigin)
+        );
 
         if (_left.tabWidget->count() && _left.tabWidget->isVisible()
             && _left.tabWidget->getState() <= OverlayTabWidget::State::Normal) {
@@ -724,7 +725,9 @@ public:
         int rh = std::max(h - ofs.width() - delta, 10);
         w -= ofs.height();
 
-        _right.tabWidget->setRect(QRect(w - rect.width(), ofs.width(), rect.width(), rh));
+        _right.tabWidget->setRect(
+            QRect(w - rect.width(), ofs.width(), rect.width(), rh).translated(viewOrigin)
+        );
 
         if (_right.tabWidget->count() && _right.tabWidget->isVisible()
             && _right.tabWidget->getState() <= OverlayTabWidget::State::Normal) {
@@ -743,7 +746,9 @@ public:
         }
         int tw = w - rectLeft.width() - rectRight.width() - ofs.width() - delta;
 
-        _top.tabWidget->setRect(QRect(rectLeft.width() - ofs.width(), ofs.height(), tw, rect.height()));
+        _top.tabWidget->setRect(
+            QRect(rectLeft.width() - ofs.width(), ofs.height(), tw, rect.height()).translated(viewOrigin)
+        );
     }
 
     void setOverlayMode(OverlayMode mode)

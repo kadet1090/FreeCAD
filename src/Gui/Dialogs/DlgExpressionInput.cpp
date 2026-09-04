@@ -830,6 +830,7 @@ void DlgExpressionInput::setupVarSets()
         auto* listView = new QListView(this);
         listView->setSelectionMode(QAbstractItemView::SingleSelection);
         listView->setModel(model);
+        listView->setIconSize(QSize(16, 16));
         ui->comboBoxVarSet->setView(listView);
         ui->comboBoxVarSet->setModel(model);
         ui->comboBoxVarSet->setItemDelegate(new IndentedItemDelegate(ui->comboBoxVarSet));
@@ -858,8 +859,8 @@ void DlgExpressionInput::onCheckVarSets(int state)
         catch (Base::Exception&) {
             okBtn->setEnabled(false);
         }
-        adjustSize();
     }
+    adjustSize();
 }
 
 void DlgExpressionInput::preselectGroup()

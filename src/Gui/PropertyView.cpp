@@ -72,6 +72,10 @@ PropertyView::PropertyView(QWidget* parent)
     : QWidget(parent)
     , SelectionObserver(false, ResolveMode::NoResolve)
 {
+    // The tabs sit under the property list, not under a tab widget pane, so the edge they share
+    // is the list's background rather than the default pane colour.
+    setProperty("fcStyleCurrentPaneBackground", "@ListBackground");
+
     auto pLayout = new QGridLayout(this);
     pLayout->setSpacing(0);
     pLayout->setContentsMargins(0, 0, 0, 0);

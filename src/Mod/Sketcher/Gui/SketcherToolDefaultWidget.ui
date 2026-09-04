@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>312</width>
-    <height>254</height>
+    <height>742</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,12 +26,15 @@
      <item>
       <widget class="Gui::PrefComboBox" name="comboBox1">
        <property name="currentIndex">
-        <number>0</number>
+        <number>-1</number>
        </property>
-       <property name="prefEntry">
+       <property name="sizeAdjustPolicy">
+        <enum>QComboBox::SizeAdjustPolicy::AdjustToMinimumContentsLengthWithIcon</enum>
+       </property>
+       <property name="prefEntry" stdset="0">
         <cstring></cstring>
        </property>
-       <property name="prefPath">
+       <property name="prefPath" stdset="0">
         <cstring>Mod/Sketcher/General</cstring>
        </property>
       </widget>
@@ -50,12 +53,15 @@
      <item>
       <widget class="Gui::PrefComboBox" name="comboBox2">
        <property name="currentIndex">
-        <number>0</number>
+        <number>-1</number>
        </property>
-       <property name="prefEntry">
+       <property name="sizeAdjustPolicy">
+        <enum>QComboBox::SizeAdjustPolicy::AdjustToMinimumContentsLengthWithIcon</enum>
+       </property>
+       <property name="prefEntry" stdset="0">
         <cstring></cstring>
        </property>
-       <property name="prefPath">
+       <property name="prefPath" stdset="0">
         <cstring>Mod/Sketcher/General</cstring>
        </property>
       </widget>
@@ -74,12 +80,15 @@
      <item>
       <widget class="Gui::PrefComboBox" name="comboBox3">
        <property name="currentIndex">
-        <number>0</number>
+        <number>-1</number>
        </property>
-       <property name="prefEntry">
+       <property name="sizeAdjustPolicy">
+        <enum>QComboBox::SizeAdjustPolicy::AdjustToMinimumContentsLengthWithIcon</enum>
+       </property>
+       <property name="prefEntry" stdset="0">
         <cstring></cstring>
        </property>
-       <property name="prefPath">
+       <property name="prefPath" stdset="0">
         <cstring>Mod/Sketcher/General</cstring>
        </property>
       </widget>
@@ -125,11 +134,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterOne">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -146,11 +155,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterTwo">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -167,11 +176,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterThree">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -188,11 +197,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterFour">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -209,11 +218,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterFive">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -230,11 +239,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterSix">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -251,11 +260,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterSeven">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -272,11 +281,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterEight">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -293,11 +302,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterNine">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -314,11 +323,11 @@
      </item>
      <item>
       <widget class="Gui::PrefQuantitySpinBox" name="parameterTen">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
+       </property>
+       <property name="unit" stdset="0">
+        <string notr="true">mm</string>
        </property>
       </widget>
      </item>
@@ -338,10 +347,10 @@
      <property name="checked">
       <bool>false</bool>
      </property>
-     <property name="prefEntry">
+     <property name="prefEntry" stdset="0">
       <cstring></cstring>
      </property>
-     <property name="prefPath">
+     <property name="prefPath" stdset="0">
       <cstring>Mod/Sketcher/General</cstring>
      </property>
     </widget>
@@ -360,10 +369,10 @@
      <property name="checked">
       <bool>false</bool>
      </property>
-     <property name="prefEntry">
+     <property name="prefEntry" stdset="0">
       <cstring></cstring>
      </property>
-     <property name="prefPath">
+     <property name="prefPath" stdset="0">
       <cstring>Mod/Sketcher/General</cstring>
      </property>
     </widget>
@@ -382,10 +391,10 @@
      <property name="checked">
       <bool>false</bool>
      </property>
-     <property name="prefEntry">
+     <property name="prefEntry" stdset="0">
       <cstring></cstring>
      </property>
-     <property name="prefPath">
+     <property name="prefPath" stdset="0">
       <cstring>Mod/Sketcher/General</cstring>
      </property>
     </widget>
@@ -404,10 +413,10 @@
      <property name="checked">
       <bool>false</bool>
      </property>
-     <property name="prefEntry">
+     <property name="prefEntry" stdset="0">
       <cstring></cstring>
      </property>
-     <property name="prefPath">
+     <property name="prefPath" stdset="0">
       <cstring>Mod/Sketcher/General</cstring>
      </property>
     </widget>
@@ -429,18 +438,23 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Gui::PrefQuantitySpinBox</class>
-   <extends>QWidget</extends>
-   <header>Gui/PrefWidgets.h</header>
+   <class>Gui::QuantitySpinBox</class>
+   <extends>QAbstractSpinBox</extends>
+   <header>Gui/QuantitySpinBox.h</header>
   </customwidget>
   <customwidget>
    <class>Gui::PrefCheckBox</class>
-   <extends>QWidget</extends>
+   <extends>QCheckBox</extends>
    <header>Gui/PrefWidgets.h</header>
   </customwidget>
   <customwidget>
    <class>Gui::PrefComboBox</class>
-   <extends>QWidget</extends>
+   <extends>QComboBox</extends>
+   <header>Gui/PrefWidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Gui::PrefQuantitySpinBox</class>
+   <extends>Gui::QuantitySpinBox</extends>
    <header>Gui/PrefWidgets.h</header>
   </customwidget>
  </customwidgets>

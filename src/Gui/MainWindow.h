@@ -372,6 +372,9 @@ private:
     void populateToolBarMenu(QMenu*);
     void populateDockWindowMenu(QMenu*);
 
+    /// Points the tab strip at the surface the active view shows where the two meet.
+    void updateTabPaneBackground();
+
     static void renderDevBuildWarning(
         QPainter& painter,
         const QPoint startPosition,
@@ -484,11 +487,6 @@ public:
     {
         return "StatusBar";
     }
-
-    friend class MainWindow;
-
-private:
-    QString msg, wrn, err, critical;
 };
 
 // -------------------------------------------------------------

@@ -39,7 +39,9 @@
 #include "Application.h"
 #include "BitmapFactory.h"
 #include "Command.h"
+#include "GeometrySelectorWidget.h"
 #include "Inventor/Draggers/SoTransformDragger.h"
+#include "MetaTypes.h"  // Base::Placement as QVariant payload for the origin history data
 #include "QuantitySpinBox.h"
 #include "ViewProviderDragger.h"
 #include "TaskView/TaskView.h"
@@ -188,35 +190,94 @@ void TaskTransform::dragMotionCallback(void* data, [[maybe_unused]] SoDragger* d
     task->updatePositionAndRotationUi();
 }
 
-void TaskTransform::loadPlacementModeItems() const
+void TaskTransform::buildTransformOriginSelector()
 {
-    ui->placementComboBox->clear();
+    auto* selector = ui->transformOriginSelector;
+    selector->setQuantity(GeometryQuantity::Single);
 
-    ui->placementComboBox->addItem(
-        tr("Object origin"),
-        QVariant::fromValue(PlacementMode::ObjectOrigin)
-    );
-
+    std::vector<GeometrySelectorOption> options;
+    options.push_back({
+        .icon = {},
+        .label = tr("Object origin"),
+        .references = {},
+        .userData = QVariant::fromValue(PlacementMode::ObjectOrigin),
+    });
     if (centerOfMassProvider->supports(vp->getObject())) {
-        ui->placementComboBox->addItem(
-            tr("Center of mass / centroid"),
-            QVariant::fromValue(PlacementMode::Centroid)
-        );
+        options.push_back({
+            .icon = {},
+            .label = tr("Center of mass / centroid"),
+            .references = {},
+            .userData = QVariant::fromValue(PlacementMode::Centroid),
+        });
     }
+    selector->setOptions(std::move(options));
+    selector->setAllowCustom(subObjectPlacementProvider != nullptr);
+    // A remembered pick carries no snap point of its own — referencePlacementFromSelection()
+    // partly derives the origin from where on the element the user clicked — so the placement
+    // resolved by the live pick is stashed on the entry and restored verbatim on reselection.
+    selector->setHistoryDataProvider([this] {
+        return QVariant::fromValue(customTransformOrigin.value_or(Base::Placement {}));
+    });
 
-    if (subObjectPlacementProvider) {
-        ui->placementComboBox->addItem(tr("Custom"), QVariant::fromValue(PlacementMode::Custom));
-    }
+    connect(
+        selector,
+        &GeometrySelectorWidget::currentIndexChanged,
+        this,
+        &TaskTransform::onTransformOriginModeChanged
+    );
+    connect(selector->selection(), &GeometrySelection::selectionModeEntered, this, [this] {
+        setTransformOriginPicking(true);
+    });
+    connect(selector->selection(), &GeometrySelection::selectionModeExited, this, [this] {
+        setTransformOriginPicking(false);
+    });
+    connect(
+        selector->selection(),
+        &GeometrySelection::pickSelectionChanged,
+        this,
+        &TaskTransform::onTransformOriginPick
+    );
 }
 
-void TaskTransform::loadPositionModeItems() const
+void TaskTransform::buildCoordinateSystemSelector()
 {
-    ui->positionModeComboBox->clear();
-    ui->positionModeComboBox->addItem(tr("Local"), QVariant::fromValue(PositionMode::Local));
-    ui->positionModeComboBox->addItem(tr("Global"), QVariant::fromValue(PositionMode::Global));
-    if (subObjectPlacementProvider) {
-        ui->positionModeComboBox->addItem(tr("Custom"), QVariant::fromValue(PositionMode::Custom));
-    }
+    auto* selector = ui->coordinateSystemSelector;
+    selector->setQuantity(GeometryQuantity::Single);
+
+    std::vector<GeometrySelectorOption> options;
+    options.push_back({
+        .icon = {},
+        .label = tr("Local"),
+        .references = {},
+        .userData = QVariant::fromValue(PositionMode::Local),
+    });
+    options.push_back({
+        .icon = {},
+        .label = tr("Global"),
+        .references = {},
+        .userData = QVariant::fromValue(PositionMode::Global),
+    });
+    selector->setOptions(std::move(options));
+    selector->setAllowCustom(subObjectPlacementProvider != nullptr);
+
+    connect(
+        selector,
+        &GeometrySelectorWidget::currentIndexChanged,
+        this,
+        &TaskTransform::onCoordinateSystemModeChanged
+    );
+    connect(selector->selection(), &GeometrySelection::selectionModeEntered, this, [this] {
+        setCoordinateSystemPicking(true);
+    });
+    connect(selector->selection(), &GeometrySelection::selectionModeExited, this, [this] {
+        setCoordinateSystemPicking(false);
+    });
+    connect(
+        selector->selection(),
+        &GeometrySelection::pickSelectionChanged,
+        this,
+        &TaskTransform::onCoordinateSystemPick
+    );
 }
 
 void TaskTransform::setupGui()
@@ -225,13 +286,9 @@ void TaskTransform::setupGui()
     ui->setupUi(proxy);
     this->groupLayout()->addWidget(proxy);
 
-    loadPlacementModeItems();
-    loadPositionModeItems();
+    buildTransformOriginSelector();
+    buildCoordinateSystemSelector();
 
-    ui->referenceLabel->hide();
-    ui->referencePickerWidget->hide();
-    ui->customCSReferenceLabel->hide();
-    ui->customCSPickerWidget->hide();
     ui->alignRotationCheckBox->hide();
 
     for (auto positionSpinBox :
@@ -261,30 +318,6 @@ void TaskTransform::setupGui()
         qOverload<double>(&QuantitySpinBox::valueChanged),
         this,
         [this](double) { updateIncrements(); }
-    );
-    connect(
-        ui->positionModeComboBox,
-        qOverload<int>(&QComboBox::currentIndexChanged),
-        this,
-        &TaskTransform::onCoordinateSystemChange
-    );
-    connect(
-        ui->placementComboBox,
-        qOverload<int>(&QComboBox::currentIndexChanged),
-        this,
-        &TaskTransform::onPlacementModeChange
-    );
-    connect(
-        ui->pickTransformOriginButton,
-        &QPushButton::clicked,
-        this,
-        &TaskTransform::onPickTransformOrigin
-    );
-    connect(
-        ui->pickCoordinateSystemReferenceButton,
-        &QPushButton::clicked,
-        this,
-        &TaskTransform::onPickCoordinateSystemReference
     );
     connect(ui->alignToOtherObjectButton, &QPushButton::clicked, this, &TaskTransform::onAlignToOtherObject);
     connect(ui->moveOptionsButton, &QPushButton::toggled, ui->frameMoveOptions, &QWidget::setVisible);
@@ -331,6 +364,9 @@ void TaskTransform::setupGui()
     updateDraggerLabels();
     updateIncrements();
     updatePositionAndRotationUi();
+
+    ui->transformOriginSelector->setCurrentIndex(0);
+    ui->coordinateSystemSelector->setCurrentIndex(0);
 }
 
 void TaskTransform::loadPreferences()
@@ -438,32 +474,14 @@ void TaskTransform::setSelectionMode(SelectionMode mode)
 
     SoPickStyle* draggerPickStyle = SO_GET_PART(dragger, "pickStyle", SoPickStyle);
 
-    ui->pickTransformOriginButton->setText(tr("Pick Reference"));
     ui->alignToOtherObjectButton->setText(tr("Move to Other Object"));
-    ui->pickCoordinateSystemReferenceButton->setText(tr("Pick Reference"));
 
     switch (mode) {
-        case SelectionMode::SelectTransformOrigin:
-            draggerPickStyle->style = SoPickStyle::UNPICKABLE;
-            draggerPickStyle->setOverride(true);
-            blockSelection(false);
-            ui->referenceLineEdit->setText(tr("Select object, face, edge…"));
-            ui->pickTransformOriginButton->setText(tr("Cancel"));
-            break;
-
         case SelectionMode::SelectAlignTarget:
             draggerPickStyle->style = SoPickStyle::UNPICKABLE;
             draggerPickStyle->setOverride(true);
             ui->alignToOtherObjectButton->setText(tr("Cancel"));
             blockSelection(false);
-            break;
-
-        case SelectionMode::SelectCustomCS:
-            draggerPickStyle->style = SoPickStyle::UNPICKABLE;
-            draggerPickStyle->setOverride(true);
-            blockSelection(false);
-            ui->customCSLineEdit->setText(tr("Select object, face, edge…"));
-            ui->pickCoordinateSystemReferenceButton->setText(tr("Cancel"));
             break;
 
         case SelectionMode::None:
@@ -536,57 +554,21 @@ void TaskTransform::onSelectionChanged(const SelectionChanges& msg)
         return;
     }
 
-    if (selectionMode == SelectionMode::SelectCustomCS && msg.Type == SelectionChanges::AddSelection) {
-        setCustomCoordinateSystemFromSelection(msg);
+    if (selectionMode != SelectionMode::SelectAlignTarget) {
         return;
     }
 
-    if (selectionMode != SelectionMode::SelectTransformOrigin
-        && selectionMode != SelectionMode::SelectAlignTarget) {
-        return;
-    }
-
-    auto reference = referencePlacementFromSelection(
-        msg,
-        ReferencePlacementOption::UseSubObjectPlacement
-            | (selectionMode == SelectionMode::SelectTransformOrigin
-                   ? ReferencePlacementOption::UseSnapPosition
-                   : ReferencePlacementOption::None)
-    );
+    auto reference
+        = referencePlacementFromSelection(msg, ReferencePlacementOption::UseSubObjectPlacement);
     if (!reference) {
         return;
     }
 
-    switch (selectionMode) {
-        case SelectionMode::SelectTransformOrigin: {
-            if (msg.Type == SelectionChanges::AddSelection) {
-                ui->referenceLineEdit->setText(reference->label);
-                customTransformOrigin = reference->objectPlacement;
-                updateTransformOrigin();
-                setSelectionMode(SelectionMode::None);
-            }
-            else {
-                vp->setTransformOrigin(reference->objectPlacement);
-            }
+    vp->setDraggerPlacement(vp->getObjectPlacement() * reference->objectPlacement);
 
-            break;
-        }
-
-        case SelectionMode::SelectAlignTarget: {
-            vp->setDraggerPlacement(vp->getObjectPlacement() * reference->objectPlacement);
-
-            if (msg.Type == SelectionChanges::AddSelection) {
-                moveObjectToDragger(getRelevantComponents());
-
-                setSelectionMode(SelectionMode::None);
-            }
-
-            break;
-        }
-
-        default:
-            // no-op
-            break;
+    if (msg.Type == SelectionChanges::AddSelection) {
+        moveObjectToDragger(getRelevantComponents());
+        setSelectionMode(SelectionMode::None);
     }
 }
 
@@ -680,17 +662,21 @@ std::optional<TaskTransform::ReferencePlacement> TaskTransform::referencePlaceme
     return std::nullopt;
 }
 
-void TaskTransform::setCustomCoordinateSystemFromSelection(const SelectionChanges& msg)
+void TaskTransform::onCoordinateSystemPick(const Gui::SelectionChanges& msg)
 {
+    if (msg.Type != SelectionChanges::AddSelection) {
+        return;
+    }
+
     auto reference
         = referencePlacementFromSelection(msg, ReferencePlacementOption::UseSubObjectPlacement);
     if (!reference) {
         return;
     }
 
+    // The widget stores and displays the picked reference itself and ends its own session; here
+    // we only turn it into the custom coordinate system.
     customCoordinateSystemPlacement = reference->documentPlacement;
-    ui->customCSLineEdit->setText(reference->label);
-    setSelectionMode(SelectionMode::None);
     showCoordinateSystemIndicator();
     updateInputLabels();
     updatePositionAndRotationUi();
@@ -775,31 +761,80 @@ void TaskTransform::onFlip()
     moveObjectToDragger();
 }
 
-void TaskTransform::onPickTransformOrigin()
+void TaskTransform::setCoordinateSystemPicking(bool active)
 {
-    setSelectionMode(
-        selectionMode == SelectionMode::None ? SelectionMode::SelectTransformOrigin
-                                             : SelectionMode::None
-    );
-}
+    pickingCoordinateSystem = active;
 
-void TaskTransform::onPickCoordinateSystemReference()
-{
-    setSelectionMode(
-        selectionMode == SelectionMode::SelectCustomCS ? SelectionMode::None
-                                                       : SelectionMode::SelectCustomCS
-    );
-}
-
-void TaskTransform::onPlacementModeChange([[maybe_unused]] int index)
-{
-    placementMode = ui->placementComboBox->currentData().value<PlacementMode>();
-    if (placementMode != PlacementMode::Custom
-        && selectionMode == SelectionMode::SelectTransformOrigin) {
-        setSelectionMode(SelectionMode::None);
+    SoPickStyle* draggerPickStyle = SO_GET_PART(dragger, "pickStyle", SoPickStyle);
+    if (active) {
+        draggerPickStyle->style = SoPickStyle::UNPICKABLE;
+        draggerPickStyle->setOverride(true);
+    }
+    else {
+        draggerPickStyle->style = SoPickStyle::SHAPE_ON_TOP;
+        draggerPickStyle->setOverride(false);
     }
 
+    updateSpinBoxesReadOnlyStatus();
+}
+
+void TaskTransform::onTransformOriginModeChanged([[maybe_unused]] int index)
+{
+    const auto* option = ui->transformOriginSelector->currentOption();
+    placementMode = option ? option->userData.value<PlacementMode>() : PlacementMode::Custom;
+
+    // Reselecting a remembered pick performs no pick of its own, so onTransformOriginPick never
+    // runs for it; restore the placement resolved when that entry was originally captured.
+    if (const QVariant historyData = ui->transformOriginSelector->currentHistoryData();
+        historyData.isValid()) {
+        customTransformOrigin = historyData.value<Base::Placement>();
+    }
     updateTransformOrigin();
+}
+
+void TaskTransform::onTransformOriginPick(const Gui::SelectionChanges& msg)
+{
+    const auto isSupportedMessage = msg.Type == SelectionChanges::AddSelection
+        || msg.Type == SelectionChanges::SetPreselect;
+    if (!isSupportedMessage) {
+        return;
+    }
+
+    auto reference = referencePlacementFromSelection(
+        msg,
+        ReferencePlacementOption::UseSubObjectPlacement | ReferencePlacementOption::UseSnapPosition
+    );
+    if (!reference) {
+        return;
+    }
+
+    if (msg.Type == SelectionChanges::AddSelection) {
+        // The widget stores and displays the picked reference itself and ends its
+        // own session; here we only turn it into the dragger origin.
+        customTransformOrigin = reference->objectPlacement;
+        updateTransformOrigin();
+    }
+    else {
+        vp->setTransformOrigin(reference->objectPlacement);
+    }
+}
+
+void TaskTransform::setTransformOriginPicking(bool active)
+{
+    pickingTransformOrigin = active;
+
+    SoPickStyle* draggerPickStyle = SO_GET_PART(dragger, "pickStyle", SoPickStyle);
+    if (active) {
+        draggerPickStyle->style = SoPickStyle::UNPICKABLE;
+        draggerPickStyle->setOverride(true);
+    }
+    else {
+        draggerPickStyle->style = SoPickStyle::SHAPE_ON_TOP;
+        draggerPickStyle->setOverride(false);
+        vp->setTransformOrigin(vp->getTransformOrigin());
+    }
+
+    updateSpinBoxesReadOnlyStatus();
 }
 
 void TaskTransform::updateTransformOrigin()
@@ -820,12 +855,7 @@ void TaskTransform::updateTransformOrigin()
         }
     };
 
-    const bool showReference = (placementMode == PlacementMode::Custom);
-    ui->referenceLabel->setVisible(showReference);
-    ui->referencePickerWidget->setVisible(showReference);
-
     if (placementMode == PlacementMode::Custom && !customTransformOrigin.has_value()) {
-        setSelectionMode(SelectionMode::SelectTransformOrigin);
         return;
     }
 
@@ -847,7 +877,8 @@ void TaskTransform::updateTransformOrigin()
 
 void TaskTransform::updateSpinBoxesReadOnlyStatus() const
 {
-    const bool isReadOnly = selectionMode != SelectionMode::None;
+    const bool isReadOnly = selectionMode != SelectionMode::None || pickingTransformOrigin
+        || pickingCoordinateSystem;
 
     const auto controls = {
         ui->xPositionSpinBox,
@@ -911,6 +942,7 @@ void TaskTransform::showCoordinateSystemIndicator()
     }
 
     auto* annotation = new So3DAnnotation();
+    annotation->layer = static_cast<int>(AnnotationLayer::Handle);
     annotation->addChild(csIndicatorTransform);
     annotation->addChild(indicator);
 
@@ -951,17 +983,12 @@ void TaskTransform::onTransformOriginReset()
     vp->resetTransformOrigin();
 }
 
-void TaskTransform::onCoordinateSystemChange([[maybe_unused]] int mode)
+void TaskTransform::onCoordinateSystemModeChanged([[maybe_unused]] int index)
 {
-    if (selectionMode == SelectionMode::SelectCustomCS) {
-        setSelectionMode(SelectionMode::None);
-    }
-
-    positionMode = ui->positionModeComboBox->currentData().value<PositionMode>();
+    const auto* option = ui->coordinateSystemSelector->currentOption();
+    positionMode = option ? option->userData.value<PositionMode>() : PositionMode::Custom;
 
     ui->alignRotationCheckBox->setVisible(positionMode != PositionMode::Local);
-    ui->customCSReferenceLabel->setVisible(positionMode == PositionMode::Custom);
-    ui->customCSPickerWidget->setVisible(positionMode == PositionMode::Custom);
 
     if (positionMode == PositionMode::Local) {
         hideCoordinateSystemIndicator();
@@ -976,10 +1003,6 @@ void TaskTransform::onCoordinateSystemChange([[maybe_unused]] int mode)
     updateInputLabels();
     updatePositionAndRotationUi();
     updateTransformOrigin();
-
-    if (positionMode == PositionMode::Custom && !customCoordinateSystemPlacement.has_value()) {
-        setSelectionMode(SelectionMode::SelectCustomCS);
-    }
 }
 
 void TaskTransform::onPositionChange()

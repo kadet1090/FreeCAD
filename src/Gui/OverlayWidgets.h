@@ -88,6 +88,7 @@ public:
      * @param pos: docking position
      */
     OverlayTabWidget(QWidget* parent, Qt::DockWidgetArea pos);
+    ~OverlayTabWidget() override;
 
     /// Enable/disable overlay mode for this tab widget
     void setOverlayMode(bool enable);
@@ -166,6 +167,15 @@ public:
     {
         return touched;
     }
+
+    /**
+     * @brief The gap overlay panels keep between themselves and the window edge.
+     *
+     * Panels float over the 3D view instead of being docked beside it, so nothing else reserves
+     * this room. A reveal strip is deliberately exempt: an edge you can throw the pointer at is
+     * worth more there than a consistent gap.
+     */
+    static QMargins viewPadding();
 
     /// Set geometry of this tab widget
     void setRect(QRect rect);
@@ -444,6 +454,9 @@ private:
     qreal _animation = 0;
     QPropertyAnimation* _animator = nullptr;
 
+    /// Runs the whole edge that faces the view, so the panel can be grabbed anywhere along it.
+    OverlaySizeGrip* sizeGrip = nullptr;
+
     State _state = State::Normal;
 
     std::map<QDockWidget*, int> _sizemap;
@@ -491,10 +504,15 @@ protected:
     void timerEvent(QTimerEvent* te) override;
 
 private:
+    /// Where the title sits in the strip, once the theme has had its say.
+    Qt::Alignment titleAlignment() const;
+
+    /// Where it sits when the theme says nothing.
+    Qt::Alignment dockAreaAlignment() const;
+
     QPoint dragOffset;
     QSize dragSize;
     QLayoutItem* titleItem = nullptr;
-    QColor textcolor;
     int timerId = 0;
     bool blink = false;
     bool mouseMovePending = false;
@@ -506,6 +524,9 @@ class OverlaySizeGrip: public QWidget
 {
     Q_OBJECT
 public:
+    /// How thick the grip is across the edge it runs along; it spans that edge in full.
+    static constexpr int thickness = 6;
+
     OverlaySizeGrip(QWidget* parent, bool vertical);
 
 Q_SIGNALS:
@@ -523,7 +544,7 @@ private:
 };
 
 /// Splitter for OverlayTabWidget
-class OverlaySplitter: public QSplitter
+class GuiExport OverlaySplitter: public QSplitter
 {
     Q_OBJECT
 public:
@@ -536,17 +557,32 @@ protected:
 
 
 /// Splitter handle for dragging the splitter
-class OverlaySplitterHandle: public QSplitterHandle
+class GuiExport OverlaySplitterHandle: public QSplitterHandle
 {
     Q_OBJECT
 public:
     friend class OverlaySplitter;
 
     OverlaySplitterHandle(Qt::Orientation, QSplitter* parent);
+
+    /// The name this handle answers to, whoever renames it. See claimObjectName().
+    static constexpr const char* objectNameLiteral = "OverlaySplitHandle";
+
     void setTitleItem(QLayoutItem*);
     void retranslate();
     void refreshIcons();
     QDockWidget* dockWidget();
+
+    /**
+     * @brief Which end of the strip the title text hugs. The buttons take the other one.
+     *
+     * The button layout is only reachable through a position-unqualified token
+     * (e.g. PanelTitleHorizontalAlign): it is fixed once, from this same call, before the
+     * strip has been given the geometry a position-qualified token (PanelTitleWestHorizontalAlign
+     * and friends) would need to answer differently. Such a token still reaches the painted
+     * text on every repaint, so stating one here only moves the text away from its buttons.
+     */
+    Qt::Alignment titleAlignment() const;
 
     void showTitle(bool enable);
     bool isShowing() const
@@ -575,7 +611,20 @@ protected:
     void onAction();
     void onTimer();
 
+    /**
+     * @brief Takes the handle's name back from whoever last wrote it.
+     *
+     * QSplitter renames every handle to qt_splithandle_* once createHandle() has returned, and
+     * QStyleSheetStyle reads a qt_ prefix as one of Qt's own internal children: it answers any
+     * font set on such a widget by replacing it with the parent's. This is a panel title bar,
+     * not one of Qt's internals, and only a name of its own lets a font token reach it.
+     */
+    void claimObjectName();
+
 private:
+    /// Which end of the strip the title hugs when no theme says otherwise.
+    Qt::Alignment dockAreaAlignment() const;
+
     QLayoutItem* titleItem = nullptr;
     int idx = -1;
     QAction actFloat;

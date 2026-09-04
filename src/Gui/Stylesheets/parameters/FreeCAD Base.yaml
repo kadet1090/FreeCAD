@@ -1,0 +1,748 @@
+---
+# "@Name" inside an expression is a flat parameter lookup: it finds a parameter literally
+# named "Name" or nothing at all. It is NOT a component-chain lookup. FreeCADStyle walks
+# Button → FormControl when a widget asks for a Height, but that walk happens at draw time
+# and the expression evaluator has no part in it — so "@ButtonHeight" here resolves to the
+# literal string "@ButtonHeight", which is an engaged value that stops the chain walk dead
+# and silently disables the property. Always reference the concrete parameter that exists
+# (here: "@FormControlHeight").
+
+# Semantic surface tokens; these drive QPalette.
+# Window / panel backgrounds
+BaseWindowBackground: "@Background.050"
+BaseAlternateBackground: "@Background.100"
+BaseInputBackground: "@Background.000"
+
+# Selection
+BaseHighlightBackground: "@Accent.500"
+BaseHighlightTextColor: "@Neutral.000"
+
+# Disabled
+BaseDisabledTextColor: "@Contrast.300"
+BaseDisabledBackground: "@Neutral.200"
+
+# Placeholder text in inputs
+BasePlaceholderTextColor: "@Contrast.400"
+
+# Links / URLs
+BaseLinkColor: "@Accent.600"
+
+# 3D shading (QPalette Light / Midlight / Mid / Dark / Shadow)
+BaseShadingLight: "@Neutral.100"
+BaseShadingMidlight: "@Neutral.200"
+BaseShadingMid: "@Neutral.400"
+BaseShadingDark: "@Neutral.600"
+BaseShadingShadow: "@Neutral.800"
+
+BaseBorderColor: "@Neutral.400"
+BaseHoveredBorderColorEffect: "effect(darken: 0.08)"
+
+FormControlSmallHeight: 24px
+FormControlInternalHeight: 22px
+FormControlHeight: 26px
+FormControlBigHeight: 30px
+
+# The height a form control keeps no matter how little room the layout around it has. Qt honours
+# no minimum at all once a container is given less than its layout asks for: it takes the space
+# back from the tallest widgets first, which is exactly the inputs. FreeCADStyle puts this one on
+# the widget itself, the one floor QWidget::setGeometry() will not cross. Set it to reset() for a
+# component that is sized by something other than these heights.
+FormControlSmallMinHeight: "@FormControlSmallHeight"
+FormControlMinHeight: "@FormControlHeight"
+FormControlInternalMinHeight: "reset()" # Internal buttons should adapt
+FormControlBigMinHeight: "@FormControlBigHeight"
+
+FormControlIconSpacing: "@Spacing.150"
+
+FormControlPadding: "padding(horizontal: @Spacing.100, vertical: @Spacing.075)"
+FormControlBorderThickness: 1px
+FormControlBorderRadius: "@BaseRadius.medium"
+FormControlBorderColor: "@BaseBorderColor"
+FormControlTextColor: "@BaseTextColor"
+
+# The trailing column a form control reserves for the glyph it paints there - a spin box's step
+# arrows, a dropdown's arrow. One number so the controls agree with each other; a component can
+# still override it.
+FormControlArrowWidth: 14px
+FormControlArrowHeight: 12px
+
+ButtonBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Background.100, @Background.200)"
+ButtonMinWidth: 100px
+ButtonPadding: "padding(horizontal: @Spacing.300, vertical: @Spacing.100)"
+
+ButtonIconSpacing: "@FormControlIconSpacing"
+ButtonIconSize: 16px
+
+ButtonSmallFontSize: 0.75rem
+ButtonSmallFontWeight: 600
+ButtonContentBox: "content_box((width: @ButtonMinWidth, height: @FormControlHeight), @ButtonPadding, @FormControlBorderThickness)"
+
+ButtonFocusedBorderColor: "@Accent.600"
+ButtonPrimaryFocusedBorderColor: "@ButtonFocusedBorderColor"
+
+ButtonTextColor: "@BaseTextColor"
+ButtonBorderColor: "@BaseBorderColor"
+
+ButtonHoveredBackgroundEffect: "effect(lighten: 0.035)"
+ButtonPressedBackgroundEffect: "effect(darken: 0.04)"
+ButtonCheckedBackgroundEffect: "effect(darken: 0.03)"
+
+ButtonPressedInnerShadow: "inner_shadow(color: rgba(0, 0, 0, 50), y: 2px, blur: 6px)"
+
+ButtonCheckedInnerShadow: "@ButtonPressedInnerShadow"
+
+ButtonDisabledBackground: "@BaseDisabledBackground"
+ButtonDisabledTextColor: "@BaseDisabledTextColor"
+ButtonDisabledBorderColor: "@BaseBorderColor"
+
+ButtonPrimaryBackground: "blend(@ButtonBackground, @Accent.500, 15%)"
+ButtonPrimaryBorderColor: "blend(@ButtonBorderColor, @Accent.500, 25%)"
+
+ButtonLinkBackground: "@Colors.transparent"
+ButtonLinkBorderColor: "@Colors.transparent"
+
+ButtonLinkHoveredBackground: "@Background.100"
+ButtonLinkHoveredBorderColor: "@BaseBorderColor"
+
+ButtonLinkPressedBackground: "@Background.200"
+ButtonLinkPressedBorderColor: "@BaseBorderColor"
+ButtonLinkPressedInnerShadow: "@ButtonPressedInnerShadow"
+
+ButtonLinkCheckedBackground: "@Background.150"
+ButtonLinkCheckedBorderColor: "@BaseBorderColor"
+ButtonLinkCheckedInnerShadow: "@ButtonCheckedInnerShadow"
+
+ToolButtonPadding: "padding(@Spacing.150)"
+ToolButtonSmallPadding: "padding(@Spacing.100)"
+
+# A tool button is at least as wide as it is tall, so an icon-only one is never narrower than
+# square. The floors are the form-control heights, which is what a tool button's own Height
+# resolves to through Button -> FormControl.
+ToolButtonMinWidth: "@FormControlHeight"
+ToolButtonSmallMinWidth: "@FormControlSmallHeight"
+
+# The Link variant covers auto-raise buttons. The padding is uniform, so an icon-only button
+# grows squarely: size = iconSize + 2 * padding. That square only survives while
+# iconSize + 2 * padding clears ToolButtonMinWidth; below an 18px icon the width floor wins
+# and the button reads slightly wide.
+ToolButtonLinkPadding: "@Spacing.100"
+ToolButtonMenuWidth: 14px
+
+# ── GeometrySelector ─────────────────────────────────────────────────────────
+# Composite selection field (Gui::GeometrySelectorWidget) rendered as a list but sized like a
+# form control, so it never stands shorter than the line edits and spin boxes beside it in a
+# task form.
+GeometrySelectorMinHeight: "@FormControlHeight"
+GeometrySelectorPadding: "padding(@Spacing.050)"
+GeometrySelectorItemSpacing: "@Spacing.050"
+GeometrySelectorItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050)"
+
+# ── Internal Button ───────────────────────────────────────────────────────────
+# Flat action button used inside custom composite widgets (e.g. the geometry selector's
+# change / remove controls). FreeCADStyle paints it directly on the child widget so it looks
+# the same under any application QStyle. Deliberately simplified: transparent at rest, a solid
+# fill only while hovered or pressed, no gradient and no border. Because it inherits
+# FormControl rather than Button it has none of Button's hover/pressed effects — the fill
+# comes solely from the explicit state backgrounds below. Height and min-width are reset so
+# its compact padding drives the size.
+InternalButtonBackground: "@Colors.transparent"
+InternalButtonBorderColor: "@Colors.transparent"
+InternalButtonBorderThickness: 0px
+InternalButtonBorderRadius: "@BaseRadius.medium"
+InternalButtonPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050)"
+InternalButtonHeight: "reset()"
+InternalButtonMinHeight: "reset()"
+InternalButtonMinWidth: "reset()"
+
+InternalButtonHoveredBackground: "@Background.150"
+InternalButtonPressedBackground: "@Background.200"
+
+# What the Internal control size means for an ordinary button, so a QToolButton can carry it
+# without becoming an InternalButton.
+ButtonInternalPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.050)"
+ToolButtonInternalPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050)"
+ToolButtonInternalMinWidth: "reset()"
+
+ToolBarItemSpacing: "@Spacing.075"
+ToolBarItemMargin: "@Spacing.050"
+
+# A toolbar decides how tall its buttons are, so the form-control height a tool button would
+# otherwise inherit is stopped here rather than overridden with a second number.
+ToolBarButtonHeight: "reset()"
+ToolBarButtonMinHeight: "reset()"
+
+ToolBarBackground: "@Background.100"
+ToolBarBorderColor: "@BaseBorderColor"
+# Canonical North, i.e. the bottom edge; rotated for the other dock positions.
+ToolBarBorderThickness: "border_thickness(0px, bottom: 1px)"
+
+# A toolbar in the status bar or the menu bar corner blends into its host.
+ToolBarTransparentBackground: "reset()"
+ToolBarTransparentBorderColor: "reset()"
+
+# WbToolBar — the toolbar hosting the workbench selector sits flush with no layout margins so
+# the tabs span its full extent. QToolBarLayout rebuilds its contents margins from
+# ToolBarItemMargin + ToolBarFrameWidth on every invalidate, so both must resolve to zero here.
+WbToolBarItemMargin: 0px
+WbToolBarFrameWidth: 0px
+
+# A namespace set on OverlayToolButton, so it resolves ahead of the ToolButton chain. A panel
+# title bar is a thin strip and its buttons are secondary to the panel content, so they carry
+# a smaller icon than a tool button elsewhere. This is an override name, not the Panel
+# component below: a button in a title bar is still a button.
+PanelButtonIconSize: 12px
+PanelButtonMinHeight: "reset()"
+
+# Overlay panels float over the 3D view rather than being docked beside it, so nothing else
+# reserves the gap between them and the window edge. Stated as an inset so a theme can give one
+# edge more room than another - the bottom shares its edge with the status bar. A reveal strip
+# is exempt: it stays flush so the pointer can still be thrown at the edge to catch it.
+3DViewPadding: "padding(@Spacing.200)"
+
+# A docked QDockWidget keeps none of its own client area - its body and its title bar divide
+# all of it between them - so these paint on those two widgets and the dock paints nothing.
+# Position is the dock area, so every geometric token here is stated at the canonical North, a
+# panel docked along the top edge, and rotated onto the edge that faces the central widget.
+PanelBackground: "@Background.100"
+PanelBorderColor: "@BaseBorderColor"
+# The seam belongs to the resize handle below, not to the panels: a panel spans only its own
+# slice of a dock area, so a seam drawn here breaks at every handle between one panel and the
+# next. State a thickness to give an individual panel an outline of its own; the strip and the
+# body will divide it between them along whichever edges the dock area puts it on.
+PanelBorderThickness: "reset()"
+# The content fills whatever the padding leaves it. The inset is floored at the border either
+# half draws, so this states the gutter only.
+PanelPadding: "padding(0)"
+
+# The title heads the content below it rather than floating over the panel, so it carries its
+# own surface and a rule along the edge it shares with the body. It stays at the top of its
+# panel whichever area that panel is docked to, so the rule is always its bottom edge and never
+# rotates. Its other three edges are the panel's own outline above, which does.
+PanelTitleBackground: "@Background.150"
+PanelTitleTextColor: "@Contrast.500"
+PanelTitleBorderColor: "@BaseBorderColor"
+PanelTitleBorderThickness: "border_thickness(0px, bottom: 1px)"
+PanelTitlePadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050) + padding(@PanelTitleBorderThickness)"
+
+# The handle between two panels, and between a panel and the central widget. It is wide enough
+# to grab, so it reads as the gutter the panels sit in rather than as a line of its own.
+PanelSeparatorBackground: "@Background.150"
+PanelSeparatorHoveredBackground: "@Background.200"
+PanelSeparatorWidth: "1px"
+
+# The handle along a dock area's inner edge spans that whole area, past every panel in it, so it
+# is the one surface that can draw the seam as a single unbroken line. Canonical North, i.e. the
+# bottom edge: rotated onto the right of a left dock area's handle, the left of a right one's.
+# A handle between one panel and the next borders no central widget and draws none of this.
+PanelSeparatorBorderColor: "@BaseBorderColor"
+PanelSeparatorBorderThickness: "border_thickness(0px, bottom: 1px)"
+
+# Overlay mode, where the panel floats over the 3D view. The body drops every trace of its
+# docked chrome - an opaque surface here is exactly the slab overlay mode exists to avoid - and
+# the strip keeps just enough of one to hold its buttons and its title legible over the model.
+PanelTransparentBackground: "reset()"
+PanelTransparentBorderColor: "reset()"
+PanelTransparentBorderThickness: "reset()"
+PanelTransparentPadding: "padding(@Spacing.100)"
+
+PanelTitleTransparentBackground: "@ButtonBackground"
+PanelTitleTransparentBorderColor: "@BaseBorderColor"
+PanelTitleTransparentBorderThickness: "1px"
+PanelTitleTransparentBorderRadius: "@BaseRadius.medium"
+PanelTitleTransparentPadding: "padding(@Spacing.075, right: @Spacing.150, left: @Spacing.200)"
+PanelTitleTransparentFontWeight: 800
+PanelTitleTransparentFontSize: 0.875rem
+PanelTitleTransparentVerticalAlign: "middle"
+
+# A namespace set on the expression button inside a quantity field, so it resolves ahead of the
+# ToolButton chain. It is a fixed square that sits inside the line edit's frame, so it carries
+# no padding of its own, and it marks a bound expression by staying checked.
+ExpressionButtonBackground: "@ButtonBackground"
+ExpressionButtonBorderColor: "@ButtonBorderColor"
+
+ExpressionButtonCheckedBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Accent.700, @Accent.800)"
+ExpressionButtonCheckedBorderColor: "@Accent.900"
+ExpressionButtonCheckedIconColor: "@Background.050"
+ExpressionButtonPadding: "0px"
+ExpressionButtonMinHeight: "reset()"
+
+# ── Transparent property editor — an opaque panel sized to its rows ──────────
+# Unlike the tree, property rows are a dense label/value grid that needs a continuous surface
+# behind them, so this paints a real panel rather than a box per item. Because it paints, it
+# stops the transparency chain: the header, scrollbars and inline editors below it render as
+# if docked. Items deliberately get no Transparent tokens — the variant then drops out of the
+# fallback chain and they resolve their normal styling.
+PropertyEditorTransparentBackground: "@Background.050"
+PropertyEditorTransparentBorderColor: "@BaseBorderColor"
+PropertyEditorTransparentBorderThickness: 1px
+PropertyEditorTransparentBorderRadius: "@BaseRadius.medium"
+PropertyEditorTransparentPadding: "0px"
+PropertyEditorTransparentIsTransparent: "false"
+
+PropertyEditorBorderRadius: 0px
+PropertyEditorBorderThickness: "border_thickness(0, bottom: 1px)"
+
+DocumentTreeBorderRadius: 0px
+DocumentTreeBorderThickness: "border_thickness(0, bottom: 1px)"
+
+SeparatorThickness: 1px
+SeparatorColor: "@BaseBorderColor"
+
+# Read by resolveBoxStyle as the box's own fill. It named the opaque patch behind the title
+# while QSS drew the group box; the title is masked out of the border now, so nothing is
+# painted behind it and the body stays see-through.
+GroupBoxBackground: "@Colors.transparent"
+GroupBoxBorderColor: "@Neutral.300"
+GroupBoxBorderRadius: "@BaseRadius.medium"
+GroupBoxBorderThickness: 1px
+GroupBoxPadding: "padding(@Spacing.300)"
+
+# Flat group boxes keep Qt's convention — a single line along the top edge, no side or bottom
+# frame. Override these three to give a flat box a frame of its own.
+GroupBoxFlatBorderThickness: "border_thickness(0px, top: 1px)"
+GroupBoxFlatBorderRadius: 0px
+# With no side or bottom line to stand off from, only the gap below the top line means anything.
+GroupBoxFlatPadding: "padding(0, top: @Spacing.300)"
+
+GroupBoxTitlePadding: "padding(horizontal: @Spacing.150, vertical: 0)"
+GroupBoxTitleFontWeight: 600
+GroupBoxTitleTextColor: "@Contrast.500"
+
+# A tooltip borrows the menu's surface: both are floating panels over the document, and a
+# theme that retunes one almost always means the other.
+#
+# The radius follows Menu's 0px because a tooltip is a top-level window: a painted radius
+# alone would leave the window's own square corners showing through. Rounding both is one
+# shared follow-up (WA_TranslucentBackground in polish()), not a per-component decision.
+#
+# TooltipPadding is a single value, not padding(...): Qt reports the content inset through
+# PM_ToolTipLabelFrameWidth, one scalar for all four sides, so an asymmetric padding() would
+# silently collapse to its left edge.
+#
+# There is no TooltipFontSize by default — a tooltip keeps the application font until a theme
+# states otherwise, resolved by the same general font pass every other component goes through.
+TooltipBackground: "@MenuBackground"
+TooltipBorderColor: "@MenuBorderColor"
+TooltipBorderThickness: "@MenuBorderThickness"
+TooltipBorderRadius: "@MenuBorderRadius"
+TooltipPadding: "@Spacing.200"
+TooltipTextColor: "@BaseTextColor"
+
+# What polish(QPalette&) hands Qt for the widgets that take a tip colour from the palette
+# rather than from the style.
+BaseTooltipBackground: "@TooltipBackground"
+BaseTooltipTextColor: "@TooltipTextColor"
+
+# The report output fills a dock of its own rather than sitting as a field among others, so it
+# drops the frame and fill every other text edit carries and takes the dock's surface instead.
+ReportOutputBackground: "reset()"
+ReportOutputBorderColor: "reset()"
+
+# The halo Gui::HighlightOverlay paints around a marked control. The background is a tint
+# rather than a fill so the control's own text and indicator stay legible beneath it, and
+# HighlightOverlayMargin is both how far the halo stands off the control and how far it is
+# allowed to reach past the edge of the widget hosting it.
+HighlightOverlayBackground: "opacity(@Accent.500, 12%)"
+HighlightOverlayBorderColor: "@Accent.500"
+HighlightOverlayBorderThickness: 2px
+HighlightOverlayBorderRadius: "@BaseRadius.medium"
+HighlightOverlayMargin: "@Spacing.100"
+
+# 3D-view geometry highlight. A face is see-through so the surface under it still reads;
+# its boundary stays solid so the outline stays crisp.
+GeometryHighlightHoveredFaceColor: "opacity(@Blue.400, 80%)"
+GeometryHighlightHoveredEdgeColor: "@Blue.500"
+GeometryHighlightHoveredPointColor: "@Blue.500"
+GeometryHighlightReferenceFaceColor: "opacity(@Blue.500, 30%)"
+GeometryHighlightReferenceEdgeColor: "@Blue.500"
+GeometryHighlightReferencePointColor: "@Blue.500"
+
+# A scroll bar's appearance lives in QSS pseudo-elements QProxyStyle cannot reach, so it is
+# the one component the style does not paint. These tokens are what its rules read.
+ScrollBarBackground: "@Colors.transparent"
+ScrollBarHoveredBackground: "opacity(@BaseBorderColor, 0.1)"
+
+ScrollBarThumbBackground: "@Neutral.400"
+ScrollBarThumbHoveredBackground: "@Neutral.600"
+ScrollBarThumbBorderRadius: "@BaseRadius.medium"
+ScrollBarThumbMargin: "padding(@Spacing.100)"
+ScrollBarThumbMinLength: 20px
+
+# The surface a task panel and a dialog sit on; read by the QSint content rule below,
+# which is stylesheet work QProxyStyle cannot reach.
+DialogBackground: "@Background.050"
+
+# That fill is opaque, so a task box presents a solid surface to the dialog inside it even
+# while the panel around it is see-through. Without this the whole dialog stays in the
+# transparent chain and its controls paint as overlay chrome.
+TaskBoxTransparentIsTransparent: "false"
+
+# The two halves of a split button are painted as separate boxes, so the token system zeroes
+# the corners where they meet and drops the trailing half's border there. FreeCADStyle needs
+# to know nothing about SplitButton for this to work.
+SplitButtonMainBorderRadius: "border_radius(@FormControlBorderRadius, right: 0px)"
+SplitButtonMenuBorderRadius: "border_radius(@FormControlBorderRadius, left: 0px)"
+SplitButtonMenuBorderThickness: "border_thickness(@FormControlBorderThickness, left: 0px)"
+
+# The bar's own tokens drive its background and the separator between it and the content
+# area below.
+MenuBarBackground: "@BaseWindowBackground"
+MenuBarPadding: "padding(horizontal: @Spacing.300, vertical: @Spacing.000)"
+MenuBarBorderColor: "@BaseBorderColor"
+MenuBarBorderThickness: "border_thickness(0px, bottom: 1px)"
+
+MenuBarItemSpacing: "@Spacing.000"
+MenuBarItemPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.050)"
+MenuBarItemMargin: "padding(@Spacing.100)"
+MenuBarItemBorderRadius: "@BaseRadius.small"
+MenuBarItemTextColor: "@BaseTextColor"
+
+MenuBarItemHoveredBackground: "@Background.200"
+MenuBarItemHoveredTextColor: "@BaseTextColor"
+
+MenuBarItemPressedBackground: "@Neutral.400"
+MenuBarItemPressedInnerShadow: "@ButtonPressedInnerShadow"
+MenuBarItemPressedTextColor: "@BaseTextColor"
+
+MenuBarItemDisabledTextColor: "@BaseDisabledTextColor"
+
+# The status bar is the menu bar's opposite number: the same surface at the other end of the
+# window, so its separating edge sits on the top rather than the bottom. Its height is stated
+# rather than left to its contents: what stands in the bar differs by workbench and by profile,
+# and a bar sized to its tallest item changes height as they come and go.
+StatusBarBackground: "@BaseWindowBackground"
+StatusBarPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.050, left: @Spacing.300)"
+StatusBarBorderColor: "@BaseBorderColor"
+StatusBarBorderThickness: "border_thickness(0px, top: 1px)"
+StatusBarItemSpacing: "@Spacing.150"
+StatusBarHeight: 36px
+
+StatusBarMessageTextColor: "@BaseTextColor"
+StatusBarMessageWarningTextColor: "@WarningColor"
+StatusBarMessageErrorTextColor: "@NegativeColor"
+StatusBarMessageCriticalTextColor: "@Red.900"
+
+LineEditBackground: "@Background.000"
+LineEditBorderColor: "@FormControlBorderColor"
+LineEditBorderRadius: "@FormControlBorderRadius"
+LineEditBorderThickness: "@FormControlBorderThickness"
+LineEditPadding: "@FormControlPadding"
+LineEditHeight: "@FormControlHeight"
+LineEditSmallHeight: "@FormControlSmallHeight"
+
+LineEditFocusedBorderColor: "@Accent.500"
+LineEditHoveredBorderColorEffect: "@BaseHoveredBorderColorEffect"
+
+LineEditDisabledBackground: "@BaseDisabledBackground"
+LineEditDisabledTextColor: "@BaseDisabledTextColor"
+
+TextEditPadding: "padding(@FormControlPadding.left)"
+
+SelectPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.100)"
+SelectSmallPadding: "@FormControlPadding"
+SelectBigPadding: "@FormControlPadding"
+
+ListBackground: "@Background.000"
+ListBorderColor: "@FormControlBorderColor"
+ListBorderRadius: "@FormControlBorderRadius"
+ListBorderThickness: "@FormControlBorderThickness"
+
+# The list frame reacts to focus and hover like a text input, so its accent ring and hover
+# border effect are stated once, on LineEdit.
+ListFocusedBorderColor: "@LineEditFocusedBorderColor"
+ListHoveredBorderColorEffect: "@LineEditHoveredBorderColorEffect"
+
+ListDisabledBackground: "@LineEditDisabledBackground"
+ListDisabledTextColor: "@LineEditDisabledTextColor"
+
+ListItemPadding: "padding(horizontal: @Spacing.100, vertical: @Spacing.050)"
+ListItemIconSpacing: "@Spacing.150"
+
+# Default rows are transparent; an alternate row takes the palette's alternate base. The
+# Alternate variant prefix is tried before the plain ListRow* fallback.
+ListRowAlternateBackground: "@BaseAlternateBackground"
+
+ListRowSelectedBackground: "opacity(@Accent.500, 40%)"
+ListItemSelectedTextColor: "@BaseTextColor"
+
+ListRowHoveredBackground: "opacity(@Accent.500, 20%)"
+ListRowPressedBackground: "@Background.200"
+
+HeaderItemBackground: "@ButtonBackground"
+HeaderItemHoveredBackgroundEffect: "@ButtonHoveredBackgroundEffect"
+HeaderItemPressedBackgroundEffect: "@ButtonPressedBackgroundEffect"
+HeaderItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.100)"
+HeaderItemTextColor: "@ButtonTextColor"
+HeaderItemDisabledTextColor: "@ButtonDisabledTextColor"
+
+HeaderItemBorderColor: "border_colors(@Colors.transparent, bottom: @FormControlBorderColor)"
+HeaderItemBorderThickness: "border_thickness(0px, bottom: 1px)"
+HeaderItemBorderRadius: "border_radius(0px)"
+
+# The popup is a top-level window, so it stays square: a painted radius would leave the
+# window's own square corners showing through. MenuPadding is the pill inset, and with
+# MenuBorderThickness it drives PM_MenuHMargin and PM_MenuVMargin, which is the only way Qt
+# lets a style inset menu items: QMenu::paintEvent clips every item to its own action rect.
+MenuBackground: "@ListBackground"
+MenuBorderColor: "@ListBorderColor"
+MenuBorderThickness: "@ListBorderThickness"
+MenuBorderRadius: 0px
+MenuPadding: "padding(@Spacing.050)"
+MenuIconSize: 16px
+MenuOverlap: 0px
+
+# MenuItemIconSpacing is every inter-column gap; MenuItemSpacing is the gap between rows, and
+# MenuItemMargin insets the highlight beyond what MenuPadding already does.
+MenuItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050, right: @Spacing.300)"
+MenuItemIconSpacing: "@ListItemIconSpacing"
+MenuItemSpacing: "@Spacing.050"
+MenuItemMargin: "padding(0px)"
+MenuItemBorderRadius: 2px
+MenuItemTextColor: "@BaseTextColor"
+MenuItemHoveredBackground: "@ListRowPressedBackground"
+MenuItemPressedBackgroundEffect: "@ButtonPressedBackgroundEffect"
+MenuItemDisabledTextColor: "@ListDisabledTextColor"
+MenuItemMinWidth: 120px
+
+MenuShortcutSpacing: "@Spacing.400"
+MenuShortcutTextColor: "@BaseDisabledTextColor"
+MenuShortcutFontSize: 0.75rem
+
+# One element covers both a plain rule and an addSection() header; the header additionally
+# uses MenuSeparatorPadding, MenuSeparatorTextColor and MenuSeparatorIconSpacing, the gap
+# between the section label and the rule that fills the rest of the row. Set
+# MenuSeparatorBorderThickness to reset() to drop the rule entirely.
+MenuSeparatorHeight: "@Spacing.100"
+MenuSeparatorMargin: "padding(horizontal: @Spacing.100)"
+MenuSeparatorBorderColor: "@SeparatorColor"
+MenuSeparatorBorderThickness: "@SeparatorThickness"
+MenuSeparatorPadding: "padding(horizontal: @Spacing.100, vertical: @Spacing.050)"
+MenuSeparatorTextColor: "@BaseDisabledTextColor"
+MenuSeparatorIconSpacing: "@Spacing.100"
+
+# Left uncoloured on purpose: with no MenuArrowIconColor the arrow follows the item label
+# through every state. Stating one opts out of that tracking, since elements do not chain
+# and an Arrow token never sees the item's hovered or disabled state.
+MenuArrowWidth: 8px
+
+CheckBoxWidth: 14px
+CheckBoxHeight: "@CheckBoxWidth"
+CheckBoxSpacing: "@Spacing.150"
+
+CheckBoxSmallWidth: 12px
+CheckBoxSmallHeight: "@CheckBoxSmallWidth"
+
+CheckBoxBackground: "@Background.000"
+CheckBoxBorderRadius: "@BaseRadius.medium"
+CheckBoxPadding: "padding(@Spacing.100)"
+CheckBoxTickColor: "@BaseTextColor"
+
+CheckBoxFocusedBorderColor: "@Accent.500"
+CheckBoxHoveredBorderColorEffect: "@BaseHoveredBorderColorEffect"
+
+CheckBoxDisabledBackground: "@BaseDisabledBackground"
+CheckBoxDisabledTickColor: "@BaseDisabledTextColor"
+
+CheckBoxPressedInnerShadow: "inner_shadow(color: rgba(0, 0, 0, 50), y: 1px, blur: 4px)"
+
+# A radio button is a check box with a different radius, which is all it states of its own.
+RadioButtonBorderRadius: "border_radius(50%)"
+
+# The state box behind a checkable item's icon. Its padding sets the leading column's width
+# and the row's content height, both of which every row in the menu must agree on.
+MenuIconIndicatorPadding: "padding(@Spacing.050)"
+MenuIconIndicatorMargin: "padding(-@Spacing.025)"
+MenuIconIndicatorBorderRadius: "@BaseRadius.medium"
+MenuIconIndicatorBorderThickness: "@FormControlBorderThickness"
+
+MenuIconIndicatorCheckedBackground: "@ButtonLinkPressedBackground"
+MenuIconIndicatorCheckedBorderColor: "@ButtonLinkPressedBorderColor"
+MenuIconIndicatorCheckedInnerShadow: "@ButtonLinkPressedInnerShadow"
+
+# The container around the list is a QFrame, and its frame is the popup's edge.
+DropdownListBackground: "@MenuBackground"
+DropdownListBorderColor: "@MenuBorderColor"
+DropdownListBorderThickness: "@MenuBorderThickness"
+DropdownListBorderRadius: "@MenuBorderRadius"
+DropdownListPadding: "@MenuPadding"
+
+# The highlighted row here is the hovered one, not the selected one: Qt marks the row under the
+# pointer State_Selected, which is what makes the base style reach for the palette's highlight
+# text colour. That colour is meant for a fully saturated fill and the hover tint is not one,
+# so the label is held at the ordinary text colour instead.
+# How tall a dropdown may grow. Cleared with reset(), it is bounded only by Qt, which keeps
+# it on screen and honours maxVisibleItems.
+DropdownListMaxHeight: "250px"
+WorkbenchSelectorDropdownMaxHeight: "reset()"
+
+# Where the popup opens:
+#   current - the current row lands on the combo box, the way a menu opens over its button
+#   below   - the popup's top edge meets the combo box's bottom edge
+# An unrecognised value falls back to current. The screen-edge clamp outranks both: a long
+# popup near the bottom of the screen stays on screen rather than staying aligned.
+DropdownListPlacement: "current"
+# Applied after placement, in either mode. Positive moves the popup down.
+DropdownListPlacementOffset: 0px
+
+DropdownListItemPadding: "@MenuItemPadding"
+DropdownListItemIconSpacing: "@MenuItemIconSpacing"
+DropdownListItemSpacing: "@MenuItemSpacing"
+DropdownListItemHoveredTextColor: "@BaseTextColor"
+# Without this alias, PM_SmallIconSize finds nothing on the DropdownList -> List chain and falls
+# through to the platform theme, so a row's icon takes whatever size the desktop happens to use.
+DropdownListIconSize: "@MenuIconSize"
+
+# Two different rows can carry a highlight: hover follows the pointer, while selection marks the
+# entry the combo box currently holds and stays put as the pointer moves. A row that is both
+# resolves the hovered fill, since Hovered outranks Selected.
+DropdownListRowBorderRadius: "@MenuItemBorderRadius"
+DropdownListRowHoveredBackground: "@MenuItemHoveredBackground"
+DropdownListRowSelectedBackground: "@Background.100"
+DropdownListRowPressedBackgroundEffect: "@ButtonPressedBackgroundEffect"
+
+# The rule between groups of dropdown rows. The height is the band the rule is centred in,
+# extended by the next row's leading gap so the rule centres between rows rather than within its
+# own band. That split only comes out even when Height + ItemSpacing - SeparatorThickness is
+# even; with the even spacing scale and an odd thickness, Height must be odd, hence the +1px the
+# scale itself cannot express.
+DropdownListSeparatorHeight: "@Spacing.100 + 1px"
+DropdownListSeparatorMargin: "padding(horizontal: @Spacing.100)"
+DropdownListSeparatorBorderColor: "@SeparatorColor"
+DropdownListSeparatorBorderThickness: "@SeparatorThickness"
+
+TreeItemPadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.075)"
+
+# The connector lines in the indent column. Set the thickness to reset() to drop them; the
+# expand arrow is drawn either way.
+TreeBranchBorderColor: "@BaseBorderColor"
+TreeBranchBorderThickness: 1px
+
+# The document tree paints each item as a free-standing box only over a transparent surface,
+# where a full-width row would put an opaque stripe across the 3D view. Docked, none of these
+# tokens resolve and the tree falls back through Tree → List to the ordinary item-view look.
+DocumentTreeTransparentBackground: "reset()"
+DocumentTreeTransparentBorderThickness: "reset()"
+DocumentTreeRowTransparentBackground: "reset()"
+
+DocumentTreeItemTransparentBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Background.050, @Background.100)"
+DocumentTreeItemTransparentBorderRadius: "@BaseRadius.medium"
+DocumentTreeItemTransparentBorderThickness: 1px
+DocumentTreeItemTransparentBorderColor: "@BaseBorderColor"
+
+DocumentTreeItemTransparentPadding: "padding(horizontal: @Spacing.200, vertical: 3px)"
+DocumentTreeItemTransparentSpacing: "@Spacing.100"
+
+DocumentTreeItemTransparentHoveredBackgroundEffect: "effect(lighten: 0.05)"
+
+DocumentTreeItemTransparentSelectedBackground: "blend(@DocumentTreeItemTransparentBackground, @Accent.500, 20%)"
+DocumentTreeItemTransparentSelectedBorderColor: "blend(@DocumentTreeItemTransparentBorderColor, @Accent.500, 20%)"
+
+# A row of several columns is one band, so what separates the columns is a rule inside it and the
+# distance each column's content keeps from the seam before it. Stated only under the Transparent
+# variant: a docked row carries no edge of its own to divide.
+DocumentTreeItemTransparentColumnGap: "@Spacing.150"
+DocumentTreeSeparatorTransparentBorderColor: "@DocumentTreeItemTransparentBorderColor"
+DocumentTreeSeparatorTransparentBorderThickness: "@SeparatorThickness"
+
+# Over a transparent surface the header is drawn the way the rows below it are: one band across
+# its sections, divided by the same rule and holding its labels off it by the same gap, rather
+# than an opaque strip with a line under it. Header inherits no component, so it borrows the
+# tree's look by name.
+HeaderItemTransparentBackground: "@DocumentTreeItemTransparentBackground"
+HeaderItemTransparentBorderColor: "@DocumentTreeItemTransparentBorderColor"
+HeaderItemTransparentBorderThickness: "@DocumentTreeItemTransparentBorderThickness"
+HeaderItemTransparentBorderRadius: "@DocumentTreeItemTransparentBorderRadius"
+HeaderItemTransparentPadding: "@DocumentTreeItemTransparentPadding"
+HeaderItemTransparentColumnGap: "@DocumentTreeItemTransparentColumnGap"
+HeaderSeparatorTransparentBorderColor: "@DocumentTreeSeparatorTransparentBorderColor"
+HeaderSeparatorTransparentBorderThickness: "@DocumentTreeSeparatorTransparentBorderThickness"
+
+# The strip under the tabs, which the active tab's own edge joins.
+TabBarBaseHeight: 4px
+TabBarBaseOverlap: 4px
+TabBarBaseBorderColor: "@BaseBorderColor"
+TabBarBaseBorderThickness: "border_thickness(0px, bottom: 1px)"
+TabBarBaseBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, opacity(@BaseBorderColor, 0%), opacity(@BaseBorderColor, 40%))"
+
+# North is canonical: the geometric tokens are stated once and rotated to the other
+# positions. A per-position colour override is still possible, e.g. TabBarTabSouthBackground.
+#
+# The stop at y1 is the edge a tab shares with its pane. Routing it through a token rather
+# than a literal lets a pane whose background is not the default declare its own.
+# The surface a tab is attached to. The pane paints with it; a selected tab's gradient stops
+# at it, so the two read as one surface.
+TabWidgetBackground: "@Background.100"
+CurrentPaneBackground: "@TabWidgetBackground"
+TabBarTabSelectedBackground: "linear_gradient(x1: 0, x2: 0, y1: 1, y2: 0, @CurrentPaneBackground, @Background.000)"
+
+TabBarTabBorderRadius: "border_radius(0px, top: @BaseRadius.medium)"
+TabBarTabHoveredBorderColor: "@BaseBorderColor"
+TabBarTabBorderThickness: "border_thickness(1px, bottom: 0)"
+
+# Gap semantics: positive is a gap, negative an overlap. -1px merges the borders of adjacent
+# tabs into one.
+TabBarTabSpacing: -1px
+
+TabBarTabPadding: "padding(vertical: @Spacing.150, horizontal: @Spacing.300)"
+TabBarTabIconSpacing: "@Spacing.150"
+
+TabBarTabSelectedBorderColor: "@BaseBorderColor"
+TabBarTabDisabledBackground: "@BaseDisabledBackground"
+TabBarTabDisabledTextColor: "@BaseDisabledTextColor"
+
+# The workbench selector's tabs run edge to edge along the toolbar rather than sitting on a
+# base strip, so they lose the strip and the rounded corners and keep only the rules between
+# neighbours.
+WbTabBarBaseBackground: "reset()"
+WbTabBarTabBorderRadius: "border_radius(0px)"
+WbTabBarTabBorderThickness: "border_thickness(0px, left: 1px, right: 1px)"
+
+# The document tabs read the same way: one strip of them runs the width of the window under
+# the views rather than sitting on a base of its own, so they lose the strip and the rounded
+# corners and keep only the rules between neighbours.
+MdiTabBarBaseBackground: "reset()"
+MdiTabBarTabBorderRadius: "border_radius(0px)"
+MdiTabBarTabBorderThickness: "border_thickness(0px, left: 1px, right: 1px)"
+
+TabBarCloseButtonHeight: 14px
+TabBarCloseButtonWidth: 14px
+TabBarCloseButtonBorderRadius: "@BaseRadius.medium"
+TabBarCloseButtonIconColor: "@BaseTextColor"
+TabBarCloseButtonPadding: "padding(@Spacing.100)"
+
+TabBarCloseButtonHoveredBackground: "@Red.600"
+TabBarCloseButtonHoveredIconColor: "@Background.050"
+
+TabBarCloseButtonPressedBackground: "@Red.800"
+TabBarCloseButtonPressedIconColor: "@Background.050"
+
+TabBarCloseButtonDisabledIconColor: "@BaseDisabledTextColor"
+
+TabWidgetBorderColor: "@BaseBorderColor"
+TabWidgetBorderRadius: "border_radius(@BaseRadius.medium)"
+TabWidgetBorderThickness: "border_thickness(1px)"
+TabWidgetPadding: 0
+
+# Over a see-through surface a tab is a pill rather than a folder joined to a pane: the tabs
+# stand apart, the base strip fades, and the pane loses the edge it would otherwise share.
+TabBarTabTransparentSpacing: "@Spacing.150"
+TabBarTabTransparentBackground: "linear_gradient(x1: 0, y1: 0, x2: 0, y2: 1, @Background.050, @Background.100)"
+TabBarTabTransparentBorderRadius: "@BaseRadius.medium"
+TabBarTabTransparentBorderColor: "@BaseBorderColor"
+TabBarTabTransparentBorderThickness: 1px
+TabBarTabTransparentPadding: "padding(horizontal: @Spacing.200, vertical: @Spacing.100)"
+TabBarTabTransparentHoveredBackgroundEffect: "effect(lighten: 0.05)"
+TabBarTabTransparentSelectedBackground: "blend(@TabBarTabTransparentBackground, @Accent.500, 20%)"
+TabBarTabTransparentSelectedBorderColor: "blend(@TabBarTabTransparentBorderColor, @Accent.500, 20%)"
+
+TabBarBaseTransparentBackground: "reset()"
+TabBarBaseTransparentBorderColor: "reset()"
+TabBarBaseTransparentHeight: 0px
+TabBarBaseTransparentOverlap: 0px
+
+TabWidgetTransparentBackground: "reset()"
+TabWidgetTransparentBorderColor: "reset()"
+TabWidgetTransparentBorderThickness: 0px
+TabWidgetTransparentPadding: "padding(bottom: @TabBarTabTransparentSpacing)"
+
+ActionLabelMinHeight: "reset()"

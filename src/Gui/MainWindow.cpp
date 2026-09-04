@@ -67,6 +67,8 @@
 #endif
 
 #include <algorithm>
+#include <map>
+#include <string_view>
 #include <vector>
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -97,7 +99,10 @@
 #include "DockWindowManager.h"
 #include "DownloadManager.h"
 #include "FileDialog.h"
+#include "FreeCADStyle.h"
 #include "InputHintWidget.h"
+#include "FCMenuBar.h"
+#include "FCStatusBar.h"
 #include "MenuManager.h"
 #include "ModuleIO.h"
 #include "NotificationArea.h"
@@ -188,18 +193,18 @@ private:
  *  - Provide a popup menu allowing user to change the used unit schema (and update if changed
  * elsewhere)
  */
-class DimensionWidget: public QPushButton, WindowParameter
+class DimensionWidget: public QToolButton, WindowParameter
 {
     Q_OBJECT
 
 public:
     explicit DimensionWidget(QWidget* parent)
-        : QPushButton(parent)
+        : QToolButton(parent)
         , WindowParameter("Units")
     {
-        setFlat(true);
+        setAutoRaise(true);
+        setPopupMode(InstantPopup);
         setText(qApp->translate("Gui::MainWindow", "Dimension"));
-        setMinimumWidth(120);
         //: A context menu action used to show or hide the unit system chooser in the status bar
         setWindowTitle(qApp->translate("Gui::MainWindow", "Unit System"));
         // Visibility is owned and persisted by MainWindow's status-bar registry.
@@ -253,7 +258,7 @@ public:
             retranslateUi();
         }
         else {
-            QPushButton::changeEvent(event);
+            QToolButton::changeEvent(event);
         }
     }
 
@@ -338,6 +343,8 @@ struct MainWindowP
     QTimer saveStateTimer;
     QTimer restoreStateTimer;
     QMdiArea* mdiArea;
+    QTabBar* mdiTabBar {nullptr};
+    QMetaObject::Connection paneBackgroundConnection;
     QPointer<MDIView> activeView;
     QSignalMapper* windowMapper;
     SplashScreen* splashscreen;
@@ -387,6 +394,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f)
     // global access
     instance = this;
 
+    setMenuBar(new FCMenuBar(this));
+    setStatusBar(new FCStatusBar(this));
+
     d->connParam = App::GetApplication().GetUserParameter().signalParamChanged.connect(
         [this](ParameterGrp* Param, ParameterGrp::ParamType, const char* Name, const char*) {
             if (Param != d->hGrp || !Name) {
@@ -431,12 +441,17 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f)
     d->mdiArea->setTabsMovable(true);
     d->mdiArea->setTabPosition(QTabWidget::South);
     d->mdiArea->setViewMode(QMdiArea::TabbedView);
-    auto tab = d->mdiArea->findChild<QTabBar*>();
-    if (tab) {
-        tab->setTabsClosable(true);
+    d->mdiTabBar = d->mdiArea->findChild<QTabBar*>();
+    if (d->mdiTabBar) {
+        d->mdiTabBar->setTabsClosable(true);
         // The tabs might be very wide
-        tab->setExpanding(false);
-        tab->setObjectName(QStringLiteral("mdiAreaTabBar"));
+        d->mdiTabBar->setExpanding(false);
+        d->mdiTabBar->setObjectName(QStringLiteral("mdiAreaTabBar"));
+
+        // Give the strip its own token namespace so it can say how it differs from an ordinary
+        // tab bar: it runs the width of the window under the views rather than sitting on a
+        // base of its own.
+        d->mdiTabBar->setProperty("component", QStringLiteral("MdiTabBar"));
     }
     d->mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     d->mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -444,7 +459,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags f)
 #ifndef HAS_QTBUG_129596
     d->mdiArea->setActivationOrder(QMdiArea::ActivationHistoryOrder);
 #endif
-    d->mdiArea->setBackground(QBrush(QColor(160, 160, 160)));
     setCentralWidget(d->mdiArea);
 
     statusBar()->setObjectName(QStringLiteral("statusBar"));
@@ -1152,19 +1166,18 @@ bool MainWindow::closeAllDocuments(bool close)
 
 void MainWindow::activateNextWindow()
 {
-    auto tab = d->mdiArea->findChild<QTabBar*>();
-    if (tab && tab->count() > 0) {
-        int index = (tab->currentIndex() + 1) % tab->count();
-        tab->setCurrentIndex(index);
+    if (d->mdiTabBar && d->mdiTabBar->count() > 0) {
+        int index = (d->mdiTabBar->currentIndex() + 1) % d->mdiTabBar->count();
+        d->mdiTabBar->setCurrentIndex(index);
     }
 }
 
 void MainWindow::activatePreviousWindow()
 {
-    auto tab = d->mdiArea->findChild<QTabBar*>();
-    if (tab && tab->count() > 0) {
-        int index = (tab->currentIndex() + tab->count() - 1) % tab->count();
-        tab->setCurrentIndex(index);
+    if (d->mdiTabBar && d->mdiTabBar->count() > 0) {
+        int index = (d->mdiTabBar->currentIndex() + d->mdiTabBar->count() - 1)
+            % d->mdiTabBar->count();
+        d->mdiTabBar->setCurrentIndex(index);
     }
 }
 
@@ -1505,6 +1518,19 @@ void MainWindow::removeWindow(Gui::MDIView* view, bool close)
     updateActions();
 }
 
+void MainWindow::updateTabPaneBackground()
+{
+    if (!d->mdiTabBar) {
+        return;
+    }
+
+    FreeCADStyle::setStyleOverride(
+        d->mdiTabBar,
+        QStringLiteral("CurrentPaneBackground"),
+        d->activeView ? d->activeView->paneBackground() : QString()
+    );
+}
+
 void MainWindow::tabChanged(MDIView* view)
 {
     Q_UNUSED(view)
@@ -1513,8 +1539,7 @@ void MainWindow::tabChanged(MDIView* view)
 
 void MainWindow::tabCloseRequested(int index)
 {
-    auto tab = d->mdiArea->findChild<QTabBar*>();
-    if (index < 0 || index >= tab->count()) {
+    if (index < 0 || index >= d->mdiTabBar->count()) {
         return;
     }
 
@@ -1583,6 +1608,14 @@ void MainWindow::setActiveWindow(MDIView* view)
     }
 
     d->activeView = view;
+
+    // The tab strip has no ancestor in common with the views, so it is told which surface its
+    // selected tab now abuts, and follows that view's own for as long as it stays active.
+    QObject::disconnect(d->paneBackgroundConnection);
+    d->paneBackgroundConnection
+        = connect(view, &MDIView::paneBackgroundChanged, this, &MainWindow::updateTabPaneBackground);
+    updateTabPaneBackground();
+
     Application::Instance->viewActivated(view);
 
     // activate/remember workbench by tab (if enabled)
@@ -2694,7 +2727,10 @@ void MainWindow::changeEvent(QEvent* e)
 void MainWindow::clearStatus()
 {
     d->currentStatusType = 100;
-    statusBar()->setStyleSheet(QStringLiteral("#statusBar{}"));
+
+    if (auto* bar = qobject_cast<FCStatusBar*>(statusBar())) {
+        bar->setMessageLevel(StyleParameters::MessageLevel::Default);
+    }
 }
 
 void MainWindow::statusMessageChanged()
@@ -2755,6 +2791,20 @@ void applyStatusBarItemEnabled(QWidget* widget, bool enabled)
     }
     else {
         widget->setVisible(enabled);
+    }
+}
+
+StyleParameters::MessageLevel messageLevelOf(int statusType)
+{
+    switch (statusType) {
+        case MainWindow::Err:
+            return StyleParameters::MessageLevel::Error;
+        case MainWindow::Wrn:
+            return StyleParameters::MessageLevel::Warning;
+        case MainWindow::Critical:
+            return StyleParameters::MessageLevel::Critical;
+        default:
+            return StyleParameters::MessageLevel::Default;
     }
 }
 }  // namespace
@@ -2924,19 +2974,8 @@ void MainWindow::showStatus(int type, const QString& message)
 
     QFontMetrics fm(statusBar()->font());
     QString msg = fm.elidedText(message, Qt::ElideMiddle, this->d->actionLabel->width());
-    switch (type) {
-        case MainWindow::Err:
-            statusBar()->setStyleSheet(d->status->err);
-            break;
-        case MainWindow::Wrn:
-            statusBar()->setStyleSheet(d->status->wrn);
-            break;
-        case MainWindow::Pane:
-            statusBar()->setStyleSheet(QStringLiteral("#statusBar{}"));
-            break;
-        default:
-            statusBar()->setStyleSheet(d->status->msg);
-            break;
+    if (auto* bar = qobject_cast<FCStatusBar*>(statusBar())) {
+        bar->setMessageLevel(messageLevelOf(type));
     }
     d->currentStatusType = -type;
     statusBar()->showMessage(msg.simplified(), timeout);
@@ -3058,9 +3097,6 @@ void MainWindow::setWindowTitle(const QString& string)
 StatusBarObserver::StatusBarObserver()
     : WindowParameter("OutputWindow")
 {
-    msg = QStringLiteral("#statusBar{color: #000000}");  // black
-    wrn = QStringLiteral("#statusBar{color: #ffaa00}");  // orange
-    err = QStringLiteral("#statusBar{color: #ff0000}");  // red
     Base::Console().attachObserver(this);
     getWindowParameter()->Attach(this);
     getWindowParameter()->NotifyAll();
@@ -3074,26 +3110,26 @@ StatusBarObserver::~StatusBarObserver()
 
 void StatusBarObserver::OnChange(Base::Subject<const char*>& rCaller, const char* sReason)
 {
-    ParameterGrp& rclGrp = ((ParameterGrp&)rCaller);
-    auto format = QStringLiteral("#statusBar{color: %1}");
-    if (strcmp(sReason, "colorText") == 0) {
-        unsigned long col = rclGrp.GetUnsigned(sReason);
-        this->msg = format.arg(Base::Color::fromPackedRGB<QColor>(col).name());
+    // The preference is the value; the token it lands on is what the status bar resolves. A
+    // colour the user never set pushes nothing, leaving the theme's own token in place.
+    static const std::map<std::string_view, QString> tokens = {
+        {"colorText", QStringLiteral("StatusBarMessageTextColor")},
+        {"colorWarning", QStringLiteral("StatusBarMessageWarningTextColor")},
+        {"colorError", QStringLiteral("StatusBarMessageErrorTextColor")},
+        {"colorCriticalText", QStringLiteral("StatusBarMessageCriticalTextColor")},
+    };
+
+    const auto token = tokens.find(sReason);
+    MainWindow* mainWindow = getMainWindow();
+
+    if (token == tokens.end() || mainWindow == nullptr) {
+        return;
     }
-    else if (strcmp(sReason, "colorWarning") == 0) {
-        unsigned long col = rclGrp.GetUnsigned(sReason);
-        this->wrn = format.arg(Base::Color::fromPackedRGB<QColor>(col).name());
-    }
-    else if (strcmp(sReason, "colorError") == 0) {
-        unsigned long col = rclGrp.GetUnsigned(sReason);
-        this->err = format.arg(Base::Color::fromPackedRGB<QColor>(col).name());
-    }
-    else if (strcmp(sReason, "colorCritical") == 0) {
-        unsigned long col = rclGrp.GetUnsigned(sReason);
-        this->critical = format.arg(
-            QColor((col >> 24) & 0xff, (col >> 16) & 0xff, (col >> 8) & 0xff).name()
-        );
-    }
+
+    auto& group = static_cast<ParameterGrp&>(rCaller);
+    const QColor color = Base::Color::fromPackedRGB<QColor>(group.GetUnsigned(sReason));
+
+    FreeCADStyle::setStyleOverride(mainWindow->statusBar(), token->second, color.name());
 }
 
 void StatusBarObserver::sendLog(

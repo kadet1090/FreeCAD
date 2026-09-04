@@ -41,6 +41,7 @@
 #include <Base/Tools.h>
 #include <Gui/Command.h>
 #include <Gui/Document.h>
+#include <Gui/FreeCADStyle.h>
 
 #include "Document.h"
 #include "Tree.h"
@@ -71,6 +72,20 @@ PropertyEditor::PropertyEditor(QWidget* parent)
 {
     propertyModel = new PropertyModel(this);
     setModel(propertyModel);
+
+    // Resolves PropertyEditor* tokens ahead of the Tree and List chain, so the overlay
+    // treatment can differ from the document tree's.
+    setProperty("component", "PropertyEditor");
+
+    // Over a transparent surface the editor paints a panel sized to its rows, so the cap has
+    // to follow anything that changes how many rows are visible.
+    // clang-format off
+    connect(propertyModel, &QAbstractItemModel::modelReset, this, &PropertyEditor::updateHeightLimit);
+    connect(propertyModel, &QAbstractItemModel::rowsInserted, this, &PropertyEditor::updateHeightLimit);
+    connect(propertyModel, &QAbstractItemModel::rowsRemoved, this, &PropertyEditor::updateHeightLimit);
+    connect(this, &QTreeView::expanded, this, &PropertyEditor::updateHeightLimit);
+    connect(this, &QTreeView::collapsed, this, &PropertyEditor::updateHeightLimit);
+    // clang-format on
 
     setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
@@ -104,6 +119,9 @@ PropertyEditor::PropertyEditor(QWidget* parent)
     connect(this, &QTreeView::expanded, this, &PropertyEditor::onItemExpanded);
     connect(this, &QTreeView::collapsed, this, &PropertyEditor::onItemCollapsed);
     connect(propertyModel, &QAbstractItemModel::rowsMoved, this, &PropertyEditor::onRowsMoved);
+    // onRowsMoved above must run first: it hides the emptied group header, and the cap has to
+    // see that hidden state rather than the pre-move row count.
+    connect(propertyModel, &QAbstractItemModel::rowsMoved, this, &PropertyEditor::updateHeightLimit);
     connect(propertyModel, &QAbstractItemModel::rowsRemoved, this, &PropertyEditor::onRowsRemoved);
     // clang-format on
 
@@ -180,6 +198,68 @@ QBrush PropertyEditor::itemBackground() const
 void PropertyEditor::setItemBackground(const QBrush& c)
 {
     this->_itemBackground = c;
+}
+
+bool PropertyEditor::hasVisibleProperties() const
+{
+    // Group headers survive PropertyModel::resetGroups() even once their properties are
+    // gone, so an empty model still reports top-level rows; only a group that still has
+    // children counts as content to size the panel around.
+    for (int row = 0, count = model()->rowCount(); row < count; ++row) {
+        if (model()->rowCount(model()->index(row, 0)) > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int PropertyEditor::visibleRowsHeight(const QModelIndex& parent) const
+{
+    int height = 0;
+    for (int row = 0, count = model()->rowCount(parent); row < count; ++row) {
+        if (isRowHidden(row, parent)) {
+            continue;
+        }
+
+        QModelIndex index = model()->index(row, 0, parent);
+        height += rowHeight(index);
+        if (isExpanded(index)) {
+            height += visibleRowsHeight(index);
+        }
+    }
+    return height;
+}
+
+int PropertyEditor::contentHeight() const
+{
+    // Sums intrinsic row heights instead of asking QTreeView::viewportSizeHint(), which
+    // reports the last row's scrolled-away position under ScrollPerPixel rather than the
+    // panel's actual content height.
+    if (model() == nullptr || !hasVisibleProperties()) {
+        return 0;
+    }
+
+    return visibleRowsHeight(QModelIndex()) + 2 * frameWidth();
+}
+
+void PropertyEditor::updateHeightLimit()
+{
+    const int limit = Gui::FreeCADStyle::isTransparent(this) ? contentHeight() : QWIDGETSIZE_MAX;
+    if (limit == maximumHeight()) {
+        return;
+    }
+
+    setMaximumHeight(limit);
+}
+
+void PropertyEditor::changeEvent(QEvent* event)
+{
+    QTreeView::changeEvent(event);
+
+    // StyleChange is what the transparency propagator dispatches when a widget's tag flips.
+    if (event->type() == QEvent::StyleChange || event->type() == QEvent::FontChange) {
+        updateHeightLimit();
+    }
 }
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -924,6 +1004,16 @@ void PropertyEditor::expandToDefault()
 void PropertyEditor::collapseAll()
 {
     setFirstLevelExpanded(false);
+    updateHeightLimit();
+}
+
+void PropertyEditor::expandAll()
+{
+    // QTreeView's layout can emit expanded() for a row while it is still mid-build, before the
+    // rest of the tree is accounted for, so a signal-driven cap update here can undercount.
+    // Only this explicit refresh, taken after layout has settled, is reliable.
+    QTreeView::expandAll();
+    updateHeightLimit();
 }
 
 QMenu* PropertyEditor::setupExpansionSubmenu(QWidget* parent)

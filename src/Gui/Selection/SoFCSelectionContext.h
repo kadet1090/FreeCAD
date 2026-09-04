@@ -33,6 +33,7 @@
 #include <App/Material.h>
 
 class SoState;
+class SoNode;
 
 namespace Gui
 {

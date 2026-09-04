@@ -23,6 +23,7 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
 #include <string>
 #include <mutex>
 
@@ -108,7 +109,16 @@ public:
      * Apply the named preferencePack
      * \return True if the preferencePack was applied, or false if it was not
      */
-    bool apply(const std::string& preferencePackName) const;
+    /// Whether applying a pack should also re-read the dock and toolbar visibility it wrote.
+    /// Skip it when no main window exists yet: there is nothing to re-read, and the managers
+    /// that would do it dereference getMainWindow().
+    enum class WindowState : std::uint8_t
+    {
+        Reload,
+        LeaveAlone
+    };
+
+    bool apply(const std::string& preferencePackName, WindowState windowState = WindowState::Reload) const;
 
     /**
      * Check the visibility of the specified pack
@@ -201,7 +211,7 @@ public:
     /**
      * Get a list of all mod directories.
      */
-    std::vector<std::filesystem::path> modPaths() const;
+    static std::vector<std::filesystem::path> modPaths();
 
     /**
      * Get the path to the saved preference packs.

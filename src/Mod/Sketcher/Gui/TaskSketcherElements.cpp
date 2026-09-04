@@ -60,6 +60,8 @@
 #include "ViewProviderSketch.h"
 #include "ui_TaskSketcherElements.h"
 
+#include <IconManager.h>
+
 // clang-format off
 using namespace SketcherGui;
 using namespace Gui::TaskView;
@@ -1355,6 +1357,8 @@ TaskSketcherElements::TaskSketcherElements(ViewProviderSketch* sketchView)
     ui->listWidgetElements->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->listWidgetElements->setEditTriggers(QListWidget::NoEditTriggers);
     ui->listWidgetElements->setMouseTracking(true);
+
+    ui->settingsButton->setIcon(Gui::IconManager::instance().icon(":/icons/tabler/outline/adjustments.svg"));
 
     createFilterButtonActions();
     createSettingsButtonActions();

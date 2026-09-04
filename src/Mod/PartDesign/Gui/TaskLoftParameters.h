@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <Gui/ViewProviderDocumentObject.h>
+
 #include "TaskSketchBasedParameters.h"
 #include "ViewProviderLoft.h"
 
@@ -91,6 +93,8 @@ private:
     std::unique_ptr<Ui_TaskLoftParameters> ui;
 
     selectionModes selectionMode = none;
+    /// Keeps the loft in view while it has sections to show; see updateUI().
+    Gui::TemporaryVisibility visibility;
 };
 
 /// simulation dialog for the TaskView

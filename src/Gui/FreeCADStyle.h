@@ -23,14 +23,57 @@
 
 #pragma once
 
+#pragma once
+
+#include <cstdint>
+#include <functional>
+#include <initializer_list>
+#include <optional>
+#include <string_view>
+#include <unordered_map>
+
 #include <FCGlobal.h>
-#include <QProxyStyle>
+
+#include <QBrush>
+#include <QColor>
+#include <QIcon>
+#include <QPixmap>
 #include <QEvent>
+#include <QMarginsF>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPointer>
+#include <QProxyStyle>
 #include <QPushButton>
+#include <QAbstractScrollArea>
+#include <QComboBox>
+#include <QStyleOptionHeader>
+#include <QTabBar>
+#include <QToolBar>
+#include <QStyleOption>
+
+#include "StyleParameters/Insets.h"
+#include "StyleParameters/StyleContext.h"
+#include "StyleParameters/StyleOverrides.h"
+#include "StyleParameters/Value.h"
+
+class QChildEvent;
+class QDockWidget;
+class QListView;
+class QTreeView;
+class QTextDocument;
 
 namespace Gui
 {
 
+/**
+ * @brief A QStyle whose every visual decision comes from design tokens.
+ *
+ * A widget is described by a StyleParameters::StyleContext: the component it is, the element
+ * of that component being drawn, the variants that apply and the states it is in. contextOf()
+ * derives that description from the widget and its style option, and resolve() turns it into
+ * a value by assembling token names from it and walking the component's inheritance chain.
+ */
 class GuiExport FreeCADStyle: public QProxyStyle
 {
     Q_OBJECT
@@ -40,8 +83,1447 @@ public:
         : QProxyStyle(QStringLiteral("Fusion"))
     {}
 
+    /**
+     * @brief Per-corner border radii, each stored as a Numeric (possibly with "%" unit).
+     *
+     * Percent values are resolved to absolute pixels at paint time via resolve().
+     * Use setLeft/setRight/setTop/setBottom to zero out corners (e.g. for tab shapes).
+     */
+    struct CornerRadii
+    {
+        StyleParameters::Numeric topLeft = {.value = 0, .unit = "px"};
+        StyleParameters::Numeric topRight = {.value = 0, .unit = "px"};
+        StyleParameters::Numeric bottomRight = {.value = 0, .unit = "px"};
+        StyleParameters::Numeric bottomLeft = {.value = 0, .unit = "px"};
+
+        void setLeft(qreal left)
+        {
+            topLeft = bottomLeft = {.value = left, .unit = "px"};
+        }
+
+        void setRight(qreal right)
+        {
+            topRight = bottomRight = {.value = right, .unit = "px"};
+        }
+
+        void setTop(qreal top)
+        {
+            topLeft = topRight = {.value = top, .unit = "px"};
+        }
+
+        void setBottom(qreal bottom)
+        {
+            bottomLeft = bottomRight = {.value = bottom, .unit = "px"};
+        }
+
+        CornerRadii enlarged(qreal amount) const
+        {
+            CornerRadii result = *this;
+
+            result.topLeft.value += amount;
+            result.topRight.value += amount;
+            result.bottomRight.value += amount;
+            result.bottomLeft.value += amount;
+
+            return result;
+        }
+
+        bool isRounded() const
+        {
+            return topLeft.value > 0 || topRight.value > 0 || bottomRight.value > 0
+                || bottomLeft.value > 0;
+        }
+
+        /**
+         * @brief Resolves any percent-unit radii to absolute pixel values.
+         *
+         * A "%" radius is resolved as value/100 * min(width, height), matching
+         * the CSS border-radius convention for uniform corner shapes. Absolute
+         * radii ("px" or dimensionless) are passed through unchanged.
+         */
+        CornerRadii resolve(QSizeF size) const;
+    };
+
+    /**
+     * @brief Describes an inward shadow drawn on top of a box background.
+     */
+    struct InnerShadow
+    {
+        QColor color;
+        qreal x = 0;
+        qreal y = 0;
+        qreal blur = 0;
+    };
+
+    /**
+     * @brief Per-side border colors in CSS TRBL order.
+     *
+     * When all four sides are equal, isUniform() returns true and uniform()
+     * gives the shared color, enabling a single-fill fast path in drawBoxBackground().
+     */
+    struct BorderColorsPerSide
+    {
+        QColor top;
+        QColor right;
+        QColor bottom;
+        QColor left;
+
+        bool isUniform() const
+        {
+            return top == right && right == bottom && bottom == left;
+        }
+
+        QColor uniform() const
+        {
+            return top;
+        }
+    };
+
+    /**
+     * @brief Describes the visual appearance of a painted background box.
+     *
+     * All border fields must be set together (borderColor + borderThickness)
+     * for a border to be drawn; partial specification is silently ignored.
+     */
+    struct BoxStyleDefinition
+    {
+        QBrush background;
+        std::optional<BorderColorsPerSide> borderColor;
+        std::optional<QMarginsF> borderThickness;
+        CornerRadii borderRadius;  // default: all zero (sharp corners)
+        std::optional<InnerShadow> innerShadow;
+    };
+
+    /// The edge on which a box meets the half of a split control next to it.
+    enum class SeamEdge : std::uint8_t
+    {
+        None,
+        Left,
+        Right,
+        Top,
+        Bottom,
+    };
+
+    /// Whether a box keeps its border on the seam, or leaves it to the half next to it.
+    enum class SeamBorder : std::uint8_t
+    {
+        Keep,
+        Drop,
+    };
+
+    /**
+     * @brief Describes the spatial layout properties of a box-shaped widget.
+     *
+     * Resolved from Design System tokens:
+     *   Padding, Height, MinWidth, MaxWidth, Width, MinHeight, MaxHeight, IconSpacing.
+     *
+     * Constraint semantics (applied by constrain() and sizeFromContents()):
+     *   1. Fixed overrides (width, height) are applied first — pin the dimension absolutely.
+     *   2. min* clamps raise the result.
+     *   3. max* clamps lower the result.
+     *
+     * Usage guidance:
+     *   - Use sizeFromContents(contentSize) for a size hint, whether the content size was
+     *     computed here (PushButton, ToolButton, ItemViewItem) or delegated to the parent style
+     *     first (ComboBox, LineEdit, SpinBox). The parent reserves only its own frame, so a hint
+     *     that skips the padding promises room that contentRect() then takes away.
+     *   - Use constrain(rect) to fit an existing rect to the same limits without adding padding.
+     */
+    struct BoxGeometryDefinition
+    {
+        QMarginsF padding;
+        QMarginsF margin;
+
+        std::optional<int> height;
+        std::optional<int> minWidth;
+        std::optional<int> width;      // fixed width override
+        std::optional<int> maxWidth;   // maximum width clamp
+        std::optional<int> minHeight;  // minimum height clamp
+        std::optional<int> maxHeight;  // maximum height clamp
+        /** Qt hardcodes this many pixels between an icon and its label text. */
+        static constexpr int qtBuiltInIconGap = 4;
+
+        int iconSpacing = qtBuiltInIconGap;  // fallback matches Qt's built-in
+
+        /** Gap reserved between consecutive rows of a stacked component. The gap is excluded
+         *  from the content rect and from the row's own box, so it renders as the surface
+         *  behind the rows. 0 = rows abut. */
+        int spacing = 0;
+
+        /** Gap reserved to the left of a box that is not the leading column of its row, so
+         *  adjacent columns do not touch. 0 = columns abut. */
+        int columnGap = 0;
+
+        /**
+         * @brief Width delta to replace Qt's hardcoded icon–text gap with the token spacing.
+         *
+         * Add this to a width computed by Qt (sizeHint, sizeFromContents) when Qt has already
+         * baked in qtBuiltInIconGap pixels for the icon–text gap and you want the token value.
+         * Returns 0 when the token matches Qt's default, so it is always safe to apply.
+         */
+        [[nodiscard]] int iconGapDelta() const
+        {
+            return iconSpacing - qtBuiltInIconGap;
+        }
+
+        /** @brief Total horizontal padding (left + right), in pixels. */
+        [[nodiscard]] int paddingH() const
+        {
+            return static_cast<int>(padding.left() + padding.right());
+        }
+
+        /** @brief Total vertical padding (top + bottom), in pixels. */
+        [[nodiscard]] int paddingV() const
+        {
+            return static_cast<int>(padding.top() + padding.bottom());
+        }
+
+        /** @brief Applies all dimension constraints to a size. Fixed overrides first, then min
+         * clamps up, max clamps down. */
+        [[nodiscard]] QSize constrain(QSize size) const
+        {
+            if (width) {
+                size.setWidth(*width);
+            }
+            if (height) {
+                size.setHeight(*height);
+            }
+            if (minWidth) {
+                size.setWidth(std::max(size.width(), *minWidth));
+            }
+            if (minHeight) {
+                size.setHeight(std::max(size.height(), *minHeight));
+            }
+            if (maxWidth) {
+                size.setWidth(std::min(size.width(), *maxWidth));
+            }
+            if (maxHeight) {
+                size.setHeight(std::min(size.height(), *maxHeight));
+            }
+            return size;
+        }
+
+        /** @brief Applies all dimension constraints to a rect, preserving top-left position. */
+        [[nodiscard]] QRect constrain(const QRect& rect) const
+        {
+            return {rect.topLeft(), constrain(rect.size())};
+        }
+
+        /** @brief Computes outer widget size: adds padding to content size, then constrains.
+         *  Every component's size hint goes through here, including the ones that ask the parent
+         *  style first: the parent reserves only its own frame, while contentRect() takes the
+         *  full padding back out, so a hint that skips this step promises room it will not have.
+         */
+        [[nodiscard]] QSize sizeFromContents(QSize contentSize) const
+        {
+            return constrain(contentSize.grownBy(padding.toMargins()));
+        }
+
+        [[nodiscard]] QSize marginBox(QSize contentSize) const
+        {
+            return sizeFromContents(contentSize).grownBy(margin.toMargins());
+        }
+
+        /** @brief Returns @p rect inset by this geometry's padding. */
+        [[nodiscard]] QRect contentRect(const QRect& rect) const
+        {
+            return borderRect(rect).marginsRemoved(padding.toMargins());
+        }
+
+        /** @brief Returns @p rect inset by this geometry's padding. */
+        [[nodiscard]] QRect contentRect(const QRect& rect, const QSize& size) const
+        {
+            if (rect.width() <= size.width() && rect.height() <= size.height()) {
+                return rect;
+            }
+
+            int availableWidth = rect.width() - size.width();
+            int availableHeight = rect.height() - size.height();
+
+            if (availableWidth > paddingH() && availableHeight > paddingV()) {
+                return contentRect(rect);
+            }
+
+            double scaleHorizontal = qMin(static_cast<double>(availableWidth) / paddingH(), 1.0);
+            double scaleVertical = qMin(static_cast<double>(availableHeight) / paddingV(), 1.0);
+
+            return rect.adjusted(
+                static_cast<int>(padding.left() * scaleHorizontal),
+                static_cast<int>(padding.top() * scaleVertical),
+                -static_cast<int>(padding.right() * scaleHorizontal),
+                -static_cast<int>(padding.bottom() * scaleVertical)
+            );
+        }
+
+        [[nodiscard]] QRect borderRect(QRect rect) const
+        {
+            return rect.marginsRemoved(margin.toMargins());
+        }
+    };
+
+    void polish(QPalette& palette) override;
+
+    int pixelMetric(PixelMetric metric, const QStyleOption* option, const QWidget* widget) const override;
+
+    int styleHint(
+        StyleHint hint,
+        const QStyleOption* option,
+        const QWidget* widget,
+        QStyleHintReturn* returnData
+    ) const override;
+
+    QSize sizeFromContents(
+        ContentsType type,
+        const QStyleOption* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const override;
+
+    QRect subElementRect(
+        SubElement element,
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const override;
+
+    void drawPrimitive(
+        PrimitiveElement element,
+        const QStyleOption* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const override;
+
+    void drawControl(
+        ControlElement element,
+        const QStyleOption* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const override;
+
+    void drawComplexControl(
+        ComplexControl control,
+        const QStyleOptionComplex* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const override;
+
+    QRect subControlRect(
+        ComplexControl complexControl,
+        const QStyleOptionComplex* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const override;
+
+    /**
+     * @brief Builds a StyleContext from a widget and its current style option.
+     *
+     * Static so callers outside a paint path can describe a widget the same way the style
+     * does. @p option may be null, in which case no state is derived.
+     */
+    static StyleParameters::StyleContext contextOf(
+        const QWidget* widget,
+        const QStyleOption* option = nullptr,
+        const StyleParameters::StyleComponentElement& element
+        = StyleParameters::StyleComponentElement::Root
+    );
+
+    /**
+     * @brief Discards every cached token value.
+     *
+     * Call whenever the resolved value of a token may have changed — a theme reload, an
+     * edit in the theme editor — since nothing else invalidates the cache.
+     */
+    void clearTokenCache();
+
+    void polish(QWidget* widget) override;
+    void unpolish(QWidget* widget) override;
+
+    void polish(QApplication* application) override;
+    void unpolish(QApplication* application) override;
+
+    /**
+     * @brief Declares a style override on @p widget and re-derives it and its descendants.
+     *
+     * @p name is a token name without the property prefix, e.g. "CurrentPaneBackground";
+     * @p expression is written in the same language the theme files use. The override applies
+     * to @p widget and everything below it, and a nearer declaration of the same name wins.
+     *
+     * Takes effect immediately for fonts as well as colours: every descendant has applyWidgetFont()
+     * re-run on it as part of this same call. QEvent::FontChange only reaches a descendant whose
+     * resolved font actually changes as a result; calling this from inside such a handler runs it
+     * reentrantly wherever that happens.
+     *
+     * Setting the dynamic property directly works too, but only takes effect the next time the
+     * widget is polished; use this, or refreshStyleOverrides(), for a change made afterwards.
+     *
+     * An empty @p expression removes the override instead of declaring one.
+     */
+    static void setStyleOverride(QWidget* widget, const QString& name, const QString& expression);
+
+    /**
+     * @brief Re-derives the override set of @p widget and its descendants after a declaration
+     * changed.
+     *
+     * Also reapplies every descendant's font immediately, the same way setStyleOverride() does:
+     * QEvent::FontChange reaches only a descendant whose resolved font actually changes, and
+     * calling this from inside such a handler runs it reentrantly.
+     */
+    static void refreshStyleOverrides(QWidget* widget);
+
+    /**
+     * @brief The alignment @p widget's label is stated to take, or @p fallback where none is.
+     *
+     * Answers per axis: an axis no theme speaks for keeps its bits from @p fallback, so a
+     * caller with a rule of its own for where a label sits loses it only where a theme has
+     * spoken. A widget under any other style keeps @p fallback whole.
+     *
+     * State-independent: the answer never varies with hover, press or focus, regardless of
+     * whether @p widget is currently in one of those states.
+     */
+    static Qt::Alignment labelAlignment(const QWidget* widget, Qt::Alignment fallback);
+
+    /// The colour a status message of @p level is stated to take, or @p fallback where none is.
+    static QColor statusMessageColor(
+        const QWidget* statusBar,
+        StyleParameters::MessageLevel level,
+        QColor fallback
+    );
+
+    /**
+     * @brief The padding @p widget's element is stated to take, or nothing where none is.
+     *
+     * Answers for the component contextOf() derives alone: unlike labelAlignment() this does not
+     * route through panelContext(), so a panel-hosted caller resolves without the Position
+     * variant.
+     */
+    static std::optional<QMargins> stylePadding(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    );
+
+    /**
+     * @brief The gap @p widget's element is stated to leave between its children, or nothing
+     * where none is stated.
+     *
+     * Answers for the component contextOf() derives alone, as stylePadding() does.
+     */
+    static std::optional<int> styleSpacing(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    );
+
+    /**
+     * @brief The height @p widget's element is stated to hold, or nothing where none is stated.
+     *
+     * Answers for the component contextOf() derives alone, as stylePadding() does.
+     */
+    static std::optional<int> styleHeight(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    );
+
+    /**
+     * @brief The height floor @p widget's element is stated to keep, or nothing where none is.
+     *
+     * Answers for the component contextOf() derives alone, as stylePadding() does.
+     */
+    static std::optional<int> styleMinHeight(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    );
+
+    /**
+     * @brief Recomputes the inherited transparency of @p widget and everything below it.
+     *
+     * @param widget    Root of the subtree to update.
+     * @param inherited Transparency of the surface behind @p widget. A widget carrying the
+     *                  "transparent" property overrides this for itself, opening a root.
+     */
+    void updateTransparency(QWidget* widget, bool inherited);
+
+    /**
+     * @brief Whether @p widget is painted over a transparent surface.
+     *
+     * Returns false for a null widget and for any widget the propagator has not reached.
+     */
+    static bool isTransparent(const QWidget* widget);
+
+    // clang-format off
+    /// Prefix of a property declaring an override, e.g. "fcStyleCurrentPaneBackground"
+    /// overrides the CurrentPaneBackground token.
+    static constexpr const char* overridePropertyPrefix = "fcStyle";
+
+    /// Where the resolved override-set id is cached on the widget. Deliberately outside
+    /// overridePropertyPrefix: under it, the collection walk would read this back as an
+    /// override named "OverrideSet". Style-owned: storeOverrideSet() is its sole writer, and
+    /// overrideSetOf()'s memo is only sound because of that, so never set it from outside.
+    static constexpr const char* overrideSetProperty    = "fcOverrideSet";
+    // clang-format on
+
+
+    /// Resolves the geometry of the box @p context describes: padding, margin and the
+    /// dimension constraints that decide how big it may be.
+    BoxGeometryDefinition resolveBoxGeometry(const StyleParameters::StyleContext& context) const;
+
+    /// Resolves the appearance of the box @p context describes: background, border and radii.
+    BoxStyleDefinition resolveBoxStyle(const StyleParameters::StyleContext& context) const;
+
+    /**
+     * @brief The font attributes @p context states, and nothing else.
+     *
+     * The result carries only the properties a token spoke for, so a caller may apply it over a
+     * font without disturbing the rest of it. @p base is consulted only by relative sizes.
+     */
+    QFont resolveTokenFont(const StyleParameters::StyleContext& context, const QFont& base) const;
+
+    /**
+     * @brief Gives @p widget the font its component's tokens ask for.
+     *
+     * Idempotent: what a previous application put there is taken back first, so a widget can be
+     * polished any number of times and a theme that stops stating a token gives the widget its
+     * own font back.
+     */
+    void applyWidgetFont(QWidget* widget) const;
+
+    /// The font @p widget would carry had the style never applied one to it.
+    static QFont untouchedFont(const QWidget* widget);
+
+    /**
+     * @brief Gives @p widget the floor its component's MinHeight token asks for.
+     *
+     * A size hint is not enough to keep an input at its height: a layout given less room than
+     * it needs drops every minimum it knows and takes the space from its tallest items first,
+     * which is what leaves a spin box shorter than the label beside it. An explicit minimum is
+     * the one QWidget::setGeometry() honours regardless.
+     *
+     * Idempotent, and never lowers a minimum the widget was given elsewhere.
+     */
+    void applyWidgetMinimumHeight(QWidget* widget) const;
+
+    /// The minimum height @p widget would carry had the style never applied one to it.
+    static int untouchedMinimumHeight(const QWidget* widget);
+
+    /**
+     * @brief The font @p base takes on under @p context.
+     *
+     * Where a token does not resolve the corresponding property of @p base is kept, so a caller
+     * can always hand over the widget's own font and get back something safe to paint with.
+     */
+    QFont resolveFont(const StyleParameters::StyleContext& context, const QFont& base) const;
+
+    /**
+     * @brief Resolves a box that abuts another one, and squares off the edge they share.
+     *
+     * The two halves of a split control are painted as separate boxes, so without this each
+     * would round its own corners at the join and both would draw a border there. The half
+     * that passes SeamBorder::Keep supplies the single rule between them.
+     */
+    BoxStyleDefinition seamedBoxStyle(
+        const StyleParameters::StyleContext& context,
+        SeamEdge seam,
+        SeamBorder border
+    ) const;
+
+    /**
+     * @brief Paints the box @p context describes into @p rect.
+     *
+     * @p rect is the outer rect, so the resolved margin is taken off before painting.
+     */
+    void paintBox(QPainter* painter, const QRect& rect, const StyleParameters::StyleContext& context) const;
+
+    // clang-format off
+    /// Tags the QListView Qt built for a combo box popup.
+    static constexpr const char* comboDropdownProperty  = "_fc_comboDropdown";
+    /// Tags the frame Qt puts around that list, which paints the popup's own surface.
+    static constexpr const char* comboContainerProperty = "_fc_comboContainer";
+    /// Carries the combo box a popup belongs to, so its rows can read its current index.
+    static constexpr const char* comboBoxProperty       = "_fc_comboBox";
+    /// The row a popup's owner has chosen, for a dropdown with no combo box behind it.
+    static constexpr const char* chosenRowProperty      = "_fc_chosenRow";
+    // clang-format on
+
+    /// The row this dropdown's owner has chosen, or nothing when nothing drives its selection.
+    static std::optional<int> chosenDropdownRow(const QWidget* widget);
+
+    static void applyDropdownSelectionState(
+        StyleParameters::StyleContext& context,
+        const QStyleOption* option,
+        const QWidget* widget
+    );
+
+    static void applyDropdownPressedState(
+        StyleParameters::StyleContext& context,
+        const QStyleOption* option
+    );
+
+    static void repaintPressedDropdownRow(QObject* viewport, const QEvent* event);
+
+    /// Adopts the list Qt built for @p comboBox as a themed dropdown.
+    void constrainComboDropdown(QComboBox* comboBox);
+
+    /// Adopts @p listView as a dropdown whose selection is driven from outside it.
+    void constrainDropdown(QListView* listView, int chosenRow = -1);
+
+    static bool isSeparatorIndex(const QModelIndex& index);
+
+    /// The context a dropdown separator row resolves against, or nothing when @p option is
+    /// not one.
+    static std::optional<StyleParameters::StyleContext> dropdownSeparatorContext(
+        const QStyleOption* option,
+        const QWidget* widget
+    );
+
+    QSize dropdownSeparatorSizeFromContents(const StyleParameters::StyleContext& context) const;
+
+    QRect dropdownSeparatorRuleBand(
+        const QStyleOption* option,
+        const QWidget* widget,
+        const BoxGeometryDefinition& geometry
+    ) const;
+
+    /// Caps a dropdown's height at the token the theme states, if it states one.
+    void applyComboDropdownMaxHeight(QListView* listView) const;
+
+    /// Restores what Qt would have done, for a combo box leaving this style.
+    void restoreComboDropdownDefaults(QComboBox* comboBox);
+
+    /// Where a branch connector's lines meet, inside the indent cell @p cell.
+    static QPointF branchCenter(const QRect& cell, int leadingGap);
+
+    /// The connector segments an indent cell draws, given what it joins.
+    static QList<QLineF> branchSegments(
+        const QRect& cell,
+        QStyle::State state,
+        bool topLevel,
+        Qt::LayoutDirection direction,
+        int leadingGap
+    );
+
+    /// Where a dropdown popup sits relative to the combo box it belongs to.
+    enum class ComboPopupPlacementMode : std::uint8_t
+    {
+        /// The current row lands on the combo box, the way a menu opens over its button.
+        OverCurrent,
+        /// The popup's top edge meets the combo box's bottom edge.
+        Below,
+    };
+
+    struct ComboPopupPlacement
+    {
+        ComboPopupPlacementMode mode = ComboPopupPlacementMode::OverCurrent;
+        /// Applied after the mode has been honoured; positive moves the popup down.
+        int offset = 0;
+    };
+
+    /**
+     * @brief The placement the theme asks for, for the popup @p container holds.
+     *
+     * An unrecognised or absent mode means OverCurrent, so a theme that says nothing about
+     * placement still gets the menu-style behaviour the dropdowns are designed around.
+     */
+    ComboPopupPlacement resolveComboPopupPlacement(const QWidget* container) const;
+
+    /// The tagged dropdown list inside a popup container, or nullptr if it holds none.
+    static QListView* comboPopupListView(const QWidget* container);
+
+    /// Widens the popup when a scroll bar appeared after Qt had settled its width.
+    static void widenComboPopupForScrollBar(QWidget* container);
+
+    /// Trims the popup so it shows whole rows rather than a sliver of one.
+    static void snapComboPopupToWholeRows(QWidget* container);
+
+    /// How far the current row sits from the top of the popup.
+    static int comboPopupCurrentRowOffset(const QWidget* container);
+
+    /// Puts the popup where the theme asks for it, once Qt has finished placing it.
+    void correctComboPopupPlacement(QWidget* container);
+
+    void constrainReplacedComboDropdown(QObject* obj, QChildEvent* event);
+
+    void scheduleComboPopupCorrection(QObject* obj);
+
+    /// Asks @p widget to lay its rows out again, for a change no repaint would pick up.
+    static void scheduleItemViewRelayout(QWidget* widget);
+
+    /// The rect a combo popup's container lays its list out in.
+    std::optional<QRect> comboPopupContentsRect(const QStyleOption* option, const QWidget* widget) const;
+
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
+
+    /// Resolves a token by its full name.
+    std::optional<StyleParameters::Value> resolve(std::string_view name) const;
+
+    /**
+     * @brief Resolves the first of @p names that has a value.
+     *
+     * Useful for resolved-with-fallback patterns, e.g.:
+     * resolve({"ToolButtonSmallPadding", "ToolButtonPadding"})
+     */
+    std::optional<StyleParameters::Value> resolve(std::initializer_list<std::string_view> names) const;
+
+    /**
+     * @brief Resolves @p property for @p context, caching the result.
+     *
+     * The context's component chain, variants and states decide which token names are tried
+     * and in what order. The cache is invalidated by clearTokenCache().
+     */
+    std::optional<StyleParameters::Value> resolve(
+        const StyleParameters::StyleContext& context,
+        StyleParameters::StyleProperty property
+    ) const;
+
+    /// Typed variants of each resolve() overload, wrapping it with StyleParameters::valueAs.
+    template<typename T>
+    std::optional<T> resolve(std::string_view name) const
+    {
+        return StyleParameters::valueAs<T>(resolve(name));
+    }
+
+    template<typename T>
+    std::optional<T> resolve(std::initializer_list<std::string_view> names) const
+    {
+        return StyleParameters::valueAs<T>(resolve(names));
+    }
+
+    template<typename T>
+    std::optional<T> resolve(
+        const StyleParameters::StyleContext& context,
+        StyleParameters::StyleProperty property
+    ) const
+    {
+        return StyleParameters::valueAs<T>(resolve(context, property));
+    }
+
+    /// The alignment @p context states, falling back per axis to @p fallback.
+    Qt::Alignment resolveAlignment(
+        const StyleParameters::StyleContext& context,
+        Qt::Alignment fallback
+    ) const;
+
+    /**
+     * @brief Paints a background, its border ring and its rounded corners into @p rect.
+     *
+     * @p borderMask, when non-empty, clips the border ring, for a container whose border is
+     * interrupted by something drawn on top of it.
+     */
+    static void drawBoxBackground(
+        QPainter* painter,
+        const QRect& rect,
+        const BoxStyleDefinition& rule,
+        const QPainterPath& borderMask = {}
+    );
+
+    /// Paints the box @p context resolves to, without taking its margin off @p rect.
+    void drawComponent(
+        QPainter* painter,
+        const QRect& rect,
+        const StyleParameters::StyleContext& context
+    ) const;
+
+    void drawComponent(
+        QPainter* painter,
+        const QRect& rect,
+        const QWidget* widget,
+        const QStyleOption* option = nullptr
+    ) const;
+
+    /**
+     * @brief Answers @p metric from a token, or nothing when no token describes it.
+     *
+     * Split out from pixelMetric() so a metric this style does not own falls through to the
+     * base style rather than being answered with a fabricated value.
+     */
+    std::optional<int> resolvePixelMetric(
+        PixelMetric metric,
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const;
+
+    /// The edge a tab bar's tabs sit on, as a Position variant value.
+    static StyleParameters::Position tabPositionOf(QTabBar::Shape shape);
+
+    void drawTabBarTab(QPainter* painter, const QStyleOptionTab* option, const QWidget* widget) const;
+
+    void drawTabBarTabLabel(QPainter* painter, const QStyleOptionTab* option, const QWidget* widget) const;
+
+    QSize tabBarTabSizeFromContents(
+        const QStyleOption* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    /// How far a tab's paint rect reaches past its own, so adjacent tabs share one border.
+    int tabOverlapOf(const QStyleOptionTab* option, const QWidget* widget) const;
+
+    /// @p rect grown by @p tabOverlap on its trailing edge.
+    static QRect tabVisualRect(const QRect& rect, int tabOverlap, bool isVertical);
+
+    void drawTabCloseButton(QPainter* painter, const QStyleOption* option, const QWidget* widget) const;
+
+    void drawTabWidgetFrame(
+        QPainter* painter,
+        const QStyleOptionTabWidgetFrame* option,
+        const QWidget* widget
+    ) const;
+
+    void drawTabBarBase(
+        QPainter* painter,
+        const QStyleOptionTabBarBase* option,
+        const QWidget* widget
+    ) const;
+
+    /// Repaints a tab bar on pointer moves, so the cursor check in contextOf sees fresh state.
+    static void forceTabBarRepaint(QObject* obj, QEvent* event);
+
+    /// The edge a toolbar is docked to, as a Position variant value.
+    static StyleParameters::Position toolbarPositionOf(const QToolBar* toolbar);
+
+    /**
+     * @brief Which part of a panel @p widget is, or nothing when it is not part of one.
+     *
+     * The element a widget declares via componentProperty/elementProperty when it names the
+     * Panel component, or Root for the body a dock hands its whole client area to. A title bar
+     * declares itself this way rather than being deduced: in overlay mode a panel hangs its
+     * strip off a tab widget rather than off a dock, and both are the same strip to a theme.
+     */
+    static std::optional<StyleParameters::StyleComponentElement> panelElementOf(const QWidget* widget);
+
+    /// The edge a dock panel attaches to, as a Position variant value.
+    static StyleParameters::Position panelPositionOf(const QDockWidget* dock);
+
+    /// The edge one part of a panel attaches to: the dock area for a body, its own run for a strip.
+    static StyleParameters::Position panelElementPositionOf(
+        const QWidget* widget,
+        const QDockWidget* dock,
+        StyleParameters::StyleComponentElement element
+    );
+
+    /**
+     * @brief Where the resize handle at @p rect meets the central widget, or nothing if nowhere.
+     *
+     * The handle along a dock area's inner edge spans that whole area, so it is the one place
+     * the seam between the panels and the central widget can be drawn in one unbroken line. The
+     * handles *inside* an area, between one panel and the next, touch the central widget nowhere
+     * and carry no seam - drawing one there would leave a stub across the column.
+     */
+    static std::optional<StyleParameters::Position> separatorSeamOf(
+        const QWidget* widget,
+        const QRect& rect
+    );
+
+    /**
+     * @brief Context for one element of the dock panel @p widget belongs to.
+     *
+     * @p widget is either the dock itself or one of its direct children - its body or its
+     * title bar - and carries the dock area as the Position variant.
+     */
+    StyleParameters::StyleContext panelContext(
+        const QWidget* widget,
+        StyleParameters::StyleComponentElement element
+    ) const;
+
+    /// Applies the panel values @p element keeps on the widget rather than reading at paint time.
+    void applyPanelStyle(QWidget* widget, StyleParameters::StyleComponentElement element) const;
+
+    /// Sets up @p dock's body for the area the dock currently occupies. Safe to call repeatedly.
+    void refreshPanelBody(QDockWidget* dock) const;
+
+    /// Insets a panel part's layout by its padding token, so its surface shows around the content.
+    void applyPanelPadding(QWidget* widget, StyleParameters::StyleComponentElement element) const;
+
+    /// Puts a panel title bar's text colour in its palette, the only channel its painting reads.
+    void applyPanelTitleColor(QWidget* widget) const;
+
+    /// Draws a separator rule centred in @p rect, running along @p orientation.
+    void drawSeparatorLine(QPainter* painter, const QRect& rect, Qt::Orientation orientation) const;
+
+    /// Insets a text edit's content by its padding token, through the document's own margin.
+    void applyTextEditDocumentPadding(QWidget* widget, QTextDocument* document) const;
+
+    /// The edges on which @p option's cell continues into another column of the same row.
+    static Qt::Edges columnSeamsOf(const QStyleOptionViewItem& option, const QWidget* widget);
+
+    /// The edges on which @p option's section continues into another section of the header.
+    static Qt::Edges sectionSeamsOf(const QStyleOptionHeader& option);
+
+    /// Opens a box on its @p seams, so the parts of one row read as a band rather than a string
+    /// of separate chips: the corner, the edge and the margin all go where the row continues.
+    static void openSeams(BoxGeometryDefinition& geometry, BoxStyleDefinition& style, Qt::Edges seams);
+
+    /// Draws the rule marking a seam along the leading edge of @p box, if the theme states one.
+    void drawSeamRule(
+        QPainter* painter,
+        const StyleParameters::StyleContext& context,
+        const QRect& box,
+        Qt::Edges seams
+    ) const;
+
+    /// What a column keeps between the seam before it and its own content.
+    int columnGapAt(const StyleParameters::StyleContext& context, Qt::Edges seams) const;
+
+    void drawHeaderSection(QPainter* painter, const QStyleOptionHeader* option, const QWidget* widget) const;
+
+    void drawComboBox(const QStyleOptionComboBox* option, QPainter* painter, const QWidget* widget) const;
+
+    void drawComboBoxLabel(
+        QPainter* painter,
+        const QStyleOptionComboBox* option,
+        const QWidget* widget
+    ) const;
+
+    QRect comboBoxSubControlRect(
+        const QStyleOptionComboBox* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const;
+
+    /**
+     * @brief The shape a group box's border is confined to, leaving its title clear.
+     *
+     * Empty for a box with neither a title nor a check indicator, so the frame stays whole.
+     */
+    QPainterPath groupBoxBorderMask(
+        const QStyleOptionGroupBox* option,
+        const QWidget* widget,
+        const QRect& frameRect
+    ) const;
+
+    void drawGroupBoxLabel(
+        QPainter* painter,
+        const QStyleOptionGroupBox* option,
+        const QWidget* widget
+    ) const;
+
+    void drawGroupBox(QPainter* painter, const QStyleOptionGroupBox* option, const QWidget* widget) const;
+
+    /**
+     * @brief The font a group box's title is painted in.
+     */
+    QFont groupBoxTitleFont(const QStyleOptionGroupBox* option, const QWidget* widget) const;
+
+    /**
+     * @brief The area a group box's title occupies on the frame's top edge.
+     *
+     * Covers the label, the check indicator, or both. Null when the box has neither, which is
+     * the caller's signal that the frame runs unbroken.
+     */
+    QRect groupBoxTitleRect(const QStyleOptionGroupBox* option, const QWidget* widget) const;
+
+    QRect groupBoxSubControlRect(
+        const QStyleOptionGroupBox* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const;
+
+    QSize groupBoxSizeFromContents(
+        const QStyleOptionGroupBox* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    void drawSpinBox(const QStyleOptionSpinBox* option, QPainter* painter, const QWidget* widget) const;
+
+    /// The trailing column a control reserves for the glyph it paints there, empty when it
+    /// paints none. Reservation and placement both come from here, so they cannot drift apart -
+    /// which is how an arrow ends up a pixel outside the column that was paid for.
+    QSize arrowColumnSize(const QStyleOption* option, const QWidget* widget) const;
+
+    QSize spinBoxSizeFromContents(
+        const QStyleOptionSpinBox* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    /// How much wider than @p ownWidth a wrapper around this style reports a spin box of
+    /// @p size to be. Only ever asked of the wrapper itself: what Qt reserves for the step
+    /// buttons is a fixed 16px on one patch release, nothing on the next and a width read off
+    /// the sheet's own rule on a third, so nothing but the wrapper knows it.
+    int styleSheetSpinBoxSurplus(
+        const QStyleOptionSpinBox* option,
+        const QSize& size,
+        int ownWidth,
+        const QWidget* widget
+    ) const;
+
+    QRect spinBoxSubControlRect(
+        const QStyleOptionSpinBox* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const;
+
+    /**
+     * @brief The FreeCADStyle actually in force for @p widget, or nullptr under any other style.
+     *
+     * QApplication::setStyleSheet wraps the application style in a QStyleSheetStyle the moment
+     * any stylesheet is set - which FreeCAD always does at startup - so widget->style() is that
+     * wrapper, not FreeCADStyle, for the whole running application. The wrapper reparents the
+     * style it wraps as a direct child QObject, which is the only public handle on it.
+     */
+    static const FreeCADStyle* styleOf(const QWidget* widget);
+
+    /// True when this style is in force for @p widget but reached through a wrapper. That is
+    /// every widget in the running application: QApplication::setStyleSheet puts a
+    /// QStyleSheetStyle in front of the application style, and FreeCAD sets one at startup.
+    bool isWrappedFor(const QWidget* widget) const;
+
+    /**
+     * @brief Which of a row's two painted layers is being drawn.
+     *
+     * The surface is what a row looks like at rest; the interaction layer sits over it so a
+     * hover or selection reads as an overlay rather than replacing the background.
+     */
+    enum class RowLayer : std::uint8_t
+    {
+        Surface,
+        Interaction,
+    };
+
+    /// The inter-row gap the rows of this view each reserve above themselves.
+    int leadingRowGap(const QStyleOption* option, const QWidget* widget) const;
+
+    /// Whether @p cellRect sits at the leading edge of the tree's own column.
+    static bool atTreeColumnLeadingEdge(
+        const QTreeView* view,
+        const QRect& cellRect,
+        Qt::LayoutDirection direction
+    );
+
+    void drawItemViewBranch(QPainter* painter, const QStyleOption* option, const QWidget* widget) const;
+
+    void drawBranchArrow(QPainter* painter, const QStyleOption* option, const QWidget* widget) const;
+
+    /// Whether a cell is the one nearest its view's leading edge.
+    static bool isLeadingCell(const QStyleOptionViewItem* vopt);
+
+    /// Grows a leading cell's rect over the gutter that precedes it.
+    static void reachToLeadingEdge(QRect& rect, const QStyleOptionViewItem* vopt, const QWidget* widget);
+
+    void drawItemViewRow(
+        QPainter* painter,
+        const QStyleOptionViewItem* vopt,
+        const QWidget* widget,
+        RowLayer layer
+    ) const;
+
+    /// Where each part of an item-view cell sits.
+    struct ItemViewLayout
+    {
+        QRect checkIndicator;
+        QRect decoration;
+        QRect text;
+    };
+
+    /**
+     * @brief Lays out the parts of an item-view cell from the Item token geometry.
+     *
+     * The outer inset comes from Padding and every gap between parts from IconSpacing.
+     * Returns nullopt for a cell this style does not describe.
+     */
+    std::optional<ItemViewLayout> itemViewLayout(
+        const QStyleOptionViewItem* option,
+        const QWidget* widget
+    ) const;
+
+    bool ownsItemViewLayout(const QStyleOptionViewItem* option, const QWidget* widget) const;
+
+    /// The gutter Qt's own item painting leaves before a cell's text.
+    int itemViewTextGutter(const QStyleOption* option, const QWidget* widget) const;
+
+    int itemViewContentHeight(
+        const QStyleOptionViewItem& option,
+        int iconExtent,
+        const QWidget* widget
+    ) const;
+
+    QRect itemViewSubElementRect(
+        SubElement element,
+        const QStyleOption* option,
+        const QWidget* widget
+    ) const;
+
+    QSize itemViewItemSizeFromContents(
+        const QStyleOption* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    /// The rect a view lays its rows out in, inset by its own border and padding.
+    std::optional<QRect> itemViewContentsRect(const QStyleOption* option, const QWidget* widget) const;
+
+    /// Clips a scroll area to its own rounded corners, so rows cannot paint over them.
+    void updateScrollAreaMask(QAbstractScrollArea* scrollArea) const;
+
+    void drawRadioButtonDot(
+        QPainter* painter,
+        const QRect& rect,
+        const StyleParameters::StyleContext& context,
+        const QPalette& palette
+    ) const;
+
+    void drawCheckMark(
+        QPainter* painter,
+        const QRect& rect,
+        const StyleParameters::StyleContext& context,
+        const QPalette& palette
+    ) const;
+
+    void drawIndeterminateMark(
+        QPainter* painter,
+        const QRect& rect,
+        const StyleParameters::StyleContext& context,
+        const QPalette& palette
+    ) const;
+
+    /// Draws an anti-aliased chevron pointing @p direction, filling @p rect.
+    void drawChevronArrow(
+        QPainter* painter,
+        const QRect& rect,
+        Qt::ArrowType direction,
+        const QColor& color
+    ) const;
+
+    void drawToolButton(
+        const QStyleOptionToolButton* option,
+        QPainter* painter,
+        const QWidget* widget
+    ) const;
+
+    void drawToolButtonLabel(
+        QPainter* painter,
+        const QStyleOptionToolButton* option,
+        const QWidget* widget
+    ) const;
+
+    QSize toolButtonSizeFromContents(
+        const QStyleOptionToolButton* option,
+        const QSize& size,
+        const QWidget* widget
+    ) const;
+
+    QRect toolButtonSubControlRect(
+        const QStyleOptionToolButton* option,
+        SubControl subControl,
+        const QWidget* widget
+    ) const;
+
+    /// Where each part of a menu item sits inside its row.
+    struct MenuItemLayout
+    {
+        QRect indicator;
+        QRect iconIndicator;
+        QRect icon;
+        QRect text;
+        QRect shortcut;
+        QRect arrow;
+    };
+
+    /// The width each optional column of a menu item claims, gap included.
+    struct MenuItemColumns
+    {
+        int leading = 0;
+        int arrow = 0;
+        int shortcutGap = 0;
+
+        int total() const
+        {
+            return leading + arrow + shortcutGap;
+        }
+    };
+
+    /**
+     * @brief Lays out the parts of a menu item from the Item token geometry.
+     *
+     * The outer inset comes from Padding and every gap between parts from IconSpacing, so
+     * menus space their columns on the same scale as the rest of the design system.
+     *
+     * Returns nullopt for anything this style does not describe.
+     */
+    std::optional<MenuItemLayout> menuItemLayout(
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
+    MenuItemColumns menuItemColumns(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    /// The width of this item's shortcut column at paint time: never narrower than what Qt
+    /// has already reserved menu-wide (option->reservedShortcutWidth, final by this point),
+    /// and wide enough for this item's own shortcut text in whatever font the Shortcut
+    /// element resolves. Only meaningful once reservedShortcutWidth is authoritative, so
+    /// menuItemLayout() uses it for layout.shortcut; menuItemSizeFromContents() runs before
+    /// that value is settled and charges its own width difference instead.
+    int menuShortcutColumnWidth(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    QSize menuItemSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    void drawMenuItem(QPainter* painter, const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    /**
+     * @brief Draws an addSection() header's label and returns the band left for the rule.
+     *
+     * A section header is a separator carrying text, so the rule runs beside the label
+     * rather than through it.
+     */
+    QRect drawMenuSectionLabel(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget,
+        const QRect& content
+    ) const;
+
+    void drawMenuSeparator(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget
+    ) const;
+
+    /// Draws a separator rule centred in @p band, from the Separator element's tokens.
+    void drawSeparatorRule(
+        QPainter* painter,
+        const StyleParameters::StyleContext& context,
+        const QRect& band,
+        Qt::Orientation orientation
+    ) const;
+
+    QSize menuSeparatorSizeFromContents(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    void drawMenuItemIndicator(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget,
+        const QRect& rect
+    ) const;
+
+    /// The inset the state box behind a checkable item's icon adds around it.
+    QMargins menuIconIndicatorPadding(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    void drawMenuItemIcon(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget,
+        const MenuItemLayout& layout
+    ) const;
+
+    void drawMenuItemText(
+        QPainter* painter,
+        const QStyleOptionMenuItem* option,
+        const QWidget* widget,
+        const MenuItemLayout& layout
+    ) const;
+
+    QColor menuArrowColor(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    /// The label with any accelerator suffix removed.
+    static QString menuItemLabel(const QString& text);
+
+    /// The accelerator suffix, or nothing when the label carries none.
+    static QString menuItemShortcut(const QString& text);
+
+    /// The label elided to @p width, so a long one shortens rather than widening the menu.
+    static QString menuItemDrawnLabel(
+        const QFontMetrics& metrics,
+        int textFlags,
+        const QString& label,
+        int width
+    );
+
+    /// @p rect with the inter-row gap removed, i.e. the row's own box.
+    static QRect menuItemBoxRect(const QRect& rect, const BoxGeometryDefinition& geometry);
+
+    int menuIconSize(const QWidget* widget, const QStyleOption* option) const;
+
+    /// Whether this style describes @p option's row, rather than leaving it to the base style.
+    bool ownsMenuItem(const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    /// Whether this style describes the popup surface @p widget paints.
+    bool ownsMenuSurface(const QWidget* widget, const QStyleOption* option) const;
+
+    /// Whether @p widget is the label a tooltip surface is shown on. Keyed on the window type
+    /// rather than the class: QTipLabel is private Qt API, and Gui::NotificationLabel is a
+    /// separate class showing the same surface.
+    static bool isTooltipLabel(const QWidget* widget);
+
+    /// Whether this style describes the tip surface @p widget paints.
+    bool ownsTooltipSurface(const QWidget* widget, const QStyleOption* option) const;
+
+    void drawMenuBarItem(QPainter* painter, const QStyleOptionMenuItem* option, const QWidget* widget) const;
+
+    void drawPushButtonLabel(
+        QPainter* painter,
+        const QStyleOptionButton* option,
+        const QWidget* widget
+    ) const;
+
+    /**
+     * @brief Returns Qt::TextShowMnemonic, optionally OR'd with Qt::TextHideMnemonic.
+     *
+     * Queries SH_UnderlineShortcut so every label painter respects the same style hint.
+     */
+    int mnemonicTextFlags(const QStyleOption* option, const QWidget* widget) const;
+
+    /**
+     * @brief Shifts @p rect by PM_ButtonShift{Horizontal,Vertical} when sunken or checked.
+     *
+     * Returns @p rect unchanged when the option state has neither State_Sunken nor State_On.
+     */
+    QRect applyButtonShift(const QRect& rect, const QStyleOption* option, const QWidget* widget) const;
+
+    /**
+     * @brief Resolves the icon colour for @p context.
+     *
+     * Tries the IconColor token, then TextColor, then falls back to palette.buttonText().
+     */
+    QColor resolveIconColor(const StyleParameters::StyleContext& context, const QPalette& palette) const;
+
+    /**
+     * @brief Renders @p icon through IconManager in the colour @p context resolves to.
+     */
+    QPixmap renderStyledIcon(
+        QPainter* painter,
+        const QIcon& icon,
+        const QSize& maxSize,
+        QIcon::Mode mode,
+        QIcon::State state,
+        const StyleParameters::StyleContext& context,
+        const QPalette& palette
+    ) const;
+
+    /// Convenience overload: derives mode, state and palette from @p option.
+    QPixmap renderStyledIcon(
+        QPainter* painter,
+        const QIcon& icon,
+        const QSize& maxSize,
+        const QStyleOption* option,
+        const StyleParameters::StyleContext& context
+    ) const;
+
+    /// The overrides @p widget declares itself, with the property prefix stripped.
+    static StyleParameters::OverrideSet declaredOverrides(const QWidget* widget);
+
+    /// Interns the overrides in effect for @p widget: its own, plus every ancestor's up to
+    /// the window it sits in.
+    static uint32_t computeOverrideSet(const QWidget* widget);
+
+    /// Records @p set on @p widget, where overrideSetOf() reads it back.
+    void storeOverrideSet(QWidget* widget, uint32_t set) const;
+
+    /**
+     * @brief Recomputes @p widget's override set and every descendant's, then reapplies each
+     * widget's font.
+     *
+     * The font reapply is what makes a font override visible without an explicit repolish; it is
+     * not merely bookkeeping despite the name. QEvent::FontChange reaches a widget only where its
+     * resolved font actually changes, and reentrantly if that happens from inside such a handler.
+     */
+    void recomputeOverrideSets(QWidget* widget) const;
+
+    /// Re-applies applyWidgetFont() to @p widget and every descendant, for a theme reload that
+    /// changes what a component's font tokens resolve to.
+    void applyWidgetFonts(QWidget* widget) const;
+
+    /// The override set @p widget resolves against, or the empty id when it declares none.
+    uint32_t overrideSetOf(const QWidget* widget) const;
+
+    static void forEachChildWidget(QWidget* widget, const std::function<void(QWidget*)>& visit);
+
+
+    // clang-format off
+    /// Where the propagated transparency tag is recorded. Style-owned.
+    static constexpr const char* transparencyProperty          = "_fc_transparent";
+    /// What a widget sets to declare its own surface, opening a transparency root.
+    static constexpr const char* transparencyOverrideProperty  = "transparent";
+    /// What a widget sets to name its component, either a known one or a prefix of its own.
+    static constexpr const char* componentProperty              = "component";
+    /// What a widget sets to name which element of its component it is, e.g. "Title".
+    static constexpr const char* elementProperty                = "element";
+    /// The font the widget had before applyWidgetFont() touched it. Style-owned.
+    static constexpr const char* styleFontBaseProperty         = "_fc_styleFontBase";
+    /// The resolveMask() of the token font applyWidgetFont() applied. Style-owned.
+    static constexpr const char* styleFontMaskProperty         = "_fc_styleFontMask";
+    /// What the mask currently on a scroll area was built from. Style-owned.
+    static constexpr const char* scrollAreaMaskProperty        = "_fc_scrollAreaMask";
+    /// The minimum height the widget had before applyWidgetMinimumHeight(). Style-owned.
+    static constexpr const char* styleMinHeightBaseProperty    = "_fc_styleMinHeightBase";
+    /// The minimum height applyWidgetMinimumHeight() applied. Style-owned.
+    static constexpr const char* styleMinHeightProperty        = "_fc_styleMinHeight";
+    // clang-format on
+
+    /// Whether the surface behind @p widget is see-through, as its own tokens describe it.
+    bool transparencyBelow(const QWidget* widget) const;
+
+    /// Records @p surface on @p widget and tells it its style changed, since the tag moves
+    /// padding and heights as well as colours.
+    void tagWidgetTransparency(QWidget* widget, bool surface) const;
+
+    /// Whether @p widget declares its own surface, falling back to what it inherits.
+    static bool ownSurface(const QWidget* widget, bool inherited);
+
+    /// Whether @p widget takes its surface from its parent at all.
+    static bool canInheritTransparency(const QWidget* widget);
+
+    static void notifyStyleChange(QWidget* widget);
+
+
+private:
+    /// @p context with its Position reset to North, for resolving a geometric token that is
+    /// stated once and rotated to wherever the component actually attaches.
+    static StyleParameters::StyleContext withNorthPosition(
+        const StyleParameters::StyleContext& context
+    );
+
+    /// Attaches @p widget to @p context, so resolution can consult what the widget declares.
+    static void bindWidget(StyleParameters::StyleContext& context, const QWidget* widget);
+
+    // StyleContextCache<T> holds one map per override-set id, so two widgets with different
+    // overrides never read each other's entries while widgets sharing a set share a bin.
+    // Bin 0 is "no overrides". Every operation is const so const draw methods can use them.
+    template<typename T>
+    class StyleContextCache
+    {
+        using Bin = std::unordered_map<uint64_t, T>;
+
+        mutable std::unordered_map<uint32_t, Bin> bins;
+
+    public:
+        const T* find(uint32_t bin, uint64_t key) const
+        {
+            const auto foundBin = bins.find(bin);
+            if (foundBin == bins.end()) {
+                return nullptr;
+            }
+
+            const auto found = foundBin->second.find(key);
+            return found != foundBin->second.end() ? &found->second : nullptr;
+        }
+
+        void store(uint32_t bin, uint64_t key, T value) const
+        {
+            bins[bin].emplace(key, std::move(value));
+        }
+
+        void clear()
+        {
+            bins.clear();
+        }
+    };
+
+    mutable StyleContextCache<std::optional<StyleParameters::Value>> tokenCache;
+    mutable StyleContextCache<BoxStyleDefinition> boxStyleCache;
+    mutable StyleContextCache<BoxGeometryDefinition> boxGeometryCache;
+
+    // Single-entry memo for overrideSetOf(). resolveBoxStyle() and resolveBoxGeometry() each
+    // resolve a dozen tokens from one context, and QObject::property() scans the widget class's
+    // static property table on every call. QPointer clears itself when the widget dies, so a
+    // stale pointer can never be compared against a new widget at the same address.
+    mutable QPointer<const QWidget> overrideMemoWidget;
+    mutable uint32_t overrideMemoSet = StyleParameters::OverrideRegistry::emptyId;
+
+    // Set while styleSheetSpinBoxSurplus() has a measurement in flight, so the call the wrapper
+    // makes back into this style answers with the width it would have reported on its own.
+    mutable bool measuringStyleSheetSpinBoxSurplus = false;
+
+    // What Qt::UI_AnimateCombo was before polish(QApplication*) turned it off, so a later switch
+    // to another style hands the platform setting back.
+    bool comboAnimationWasEnabled = false;
 };
 
 }  // namespace Gui

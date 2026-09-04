@@ -27,6 +27,7 @@
 
 #include "ViewProvider.h"
 #include <App/DocumentObject.h>
+#include <App/DocumentObserver.h>
 
 class SoMaterial;
 class SoDrawStyle;
@@ -199,6 +200,19 @@ public:
     void setShowable(bool enable);
     bool isShowable() const;
 
+    /** Reveals or conceals this object for a temporary purpose.
+     *
+     * Nothing is written to any property, so the document's own idea of what is visible —
+     * and everything that reacts to it — is left exactly as it was found. Reveals nest:
+     * the object goes back to whatever Visibility describes once as many conceals have
+     * arrived as reveals, and a conceal nobody asked for does nothing. Prefer
+     * Gui::TemporaryVisibility, which balances the two on every path out.
+     *
+     * Revealing an object whose parent group is hidden moves this object's own switch to
+     * no visible effect; that is a known limitation and is not compensated for here.
+     */
+    void makeTemporaryVisible(bool visible);
+
     /** Start the edit mode with ViewProvider::Default */
     void startDefaultEditMode();
 
@@ -258,6 +272,22 @@ protected:
 
     void setModeSwitch() override;
 
+    /// Whether anything currently holds this object revealed for a temporary purpose.
+    bool isTemporarilyVisible() const
+    {
+        return temporaryVisibility > 0;
+    }
+
+    /** Brings this object into or out of the scene for a temporary purpose.
+     *
+     * Called once when the first reveal arrives and once when the last one goes;
+     * overlapping reveals in between are not seen here. An override needs no saved state:
+     * concealing means re-applying whatever Visibility describes at that moment, which an
+     * override reads for itself. It must write no property, or the reveal stops being
+     * invisible to the document.
+     */
+    virtual void onTemporaryVisibilityChanged(bool visible);
+
     /** Adds a menu item and bind it with \ref startDefaultEditMode().  */
     void addDefaultAction(QMenu*, const QString&);
 
@@ -268,6 +298,8 @@ protected:
 private:
     bool _Showable = true;
     int treeRank = -1;
+    /// How many temporary reveals are outstanding; see makeTemporaryVisible().
+    int temporaryVisibility = 0;
 
     std::vector<const char*> aDisplayEnumsArray;
     std::vector<std::string> aDisplayModesArray;
@@ -275,5 +307,39 @@ private:
     friend class Document;
 };
 
+/**
+ * Holds one object revealed in the 3D view for as long as this lives.
+ *
+ * Nothing is written to the document: the object's Visibility property still says what
+ * the user asked for, and is what the object goes back to when the reveal ends. Holders
+ * of the same object nest, so overlapping reveals each keep it visible and the last one
+ * to go restores it. An object deleted, or a document closed, meanwhile leaves the holder
+ * inert rather than writing through a view provider that no longer exists.
+ */
+class GuiExport TemporaryVisibility
+{
+public:
+    /// Holds nothing revealed.
+    TemporaryVisibility() = default;
+    /// Reveals @p object, if it has a view provider to reveal.
+    explicit TemporaryVisibility(App::DocumentObject* object);
+    explicit TemporaryVisibility(ViewProviderDocumentObject* viewProvider);
+    ~TemporaryVisibility();
+
+    FC_DISABLE_COPY(TemporaryVisibility)
+
+    TemporaryVisibility(TemporaryVisibility&& other);
+    TemporaryVisibility& operator=(TemporaryVisibility&& other);
+
+    /// Whether this holder still keeps an object revealed.
+    bool active() const;
+    /// Gives up the reveal now rather than at destruction.
+    void reset();
+
+private:
+    /// Held weakly, and the view provider re-resolved from it on release: the object may
+    /// be deleted or its document closed while the reveal is outstanding.
+    App::DocumentObjectWeakPtrT _object {nullptr};
+};
 
 }  // namespace Gui

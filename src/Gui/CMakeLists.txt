@@ -1186,6 +1186,12 @@ SET(Widget_CPP_SRCS
     ElideCheckBox.cpp
     FontScaledSVG.cpp
     SplitButton.cpp
+    HighlightOverlay.cpp
+    GeometryHighlighter.cpp
+    GeometrySelection.cpp
+    GeometrySelectionGate.cpp
+    GeometrySelectorWidget.cpp
+    GeometrySelectorPopup.cpp
 )
 if(WIN32)
     SET(Widget_CPP_SRCS
@@ -1219,6 +1225,13 @@ SET(Widget_HPP_SRCS
     ElideCheckBox.h
     FontScaledSVG.h
     SplitButton.h
+    HighlightOverlay.h
+    GeometryHighlighter.h
+    GeometryReference.h
+    GeometrySelection.h
+    GeometrySelectionGate.h
+    GeometrySelectorWidget.h
+    GeometrySelectorPopup.h
 )
 SET(Widget_SRCS
     ${Widget_CPP_SRCS}
@@ -1347,10 +1360,14 @@ SET(FreeCADGui_CPP_SRCS
     ExpressionCompleter.cpp
     FileHandler.cpp
     FileHandler.h
+    FCMenuBar.cpp
+    FCStatusBar.cpp
     FreeCADStyle.cpp
     GuiApplication.cpp
     GuiApplicationNativeEventAware.cpp
     GuiConsole.cpp
+    IconManager.cpp
+    ThemeReloadEvent.cpp
     InputHintWidget.cpp
     InputHintPy.cpp
     Macro.cpp
@@ -1373,6 +1390,13 @@ SET(FreeCADGui_CPP_SRCS
     StyleParameters/Value.cpp
     StyleParameters/Parser.cpp
     StyleParameters/ParameterManager.cpp
+    StyleParameters/Diagnostics.cpp
+    StyleParameters/ColorShading.cpp
+    StyleParameters/ParameterDescriptorRegistry.cpp
+    StyleParameters/StyleContext.cpp
+    StyleParameters/StyleOverrides.cpp
+    StyleParameters/TokenExporter.cpp
+    StyleParameters/StyleParameterResolver.cpp
 )
 SET(FreeCADGui_SRCS
     Application.h
@@ -1388,6 +1412,8 @@ SET(FreeCADGui_SRCS
     ExpressionCompleter.h
     FreeCADGuiInit.py
     FreeCADGuiTest.py
+    FCMenuBar.h
+    FCStatusBar.h
     FreeCADStyle.h
     GraphicsViewZoom.h
     GuiApplication.h
@@ -1395,6 +1421,8 @@ SET(FreeCADGui_SRCS
     3Dconnexion/GuiAbstractNativeEvent.h
     GuiConsole.h
     InventorAll.h
+    IconManager.h
+    ThemeReloadEvent.h
     InputHint.h
     InputHintPy.h
     InputHintWidget.h
@@ -1416,11 +1444,25 @@ SET(FreeCADGui_SRCS
     ManualAlignment.h
     StartupProcess.h
     StatusBarLabel.h
+    StyleParameters.h
     TransactionObject.h
     ToolHandler.h
     StyleParameters/Value.h
     StyleParameters/Parser.h
     StyleParameters/ParameterManager.h
+    StyleParameters/Diagnostics.h
+    StyleParameters/Edges.h
+    StyleParameters/Insets.h
+    StyleParameters/Alignment.h
+    StyleParameters/Corners.h
+    StyleParameters/InnerShadow.h
+    StyleParameters/Gradient.h
+    StyleParameters/ColorShading.h
+    StyleParameters/ParameterDescriptorRegistry.h
+    StyleParameters/StyleContext.h
+    StyleParameters/StyleOverrides.h
+    StyleParameters/TokenExporter.h
+    StyleParameters/StyleParameterResolver.h
 )
 
 SET(FreeCADGui_SRCS

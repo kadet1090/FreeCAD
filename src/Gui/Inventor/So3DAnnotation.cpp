@@ -34,9 +34,11 @@
 #endif
 
 #include <Inventor/elements/SoCacheElement.h>
+#include <Inventor/lists/SoPathList.h>
 #include <algorithm>
 
 #include "So3DAnnotation.h"
+#include <Base/Tools.h>
 #include <Gui/Selection/Selection.h>
 
 using namespace Gui;
@@ -74,32 +76,6 @@ bool SoDelayedAnnotationsElement::hasDelayedPaths(SoState* state)
     return !getElement(state)->paths.empty();
 }
 
-SoPathList SoDelayedAnnotationsElement::getDelayedPaths(SoState* state)
-{
-    auto* elt = getElement(state);
-
-    if (elt->paths.empty()) {
-        return {};
-    }
-
-    // sort by priority (lower numbers render first)
-    std::stable_sort(
-        elt->paths.begin(),
-        elt->paths.end(),
-        [](const PriorityPath& a, const PriorityPath& b) { return a.priority < b.priority; }
-    );
-
-    SoPathList sortedPaths;
-    for (const auto& priorityPath : elt->paths) {
-        sortedPaths.append(priorityPath.path);
-    }
-
-    // Clear storage
-    elt->paths.clear();
-
-    return sortedPaths;
-}
-
 void SoDelayedAnnotationsElement::processDelayedPathsWithPriority(SoState* state, SoGLRenderAction* action)
 {
     auto elt = static_cast<SoDelayedAnnotationsElement*>(state->getElementNoPush(classStackIndex));
@@ -111,19 +87,72 @@ void SoDelayedAnnotationsElement::processDelayedPathsWithPriority(SoState* state
     std::stable_sort(
         elt->paths.begin(),
         elt->paths.end(),
-        [](const PriorityPath& a, const PriorityPath& b) { return a.priority < b.priority; }
+        [](const PriorityPath& first, const PriorityPath& second) {
+            return first.priority < second.priority;
+        }
     );
 
-    isProcessingDelayedPaths = true;
+    // Move the paths out of the element. Replay needs a list it owns, and the element
+    // has to end up empty anyway so the next traversal starts from nothing; the swap
+    // does both in one step. Nothing appends while the loop runs: So3DAnnotation::render
+    // makes annotations draw inline instead of deferring, and the SoBrep*Set add-sites
+    // are gated on isProcessingDelayedPaths.
+    std::vector<PriorityPath> ordered;
+    ordered.swap(elt->paths);
 
-    for (const auto& priorityPath : elt->paths) {
-        SoPathList singlePath;
-        singlePath.append(priorityPath.path);
+    Base::StateLocker processing(isProcessingDelayedPaths, true);
 
-        action->apply(singlePath, TRUE);
+    bool clearedForHandles = false;
+
+    // One apply per layer, not per path. Each apply runs its own nested delayed-path
+    // phase on the way out, and that phase is where a nested SoFCPathAnnotation draws;
+    // finishing a layer before starting the next is what keeps the layers ordered.
+    for (auto layerBegin = ordered.begin(); layerBegin != ordered.end();) {
+        const int currentLayer = layerBegin->priority;
+        const auto layerEnd
+            = std::find_if(layerBegin, ordered.end(), [currentLayer](const PriorityPath& candidate) {
+                  return candidate.priority != currentLayer;
+              });
+
+        SoPathList batch;
+        for (auto entry = layerBegin; entry != layerEnd; ++entry) {
+            batch.append(entry->path);
+        }
+
+        // Handles have to beat everything under them, but the layers below do write depth
+        // (a preview shape is a filled faceset) and every apply restores depth testing on
+        // the way in. Clearing once, at the boundary, frees the handles from that without
+        // changing how the layers below occlude each other.
+        if (!clearedForHandles && currentLayer >= static_cast<int>(AnnotationLayer::Handle)) {
+            glClear(GL_DEPTH_BUFFER_BIT);
+            clearedForHandles = true;
+        }
+
+        // Apply without obeysrules: Coin would otherwise sort and split the batch by head
+        // node, and SoCompactPathList requires every path in it to share one head. The
+        // batch can hold paths from different roots, since the element outlives a single
+        // apply and every root traversed with this action feeds the same one.
+        action->apply(batch, FALSE);
+
+        layerBegin = layerEnd;
+    }
+}
+
+void SoDelayedAnnotationsElement::discardDelayedPaths(SoState* state)
+{
+    auto elt = static_cast<SoDelayedAnnotationsElement*>(state->getElementNoPush(classStackIndex));
+
+    if (elt->paths.empty()) {
+        return;
     }
 
-    isProcessingDelayedPaths = false;
+    // The copies handed to addDelayedPath arrive at refcount 0 and are held as raw
+    // pointers, so appending them to a list that refs on append and unrefs on destruction
+    // is what actually frees them.
+    SoPathList discarded;
+    for (const PriorityPath& entry : elt->paths) {
+        discarded.append(entry.path);
+    }
 
     elt->paths.clear();
 }
@@ -135,6 +164,8 @@ bool So3DAnnotation::render = false;
 So3DAnnotation::So3DAnnotation()
 {
     SO_NODE_CONSTRUCTOR(So3DAnnotation);
+
+    SO_NODE_ADD_FIELD(layer, (static_cast<int>(AnnotationLayer::Overlay)));
 }
 
 void So3DAnnotation::initClass()
@@ -165,7 +196,11 @@ void So3DAnnotation::GLRenderBelowPath(SoGLRenderAction* action)
     }
     else {
         SoCacheElement::invalidate(action->getState());
-        SoDelayedAnnotationsElement::addDelayedPath(action->getState(), action->getCurPath()->copy());
+        SoDelayedAnnotationsElement::addDelayedPath(
+            action->getState(),
+            action->getCurPath()->copy(),
+            layer.getValue()
+        );
     }
 }
 
@@ -176,7 +211,11 @@ void So3DAnnotation::GLRenderInPath(SoGLRenderAction* action)
     }
     else {
         SoCacheElement::invalidate(action->getState());
-        SoDelayedAnnotationsElement::addDelayedPath(action->getState(), action->getCurPath()->copy());
+        SoDelayedAnnotationsElement::addDelayedPath(
+            action->getState(),
+            action->getCurPath()->copy(),
+            layer.getValue()
+        );
     }
 }
 

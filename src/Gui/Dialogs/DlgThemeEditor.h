@@ -28,6 +28,7 @@
 
 #include <QDialog>
 #include <QTreeView>
+#include <map>
 #include <optional>
 
 QT_BEGIN_NAMESPACE
@@ -73,6 +74,7 @@ public:
     struct Item;
     struct GroupItem;
     struct ParameterItem;
+    struct ValueItem;
 
     enum Column : std::uint8_t
     {
@@ -94,6 +96,11 @@ public:
 
     void reset();
     void flush() override;
+
+    const StyleParameters::ParameterManager& parameterManager() const;
+
+
+    void expandTupleIfNeeded(const QModelIndex& index);
 
     int rowCount(const QModelIndex& index) const override;
     int columnCount(const QModelIndex& index) const override;
@@ -125,9 +132,14 @@ Q_SIGNALS:
     void newParameterAdded(const QModelIndex& index);
 
 private:
+    void rebuildIndex();
+
     std::list<ParameterSource*> sources;
     std::unique_ptr<StyleParameters::ParameterManager> manager;
     std::unique_ptr<Node> root;
+    /// Name-to-ParameterItem index for O(log N) get() lookups.
+    /// First occurrence wins (highest-priority source is at the top of the tree).
+    std::map<std::string, ParameterItem*> parameterIndex;
 };
 
 class GuiExport DlgThemeEditor: public QDialog
@@ -145,10 +157,10 @@ public:
 
 public Q_SLOTS:
     void handleButtonClick(QAbstractButton* button);
+    void onExportTokens();
 
 private:
     std::unique_ptr<Ui::DlgThemeEditor> ui;
-    std::unique_ptr<StyleParameters::ParameterManager> manager;
     std::unique_ptr<StyleParametersModel> model;
 };
 }  // namespace Gui

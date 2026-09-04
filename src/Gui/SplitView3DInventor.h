@@ -64,6 +64,7 @@ public:
     View3DInventorViewer* getViewer(unsigned int) const;
     void setOverrideCursor(const QCursor&) override;
     bool containsViewProvider(const ViewProvider*) const override;
+    QString paneBackground() const override;
 
     PyObject* getPyObject() override;
     void setPyObject(PyObject*) override;

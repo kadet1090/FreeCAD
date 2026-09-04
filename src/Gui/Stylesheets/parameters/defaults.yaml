@@ -1,0 +1,19 @@
+---
+# Loaded for every theme, whether or not it ships a parameters file of its own. This is a safety
+# net, not a place to design in: it holds only what a theme's silence would otherwise leave
+# invisible, and a theme that states any of it overrides it.
+#
+# A dock panel paints its own body and title bar - the QDockWidget keeps none of its client area
+# - so with no Panel tokens at all those two widgets paint nothing and the panel chrome simply
+# is not there. Everything else a theme leaves unsaid falls through to the base style, which is
+# plain but not broken, and so does not belong here.
+#
+# References reach Design System.yaml only, which is loaded unconditionally alongside this file.
+# Nothing here may reference FreeCAD Base.yaml: a theme that ships no parameters file does not
+# load it, and the reference would resolve to the literal "@Name".
+
+PanelBackground: "@Background.100"
+
+PanelTitleBackground: "@Background.150"
+PanelTitleTextColor: "@Contrast.500"
+PanelTitlePadding: "padding(horizontal: @Spacing.150, vertical: @Spacing.050)"

@@ -39,18 +39,13 @@ void ElideLabel::paintEvent(QPaintEvent* event)
     painter.setPen(palette().color(QPalette::WindowText));
     painter.setFont(font());
 
-    constexpr int padding = 4;
     QFontMetrics fm(painter.fontMetrics());
 
-    int availableWidth = width() - padding * 2;
-    if (availableWidth < 0) {
-        return;
-    }
+    // Flush with the label's own edges: the gap around the text is the surrounding layout's to
+    // give, and a label that adds one of its own cannot be aligned with anything beside it.
+    QString elidedText = fm.elidedText(text(), Qt::ElideRight, width());
 
-    QString elidedText = fm.elidedText(text(), Qt::ElideRight, availableWidth);
-
-    QRect textRect = rect().adjusted(padding, 0, -padding, 0);
-    painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, elidedText);
+    painter.drawText(rect(), Qt::AlignLeft | Qt::AlignVCenter, elidedText);
 }
 
 QSize ElideLabel::sizeHint() const

@@ -476,6 +476,15 @@ void QGVPage::mousePressEvent(QMouseEvent* event)
         toolHandler->mousePressEvent(event);
     }
     else {
+        if (event->button() == Qt::RightButton && m_parentMDI) {
+            if (QGraphicsItem* item = itemAt(event->pos())) {
+                m_parentMDI->selectOnRightPress(item);
+            }
+            m_navStyle->handleMousePressEvent(event);
+            // do not call base class because it would clear the 
+            // selection on right click
+            return;
+        }
         m_navStyle->handleMousePressEvent(event);
     }
     QGraphicsView::mousePressEvent(event);
@@ -510,7 +519,7 @@ void QGVPage::mouseReleaseEvent(QMouseEvent* event)
 
 TechDraw::DrawPage* QGVPage::getDrawPage() { return m_vpPage->getDrawPage(); }
 
-QColor QGVPage::getBackgroundColor()
+QColor QGVPage::getBackgroundColor() const
 {
     Base::Color fcColor;
     fcColor.setPackedValue(Preferences::getPreferenceGroup("Colors")->GetUnsigned("Background", 0x70707000));

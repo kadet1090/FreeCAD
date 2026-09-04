@@ -121,6 +121,16 @@ NotificationLabel::NotificationLabel(
     setForegroundRole(QPalette::ToolTipText);  // defaults to ToolTip QPalette
     setBackgroundRole(QPalette::ToolTipBase);  // defaults to ToolTip QPalette
     setPalette(NotificationBox::palette());
+
+    // A notification is a tooltip surface with a namespace of its own, so Notification*
+    // tokens resolve ahead of Tooltip* without a component of its own. Set before
+    // ensurePolished(), which is where FreeCADStyle::polish() reads it.
+    //
+    // This reaches background, border, radius, padding and font, but not text colour: the
+    // palette set just above keeps ToolTipText from the application palette, so a
+    // NotificationTextColor token would resolve and then go unused. Do not add one without
+    // first making palette() build from the tokens.
+    setProperty("component", "Notification");
     ensurePolished();
     setMargin(1 + style()->pixelMetric(QStyle::PM_ToolTipLabelFrameWidth, nullptr, this));
     setFrameStyle(QFrame::NoFrame);
@@ -444,11 +454,6 @@ void NotificationBox::setPalette(const QPalette& palette)
     if (NotificationLabel::instance) {
         NotificationLabel::instance->setPalette(palette);
     }
-}
-
-void NotificationBox::setFont(const QFont& font)
-{
-    QApplication::setFont(font, "NotificationLabel");
 }
 
 }  // namespace Gui

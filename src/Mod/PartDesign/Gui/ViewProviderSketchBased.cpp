@@ -89,10 +89,32 @@ void ViewProviderSketchBased::attach(App::DocumentObject* pcObject)
 {
     ViewProvider::attach(pcObject);
 
-    pcPreviewRoot->addChild(pcProfileToggle);
+    // The profile highlight lives in its own branch (not under pcPreviewRoot) so it can
+    // be shown while the transparent result preview is off. showPreview() keeps the two
+    // in sync for normal editing; showProfile() overrides the profile alone.
+    showProfile(isPreviewEnabled());
 
     // we want the profile to be the same color as the preview
     pcProfileShape->color.connectFrom(&pcPreviewShape->color);
+}
+
+void ViewProviderSketchBased::showProfile(bool enable)
+{
+    auto* annotationRoot = getOrCreateAnnotation();
+    if (enable) {
+        if (annotationRoot->findChild(pcProfileToggle) < 0) {
+            annotationRoot->addChild(pcProfileToggle);
+        }
+    }
+    else {
+        annotationRoot->removeChild(pcProfileToggle);
+    }
+}
+
+void ViewProviderSketchBased::showPreview(bool enable)
+{
+    ViewProvider::showPreview(enable);
+    showProfile(enable);
 }
 
 void ViewProviderSketchBased::updateProfileShape()

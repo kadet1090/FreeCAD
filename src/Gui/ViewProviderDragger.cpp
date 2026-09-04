@@ -486,6 +486,7 @@ void ViewProviderDragger::attach(App::DocumentObject* pcObject)
     auto* pcAxisCrossKit = new Gui::SoFCPlacementIndicatorKit();
 
     auto* pcAnnotation = new So3DAnnotation();
+    pcAnnotation->layer = static_cast<int>(AnnotationLayer::Handle);
     pcAnnotation->addChild(pcAxisCrossKit);
 
     pcPlacement->addChild(pcAnnotation);

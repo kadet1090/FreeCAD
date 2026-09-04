@@ -257,7 +257,7 @@ void Gui::PreferencePackManager::importConfig(
 
 // TODO(Shvedov): Is this suitable place for this method? It is more generic,
 // and maybe more suitable place at Application?
-std::vector<std::filesystem::path> Gui::PreferencePackManager::modPaths() const
+std::vector<std::filesystem::path> Gui::PreferencePackManager::modPaths()
 {
     auto userModPath = fs::path(Base::FileInfo::stringToPath(App::Application::getUserAppDataDir()))
         / "Mod";
@@ -369,14 +369,14 @@ std::map<std::string, PreferencePack> Gui::PreferencePackManager::preferencePack
     return _preferencePacks;
 }
 
-bool PreferencePackManager::apply(const std::string& preferencePackName) const
+bool PreferencePackManager::apply(const std::string& preferencePackName, WindowState windowState) const
 {
     std::lock_guard<std::mutex> lock(_mutex);
     if (auto preferencePack = _preferencePacks.find(preferencePackName);
         preferencePack != _preferencePacks.end()) {
         BackupCurrentConfig();
         bool wasApplied = preferencePack->second.apply();
-        if (wasApplied) {
+        if (wasApplied && windowState == WindowState::Reload) {
             // If the visibility state of the dock windows was changed we have to manually reload
             // their state
             Gui::DockWindowManager* pDockMgr = Gui::DockWindowManager::instance();

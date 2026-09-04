@@ -157,9 +157,6 @@ public:
         return "ReportOutput";
     }
 
-    /** Restore the default font settings. */
-    void restoreFont();
-
     /** Returns true whether errors are reported. */
     bool isError() const;
     /** Returns true whether warnings are reported. */
@@ -212,6 +209,9 @@ public Q_SLOTS:
     void onToggleGoToEnd();
 
 private:
+    /** Pushes the Editor preferences' font family and size to this widget's style overrides. */
+    void applyFontPreferences();
+
     class Data;
     Data* d;
     bool gotoEnd;

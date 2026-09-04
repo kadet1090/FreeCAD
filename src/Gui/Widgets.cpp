@@ -1054,32 +1054,31 @@ LabelButton::LabelButton(QWidget* parent)
 
     label = new QLabel(this);
     label->setAutoFillBackground(true);
+    // A label reports its whole text as its minimum width, so in a cell too narrow for it the
+    // layout has to take the shortfall out of both children — and the button, whose content is
+    // one glyph, loses it entirely and renders as an empty frame. Let the label absorb all of it.
+    label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     layout->addWidget(label);
 
-    button = new QPushButton(QStringLiteral("…"), this);
+    button = new QToolButton(this);
+    button->setText(QStringLiteral("…"));
 #if defined(Q_OS_MACOS)
     button->setAttribute(Qt::WA_LayoutUsesWidgetRect);  // layout size from QMacStyle was not correct
 #endif
     layout->addWidget(button);
 
-    connect(button, &QPushButton::clicked, this, &LabelButton::browse);
-    connect(button, &QPushButton::clicked, this, &LabelButton::buttonClicked);
+    connect(button, &QToolButton::clicked, this, &LabelButton::browse);
+    connect(button, &QToolButton::clicked, this, &LabelButton::buttonClicked);
 }
 
 LabelButton::~LabelButton() = default;
-
-void LabelButton::resizeEvent(QResizeEvent* e)
-{
-    button->setFixedWidth(e->size().height());
-    button->setFixedHeight(e->size().height());
-}
 
 QLabel* LabelButton::getLabel() const
 {
     return label;
 }
 
-QPushButton* LabelButton::getButton() const
+QToolButton* LabelButton::getButton() const
 {
     return button;
 }
@@ -1348,15 +1347,24 @@ void PropertyListEditor::resizeEvent(QResizeEvent* e)
     lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
 }
 
+void PropertyListEditor::changeEvent(QEvent* event)
+{
+    QPlainTextEdit::changeEvent(event);
+
+    if (event->type() == QEvent::PaletteChange || event->type() == QEvent::StyleChange) {
+        highlightCurrentLine();
+        lineNumberArea->update();
+    }
+}
+
 void PropertyListEditor::highlightCurrentLine()
 {
     QList<QTextEdit::ExtraSelection> extraSelections;
     if (!isReadOnly()) {
         QTextEdit::ExtraSelection selection;
 
-        QPalette palette = style()->standardPalette();
-        selection.format.setBackground(palette.highlight().color());
-        selection.format.setForeground(palette.highlightedText().color());
+        selection.format.setBackground(palette().highlight());
+        selection.format.setForeground(palette().highlightedText());
 
         selection.format.setProperty(QTextFormat::FullWidthSelection, true);
         selection.cursor = textCursor();
@@ -1370,7 +1378,7 @@ void PropertyListEditor::highlightCurrentLine()
 void PropertyListEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
 {
     QPainter painter(lineNumberArea);
-    painter.fillRect(event->rect(), Qt::lightGray);
+    painter.setPen(palette().windowText().color());
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -1380,7 +1388,6 @@ void PropertyListEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
             QString number = QString::number(blockNumber + 1);
-            painter.setPen(Qt::black);
             painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(), Qt::AlignRight, number);
         }
 
@@ -1463,24 +1470,19 @@ LabelEditor::LabelEditor(QWidget* parent)
 
     connect(lineEdit, &QLineEdit::textChanged, this, &LabelEditor::validateText);
 
-    button = new QPushButton(QStringLiteral("…"), this);
+    button = new QToolButton(this);
+    button->setText(QStringLiteral("…"));
 #if defined(Q_OS_MACOS)
     button->setAttribute(Qt::WA_LayoutUsesWidgetRect);  // layout size from QMacStyle was not correct
 #endif
     layout->addWidget(button);
 
-    connect(button, &QPushButton::clicked, this, &LabelEditor::changeText);
+    connect(button, &QToolButton::clicked, this, &LabelEditor::changeText);
 
     setFocusProxy(lineEdit);
 }
 
 LabelEditor::~LabelEditor() = default;
-
-void LabelEditor::resizeEvent(QResizeEvent* e)
-{
-    button->setFixedWidth(e->size().height());
-    button->setFixedHeight(e->size().height());
-}
 
 QString LabelEditor::text() const
 {
@@ -1564,7 +1566,7 @@ ExpLineEdit::ExpLineEdit(QWidget* parent, bool expressionOnly)
 {
     makeLabel(this);
 
-    QObject::connect(iconLabel, &ExpressionLabel::clicked, this, &ExpLineEdit::openFormulaDialog);
+    QObject::connect(iconLabel, &QAbstractButton::clicked, this, &ExpLineEdit::openFormulaDialog);
     if (expressionOnly) {
         QMetaObject::invokeMethod(
             this,
@@ -1603,9 +1605,7 @@ void ExpLineEdit::bind(const ObjectIdentifier& _path)
 
     ExpressionBinding::bind(_path);
 
-    int frameWidth = style()->pixelMetric(QStyle::PM_SpinBoxFrameWidth);
-    setStyleSheet(QStringLiteral("QLineEdit { padding-right: %1px } ")
-                      .arg(iconLabel->sizeHint().width() + frameWidth + 1));
+    reserveIconSpace(this);
 
     iconLabel->show();
 }
@@ -1633,7 +1633,8 @@ void ExpLineEdit::onChange()
         std::unique_ptr<Expression> result(getExpression()->eval());
         setText(QString::fromStdString(anyToString(result->getValueAsAny())));
         setReadOnly(true);
-        iconLabel->setPixmap(getIcon(":/icons/bound-expression.svg", QSize(iconHeight, iconHeight)));
+        iconLabel->restoreNormalIcon();
+        iconLabel->setChecked(true);
 
         QPalette p(palette());
         p.setColor(QPalette::Text, Qt::lightGray);
@@ -1642,9 +1643,9 @@ void ExpLineEdit::onChange()
     }
     else {
         setReadOnly(false);
-        iconLabel->setPixmap(
-            getIcon(":/icons/bound-expression-unset.svg", QSize(iconHeight, iconHeight))
-        );
+        iconLabel->restoreNormalIcon();
+        iconLabel->setChecked(false);
+
         QPalette p(palette());
         p.setColor(QPalette::Active, QPalette::Text, defaultPalette.color(QPalette::Text));
         setPalette(p);
@@ -1656,16 +1657,13 @@ void ExpLineEdit::resizeEvent(QResizeEvent* event)
 {
     QLineEdit::resizeEvent(event);
 
-    int frameWidth = style()->pixelMetric(QStyle::PM_SpinBoxFrameWidth);
-
-    QSize sz = iconLabel->sizeHint();
-    iconLabel->move(rect().right() - frameWidth - sz.width(), rect().center().y() - sz.height() / 2);
+    positionIcon(this);
 
     try {
         if (isBound() && getExpression()) {
             setReadOnly(true);
-            QPixmap pixmap = getIcon(":/icons/bound-expression.svg", QSize(iconHeight, iconHeight));
-            iconLabel->setPixmap(pixmap);
+            iconLabel->restoreNormalIcon();
+            iconLabel->setChecked(true);
 
             QPalette p(palette());
             p.setColor(QPalette::Text, Qt::lightGray);
@@ -1674,9 +1672,8 @@ void ExpLineEdit::resizeEvent(QResizeEvent* event)
         }
         else {
             setReadOnly(false);
-            QPixmap pixmap
-                = getIcon(":/icons/bound-expression-unset.svg", QSize(iconHeight, iconHeight));
-            iconLabel->setPixmap(pixmap);
+            iconLabel->restoreNormalIcon();
+            iconLabel->setChecked(false);
 
             QPalette p(palette());
             p.setColor(QPalette::Active, QPalette::Text, defaultPalette.color(QPalette::Text));

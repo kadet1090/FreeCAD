@@ -175,12 +175,26 @@ public:
         return false;
     }
 
+    /**
+     * @brief The surface this view shows along the edge it shares with the tab strip.
+     *
+     * A style expression in the language the theme files use — a token reference such as
+     * "@ListBackground", or a literal such as "#2a2a2a" for a surface only the view can know.
+     * The selected tab's gradient ends on it, so the tab and the view read as one surface.
+     *
+     * Override where the view's own edge is not the window background; emit
+     * paneBackgroundChanged() whenever the answer changes.
+     */
+    virtual QString paneBackground() const;
+
 public Q_SLOTS:
     virtual void setOverrideCursor(const QCursor&);
     virtual void restoreOverrideCursor();
 
 Q_SIGNALS:
     void message(const QString&, int);
+    /// The value paneBackground() answers with has changed.
+    void paneBackgroundChanged();
 
 protected Q_SLOTS:
     /** This method gets called from the main window this view is attached to
