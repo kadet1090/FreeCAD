@@ -6417,6 +6417,30 @@ void FreeCADStyle::polish(QWidget* widget)
     }
 }
 
+void FreeCADStyle::polish(QApplication* application)
+{
+    QProxyStyle::polish(application);
+
+    // Windows animates a combo box popup open (Qt::UI_AnimateCombo; every other platform theme
+    // leaves the flag clear, so this call is inert there). QRollEffect fakes the container's
+    // visibility for the duration of the roll, and the container->show() that QComboBox::
+    // showPopup() issues right after therefore returns early without ever sending QEvent::Show —
+    // the event correctComboPopupPlacement() is scheduled from. The popup keeps Qt's own
+    // placement instead of aligning its current row over the closed control. No style hint
+    // reaches that decision: QComboBox asks QApplication::isEffectEnabled() directly, and the
+    // one hint that would suppress the effect, SH_ComboBox_Popup, also moves the popup onto the
+    // menu-painting path this style declines.
+    comboAnimationWasEnabled = QApplication::isEffectEnabled(Qt::UI_AnimateCombo);
+    QApplication::setEffectEnabled(Qt::UI_AnimateCombo, false);
+}
+
+void FreeCADStyle::unpolish(QApplication* application)
+{
+    QApplication::setEffectEnabled(Qt::UI_AnimateCombo, comboAnimationWasEnabled);
+
+    QProxyStyle::unpolish(application);
+}
+
 void FreeCADStyle::unpolish(QWidget* widget)
 {
     if (widget == nullptr) {

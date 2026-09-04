@@ -2105,6 +2105,64 @@ private Q_SLOTS:
         QCoreApplication::processEvents();
         QVERIFY2(counter.paints > 0, "the release left the row painted as pressed");
     }
+
+    // Windows rolls a combo popup open — Qt::UI_AnimateCombo, a flag its platform theme reports
+    // and no other one does. QRollEffect fakes the container's visibility for the length of the
+    // roll, so the container->show() that QComboBox::showPopup() issues right after returns
+    // early and the QEvent::Show the placement correction is scheduled from never arrives: the
+    // popup keeps Qt's placement rather than aligning its current row over the closed control.
+    // No style hint reaches the decision — QComboBox asks QApplication::isEffectEnabled()
+    // directly — so the style clears the flag as it comes into force, and hands it back as it
+    // stops being in force.
+    //
+    // The style has to be out of force before the flag is set, or the restore below does the
+    // clearing that this is trying to attribute to the install.
+    //
+    // Second to last check in this class: it leaves the application style not FreeCADStyle.
+    void test_installingTheStyleDisablesTheComboOpenAnimation()  // NOLINT
+    {
+        QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+
+        // isEffectEnabled() answers on the general flag as well as the specific one, and no
+        // Linux platform theme reports either. Both are needed to stand in for Windows.
+        QApplication::setEffectEnabled(Qt::UI_General, true);
+        QApplication::setEffectEnabled(Qt::UI_AnimateCombo, true);
+        QVERIFY(QApplication::isEffectEnabled(Qt::UI_AnimateCombo));
+
+        installFreshApplicationStyle();
+        QVERIFY2(
+            !QApplication::isEffectEnabled(Qt::UI_AnimateCombo),
+            "the style took effect and left the combo open animation running"
+        );
+
+        QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+        QVERIFY2(
+            QApplication::isEffectEnabled(Qt::UI_AnimateCombo),
+            "switching away from the style kept the platform's animation setting suppressed"
+        );
+    }
+
+    // Gui::Application always sets a stylesheet, which wraps the application style in a
+    // QStyleSheetStyle — so in the running application every polish reaches FreeCADStyle only
+    // through that wrapper, and the check above, on a bare style, would not notice it stopping
+    // there. Both flag writes happen while the wrapper is already in place.
+    //
+    // Last check in this class: it leaves an application stylesheet set.
+    void test_theAnimationIsDisabledThroughTheApplicationStyleSheetWrapper()  // NOLINT
+    {
+        qApp->setStyleSheet(QStringLiteral("QWidget { }"));
+        QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+
+        QApplication::setEffectEnabled(Qt::UI_General, true);
+        QApplication::setEffectEnabled(Qt::UI_AnimateCombo, true);
+        QVERIFY(QApplication::isEffectEnabled(Qt::UI_AnimateCombo));
+
+        installFreshApplicationStyle();
+        QVERIFY2(
+            !QApplication::isEffectEnabled(Qt::UI_AnimateCombo),
+            "the style sheet wrapper swallowed the polish that clears the animation flag"
+        );
+    }
 };
 
 QTEST_MAIN(TestComboDropdown)

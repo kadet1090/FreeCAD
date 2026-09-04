@@ -437,6 +437,9 @@ public:
     void polish(QWidget* widget) override;
     void unpolish(QWidget* widget) override;
 
+    void polish(QApplication* application) override;
+    void unpolish(QApplication* application) override;
+
     /**
      * @brief Declares a style override on @p widget and re-derives it and its descendants.
      *
@@ -1502,6 +1505,10 @@ private:
     // stale pointer can never be compared against a new widget at the same address.
     mutable QPointer<const QWidget> overrideMemoWidget;
     mutable uint32_t overrideMemoSet = StyleParameters::OverrideRegistry::emptyId;
+
+    // What Qt::UI_AnimateCombo was before polish(QApplication*) turned it off, so a later switch
+    // to another style hands the platform setting back.
+    bool comboAnimationWasEnabled = false;
 };
 
 }  // namespace Gui
