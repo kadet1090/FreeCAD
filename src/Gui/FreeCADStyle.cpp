@@ -63,6 +63,7 @@
 # include <QStyleOptionSpinBox>
 # include <QStyleOptionToolButton>
 # include <QStyleOption>
+# include <QScopeGuard>
 # include <QWidget>
 #endif
 
@@ -235,19 +236,6 @@ FreeCADStyle::CornerRadii innerRadii(const FreeCADStyle::CornerRadii& outer, con
 
 namespace
 {
-
-// QStyleSheetStyle::defaultSize() reserves this for a spin box's step buttons whenever no rule
-// states a width - a literal, with no pixel metric behind it. Asking the sheet not to add it
-// costs the buttons the rect Qt hit-tests step clicks against, so the style subtracts what it
-// knows will be added instead.
-//
-// This compensation is version-bound: a later Qt gates the addition behind
-// !rule.baseStyleCanDraw(), and FreeCAD's sheet gives spin boxes no rule, so on such a Qt nothing
-// is added here and this style would be subtracting 16px that was never charged. The runtime
-// this builds against does not yet carry that fix; if it ever does,
-// test_aStyleSheetDoesNotWidenASpinBox is what goes red, and that failure is the signal to remove
-// this subtraction rather than chase a version check.
-constexpr int styleSheetSpinButtonColumn = 16;
 
 struct ShadowCacheKey
 {
@@ -2878,6 +2866,25 @@ QSize FreeCADStyle::spinBoxSizeFromContents(
     return resolveBoxGeometry(contextOf(widget, option)).sizeFromContents(contentSize);
 }
 
+int FreeCADStyle::styleSheetSpinBoxSurplus(
+    const QStyleOptionSpinBox* option,
+    const QSize& size,
+    int ownWidth,
+    const QWidget* widget
+) const
+{
+    // The wrapper answers this by asking the style it wraps, which is this one again: the flag
+    // is what makes that inner answer the uncompensated one, leaving the difference between
+    // the two the wrapper's own contribution and nothing else. Token resolution throws, and a
+    // flag left standing would cost every spin box its compensation for the rest of the session.
+    measuringStyleSheetSpinBoxSurplus = true;
+    const auto finished = qScopeGuard([this] { measuringStyleSheetSpinBoxSurplus = false; });
+
+    const QSize wrapped = widget->style()->sizeFromContents(CT_SpinBox, option, size, widget);
+
+    return std::max(0, wrapped.width() - ownWidth);
+}
+
 QRect FreeCADStyle::spinBoxSubControlRect(
     const QStyleOptionSpinBox* option,
     SubControl subControl,
@@ -4612,11 +4619,16 @@ QSize FreeCADStyle::sizeFromContents(
         if (const auto* spinOption = qstyleoption_cast<const QStyleOptionSpinBox*>(option)) {
             QSize result = spinBoxSizeFromContents(spinOption, size, widget);
 
-            // After the clamps rather than off the content size: the wrapper adds its column back
-            // on top of whatever MinWidth or Width decided, so those have to run first. Qt adds it
-            // only when the box has buttons, so this mirrors that.
-            if (isWrappedFor(widget) && spinOption->buttonSymbols != QAbstractSpinBox::NoButtons) {
-                result.rwidth() = std::max(0, result.width() - styleSheetSpinButtonColumn);
+            // A style sheet reserves a step-button column of its own on top of the one this
+            // style already charged for, and every pixel it adds is a pixel nothing is laid out
+            // in. How wide that column is has been a fixed 16px, nothing at all, and whatever a
+            // sheet's own rule asks for across Qt 6.8 to 6.11, so it is measured rather than
+            // known - and taken off after the clamps, since the wrapper adds it on top of
+            // whatever MinWidth or Width decided.
+            if (isWrappedFor(widget) && !measuringStyleSheetSpinBoxSurplus) {
+                const int surplus = styleSheetSpinBoxSurplus(spinOption, size, result.width(), widget);
+
+                result.rwidth() = std::max(0, result.width() - surplus);
             }
 
             return result;

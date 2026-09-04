@@ -1034,6 +1034,17 @@ protected:
         const QWidget* widget
     ) const;
 
+    /// How much wider than @p ownWidth a wrapper around this style reports a spin box of
+    /// @p size to be. Only ever asked of the wrapper itself: what Qt reserves for the step
+    /// buttons is a fixed 16px on one patch release, nothing on the next and a width read off
+    /// the sheet's own rule on a third, so nothing but the wrapper knows it.
+    int styleSheetSpinBoxSurplus(
+        const QStyleOptionSpinBox* option,
+        const QSize& size,
+        int ownWidth,
+        const QWidget* widget
+    ) const;
+
     QRect spinBoxSubControlRect(
         const QStyleOptionSpinBox* option,
         SubControl subControl,
@@ -1505,6 +1516,10 @@ private:
     // stale pointer can never be compared against a new widget at the same address.
     mutable QPointer<const QWidget> overrideMemoWidget;
     mutable uint32_t overrideMemoSet = StyleParameters::OverrideRegistry::emptyId;
+
+    // Set while styleSheetSpinBoxSurplus() has a measurement in flight, so the call the wrapper
+    // makes back into this style answers with the width it would have reported on its own.
+    mutable bool measuringStyleSheetSpinBoxSurplus = false;
 
     // What Qt::UI_AnimateCombo was before polish(QApplication*) turned it off, so a later switch
     // to another style hands the platform setting back.

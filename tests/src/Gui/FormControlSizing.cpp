@@ -246,6 +246,44 @@ private Q_SLOTS:
         QCOMPARE(sheetedArrow.width(), bareArrow.width());
     }
 
+    // How much the sheet reserves is not a constant to be known in advance: across 6.8 to 6.11
+    // Qt has made it an unconditional 16px, then nothing at all, then 16px again, and a sheet
+    // that sizes the buttons itself makes it whatever that rule asks for. Only giving back what
+    // the sheet was seen to add survives all four, so a sheet naming a width the style cannot
+    // have guessed is what tells a measured compensation apart from a hardcoded one.
+    void test_aStyleSheetSizingTheStepButtonsDoesNotResizeASpinBox()  // NOLINT
+    {
+        const QString previous = QApplication::style()->name();
+        const auto restore = qScopeGuard([&previous] {
+            qApp->setStyleSheet(QString());
+            QApplication::setStyle(QStyleFactory::create(previous));
+        });
+        Gui::Application::Instance->setStyle(QStringLiteral("FreeCAD"));
+
+        QSpinBox spin;
+        spin.ensurePolished();
+
+        QVERIFY2(
+            qobject_cast<Gui::FreeCADStyle*>(spin.style()) != nullptr,
+            "the application style is not FreeCADStyle, so the test proves nothing"
+        );
+
+        const int bare = spin.sizeHint().width();
+
+        // The border is what makes the rule one Qt would paint, and only a rule Qt would paint
+        // gets its width honoured; the width itself is simply not the 16px Qt falls back to.
+        qApp->setStyleSheet(
+            QStringLiteral("QAbstractSpinBox::up-button { width: 4px; border: none; }")
+        );
+        spin.ensurePolished();
+
+        QVERIFY2(
+            qobject_cast<Gui::FreeCADStyle*>(spin.style()) == nullptr,
+            "the sheet did not wrap the style, so the test proves nothing"
+        );
+        QCOMPARE(spin.sizeHint().width(), bare);
+    }
+
     // The size hint and the content rect are two halves of one contract: a control resized to
     // the hint the style produced for a given content must still have room for that content.
     // The content rect always has the padding taken out of it, so the hint has to put it in —
